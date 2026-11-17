@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>갓물주 라이프: 미니미 하우스 3D</title>
-  <!-- 귀여운 한글 웹폰트 -->
+  <meta name="theme-color" content="#fef3c7" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>갓물주 라이프 3D: 미니미 타운 & 하우스</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Jua&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Three.js & OrbitControls CDN ImportMap -->
   <script type="importmap">
     {
       "imports": {
@@ -26,8 +26,9 @@
   <!-- ==================== 1. WebGL 3D 렌더링 컨테이너 ==================== -->
   <div id="webgl-container"></div>
 
-  <!-- ==================== 2. 3D 좌표 투영(Project) 플로팅 오버레이 레이어 ==================== -->
+  <!-- ==================== 2. 3D 좌표 투영(Projection) 오버레이 레이어 ==================== -->
   <div id="overlay-3d-layer">
+    <div id="town-lots-layer"></div>
     <div id="room-badges-layer"></div>
     <div id="shop-badges-layer"></div>
     <div id="speech-bubbles-layer"></div>
@@ -38,29 +39,35 @@
   <!-- ==================== 3. 상단 3D 젤리 캐주얼 메인 HUD ==================== -->
   <header class="fixed top-0 left-0 right-0 z-40 pointer-events-none px-2.5 pt-2.5 sm:px-4 sm:pt-3">
     <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2">
-      <!-- 좌측: 3D 로고 & 일차/시간 & 입주 현황 -->
-      <div class="pointer-events-auto jelly-hud-card px-3.5 py-1.5 sm:px-4 sm:py-2 flex items-center gap-2.5">
-        <svg width="36" height="36" viewBox="0 0 40 40" class="shrink-0">
+      <!-- 좌측: 현재 뷰 모드 & 건물/타운 현황 -->
+      <div class="pointer-events-auto jelly-hud-card px-3 py-1.5 sm:px-4 sm:py-2 flex items-center gap-2.5">
+        <svg width="34" height="34" viewBox="0 0 40 40" class="shrink-0">
           <ellipse cx="20" cy="36" rx="15" ry="3.5" fill="rgba(120,53,15,0.22)"/>
           <polygon points="20,5 36,15 20,24 4,15" fill="#f97316" stroke="#78350f" stroke-width="2.2" stroke-linejoin="round"/>
           <polygon points="4,15 20,24 20,36 4,27" fill="#fde68a" stroke="#78350f" stroke-width="2.2" stroke-linejoin="round"/>
           <polygon points="36,15 20,24 20,36 36,27" fill="#fcd34d" stroke="#78350f" stroke-width="2.2" stroke-linejoin="round"/>
         </svg>
         <div>
-          <div class="font-jua text-sm sm:text-base text-amber-950 leading-tight tracking-wide">
-            갓물주 라이프 3D <span class="text-xs text-orange-700">· 더 테넌츠 에디션</span>
+          <div class="flex items-center gap-1.5">
+            <span class="font-jua text-sm sm:text-base text-amber-950 leading-tight">갓물주 라이프 3D</span>
+            <span id="hud-mode-pill" class="font-jua text-[11px] bg-sky-100 text-sky-900 border border-sky-400 px-2 py-0.2 rounded-full">🏙️ 마을 뷰</span>
           </div>
-          <div class="flex items-center gap-2 text-xs mt-0.5">
-            <span id="hud-time-badge" class="font-jua text-amber-900 bg-amber-200/80 px-2 py-0.2 rounded-full">☀️ 1일차 · 오전 09:00</span>
-            <span id="hud-occupancy" class="font-jua text-emerald-800 bg-emerald-100 px-2 py-0.2 rounded-full border border-emerald-400">입주 0/2실</span>
+          <div class="flex items-center gap-1.5 text-[11px] mt-0.5">
+            <span id="hud-time-badge" class="font-jua text-amber-900 bg-amber-200/80 px-2 rounded-full">☀️ 1일차 · 오전 09:00</span>
+            <span id="hud-town-summary" class="font-jua text-emerald-800 bg-emerald-100 px-2 rounded-full border border-emerald-400">보유 건물 1/7</span>
           </div>
         </div>
+
+        <!-- 건물 내부 뷰일 때 즉시 타운으로 나가는 [🏙️ 마을 전체 보기] 버튼 -->
+        <button id="btn-back-to-town" class="hidden jelly-btn-sky font-jua text-xs sm:text-sm px-3 py-1.5 rounded-xl ml-1 flex items-center gap-1">
+          <span>🏙️</span><span>마을 전체 보기</span>
+        </button>
       </div>
 
-      <!-- 우측: 보유 자산 & 호실 합산 월세 & 초기화 -->
-      <div class="pointer-events-auto jelly-hud-card px-3.5 py-1.5 sm:px-4 sm:py-2 flex items-center gap-3">
-        <div class="flex items-center gap-2 pr-3 border-r-2 border-amber-300">
-          <svg width="30" height="30" viewBox="0 0 32 32" class="shrink-0">
+      <!-- 우측: 보유 자산 & 타운 합산 수익 & 일괄 수금 & 초기화 -->
+      <div class="pointer-events-auto jelly-hud-card px-3 py-1.5 sm:px-4 sm:py-2 flex items-center gap-2.5">
+        <div class="flex items-center gap-2 pr-2.5 border-r-2 border-amber-300">
+          <svg width="28" height="28" viewBox="0 0 32 32" class="shrink-0">
             <circle cx="16" cy="17.5" r="13" fill="#b45309"/>
             <circle cx="16" cy="15" r="13" fill="#fde047" stroke="#78350f" stroke-width="2.4"/>
             <circle cx="16" cy="15" r="9.5" fill="#fbbf24" stroke="#d97706" stroke-width="1.5"/>
@@ -68,15 +75,19 @@
           </svg>
           <div>
             <div class="text-[10px] font-bold text-amber-800/80 leading-none">보유 자산</div>
-            <div id="hud-gold-wrap" class="font-jua text-base sm:text-xl text-amber-950 leading-tight"><span id="hud-gold">300</span>만원</div>
+            <div id="hud-gold-wrap" class="font-jua text-base sm:text-xl text-amber-950 leading-tight"><span id="hud-gold">350</span>만원</div>
           </div>
         </div>
 
-        <div class="min-w-[110px] sm:min-w-[136px]">
-          <div class="text-[10px] font-bold text-emerald-800 leading-none">방별 자동 월세 합계</div>
-          <div class="font-jua text-sm sm:text-base text-emerald-700 leading-tight mt-0.5">+<span id="hud-rent-total">0</span>만원 <span class="text-[10px] text-amber-800">/호실쿨</span></div>
-          <div id="hud-shop-profit-hint" class="text-[10px] font-jua text-amber-700 leading-none mt-0.5">🏪상가 매출 +12~14만</div>
+        <div class="min-w-[102px] sm:min-w-[126px]">
+          <div class="text-[10px] font-bold text-emerald-800 leading-none">타운 총 임대수익</div>
+          <div class="font-jua text-sm sm:text-base text-emerald-700 leading-tight mt-0.5">+<span id="hud-rent-total">0</span>만원</div>
+          <div id="hud-synergy-hint" class="text-[10px] font-jua text-amber-700 leading-none mt-0.5">🏪상권 순환 가동중</div>
         </div>
+
+        <button id="btn-collect-all" class="hidden jelly-btn-amber font-jua text-xs px-3 py-2 rounded-xl animate-bounce">
+          🧲 일괄수금!
+        </button>
 
         <button id="btn-reset-save" title="데이터 초기화" class="jelly-btn-white w-9 h-9 rounded-xl flex items-center justify-center font-jua text-sm">
           🔄
@@ -85,38 +96,32 @@
     </div>
   </header>
 
-  <!-- ==================== 4. 좌측 상단 플로팅: [📋 초보 갓물주 미션] & [💬 카톡 알림] ==================== -->
-  <aside class="fixed top-[74px] sm:top-[84px] left-2.5 sm:left-4 z-30 flex flex-col gap-2.5 max-w-[268px] sm:max-w-[308px] pointer-events-none">
+  <!-- ==================== 4. 좌측 상단 플로팅: [📋 갓물주 & 타운 확장 미션] ==================== -->
+  <aside class="fixed top-[74px] sm:top-[84px] left-2.5 sm:left-4 z-30 flex flex-col gap-2 max-w-[266px] sm:max-w-[306px] pointer-events-none">
     <button id="quest-floating-btn" class="pointer-events-auto jelly-hud-card text-left p-3 transition">
       <div class="flex items-center justify-between gap-1.5">
-        <span id="quest-step-tag" class="font-jua text-[11px] px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-500">📋 갓물주 미션 1/10</span>
-        <span id="quest-reward-tag" class="font-jua text-[11px] text-emerald-900 bg-emerald-200 px-2.5 py-0.5 rounded-full border border-emerald-500">🎁 +120만</span>
+        <span id="quest-step-tag" class="font-jua text-[11px] px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-500">📋 타운 미션 1/10</span>
+        <span id="quest-reward-tag" class="font-jua text-[11px] text-emerald-900 bg-emerald-200 px-2.5 py-0.5 rounded-full border border-emerald-500">🎁 +150만</span>
       </div>
-      <div id="quest-title" class="font-jua text-sm sm:text-base text-amber-950 mt-1.5 leading-snug">101호 시멘트 바닥 & 벽면 리모델링</div>
-      <div id="quest-desc" class="text-xs text-stone-700 mt-0.5 leading-relaxed">101호를 클릭해 [바닥 마루 & 벽체]를 Lv.1 이상으로 시공해보세요!</div>
-      <div id="quest-action-hint" class="mt-1.5 text-[11px] font-jua text-amber-700">
-        👉 터치하면 해당 3D 호실로 클로즈업합니다
-      </div>
-    </button>
-
-    <button id="kakao-floating-btn" class="hidden pointer-events-auto kakao-bounce text-left bg-[#FEE500] hover:brightness-105 text-[#3C1E1E] rounded-2xl p-3 border-[3px] border-[#3C1E1E] shadow-[0_5px_0_#3C1E1E,0_10px_20px_rgba(0,0,0,0.22)] transition">
-      <div class="flex items-center justify-between">
-        <span class="font-jua text-xs bg-[#3C1E1E] text-[#FEE500] px-2 py-0.5 rounded-full">💬 입주민 카톡 (1)</span>
-        <span class="text-[11px] font-jua animate-pulse">답장하기 ▸</span>
-      </div>
-      <div id="kakao-banner-sender" class="font-jua text-sm mt-1">101호 김민준</div>
-      <div id="kakao-banner-preview" class="text-xs text-stone-800 truncate mt-0.5"></div>
+      <div id="quest-title" class="font-jua text-sm sm:text-base text-amber-950 mt-1.5 leading-snug"></div>
+      <div id="quest-desc" class="text-xs text-stone-700 mt-0.5 leading-relaxed"></div>
+      <div id="quest-action-hint" class="mt-1.5 text-[11px] font-jua text-amber-700"></div>
     </button>
   </aside>
 
-  <!-- ==================== 5. 우측 플로팅: 3D 쿼터뷰 카메라 컨트롤 독 ==================== -->
+  <!-- ==================== 5. 우측 플로팅: 2단계 뷰 전환 & 3D 카메라 컨트롤 ==================== -->
   <div class="fixed right-2.5 sm:right-4 top-1/2 -translate-y-1/2 z-30 flex flex-col items-center gap-2 pointer-events-auto">
+    <button id="btn-toggle-view" class="jelly-btn-sky w-13 h-14 sm:w-15 sm:h-16 px-2 rounded-2xl flex flex-col items-center justify-center">
+      <span id="toggle-view-icon" class="text-lg leading-none">🏠</span>
+      <span id="toggle-view-label" class="font-jua text-[10px] mt-1 leading-tight text-center">1호점<br/>내부관리</span>
+    </button>
+
     <button id="btn-zoom-in" class="jelly-btn-white w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex flex-col items-center justify-center">
       <span class="font-jua text-xl leading-none">+</span>
       <span class="font-jua text-[10px] mt-0.5">확대</span>
     </button>
 
-    <div id="zoom-scale-label" class="px-2.5 py-0.5 rounded-full bg-amber-950 text-amber-200 font-jua text-[11px] border-2 border-amber-300 shadow">
+    <div id="zoom-scale-label" class="px-2 py-0.5 rounded-full bg-amber-950 text-amber-200 font-jua text-[11px] border-2 border-amber-300 shadow">
       100%
     </div>
 
@@ -130,48 +135,59 @@
       <span class="font-jua text-[10px] mt-0.5">시점회전</span>
     </button>
 
-    <button id="btn-zoom-fit" class="jelly-btn-amber w-12 h-14 sm:w-14 sm:h-16 rounded-2xl flex flex-col items-center justify-center mt-0.5">
-      <span class="font-jua text-sm leading-tight text-center">🏡<br/><span class="text-[10px]">쿼터뷰</span></span>
-    </button>
-
-    <div id="autosave-indicator" class="mt-0.5 px-2.5 py-0.5 rounded-full bg-white/90 text-emerald-800 border border-emerald-400 text-[10px] font-jua shadow-sm transition-opacity">
-      💾 자동저장
+    <div id="autosave-indicator" class="mt-0.5 px-2 py-0.5 rounded-full bg-white/90 text-emerald-800 border border-emerald-400 text-[10px] font-jua shadow-sm transition-opacity">
+      💾 저장됨
     </div>
   </div>
 
-  <!-- 하단 좌측 조작 팁 캡슐 -->
+  <!-- 하단 좌측 뷰 안내 캡슐 -->
   <div class="fixed left-3 bottom-3 z-20 pointer-events-none hidden sm:block">
-    <div class="bg-amber-950/75 backdrop-blur text-amber-100 font-jua text-xs px-3.5 py-1.5 rounded-full border border-amber-400/50 shadow">
-      🖱️ 좌클릭 드래그: 3D 시점 회전 · 우클릭/두손가락: 이동 · 휠: 줌인 · 방 클릭: 리모델링
+    <div id="bottom-help-pill" class="bg-amber-950/80 backdrop-blur text-amber-100 font-jua text-xs px-3.5 py-1.5 rounded-full border border-amber-400/50 shadow">
+      🏙️ 마을 뷰: 건물 터치 시 내부 인테리어 진입 · 빈 땅 터치 시 신축 · 지붕 코인 스와이프 수금!
     </div>
   </div>
 
-  <!-- ==================== 6. 하단 슬라이드업: [🏠 3D 호실 리노베이션 & 입주민 관리 패널] ==================== -->
+  <!-- ==================== 6. 하단 슬라이드업: [🏠 내부 호실 & 상가 리노베이션 패널] ==================== -->
   <section id="bottom-panel" class="fixed left-0 right-0 bottom-0 z-40 translate-y-full transition-transform duration-300 ease-out pointer-events-none px-2 sm:px-4 pb-2 sm:pb-3">
     <div class="pointer-events-auto max-w-5xl mx-auto bg-[#fffdf9] rounded-t-3xl sm:rounded-3xl border-[4px] border-[#78350f] shadow-[0_-10px_40px_rgba(67,20,7,0.36)] overflow-hidden max-h-[52vh] sm:max-h-[48vh] flex flex-col">
-      <div id="panel-header" class="bg-gradient-to-r from-[#92400e] via-[#b45309] to-[#92400e] text-white px-4 py-2.5 flex items-center justify-between gap-2 shrink-0 border-b-4 border-[#572408]">
+      <div class="bg-gradient-to-r from-[#92400e] via-[#b45309] to-[#92400e] text-white px-4 py-2.5 flex items-center justify-between gap-2 shrink-0 border-b-4 border-[#572408]">
         <div class="flex items-center gap-2 flex-wrap">
           <span id="panel-room-title" class="font-jua text-lg sm:text-xl text-amber-200">🏠 101호</span>
-          <span id="panel-grade-badge" class="font-jua text-xs px-2.5 py-0.5 rounded-full border">철거 전 노후 호실</span>
-          <span id="panel-rent-badge" class="font-jua text-xs sm:text-sm bg-amber-950/60 text-emerald-300 border border-emerald-400/60 px-2.5 py-0.5 rounded-full">월세 30만원</span>
+          <span id="panel-grade-badge" class="font-jua text-xs px-2.5 py-0.5 rounded-full border"></span>
+          <span id="panel-rent-badge" class="font-jua text-xs sm:text-sm bg-amber-950/60 text-emerald-300 border border-emerald-400/60 px-2.5 py-0.5 rounded-full"></span>
         </div>
-        <button id="btn-close-panel" class="jelly-btn-white w-8 h-8 rounded-xl font-jua text-sm flex items-center justify-center">
-          ✕
-        </button>
+        <button id="btn-close-panel" class="jelly-btn-white w-8 h-8 rounded-xl font-jua text-sm flex items-center justify-center">✕</button>
       </div>
-
       <div id="panel-body" class="p-3 sm:p-4 overflow-y-auto custom-scroll space-y-3 bg-[#fffaf2]"></div>
     </div>
   </section>
 
-  <!-- ==================== 7. 모달 1: [📢 세입자 구하기 (부동산 앱)] ==================== -->
+  <!-- ==================== 7. 모달 1: [🏗️ 빈 땅(필지) 매입 & 새 건물 신축 선택 모달] ==================== -->
+  <div id="lot-build-modal" class="hidden fixed inset-0 z-50 bg-amber-950/60 backdrop-blur-sm flex items-center justify-center p-3">
+    <div class="bg-[#fffaf2] w-full max-w-3xl rounded-3xl border-[4px] border-[#78350f] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+      <div class="bg-gradient-to-r from-amber-600 via-orange-500 to-amber-600 text-white px-5 py-3.5 flex items-center justify-between shrink-0 border-b-4 border-amber-900">
+        <div>
+          <div class="font-jua text-lg sm:text-xl flex items-center gap-2">
+            <span>🏗️ 타운 빈 땅 매입 & 3D 건물 신축</span>
+            <span id="lot-modal-name" class="text-xs bg-white/25 px-2.5 py-0.5 rounded-full">서쪽 햇살 2번지</span>
+          </div>
+          <p id="lot-modal-sub" class="text-xs text-amber-100 mt-0.5">토지 매입비 + 건축비를 투자해 나만의 부동산 타운을 확장하세요!</p>
+        </div>
+        <button id="btn-close-lot-modal" class="jelly-btn-white w-9 h-9 rounded-xl font-jua text-base">✕</button>
+      </div>
+
+      <div id="lot-build-cards" class="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-y-auto custom-scroll"></div>
+    </div>
+  </div>
+
+  <!-- ==================== 8. 모달 2: [📱 세입자 구하기 (부동산 앱)] ==================== -->
   <div id="recruit-modal" class="hidden fixed inset-0 z-50 bg-amber-950/55 backdrop-blur-sm flex items-center justify-center p-3">
     <div class="bg-[#fffaf2] w-full max-w-3xl rounded-3xl border-[4px] border-[#78350f] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
       <div class="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-5 py-3.5 flex items-center justify-between shrink-0 border-b-4 border-emerald-800">
         <div>
           <div class="font-jua text-lg sm:text-xl flex items-center gap-2">
-            <span>📱 더 테넌츠 부동산 · 입주 희망자 프로필</span>
-            <span id="recruit-room-badge" class="text-xs bg-white/25 px-2.5 py-0.5 rounded-full">101호</span>
+            <span>📱 미니미 타운 부동산 · 입주 지원자</span>
+            <span id="recruit-room-badge" class="text-xs bg-white/25 px-2.5 py-0.5 rounded-full"></span>
           </div>
           <p id="recruit-room-info" class="text-xs text-emerald-50 mt-0.5"></p>
         </div>
@@ -181,7 +197,7 @@
       <div id="recruit-cards-grid" class="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 overflow-y-auto custom-scroll"></div>
 
       <div class="px-4 py-3 bg-amber-100/70 border-t-2 border-amber-300 flex items-center justify-between gap-2 shrink-0">
-        <span class="text-xs text-amber-950 font-medium">💡 6종 가구 풀세트 효과를 발동시키면 고소득 VIP 입주민이 높은 월세를 지불합니다!</span>
+        <span class="text-xs text-amber-950 font-medium">💡 인접 공원/상권 시너지가 높을수록 월세 수익이 대폭 상승합니다!</span>
         <button id="btn-refresh-applicants" class="jelly-btn-amber font-jua text-xs sm:text-sm px-3.5 py-2 rounded-xl shrink-0">
           🔄 새 지원자 찾기 (10만원)
         </button>
@@ -189,42 +205,14 @@
     </div>
   </div>
 
-  <!-- ==================== 8. 모달 2: [💬 입주민 소통 카톡 팝업] ==================== -->
-  <div id="kakao-modal" class="hidden fixed inset-0 z-50 bg-amber-950/55 backdrop-blur-sm flex items-center justify-center p-3">
-    <div class="w-full max-w-md rounded-3xl border-[4px] border-[#3C1E1E] bg-[#B2C7D9] shadow-2xl overflow-hidden flex flex-col">
-      <div class="bg-[#9bbbd4] px-4 py-3 flex items-center justify-between border-b border-slate-500/30">
-        <div class="flex items-center gap-2">
-          <span class="text-lg">💬</span>
-          <span id="kakao-modal-header" class="font-jua text-base text-slate-900">101호 입주민 1:1 톡</span>
-        </div>
-        <button id="btn-close-kakao" class="jelly-btn-white w-8 h-8 rounded-xl font-jua text-sm">✕</button>
-      </div>
-
-      <div class="p-4 space-y-3">
-        <div class="flex items-start gap-2.5">
-          <div id="kakao-avatar-box" class="w-12 h-12 rounded-2xl bg-white border-2 border-amber-900 flex items-center justify-center overflow-hidden shrink-0 shadow"></div>
-          <div>
-            <div id="kakao-sender-name" class="font-jua text-xs text-slate-800 mb-1"></div>
-            <div id="kakao-message-bubble" class="bg-white text-slate-900 rounded-2xl rounded-tl-sm p-3 text-sm leading-relaxed shadow border border-slate-200"></div>
-          </div>
-        </div>
-
-        <div class="pt-2 border-t border-slate-400/40">
-          <div class="font-jua text-xs text-slate-800 mb-2">👇 갓물주님의 답변 선택하기</div>
-          <div id="kakao-choices-box" class="space-y-2"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== 9. 모달 3: [🏦 부재중 자동 월세 정산] ==================== -->
+  <!-- ==================== 9. 모달 3: [🏦 부재중 자동 타운 수익 정산] ==================== -->
   <div id="offline-modal" class="hidden fixed inset-0 z-50 bg-amber-950/60 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="jelly-hud-card w-full max-w-sm p-5 text-center">
-      <div class="text-4xl mb-2">🏦✨</div>
-      <h2 class="font-jua text-xl text-amber-950">부재중 3D 하우스 월세 정산!</h2>
+      <div class="text-4xl mb-2">🏦🏙️</div>
+      <h2 class="font-jua text-xl text-amber-950">부재중 3D 타운 임대 수익 도착!</h2>
       <p id="offline-time-text" class="text-xs text-amber-900/80 mt-1"></p>
       <div class="my-4 bg-white border-2 border-amber-400 rounded-2xl py-3 px-4 shadow-inner">
-        <div class="text-xs text-amber-800 font-bold">누적 입금액</div>
+        <div class="text-xs text-amber-800 font-bold">누적 타운 수익</div>
         <div class="font-jua text-2xl text-amber-600 mt-0.5">+<span id="offline-gold-amount">0</span>만원</div>
       </div>
       <button id="btn-claim-offline" class="jelly-btn-amber w-full font-jua text-base py-2.5 rounded-2xl">
@@ -233,7 +221,6 @@
     </div>
   </div>
 
-  <!-- 상단 중앙 토스트 컨테이너 -->
   <div id="toast-container" class="fixed top-[76px] left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-1.5 pointer-events-none"></div>
 
   <script src="./data.js"></script>

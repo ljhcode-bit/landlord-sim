@@ -1,6 +1,6 @@
 /* =========================================================
-   【갓물주 라이프: 미니미 하우스 3D (The Tenants Edition)】 (style.css)
-   WebGL 3D 뷰포트, 3D 좌표 연동 플로팅 월세 타이머/말풍선, 3D 젤리 캐주얼 UI
+   【갓물주 라이프 3D: 미니미 타운 & 하우스】 스타일시트 (style.css)
+   Dual-Scale 타운 지붕 배지, 스와이프 수금, 내부 호실 배지, 3D 젤리 캐주얼 UI
    ========================================================= */
 
 :root {
@@ -21,21 +21,16 @@ html, body {
   height: 100%;
   overflow: hidden;
   font-family: var(--font-body);
-  background: radial-gradient(circle at 50% 30%, #fffaf0 0%, #fce8cc 55%, #ebd0b3 100%);
+  background: radial-gradient(circle at 50% 28%, #dff6ff 0%, #fff7e6 52%, #ebd5b8 100%);
   user-select: none;
   -webkit-user-select: none;
   touch-action: none;
 }
 
-.font-jua {
-  font-family: var(--font-title);
-}
+.font-jua { font-family: var(--font-title); }
+.font-gaegu { font-family: var(--font-hand); }
 
-.font-gaegu {
-  font-family: var(--font-hand);
-}
-
-/* ================= WebGL 3D 캔버스 & 3D 투영(Projection) 오버레이 ================= */
+/* ================= WebGL 캔버스 & 3D 투영 레이어 ================= */
 #webgl-container {
   position: fixed;
   inset: 0;
@@ -45,11 +40,9 @@ html, body {
   cursor: grab;
   touch-action: none;
 }
-
 #webgl-container:active {
   cursor: grabbing;
 }
-
 #webgl-container canvas {
   display: block;
   width: 100% !important;
@@ -65,7 +58,7 @@ html, body {
   overflow: hidden;
 }
 
-/* ================= 3D 젤리 & 플라스틱 토이 블록 캐주얼 UI ================= */
+/* ================= 3D 젤리 & 토이 블록 캐주얼 UI ================= */
 .jelly-hud-card {
   background: linear-gradient(180deg, rgba(255, 253, 249, 0.96) 0%, rgba(254, 243, 199, 0.96) 100%);
   backdrop-filter: blur(8px);
@@ -82,19 +75,15 @@ html, body {
   color: #451a03;
   border: 3px solid #78350f;
   box-shadow:
-    inset 0 3px 0 rgba(255, 255, 255, 0.8),
+    inset 0 3px 0 rgba(255, 255, 255, 0.82),
     0 5px 0 #78350f,
     0 8px 14px rgba(120, 53, 15, 0.24);
   transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.15s ease;
 }
-.jelly-btn-amber:hover {
-  filter: brightness(1.05);
-}
+.jelly-btn-amber:hover { filter: brightness(1.05); }
 .jelly-btn-amber:active {
   transform: translateY(3px);
-  box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.6),
-    0 2px 0 #78350f;
+  box-shadow: 0 2px 0 #78350f;
 }
 
 .jelly-btn-mint {
@@ -107,12 +96,26 @@ html, body {
     0 8px 14px rgba(6, 95, 70, 0.22);
   transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.15s ease;
 }
-.jelly-btn-mint:hover {
-  filter: brightness(1.05);
-}
+.jelly-btn-mint:hover { filter: brightness(1.05); }
 .jelly-btn-mint:active {
   transform: translateY(3px);
   box-shadow: 0 2px 0 #065f46;
+}
+
+.jelly-btn-sky {
+  background: linear-gradient(180deg, #7dd3fc 0%, #38bdf8 55%, #0284c7 100%);
+  color: #ffffff;
+  border: 3px solid #075985;
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.65),
+    0 5px 0 #075985,
+    0 8px 16px rgba(7, 89, 133, 0.28);
+  transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.15s ease;
+}
+.jelly-btn-sky:hover { filter: brightness(1.06); }
+.jelly-btn-sky:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 #075985;
 }
 
 .jelly-btn-white {
@@ -125,9 +128,6 @@ html, body {
     0 8px 14px rgba(120, 53, 15, 0.18);
   transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
-.jelly-btn-white:hover {
-  background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
-}
 .jelly-btn-white:active {
   transform: translateY(3px);
   box-shadow: 0 2px 0 #78350f;
@@ -137,10 +137,7 @@ html, body {
   background: linear-gradient(180deg, #fda4af 0%, #fb7185 55%, #f43f5e 100%);
   color: #fff1f2;
   border: 3px solid #881337;
-  box-shadow:
-    inset 0 3px 0 rgba(255, 255, 255, 0.55),
-    0 4px 0 #881337,
-    0 6px 12px rgba(136, 19, 55, 0.22);
+  box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.55), 0 4px 0 #881337;
   transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
 .jelly-btn-rose:active {
@@ -148,7 +145,6 @@ html, body {
   box-shadow: 0 1px 0 #881337;
 }
 
-/* 세트 보너스 컬러 뱃지 */
 .set-pill-pastel {
   background: linear-gradient(90deg, #fce7f3, #fef3c7);
   color: #9d174d;
@@ -163,10 +159,75 @@ html, body {
   background: linear-gradient(90deg, #fef08a, #fde68a, #fbcfe8);
   color: #78350f;
   border: 2px solid #eab308;
-  box-shadow: 0 0 10px rgba(250, 204, 21, 0.55);
 }
 
-/* ================= 호실별 3D 플로팅 월세 타이머 배지 ================= */
+/* ================= [마을 뷰] 건물 지붕 플로팅 배지 & 빈 땅 입간판 배지 ================= */
+.town-roof-badge {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: auto;
+  cursor: pointer;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(254, 243, 199, 0.96) 100%);
+  border: 3px solid #78350f;
+  border-radius: 18px;
+  padding: 5px 11px 6px;
+  min-width: 158px;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.9),
+    0 5px 0 #78350f,
+    0 10px 20px rgba(67, 20, 7, 0.28);
+  white-space: nowrap;
+  will-change: transform;
+  z-index: 20;
+}
+
+.town-roof-badge:hover {
+  border-color: #f59e0b;
+}
+
+.town-roof-badge.has-coins {
+  border-color: #d97706;
+  background: linear-gradient(180deg, #fef9c3 0%, #fde047 100%);
+  box-shadow:
+    0 0 0 4px rgba(250, 204, 21, 0.55),
+    0 5px 0 #92400e,
+    0 12px 24px rgba(217, 119, 6, 0.45);
+}
+
+.empty-lot-badge {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: auto;
+  cursor: pointer;
+  background: linear-gradient(180deg, #fffbeb 0%, #fed7aa 100%);
+  border: 2.5px solid #9a3412;
+  border-radius: 16px;
+  padding: 5px 11px;
+  font-family: var(--font-title);
+  font-size: 12px;
+  color: #572408;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.85),
+    0 4px 0 #9a3412,
+    0 8px 16px rgba(67, 20, 7, 0.22);
+  white-space: nowrap;
+  will-change: transform;
+  z-index: 18;
+}
+
+.empty-lot-badge.affordable {
+  background: linear-gradient(180deg, #ecfdf5 0%, #a7f3d0 100%);
+  border-color: #065f46;
+  color: #064e3b;
+  box-shadow:
+    0 0 0 4px rgba(52, 211, 153, 0.45),
+    0 4px 0 #065f46,
+    0 8px 18px rgba(6, 95, 70, 0.28);
+}
+
+/* ================= [내부 뷰] 호실별 & 상가별 플로팅 타이머 배지 ================= */
 .floating-room-badge {
   position: absolute;
   left: 0;
@@ -175,37 +236,28 @@ html, body {
   cursor: pointer;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(254, 249, 195, 0.96) 100%);
   border: 2.5px solid #78350f;
-  border-radius: 16px;
-  padding: 4px 10px 5px;
+  border-radius: 15px;
+  padding: 4px 9px 5px;
   box-shadow:
     inset 0 2px 0 rgba(255, 255, 255, 0.9),
     0 4px 0 #78350f,
-    0 8px 16px rgba(67, 20, 7, 0.28);
+    0 8px 16px rgba(67, 20, 7, 0.25);
   white-space: nowrap;
   will-change: transform;
-  transition: border-color 0.15s ease;
+  z-index: 21;
 }
-
-.floating-room-badge:hover {
-  border-color: #f59e0b;
-}
-
 .floating-room-badge.selected {
   border-color: #f59e0b;
-  box-shadow:
-    0 0 0 4px rgba(251, 191, 36, 0.72),
-    0 4px 0 #92400e,
-    0 10px 22px rgba(217, 119, 6, 0.42);
-  z-index: 22;
+  box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.78), 0 4px 0 #92400e;
+  z-index: 24;
 }
-
 .floating-room-badge.locked {
   background: linear-gradient(180deg, rgba(87, 54, 25, 0.92) 0%, rgba(67, 20, 7, 0.92) 100%);
   color: #fef3c7;
   border-color: #fde68a;
 }
 
-.room-timer-bar-track {
+.gauge-bar-track {
   width: 100%;
   height: 5px;
   background: #e7e5e4;
@@ -214,15 +266,13 @@ html, body {
   margin-top: 3px;
   border: 1px solid #d6d3d1;
 }
-
-.room-timer-bar-fill {
+.gauge-bar-fill {
   height: 100%;
   width: 0%;
   background: linear-gradient(90deg, #10b981 0%, #fbbf24 65%, #f59e0b 100%);
   border-radius: 999px;
 }
 
-/* 1층 상가 3D 플로팅 배지 */
 .floating-shop-badge {
   position: absolute;
   left: 0;
@@ -232,22 +282,17 @@ html, body {
   background: linear-gradient(180deg, #fffbeb 0%, #fde68a 100%);
   border: 2.5px solid #78350f;
   border-radius: 999px;
-  padding: 4px 12px;
+  padding: 4px 11px;
   font-family: var(--font-title);
   font-size: 12px;
   color: #451a03;
-  box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.85),
-    0 4px 0 #78350f,
-    0 6px 14px rgba(67, 20, 7, 0.24);
+  box-shadow: 0 4px 0 #78350f, 0 6px 14px rgba(67, 20, 7, 0.24);
   white-space: nowrap;
   will-change: transform;
-}
-.floating-shop-badge.selected {
-  box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.8), 0 4px 0 #78350f;
+  z-index: 21;
 }
 
-/* ================= 3D 입주민 실시간 말풍선 ================= */
+/* ================= 입주민 말풍선 & 돌발 케어 & 잭팟 텍스트 ================= */
 .floating-speech-bubble {
   position: absolute;
   left: 0;
@@ -255,30 +300,18 @@ html, body {
   pointer-events: none;
   background: linear-gradient(180deg, #ffffff 0%, #fffbeb 100%);
   color: #451a03;
-  border: 2.5px solid #78350f;
-  border-radius: 16px;
-  padding: 4px 11px;
+  border: 2px solid #78350f;
+  border-radius: 15px;
+  padding: 3px 10px;
   font-family: var(--font-hand);
   font-weight: 700;
-  font-size: 14px;
-  line-height: 1.2;
+  font-size: 13.5px;
   white-space: nowrap;
-  box-shadow: 0 3px 0 rgba(120, 53, 15, 0.25), 0 6px 12px rgba(67, 20, 7, 0.18);
-  z-index: 25;
+  box-shadow: 0 3px 0 rgba(120, 53, 15, 0.22);
+  z-index: 26;
   will-change: transform;
 }
-.floating-speech-bubble::after {
-  content: '';
-  position: absolute;
-  bottom: -7px;
-  left: 50%;
-  margin-left: -5px;
-  border-width: 7px 5px 0;
-  border-style: solid;
-  border-color: #78350f transparent transparent;
-}
 
-/* ================= 건물주 돌발 케어 이벤트 말풍선 ================= */
 .floating-care-bubble {
   position: absolute;
   left: 0;
@@ -293,69 +326,55 @@ html, body {
   align-items: center;
   gap: 5px;
   font-family: var(--font-title);
-  font-size: 13px;
+  font-size: 12.5px;
   color: #451a03;
   white-space: nowrap;
   box-shadow:
     inset 0 3px 0 rgba(255, 255, 255, 0.92),
     0 5px 0 #b45309,
-    0 10px 20px rgba(180, 83, 9, 0.38);
-  z-index: 28;
+    0 10px 20px rgba(180, 83, 9, 0.36);
+  z-index: 30;
   will-change: transform;
 }
-.floating-care-bubble:hover {
-  filter: brightness(1.07);
-}
 
-/* ================= 수금 타격감 "+72만 원!" 솟구치는 플로팅 텍스트 ================= */
 .floating-jackpot-text {
   position: absolute;
   pointer-events: none;
   font-family: var(--font-title);
-  font-size: 19px;
+  font-size: 18px;
   color: #451a03;
   background: linear-gradient(180deg, #fef08a 0%, #fbbf24 100%);
   border: 3px solid #78350f;
-  padding: 4px 14px;
+  padding: 4px 13px;
   border-radius: 999px;
-  box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.85),
-    0 5px 0 #78350f,
-    0 10px 22px rgba(217, 119, 6, 0.48);
+  box-shadow: 0 4px 0 #78350f, 0 10px 20px rgba(217, 119, 6, 0.45);
   white-space: nowrap;
   display: flex;
   align-items: center;
-  gap: 5px;
-  z-index: 32;
-  animation: jackpotRise 1.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  gap: 4px;
+  z-index: 35;
+  animation: jackpotRise 1.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 @keyframes jackpotRise {
   0%   { transform: translate(-50%, 10px) scale(0.35); opacity: 0; }
-  18%  { transform: translate(-50%, -22px) scale(1.22); opacity: 1; }
-  34%  { transform: translate(-50%, -14px) scale(0.96); opacity: 1; }
-  52%  { transform: translate(-50%, -34px) scale(1.06); opacity: 1; }
-  82%  { transform: translate(-50%, -58px) scale(1); opacity: 1; }
-  100% { transform: translate(-50%, -78px) scale(0.9); opacity: 0; }
+  18%  { transform: translate(-50%, -22px) scale(1.2); opacity: 1; }
+  35%  { transform: translate(-50%, -14px) scale(0.96); opacity: 1; }
+  80%  { transform: translate(-50%, -52px) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -72px) scale(0.9); opacity: 0; }
 }
 
 .gold-pop-anim {
-  animation: hudGoldPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: hudGoldPop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 @keyframes hudGoldPop {
   0% { transform: scale(1); }
-  50% { transform: scale(1.22); color: #d97706; }
+  50% { transform: scale(1.2); color: #d97706; }
   100% { transform: scale(1); }
 }
 
-.custom-scroll::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
-}
-.custom-scroll::-webkit-scrollbar-thumb {
-  background: #d6b899;
-  border-radius: 999px;
-}
+.custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.custom-scroll::-webkit-scrollbar-thumb { background: #d6b899; border-radius: 999px; }
 
 .quest-ready-glow {
   animation: questPulse 1.1s ease-in-out infinite alternate;
@@ -363,12 +382,4 @@ html, body {
 @keyframes questPulse {
   0% { transform: scale(1); filter: brightness(1); }
   100% { transform: scale(1.035); filter: brightness(1.06); }
-}
-
-.kakao-bounce {
-  animation: kakaoSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-@keyframes kakaoSlideIn {
-  0% { transform: translateY(-20px) scale(0.85); opacity: 0; }
-  100% { transform: translateY(0) scale(1); opacity: 1; }
 }
