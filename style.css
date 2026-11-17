@@ -1,6 +1,6 @@
 /* =========================================================
-   【갓물주 라이프: 미니미 하우스】 스타일시트 (style.css)
-   3D 미니어처 돌하우스 단면 구조, 따스한 햇살 광원, 3D 젤리 캐주얼 UI
+   【갓물주 라이프: 미니미 하우스 3D (The Tenants Edition)】 (style.css)
+   WebGL 3D 뷰포트, 3D 좌표 연동 플로팅 월세 타이머/말풍선, 3D 젤리 캐주얼 UI
    ========================================================= */
 
 :root {
@@ -21,7 +21,7 @@ html, body {
   height: 100%;
   overflow: hidden;
   font-family: var(--font-body);
-  background: #f5ebe0;
+  background: radial-gradient(circle at 50% 30%, #fffaf0 0%, #fce8cc 55%, #ebd0b3 100%);
   user-select: none;
   -webkit-user-select: none;
   touch-action: none;
@@ -35,15 +35,46 @@ html, body {
   font-family: var(--font-hand);
 }
 
+/* ================= WebGL 3D 캔버스 & 3D 투영(Projection) 오버레이 ================= */
+#webgl-container {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+  cursor: grab;
+  touch-action: none;
+}
+
+#webgl-container:active {
+  cursor: grabbing;
+}
+
+#webgl-container canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  outline: none;
+}
+
+#overlay-3d-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 15;
+  overflow: hidden;
+}
+
 /* ================= 3D 젤리 & 플라스틱 토이 블록 캐주얼 UI ================= */
 .jelly-hud-card {
-  background: linear-gradient(180deg, #fffdf9 0%, #fef3c7 100%);
+  background: linear-gradient(180deg, rgba(255, 253, 249, 0.96) 0%, rgba(254, 243, 199, 0.96) 100%);
+  backdrop-filter: blur(8px);
   border: 3px solid #78350f;
   border-radius: 22px;
   box-shadow:
-    inset 0 3px 0 rgba(255, 255, 255, 0.9),
+    inset 0 3px 0 rgba(255, 255, 255, 0.92),
     0 5px 0 #78350f,
-    0 10px 20px rgba(120, 53, 15, 0.22);
+    0 10px 22px rgba(120, 53, 15, 0.24);
 }
 
 .jelly-btn-amber {
@@ -51,20 +82,19 @@ html, body {
   color: #451a03;
   border: 3px solid #78350f;
   box-shadow:
-    inset 0 3px 0 rgba(255, 255, 255, 0.78),
+    inset 0 3px 0 rgba(255, 255, 255, 0.8),
     0 5px 0 #78350f,
     0 8px 14px rgba(120, 53, 15, 0.24);
   transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.15s ease;
 }
 .jelly-btn-amber:hover {
-  filter: brightness(1.04);
+  filter: brightness(1.05);
 }
 .jelly-btn-amber:active {
   transform: translateY(3px);
   box-shadow:
     inset 0 2px 0 rgba(255, 255, 255, 0.6),
-    0 2px 0 #78350f,
-    0 4px 8px rgba(120, 53, 15, 0.2);
+    0 2px 0 #78350f;
 }
 
 .jelly-btn-mint {
@@ -78,13 +108,11 @@ html, body {
   transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.15s ease;
 }
 .jelly-btn-mint:hover {
-  filter: brightness(1.04);
+  filter: brightness(1.05);
 }
 .jelly-btn-mint:active {
   transform: translateY(3px);
-  box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.5),
-    0 2px 0 #065f46;
+  box-shadow: 0 2px 0 #065f46;
 }
 
 .jelly-btn-white {
@@ -120,7 +148,7 @@ html, body {
   box-shadow: 0 1px 0 #881337;
 }
 
-/* 테마 세트 보너스 뱃지 */
+/* 세트 보너스 컬러 뱃지 */
 .set-pill-pastel {
   background: linear-gradient(90deg, #fce7f3, #fef3c7);
   color: #9d174d;
@@ -135,932 +163,156 @@ html, body {
   background: linear-gradient(90deg, #fef08a, #fde68a, #fbcfe8);
   color: #78350f;
   border: 2px solid #eab308;
-  box-shadow: 0 0 12px rgba(250, 204, 21, 0.55);
+  box-shadow: 0 0 10px rgba(250, 204, 21, 0.55);
 }
 
-/* ================= 따뜻한 우드 테이블 뷰포트 & 디오라마 보드 ================= */
-#viewport {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-  cursor: grab;
-  touch-action: none;
-  /* 차가운 남색 대신 따스한 코지 크림&라떼 우드 테이블 배경 */
-  background:
-    radial-gradient(circle at 50% 28%, #fffaf0 0%, #f7e6d0 52%, #e6ccb2 100%);
-}
-
-#viewport.dragging {
-  cursor: grabbing;
-}
-
-#world-canvas {
+/* ================= 호실별 3D 플로팅 월세 타이머 배지 ================= */
+.floating-room-badge {
   position: absolute;
+  left: 0;
   top: 0;
-  left: 0;
-  width: 1800px;
-  height: 1400px;
-  transform-origin: 0 0;
-  will-change: transform;
-  border-radius: 42px;
-  overflow: hidden;
-  /* 두툼한 미니어처 원목 디오라마 베이스 보드 입체감 */
-  border: 8px solid #fffbeb;
-  box-shadow:
-    0 18px 0 #d97706,
-    0 30px 0 #92400e,
-    0 46px 75px rgba(120, 53, 15, 0.35);
-  transition: background 1.5s ease;
-}
-
-/* 코지 파스텔 시간대별 하늘 그라데이션 */
-#world-canvas.time-morning {
-  background: linear-gradient(180deg, #8ecae6 0%, #caf0f8 34%, #fff8e7 68%, #d8f3dc 100%);
-}
-#world-canvas.time-afternoon {
-  background: linear-gradient(180deg, #72ddf7 0%, #bde0fe 32%, #fff3d6 66%, #cce3de 100%);
-}
-#world-canvas.time-evening {
-  background: linear-gradient(180deg, #b5838d 0%, #f4978e 26%, #fbc4ab 54%, #ffe5d9 74%, #d8e2dc 100%);
-}
-#world-canvas.time-night {
-  background: linear-gradient(180deg, #2b2d42 0%, #4a4e69 36%, #6d597a 66%, #4a5759 100%);
-}
-
-/* 하늘 태양 후광 */
-.sky-sun-halo {
-  position: absolute;
-  left: 140px;
-  top: -60px;
-  width: 340px;
-  height: 340px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 247, 205, 0.85) 0%, rgba(254, 240, 138, 0.32) 45%, transparent 72%);
-  pointer-events: none;
-  transition: opacity 1.2s ease;
-}
-#world-canvas.time-night .sky-sun-halo {
-  opacity: 0.08;
-}
-
-/* 밤하늘 반짝이 별 */
-.sky-stars {
-  position: absolute;
-  inset: 0 0 720px 0;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 1.2s ease;
-  background-image:
-    radial-gradient(3px 3px at 140px 75px, #fef9c3, transparent),
-    radial-gradient(2.5px 2.5px at 410px 48px, #ffffff, transparent),
-    radial-gradient(3px 3px at 780px 38px, #fde047, transparent),
-    radial-gradient(2.5px 2.5px at 1140px 62px, #ffffff, transparent),
-    radial-gradient(3px 3px at 1510px 52px, #fef08a, transparent),
-    radial-gradient(2.5px 2.5px at 1680px 118px, #ffffff, transparent);
-}
-#world-canvas.time-night .sky-stars,
-#world-canvas.time-evening .sky-stars {
-  opacity: 0.92;
-}
-
-/* 뭉게구름 슬로우 모션 */
-.fluffy-cloud {
-  position: absolute;
-  pointer-events: none;
-  filter: drop-shadow(0 8px 12px rgba(120, 53, 15, 0.08));
-  animation: driftCloud 28s ease-in-out infinite alternate;
-}
-#world-canvas.time-night .fluffy-cloud {
-  opacity: 0.25;
-}
-@keyframes driftCloud {
-  0% { transform: translateX(-28px); }
-  100% { transform: translateX(36px); }
-}
-
-/* ================= 3D 크림&테라코타 파스텔 미니어처 빌딩 외벽 ================= */
-.building-exterior {
-  position: absolute;
-  left: 192px;
-  top: 142px;
-  width: 1436px;
-  height: 966px;
-  border-radius: 20px 20px 10px 10px;
-  /* 따뜻한 크림 & 테라코타 파스텔 벽돌 질감 */
-  background-color: #fff6ec;
-  background-image:
-    linear-gradient(335deg, rgba(234, 179, 138, 0.18) 23px, transparent 23px),
-    linear-gradient(155deg, rgba(244, 196, 160, 0.22) 23px, transparent 23px),
-    linear-gradient(335deg, rgba(234, 179, 138, 0.16) 23px, transparent 23px),
-    linear-gradient(155deg, rgba(244, 196, 160, 0.2) 23px, transparent 23px);
-  background-size: 58px 58px;
-  background-position: 0px 2px, 4px 35px, 29px 31px, 34px 6px;
-  border: 6px solid #9a5833;
-  box-shadow:
-    inset 0 0 0 6px #fde6d2,
-    14px 18px 0 rgba(124, 45, 18, 0.22),
-    0 26px 48px rgba(120, 53, 15, 0.28);
-}
-
-/* 입체 테라코타 지붕 & 옥상 정원 난간 */
-.rooftop-terrace {
-  position: absolute;
-  left: 176px;
-  top: 72px;
-  width: 1468px;
-  height: 82px;
-  background:
-    repeating-linear-gradient(
-      90deg,
-      #e07a5f 0px,
-      #e07a5f 28px,
-      #d0674c 28px,
-      #d0674c 56px
-    );
-  border-radius: 28px 28px 10px 10px;
-  border: 5px solid #7c2d12;
-  box-shadow:
-    inset 0 6px 0 rgba(255, 255, 255, 0.35),
-    0 10px 0 #7c2d12,
-    0 18px 26px rgba(124, 45, 18, 0.26);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 38px;
-  z-index: 6;
-}
-
-.rooftop-railing-bar {
-  position: absolute;
-  left: 26px;
-  right: 26px;
-  bottom: 6px;
-  height: 16px;
-  background: repeating-linear-gradient(
-    90deg,
-    #fffbeb 0px,
-    #fffbeb 8px,
-    transparent 8px,
-    transparent 24px
-  );
-  border-top: 4px solid #fffbeb;
-  border-bottom: 3px solid #fed7aa;
-  opacity: 0.9;
-  pointer-events: none;
-}
-
-.rooftop-sign-3d {
-  background: linear-gradient(180deg, #fffbeb 0%, #fde047 55%, #f59e0b 100%);
-  border: 4px solid #78350f;
-  border-radius: 24px;
-  padding: 7px 32px;
-  font-family: var(--font-title);
-  font-size: 25px;
-  color: #572408;
-  box-shadow:
-    inset 0 4px 0 rgba(255, 255, 255, 0.85),
-    0 7px 0 #78350f,
-    0 0 28px rgba(253, 224, 71, 0.7);
-  transform: translateY(-14px);
-  z-index: 2;
-}
-
-/* 입체 층간 슬래브 & 복도 */
-.corridor-slab {
-  position: absolute;
-  left: 204px;
-  width: 1412px;
-  height: 52px;
-  background:
-    repeating-linear-gradient(
-      90deg,
-      #f5e6d3 0px,
-      #f5e6d3 46px,
-      #e6ccb2 46px,
-      #e6ccb2 48px
-    );
-  border-top: 4px solid #d4a373;
-  border-bottom: 12px solid #9a5833;
-  box-shadow:
-    inset 0 6px 10px rgba(120, 53, 15, 0.14),
-    0 10px 18px rgba(120, 53, 15, 0.22);
-  z-index: 5;
-}
-
-.corridor-wood-railing {
-  position: absolute;
-  left: 0;
-  right: 196px;
-  bottom: 0;
-  height: 15px;
-  background: repeating-linear-gradient(
-    90deg,
-    #b06d44 0px,
-    #b06d44 7px,
-    transparent 7px,
-    transparent 24px
-  );
-  border-top: 4px solid #7c3f1d;
-  pointer-events: none;
-}
-
-/* 우측 계단실 (따뜻한 우드 계단 디오라마) */
-.stairwell-3d {
-  position: absolute;
-  left: 1420px;
-  top: 164px;
-  width: 188px;
-  height: 934px;
-  background: linear-gradient(90deg, #efe0ce 0%, #fdf6ec 35%, #f3e1cc 100%);
-  border-left: 5px solid #b06d44;
-  border-right: 4px solid #d4a373;
-  box-shadow: inset 12px 0 20px rgba(120, 53, 15, 0.14);
-  overflow: hidden;
-  z-index: 4;
-}
-
-.stair-steps-wood {
-  width: 100%;
-  height: 100%;
-  background: repeating-linear-gradient(
-    180deg,
-    #fff8f0 0px,
-    #fff8f0 16px,
-    #ddb892 16px,
-    #b07d62 24px
-  );
-  opacity: 0.85;
-}
-
-/* ================= 3D 미니어처 돌하우스(Dollhouse) 단면도 호실 박스 ================= */
-.room-card {
-  position: absolute;
-  width: 384px;
-  height: 276px;
-  border-radius: 16px 16px 8px 8px;
-  border: 4px solid #8c4f2b;
-  overflow: hidden;
+  pointer-events: auto;
   cursor: pointer;
-  background: #efe5dc;
-  /* 입체 바닥 슬래브 단면 두께 + 드롭 섀도우 */
-  box-shadow:
-    0 8px 0 #7c3f1d,
-    0 14px 24px rgba(120, 53, 15, 0.25);
-  transition: transform 0.18s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-  z-index: 6;
-}
-
-.room-card:hover {
-  border-color: #f59e0b;
-  transform: translateY(-2px);
-}
-
-.room-card.selected-room {
-  border-color: #fbbf24;
-  box-shadow:
-    0 0 0 5px rgba(251, 191, 36, 0.72),
-    0 8px 0 #b45309,
-    0 18px 32px rgba(217, 119, 6, 0.38);
-  z-index: 9;
-}
-
-/* 월세 수금 시 방 전체가 반짝이는 도파민 펄스 */
-.room-card.payday-flash {
-  animation: roomPaydayPop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-@keyframes roomPaydayPop {
-  0% { transform: scale(1); }
-  40% { transform: scale(1.028); box-shadow: 0 0 0 6px #fde047, 0 10px 28px rgba(250, 204, 21, 0.65); }
-  100% { transform: scale(1); }
-}
-
-/* 돌하우스 1) 천장 크라운 몰딩 */
-.dollhouse-ceiling {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 14px;
-  z-index: 4;
-  border-bottom: 2px solid rgba(120, 53, 15, 0.22);
-  box-shadow: 0 4px 8px rgba(67, 20, 7, 0.12);
-}
-
-/* 돌하우스 2) 좌측 원근 측면벽 (Cutaway Left Wall) */
-.dollhouse-wall-left {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 26px;
-  height: 264px;
-  clip-path: polygon(0 0, 26px 14px, 26px 102px, 0 264px);
-  z-index: 2;
-}
-
-/* 돌하우스 3) 우측 원근 측면벽 (Cutaway Right Wall) */
-.dollhouse-wall-right {
-  position: absolute;
-  right: 0;
-  top: 0;
-  width: 26px;
-  height: 264px;
-  clip-path: polygon(0 14px, 26px 0, 26px 264px, 0 102px);
-  z-index: 2;
-}
-
-/* 돌하우스 4) 안쪽 뒷벽 (Back Wall + 걸레받이 몰딩) */
-.dollhouse-wall-back {
-  position: absolute;
-  left: 25px;
-  right: 25px;
-  top: 14px;
-  height: 88px;
-  z-index: 1;
-  /* 모서리 Ambient Occlusion 입체 음영 */
-  box-shadow:
-    inset 14px 0 18px -10px rgba(67, 20, 7, 0.24),
-    inset -14px 0 18px -10px rgba(67, 20, 7, 0.24),
-    inset 0 10px 14px -8px rgba(67, 20, 7, 0.16);
-}
-
-/* 돌하우스 5) 원근감 바닥면 (Floor Plane) */
-.dollhouse-floor {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 102px;
-  bottom: 12px;
-  z-index: 0;
-  box-shadow:
-    inset 0 14px 18px -10px rgba(67, 20, 7, 0.22),
-    inset 18px 0 20px -14px rgba(67, 20, 7, 0.18),
-    inset -18px 0 20px -14px rgba(67, 20, 7, 0.18);
-}
-
-/* 돌하우스 6) 바닥 전면 단면 두께 슬래브 (Floor Slab Edge) */
-.dollhouse-floor-slab {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 12px;
-  z-index: 8;
-  border-top: 2px solid rgba(255, 255, 255, 0.45);
-}
-
-/* ===== 벽지/장판 레벨별 3D 돌하우스 컬러 & 질감 ===== */
-
-/* Lv.0: 리모델링 전 낡은 회갈색 곰팡이 벽 & 장판 */
-.room-card.wallpaper-lv0 .dollhouse-ceiling { background: #a8a29e; }
-.room-card.wallpaper-lv0 .dollhouse-wall-left { background: linear-gradient(180deg, #9ca3af, #78716c); }
-.room-card.wallpaper-lv0 .dollhouse-wall-right { background: linear-gradient(180deg, #9ca3af, #78716c); }
-.room-card.wallpaper-lv0 .dollhouse-wall-back {
-  background:
-    radial-gradient(circle at 18% 42%, rgba(77, 124, 15, 0.28) 0%, transparent 26%),
-    radial-gradient(circle at 80% 58%, rgba(68, 64, 60, 0.3) 0%, transparent 22%),
-    linear-gradient(180deg, #b8b2a8 0%, #968f85 88%, #6b635b 88%);
-}
-.room-card.wallpaper-lv0 .dollhouse-floor {
-  background:
-    radial-gradient(circle at 26% 68%, rgba(87, 83, 78, 0.22) 0%, transparent 24%),
-    repeating-linear-gradient(0deg, #d6d0c4 0px, #d6d0c4 28px, #b8b0a2 28px, #b8b0a2 30px);
-}
-.room-card.wallpaper-lv0 .dollhouse-floor-slab { background: linear-gradient(90deg, #78716c, #57534e); }
-
-/* Lv.1: 화사한 피치·버터크림 파스텔 벽지 & 밝은 메이플 우드 장판 */
-.room-card.wallpaper-lv1 .dollhouse-ceiling { background: #fff1e6; }
-.room-card.wallpaper-lv1 .dollhouse-wall-left { background: linear-gradient(180deg, #fed7aa, #fdba74); }
-.room-card.wallpaper-lv1 .dollhouse-wall-right { background: linear-gradient(180deg, #fed7aa, #fb923c); }
-.room-card.wallpaper-lv1 .dollhouse-wall-back {
-  background:
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.38) 0px, rgba(255, 255, 255, 0.38) 14px, transparent 14px, transparent 28px),
-    linear-gradient(180deg, #fff5eb 0%, #ffe4cc 88%, #f6bd8b 88%);
-}
-.room-card.wallpaper-lv1 .dollhouse-floor {
-  background:
-    repeating-linear-gradient(90deg, rgba(180, 83, 9, 0.08) 0px, rgba(180, 83, 9, 0.08) 1px, transparent 1px, transparent 34px),
-    repeating-linear-gradient(0deg, #fde6c4 0px, #fde6c4 22px, #f7d4a3 22px, #f7d4a3 24px);
-}
-.room-card.wallpaper-lv1 .dollhouse-floor-slab { background: linear-gradient(90deg, #d97706, #b45309); }
-
-/* Lv.2: 살고 싶은 코지 우드 하우스! 아이보리 웨인스코팅 & 따스한 오크 헤링본 원목마루 */
-.room-card.wallpaper-lv2 .dollhouse-ceiling { background: #fef3c7; }
-.room-card.wallpaper-lv2 .dollhouse-wall-left { background: linear-gradient(180deg, #f5e0c3, #ddb892); }
-.room-card.wallpaper-lv2 .dollhouse-wall-right { background: linear-gradient(180deg, #edd2b0, #cfa072); }
-.room-card.wallpaper-lv2 .dollhouse-wall-back {
-  background:
-    linear-gradient(180deg, #fffdf7 0%, #fef6e4 58%, #d99b66 58%, #d99b66 63%, #e8c39e 63%, #deb489 90%, #9c5a2b 90%);
-}
-.room-card.wallpaper-lv2 .dollhouse-floor {
-  background-color: #eab676;
-  background-image:
-    repeating-linear-gradient(45deg, rgba(146, 64, 14, 0.12) 0px, rgba(146, 64, 14, 0.12) 2px, transparent 2px, transparent 18px),
-    repeating-linear-gradient(-45deg, rgba(255, 251, 235, 0.22) 0px, rgba(255, 251, 235, 0.22) 2px, transparent 2px, transparent 18px),
-    linear-gradient(180deg, #e7b57c 0%, #f1c895 100%);
-}
-.room-card.wallpaper-lv2 .dollhouse-floor-slab { background: linear-gradient(90deg, #92400e, #78350f); }
-
-/* Lv.3: 로얄 부티크 스위트! 샴페인 크림 비앙코 대리석 & 로즈골드 몰딩 */
-.room-card.wallpaper-lv3 .dollhouse-ceiling { background: linear-gradient(90deg, #fef08a, #fffbeb, #fef08a); }
-.room-card.wallpaper-lv3 .dollhouse-wall-left { background: linear-gradient(180deg, #fef9ef, #f3e5d0); }
-.room-card.wallpaper-lv3 .dollhouse-wall-right { background: linear-gradient(180deg, #fcf4e6, #ebd8be); }
-.room-card.wallpaper-lv3 .dollhouse-wall-back {
-  background:
-    linear-gradient(180deg, #fffdf9 0%, #faf3e8 68%, #facc15 68%, #eab308 73%, #fffbeb 73%, #f7efe2 90%, #ca8a04 90%);
-}
-.room-card.wallpaper-lv3 .dollhouse-floor {
-  background:
-    linear-gradient(125deg, transparent 40%, rgba(217, 119, 6, 0.14) 42%, transparent 45%),
-    linear-gradient(32deg, transparent 58%, rgba(202, 138, 4, 0.12) 60%, transparent 63%),
-    repeating-linear-gradient(90deg, rgba(234, 179, 8, 0.26) 0px, rgba(234, 179, 8, 0.26) 1px, transparent 1px, transparent 48px),
-    repeating-linear-gradient(0deg, rgba(234, 179, 8, 0.26) 0px, rgba(234, 179, 8, 0.26) 1px, transparent 1px, transparent 44px),
-    linear-gradient(180deg, #fffdf9 0%, #fef9ee 100%);
-}
-.room-card.wallpaper-lv3 .dollhouse-floor-slab { background: linear-gradient(90deg, #ca8a04, #facc15, #a16207); }
-
-/* ===== 창문 햇빛 광선(Sunbeam) & 실내 무드등 발광(Glow) 효과 ===== */
-.room-sunbeam {
-  position: absolute;
-  left: 122px;
-  top: 28px;
-  width: 155px;
-  height: 215px;
-  background: linear-gradient(
-    148deg,
-    rgba(255, 251, 214, 0.62) 0%,
-    rgba(254, 243, 178, 0.34) 48%,
-    rgba(255, 255, 255, 0) 85%
-  );
-  clip-path: polygon(8px 0, 74px 0, 152px 215px, 0 215px);
-  pointer-events: none;
-  z-index: 3;
-  mix-blend-mode: screen;
-  transition: opacity 1s ease;
-}
-#world-canvas.time-night .room-sunbeam {
-  opacity: 0.06;
-}
-#world-canvas.time-evening .room-sunbeam {
-  background: linear-gradient(
-    148deg,
-    rgba(253, 186, 116, 0.52) 0%,
-    rgba(254, 215, 170, 0.24) 52%,
-    transparent 85%
-  );
-}
-
-/* 침대 스탠드 무드등 따뜻한 광원 */
-.room-lamp-glow {
-  position: absolute;
-  left: 16px;
-  top: 46px;
-  width: 145px;
-  height: 145px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(253, 224, 71, 0.42) 0%, rgba(251, 191, 36, 0.14) 48%, transparent 72%);
-  pointer-events: none;
-  z-index: 3;
-}
-#world-canvas.time-night .room-lamp-glow,
-#world-canvas.time-evening .room-lamp-glow {
-  background: radial-gradient(circle, rgba(253, 224, 71, 0.68) 0%, rgba(251, 146, 60, 0.24) 52%, transparent 75%);
-}
-
-/* 입체 유리 부스 욕실 플랫폼 */
-.bathroom-3d-pod {
-  position: absolute;
-  right: 22px;
-  top: 26px;
-  width: 96px;
-  height: 126px;
-  border-radius: 12px 12px 8px 8px;
-  background:
-    repeating-linear-gradient(90deg, #e0f7fa 0px, #e0f7fa 15px, #b2ebf2 15px, #b2ebf2 16px),
-    repeating-linear-gradient(0deg, #e0f7fa 0px, #e0f7fa 15px, #b2ebf2 15px, #b2ebf2 16px);
-  border: 3px solid #67e8f9;
-  box-shadow:
-    0 6px 0 #0891b2,
-    0 10px 14px rgba(14, 116, 144, 0.22);
-  z-index: 3;
-  overflow: hidden;
-}
-
-.shower-frosted-glass {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(224, 242, 254, 0.86), rgba(186, 230, 253, 0.92));
-  backdrop-filter: blur(3px);
-  border: 2px solid rgba(255, 255, 255, 0.9);
-  opacity: 0;
-  transform: translateX(100%);
-  transition: all 0.35s ease;
-  z-index: 8;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-title);
-  color: #0369a1;
-  font-size: 12px;
-}
-.room-card.is-showering .shower-frosted-glass {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-/* 수면 중 포근한 웜 무드등 오버레이 */
-.room-sleep-mood {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(circle at 82px 118px, rgba(253, 224, 71, 0.32) 0%, rgba(43, 45, 66, 0.42) 76%);
-  opacity: 0;
-  transition: opacity 0.6s ease;
-  z-index: 6;
-}
-.room-card.is-sleeping .room-sleep-mood {
-  opacity: 1;
-}
-
-/* 가구 공통 입체 드롭섀도우 & 팝 애니메이션 */
-.furniture-item {
-  position: absolute;
-  z-index: 4;
-  filter: drop-shadow(0 6px 5px rgba(87, 36, 8, 0.24));
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-  pointer-events: none;
-}
-
-.furniture-item.upgraded-pop {
-  animation: furniturePop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-@keyframes furniturePop {
-  0% { transform: scale(0.45) translateY(10px); }
-  65% { transform: scale(1.16) translateY(-4px); }
-  100% { transform: scale(1) translateY(0); }
-}
-
-/* ================= 호실 상단 3D 이름표 & 개별 월세 타이머 게이지 뱃지 ================= */
-.room-top-hud {
-  position: absolute;
-  top: 6px;
-  left: 8px;
-  right: 8px;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 5px;
-  pointer-events: none;
-}
-
-.room-name-jelly {
-  font-family: var(--font-title);
-  font-size: 12px;
-  padding: 2px 9px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #7c3f1d 0%, #572408 100%);
-  color: #fef08a;
-  border: 2px solid #fde68a;
-  box-shadow: 0 3px 0 rgba(67, 20, 7, 0.45);
-  white-space: nowrap;
-}
-
-.room-set-mini-tag {
-  font-family: var(--font-title);
-  font-size: 10px;
-  padding: 2px 7px;
-  border-radius: 999px;
-  white-space: nowrap;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-}
-
-/* 호실별 개별 월세 쿨타임 게이지 뱃지 (필수 요구사항 4) */
-.room-rent-timer-box {
-  background: linear-gradient(180deg, #ffffff 0%, #fef9c3 100%);
-  border: 2.5px solid #92400e;
-  border-radius: 12px;
-  padding: 2px 8px 3px;
-  min-width: 132px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(254, 249, 195, 0.96) 100%);
+  border: 2.5px solid #78350f;
+  border-radius: 16px;
+  padding: 4px 10px 5px;
   box-shadow:
     inset 0 2px 0 rgba(255, 255, 255, 0.9),
-    0 3px 0 #92400e,
-    0 4px 8px rgba(120, 53, 15, 0.22);
+    0 4px 0 #78350f,
+    0 8px 16px rgba(67, 20, 7, 0.28);
+  white-space: nowrap;
+  will-change: transform;
+  transition: border-color 0.15s ease;
 }
 
-.room-rent-timer-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  font-family: var(--font-title);
-  font-size: 11px;
-  line-height: 1.15;
+.floating-room-badge:hover {
+  border-color: #f59e0b;
 }
 
-.room-rent-progress-track {
+.floating-room-badge.selected {
+  border-color: #f59e0b;
+  box-shadow:
+    0 0 0 4px rgba(251, 191, 36, 0.72),
+    0 4px 0 #92400e,
+    0 10px 22px rgba(217, 119, 6, 0.42);
+  z-index: 22;
+}
+
+.floating-room-badge.locked {
+  background: linear-gradient(180deg, rgba(87, 54, 25, 0.92) 0%, rgba(67, 20, 7, 0.92) 100%);
+  color: #fef3c7;
+  border-color: #fde68a;
+}
+
+.room-timer-bar-track {
   width: 100%;
   height: 5px;
   background: #e7e5e4;
   border-radius: 999px;
   overflow: hidden;
-  margin-top: 2px;
+  margin-top: 3px;
   border: 1px solid #d6d3d1;
 }
 
-.room-rent-progress-fill {
+.room-timer-bar-fill {
   height: 100%;
   width: 0%;
-  background: linear-gradient(90deg, #34d399 0%, #fbbf24 65%, #f59e0b 100%);
+  background: linear-gradient(90deg, #10b981 0%, #fbbf24 65%, #f59e0b 100%);
   border-radius: 999px;
-  transition: width 0.1s linear;
 }
 
-/* 호실 현관문 */
-.room-door-frame {
+/* 1층 상가 3D 플로팅 배지 */
+.floating-shop-badge {
   position: absolute;
-  bottom: 10px;
-  left: 168px;
-  width: 48px;
-  height: 16px;
-  background: #92400e;
-  border: 2.5px solid #451a03;
-  border-bottom: none;
-  border-radius: 7px 7px 0 0;
-  z-index: 9;
-}
-.room-door-leaf {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, #d97706, #b45309);
-  transform-origin: left bottom;
-  transition: transform 0.3s ease;
-}
-.room-card.door-open .room-door-leaf {
-  transform: rotate(-55deg);
-}
-
-/* 미개방 호실 코지 파스텔 블라인드 오버레이 */
-.locked-room-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 14;
-  background:
-    repeating-linear-gradient(
-      -45deg,
-      rgba(120, 72, 42, 0.78),
-      rgba(120, 72, 42, 0.78) 16px,
-      rgba(146, 92, 56, 0.82) 16px,
-      rgba(146, 92, 56, 0.82) 32px
-    );
-  backdrop-filter: blur(2px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: #fffbeb;
-  text-align: center;
-}
-
-/* ================= 1층 단지 내 상가 3D 입체 쇼윈도 ================= */
-.shop-card {
-  position: absolute;
-  border-radius: 20px 20px 10px 10px;
-  border: 5px solid #7c3f1d;
-  cursor: pointer;
-  overflow: hidden;
-  background: #fffdf9;
-  box-shadow:
-    0 10px 0 #7c3f1d,
-    0 18px 28px rgba(120, 53, 15, 0.25);
-  transition: transform 0.18s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-  z-index: 6;
-}
-
-.shop-card:hover {
-  border-color: #f59e0b;
-  transform: translateY(-2px);
-}
-
-.shop-card.selected-shop {
-  border-color: #fbbf24;
-  box-shadow:
-    0 0 0 5px rgba(251, 191, 36, 0.72),
-    0 10px 0 #92400e,
-    0 20px 32px rgba(217, 119, 6, 0.36);
-}
-
-@keyframes spinDrum {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-.washer-drum-spinning {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: spinDrum 1.8s linear infinite;
-}
-
-/* ================= 건물주 돌발 케어 말풍선 (Active Play) ================= */
-#care-bubbles-layer {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 34;
-}
-
-.care-bubble-btn {
-  position: absolute;
-  transform: translate(-50%, -50%);
+  left: 0;
+  top: 0;
   pointer-events: auto;
   cursor: pointer;
-  background: linear-gradient(180deg, #ffffff 0%, #fef08a 100%);
-  border: 3.5px solid #b45309;
+  background: linear-gradient(180deg, #fffbeb 0%, #fde68a 100%);
+  border: 2.5px solid #78350f;
   border-radius: 999px;
-  padding: 6px 14px;
+  padding: 4px 12px;
+  font-family: var(--font-title);
+  font-size: 12px;
+  color: #451a03;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.85),
+    0 4px 0 #78350f,
+    0 6px 14px rgba(67, 20, 7, 0.24);
+  white-space: nowrap;
+  will-change: transform;
+}
+.floating-shop-badge.selected {
+  box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.8), 0 4px 0 #78350f;
+}
+
+/* ================= 3D 입주민 실시간 말풍선 ================= */
+.floating-speech-bubble {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, #ffffff 0%, #fffbeb 100%);
+  color: #451a03;
+  border: 2.5px solid #78350f;
+  border-radius: 16px;
+  padding: 4px 11px;
+  font-family: var(--font-hand);
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 3px 0 rgba(120, 53, 15, 0.25), 0 6px 12px rgba(67, 20, 7, 0.18);
+  z-index: 25;
+  will-change: transform;
+}
+.floating-speech-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -7px;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 7px 5px 0;
+  border-style: solid;
+  border-color: #78350f transparent transparent;
+}
+
+/* ================= 건물주 돌발 케어 이벤트 말풍선 ================= */
+.floating-care-bubble {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: auto;
+  cursor: pointer;
+  background: linear-gradient(180deg, #ffffff 0%, #fde047 100%);
+  border: 3px solid #b45309;
+  border-radius: 999px;
+  padding: 6px 13px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   font-family: var(--font-title);
   font-size: 13px;
   color: #451a03;
   white-space: nowrap;
   box-shadow:
-    inset 0 3px 0 rgba(255, 255, 255, 0.9),
+    inset 0 3px 0 rgba(255, 255, 255, 0.92),
     0 5px 0 #b45309,
     0 10px 20px rgba(180, 83, 9, 0.38);
-  animation: careBob 1.3s ease-in-out infinite alternate;
-  transition: transform 0.12s ease;
+  z-index: 28;
+  will-change: transform;
+}
+.floating-care-bubble:hover {
+  filter: brightness(1.07);
 }
 
-.care-bubble-btn::after {
-  content: '';
-  position: absolute;
-  bottom: -10px;
-  left: 50%;
-  margin-left: -7px;
-  border-width: 9px 7px 0;
-  border-style: solid;
-  border-color: #b45309 transparent transparent;
-}
-
-.care-bubble-btn:hover {
-  filter: brightness(1.06);
-  scale: 1.08;
-}
-
-@keyframes careBob {
-  0% { transform: translate(-50%, -50%) translateY(0px); }
-  100% { transform: translate(-50%, -50%) translateY(-9px); }
-}
-
-/* ================= 미니미 2등신 3D 피규어 & 모션 ================= */
-#minimi-layer {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 22;
-}
-
-.minimi-entity {
-  position: absolute;
-  width: 68px;
-  height: 84px;
-  margin-left: -34px;
-  margin-top: -70px;
-  pointer-events: none;
-  z-index: 24;
-  will-change: transform, left, top;
-}
-
-.minimi-shadow {
-  position: absolute;
-  bottom: 4px;
-  left: 15px;
-  width: 38px;
-  height: 12px;
-  background: radial-gradient(ellipse at center, rgba(87, 36, 8, 0.42) 0%, rgba(87, 36, 8, 0) 75%);
-  border-radius: 50%;
-}
-
-.minimi-body-wrap {
-  width: 68px;
-  height: 80px;
-  transform-origin: 50% 90%;
-}
-
-.minimi-entity.is-walking .minimi-body-wrap {
-  animation: minimiWaddle 0.42s ease-in-out infinite;
-}
-.minimi-entity.is-walking .minimi-shadow {
-  animation: shadowPulse 0.42s ease-in-out infinite;
-}
-
-@keyframes minimiWaddle {
-  0%   { transform: translateY(0px) rotate(-6deg) scale(1, 1); }
-  25%  { transform: translateY(-7px) rotate(0deg) scale(0.97, 1.04); }
-  50%  { transform: translateY(0px) rotate(6deg) scale(1.03, 0.97); }
-  75%  { transform: translateY(-7px) rotate(0deg) scale(0.97, 1.04); }
-  100% { transform: translateY(0px) rotate(-6deg) scale(1, 1); }
-}
-
-@keyframes shadowPulse {
-  0%, 50%, 100% { transform: scale(1); opacity: 0.45; }
-  25%, 75% { transform: scale(0.76); opacity: 0.25; }
-}
-
-.minimi-entity.is-cleaning .minimi-body-wrap {
-  animation: minimiSweep 0.62s ease-in-out infinite alternate;
-}
-@keyframes minimiSweep {
-  0% { transform: rotate(-8deg) translateX(-3px); }
-  100% { transform: rotate(8deg) translateX(3px); }
-}
-
-.minimi-entity.is-working .minimi-body-wrap {
-  animation: minimiType 0.5s ease-in-out infinite alternate;
-}
-@keyframes minimiType {
-  0% { transform: translateY(0px) scaleY(1); }
-  100% { transform: translateY(-3px) scaleY(1.02); }
-}
-
-.minimi-entity.is-sleeping .minimi-body-wrap {
-  animation: minimiSleep 1.8s ease-in-out infinite alternate;
-}
-@keyframes minimiSleep {
-  0% { transform: scale(0.94) rotate(-8deg); }
-  100% { transform: scale(0.98) rotate(-5deg); }
-}
-
-.minimi-speech {
-  position: absolute;
-  bottom: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  background: linear-gradient(180deg, #ffffff 0%, #fffbeb 100%);
-  color: #451a03;
-  border: 2.5px solid #78350f;
-  border-radius: 18px;
-  padding: 5px 12px;
-  font-family: var(--font-hand);
-  font-weight: 700;
-  font-size: 15px;
-  line-height: 1.2;
-  box-shadow: 0 4px 0 rgba(120, 53, 15, 0.25), 0 6px 12px rgba(120, 53, 15, 0.18);
-  z-index: 38;
-  animation: speechPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.minimi-speech::after {
-  content: '';
-  position: absolute;
-  bottom: -8px;
-  left: 50%;
-  margin-left: -6px;
-  border-width: 8px 6px 0;
-  border-style: solid;
-  border-color: #78350f transparent transparent;
-}
-
-@keyframes speechPop {
-  0% { transform: translateX(-50%) scale(0.5) translateY(8px); opacity: 0; }
-  100% { transform: translateX(-50%) scale(1) translateY(0); opacity: 1; }
-}
-
-.room-pet-cat {
-  position: absolute;
-  left: 174px;
-  top: 168px;
-  z-index: 5;
-  animation: catTailWag 1.8s ease-in-out infinite alternate;
-  pointer-events: none;
-}
-@keyframes catTailWag {
-  0% { transform: translateY(0px) rotate(-3deg); }
-  100% { transform: translateY(-2px) rotate(4deg); }
-}
-
-/* ================= 수금 타격감 코인 폭발 & 파티클 이펙트 ================= */
-#particle-layer {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 36;
-}
-
-.world-particle {
+/* ================= 수금 타격감 "+72만 원!" 솟구치는 플로팅 텍스트 ================= */
+.floating-jackpot-text {
   position: absolute;
   pointer-events: none;
   font-family: var(--font-title);
-  will-change: transform, opacity;
-}
-
-/* 방 한가운데서 통통 튀어 오르는 월세 수금 플로팅 뱃지! */
-.pt-rent-jackpot {
-  animation: jackpotBounceUp 1.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  font-size: 20px;
+  font-size: 19px;
   color: #451a03;
   background: linear-gradient(180deg, #fef08a 0%, #fbbf24 100%);
   border: 3px solid #78350f;
@@ -1074,124 +326,19 @@ html, body {
   display: flex;
   align-items: center;
   gap: 5px;
+  z-index: 32;
+  animation: jackpotRise 1.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-@keyframes jackpotBounceUp {
-  0%   { transform: translate(-50%, 12px) scale(0.35); opacity: 0; }
+@keyframes jackpotRise {
+  0%   { transform: translate(-50%, 10px) scale(0.35); opacity: 0; }
   18%  { transform: translate(-50%, -22px) scale(1.22); opacity: 1; }
-  32%  { transform: translate(-50%, -12px) scale(0.96); opacity: 1; }
-  48%  { transform: translate(-50%, -32px) scale(1.06); opacity: 1; }
-  82%  { transform: translate(-50%, -56px) scale(1); opacity: 1; }
-  100% { transform: translate(-50%, -76px) scale(0.9); opacity: 0; }
+  34%  { transform: translate(-50%, -14px) scale(0.96); opacity: 1; }
+  52%  { transform: translate(-50%, -34px) scale(1.06); opacity: 1; }
+  82%  { transform: translate(-50%, -58px) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -78px) scale(0.9); opacity: 0; }
 }
 
-/* 사방으로 튀는 반짝이는 3D 골드 코인 조각 */
-.pt-burst-coin {
-  animation: coinScatter 1.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-@keyframes coinScatter {
-  0%   { transform: translate(-50%, -50%) scale(0.4) rotate(0deg); opacity: 1; }
-  55%  { transform: translate(calc(-50% + var(--tx, 30px)), calc(-50% + var(--ty, -45px))) scale(1.15) rotate(180deg); opacity: 1; }
-  100% { transform: translate(calc(-50% + var(--tx, 30px)), calc(-50% + var(--ty, -45px) + 24px)) scale(0.75) rotate(340deg); opacity: 0; }
-}
-
-.pt-coin {
-  animation: floatCoin 1.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  font-size: 17px;
-  color: #451a03;
-  background: linear-gradient(180deg, #fef9c3 0%, #fde047 100%);
-  border: 2.5px solid #78350f;
-  padding: 3px 11px;
-  border-radius: 999px;
-  box-shadow: 0 4px 0 #78350f, 0 8px 16px rgba(120, 53, 15, 0.3);
-  white-space: nowrap;
-}
-
-.pt-water { animation: riseBubble 1.25s ease-out forwards; font-size: 16px; }
-.pt-steam { animation: riseSteam 1.6s ease-out forwards; font-size: 18px; }
-.pt-dust { animation: puffDust 0.95s ease-out forwards; font-size: 17px; }
-.pt-sparkle { animation: popSparkle 1.1s ease-out forwards; font-size: 18px; }
-.pt-heart { animation: floatUpHeart 1.4s ease-out forwards; font-size: 18px; }
-.pt-zzz {
-  animation: floatZzz 1.9s ease-out forwards;
-  font-size: 16px;
-  color: #fef08a;
-  text-shadow: 0 2px 4px rgba(43, 45, 66, 0.8);
-}
-
-@keyframes riseBubble {
-  0% { transform: translate(0, 0) scale(0.6); opacity: 0.95; }
-  60% { transform: translate(-8px, -28px) scale(1.1); opacity: 0.9; }
-  100% { transform: translate(6px, -48px) scale(0.8); opacity: 0; }
-}
-@keyframes riseSteam {
-  0% { transform: translateY(0) scale(0.7); opacity: 0.85; }
-  100% { transform: translateY(-54px) scale(1.35); opacity: 0; }
-}
-@keyframes puffDust {
-  0% { transform: scale(0.5) translate(0, 0); opacity: 0.95; }
-  100% { transform: scale(1.4) translate(var(--dx, 14px), -22px); opacity: 0; }
-}
-@keyframes popSparkle {
-  0% { transform: scale(0.3) rotate(-25deg); opacity: 1; }
-  50% { transform: scale(1.25) rotate(12deg); opacity: 1; }
-  100% { transform: scale(0.8) translateY(-28px) rotate(35deg); opacity: 0; }
-}
-@keyframes floatUpHeart {
-  0% { transform: translateY(0) scale(0.6); opacity: 1; }
-  50% { transform: translateY(-24px) scale(1.2); opacity: 1; }
-  100% { transform: translateY(-48px) scale(0.95); opacity: 0; }
-}
-@keyframes floatZzz {
-  0% { transform: translate(0, 0) scale(0.7); opacity: 0.95; }
-  100% { transform: translate(18px, -44px) scale(1.2); opacity: 0; }
-}
-@keyframes floatCoin {
-  0% { transform: translate(-50%, 8px) scale(0.55); opacity: 0; }
-  22% { transform: translate(-50%, -16px) scale(1.12); opacity: 1; }
-  80% { transform: translate(-50%, -44px) scale(1); opacity: 1; }
-  100% { transform: translate(-50%, -62px) scale(0.92); opacity: 0; }
-}
-
-/* 거리 위 미니어처 배달 스쿠터 & 파스텔 미니카 */
-.street-scooter {
-  position: absolute;
-  top: 1192px;
-  left: -140px;
-  z-index: 16;
-  pointer-events: none;
-  animation: driveScooter 18s linear infinite;
-}
-@keyframes driveScooter {
-  0% { transform: translateX(0px); }
-  48% { transform: translateX(2060px); }
-  100% { transform: translateX(2060px); }
-}
-
-.street-car {
-  position: absolute;
-  top: 1254px;
-  left: 1920px;
-  z-index: 17;
-  pointer-events: none;
-  animation: driveCarLeft 23s linear infinite 3s;
-}
-@keyframes driveCarLeft {
-  0% { transform: translateX(0px); }
-  52% { transform: translateX(-2160px); }
-  100% { transform: translateX(-2160px); }
-}
-
-.street-lamp-glow {
-  opacity: 0.18;
-  transition: opacity 1s ease;
-}
-#world-canvas.time-evening .street-lamp-glow,
-#world-canvas.time-night .street-lamp-glow {
-  opacity: 0.92;
-}
-
-/* 보유 자산 숫자 톡 튀는 효과 */
 .gold-pop-anim {
   animation: hudGoldPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
