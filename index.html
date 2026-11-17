@@ -12,45 +12,55 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="./style.css" />
 </head>
-<body class="bg-slate-900 text-slate-800 select-none overflow-hidden">
+<body class="select-none overflow-hidden">
 
-  <!-- ==================== 상단 메인 HUD ==================== -->
+  <!-- ==================== 상단 3D 젤리 캐주얼 메인 HUD ==================== -->
   <header class="fixed top-0 left-0 right-0 z-40 pointer-events-none px-2.5 pt-2.5 sm:px-4 sm:pt-3">
     <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2">
-      <!-- 좌측: 타이틀 & 게임 내 시간대 -->
-      <div class="pointer-events-auto flex items-center gap-2 bg-slate-900/90 backdrop-blur-md text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-2xl border-2 border-slate-700 shadow-xl">
-        <span class="text-xl sm:text-2xl">🏡</span>
+      <!-- 좌측: 3D 집 아이콘 & 게임명 & 시간대 -->
+      <div class="pointer-events-auto jelly-hud-card px-3.5 py-1.5 sm:px-4 sm:py-2 flex items-center gap-2.5">
+        <!-- 자체 제작 3D 미니 하우스 아이콘 SVG -->
+        <svg width="36" height="36" viewBox="0 0 40 40" class="shrink-0">
+          <ellipse cx="20" cy="36" rx="15" ry="3.5" fill="rgba(120,53,15,0.2)"/>
+          <rect x="8" y="18" width="24" height="17" rx="4" fill="#fffbeb" stroke="#78350f" stroke-width="2.5"/>
+          <path d="M4 19 L20 6 L36 19 Z" fill="#f97316" stroke="#78350f" stroke-width="2.5" stroke-linejoin="round"/>
+          <rect x="17" y="25" width="6" height="10" rx="2" fill="#d97706" stroke="#78350f" stroke-width="1.8"/>
+          <rect x="11" y="21" width="4.5" height="4.5" rx="1" fill="#7dd3fc" stroke="#78350f" stroke-width="1.4"/>
+          <rect x="24.5" y="21" width="4.5" height="4.5" rx="1" fill="#7dd3fc" stroke="#78350f" stroke-width="1.4"/>
+        </svg>
         <div>
-          <div class="font-jua text-sm sm:text-base text-amber-300 leading-tight tracking-wide">갓물주 라이프: 미니미 하우스</div>
-          <div class="flex items-center gap-2 text-xs text-slate-200 mt-0.5">
-            <span id="hud-time-badge" class="font-jua text-sky-300">☀️ 1일차 · 오전 08:00</span>
-            <span class="text-slate-500">|</span>
-            <span id="hud-occupancy" class="text-emerald-300 font-medium">입주 0/2실</span>
+          <div class="font-jua text-sm sm:text-base text-amber-950 leading-tight tracking-wide">갓물주 라이프: 미니미 하우스</div>
+          <div class="flex items-center gap-2 text-xs mt-0.5">
+            <span id="hud-time-badge" class="font-jua text-amber-800 bg-amber-200/70 px-2 py-0.2 rounded-full">☀️ 1일차 · 오전 08:00</span>
+            <span id="hud-occupancy" class="font-jua text-emerald-800 bg-emerald-100 px-2 py-0.2 rounded-full border border-emerald-300">입주 0/2실</span>
           </div>
         </div>
       </div>
 
-      <!-- 우측: 보유 자금 & 월세 정산 게이지 & 저장 상태 -->
-      <div class="pointer-events-auto flex items-center gap-2 bg-slate-900/90 backdrop-blur-md text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-2xl border-2 border-amber-400/60 shadow-xl">
-        <div class="flex items-center gap-1.5 pr-2 border-r border-slate-700">
-          <span class="text-lg sm:text-xl">💰</span>
+      <!-- 우측: 보유 자산 & 호실별 합산 월세 표시 & 초기화 -->
+      <div class="pointer-events-auto jelly-hud-card px-3.5 py-1.5 sm:px-4 sm:py-2 flex items-center gap-3">
+        <div class="flex items-center gap-2 pr-3 border-r-2 border-amber-300">
+          <!-- 3D 골드 코인 아이콘 SVG -->
+          <svg width="30" height="30" viewBox="0 0 32 32" class="shrink-0">
+            <circle cx="16" cy="17.5" r="13" fill="#b45309"/>
+            <circle cx="16" cy="15" r="13" fill="#fde047" stroke="#78350f" stroke-width="2.4"/>
+            <circle cx="16" cy="15" r="9.5" fill="#fbbf24" stroke="#d97706" stroke-width="1.5"/>
+            <text x="16" y="19.5" text-anchor="middle" font-family="Jua" font-size="13" fill="#78350f">₩</text>
+            <ellipse cx="11.5" cy="9.5" rx="3.5" ry="1.6" fill="rgba(255,255,255,0.75)" transform="rotate(-25 11.5 9.5)"/>
+          </svg>
           <div>
-            <div class="text-[10px] text-slate-400 leading-none">보유 자산</div>
-            <div class="font-jua text-base sm:text-lg text-amber-300 leading-tight"><span id="hud-gold">300</span>만원</div>
+            <div class="text-[10px] font-bold text-amber-800/80 leading-none">보유 자산</div>
+            <div id="hud-gold-wrap" class="font-jua text-base sm:text-xl text-amber-950 leading-tight"><span id="hud-gold">300</span>만원</div>
           </div>
         </div>
 
-        <div class="min-w-[112px] sm:min-w-[138px]">
-          <div class="flex items-center justify-between text-[11px]">
-            <span class="text-emerald-300 font-jua">월세 +<span id="hud-rent-total">0</span>만</span>
-            <span id="hud-payday-sec" class="text-slate-300 text-[10px]">입금 D-18s</span>
-          </div>
-          <div class="w-full h-2 bg-slate-700 rounded-full overflow-hidden mt-1 border border-slate-600">
-            <div id="hud-payday-bar" class="h-full bg-gradient-to-r from-emerald-400 to-amber-300 transition-all duration-300" style="width: 10%"></div>
-          </div>
+        <div class="min-w-[108px] sm:min-w-[132px]">
+          <div class="text-[10px] font-bold text-emerald-800 leading-none">호실별 자동 월세 합계</div>
+          <div class="font-jua text-sm sm:text-base text-emerald-700 leading-tight mt-0.5">+<span id="hud-rent-total">0</span>만원 <span class="text-[10px] text-amber-800">/방별쿨</span></div>
+          <div id="hud-shop-profit-hint" class="text-[10px] font-jua text-amber-700 leading-none mt-0.5">🏪상가 방문 +12~14만</div>
         </div>
 
-        <button id="btn-reset-save" title="데이터 초기화" class="ml-1 text-xs bg-slate-800 hover:bg-rose-900/80 text-slate-300 hover:text-rose-200 px-2 py-1.5 rounded-xl border border-slate-700 transition">
+        <button id="btn-reset-save" title="데이터 초기화" class="jelly-btn-white w-9 h-9 rounded-xl flex items-center justify-center font-jua text-sm">
           🔄
         </button>
       </div>
@@ -58,313 +68,410 @@
   </header>
 
   <!-- ==================== 좌측 상단 플로팅: [📋 초보 갓물주 미션] & [💬 카톡 알림] ==================== -->
-  <aside class="fixed top-[72px] sm:top-[80px] left-2.5 sm:left-4 z-30 flex flex-col gap-2 max-w-[265px] sm:max-w-[300px] pointer-events-none">
-    <!-- 메인 가이드 퀘스트 버튼 -->
-    <button id="quest-floating-btn" class="pointer-events-auto text-left bg-white/95 hover:bg-amber-50 backdrop-blur-md rounded-2xl p-2.5 sm:p-3 border-2 border-amber-400 shadow-xl transition transform active:scale-95">
-      <div class="flex items-center justify-between gap-2">
-        <span id="quest-step-tag" class="font-jua text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">📋 초보 갓물주 미션 1/10</span>
-        <span id="quest-reward-tag" class="font-jua text-xs text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">🎁 +120만원</span>
+  <aside class="fixed top-[74px] sm:top-[84px] left-2.5 sm:left-4 z-30 flex flex-col gap-2.5 max-w-[268px] sm:max-w-[305px] pointer-events-none">
+    <!-- 3D 젤리 미션 카드 -->
+    <button id="quest-floating-btn" class="pointer-events-auto jelly-hud-card text-left p-3 transition">
+      <div class="flex items-center justify-between gap-1.5">
+        <span id="quest-step-tag" class="font-jua text-[11px] px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-500">📋 초보 갓물주 미션 1/10</span>
+        <span id="quest-reward-tag" class="font-jua text-[11px] text-emerald-900 bg-emerald-200 px-2.5 py-0.5 rounded-full border border-emerald-500">🎁 +120만</span>
       </div>
-      <div id="quest-title" class="font-jua text-sm sm:text-base text-slate-900 mt-1 leading-snug">101호 곰팡이 벽지 도배하기</div>
-      <div id="quest-desc" class="text-xs text-slate-600 mt-0.5 leading-relaxed">101호를 클릭해 [벽지/장판]을 Lv.1 이상으로 업그레이드하세요.</div>
-      <div id="quest-action-hint" class="mt-1.5 text-[11px] font-jua text-amber-600 flex items-center gap-1">
-        <span>👉 터치하면 해당 위치로 카메라가 이동합니다</span>
+      <div id="quest-title" class="font-jua text-sm sm:text-base text-amber-950 mt-1.5 leading-snug">101호 화사한 파스텔 벽지 도배하기</div>
+      <div id="quest-desc" class="text-xs text-stone-700 mt-0.5 leading-relaxed">101호를 터치해 [벽지/장판]을 Lv.1 이상으로 리모델링하세요!</div>
+      <div id="quest-action-hint" class="mt-1.5 text-[11px] font-jua text-amber-700">
+        👉 터치하면 해당 방으로 줌인 이동합니다
       </div>
     </button>
 
-    <!-- 세입자 현실 민원 카톡 플로팅 배너 (발생 시 표시) -->
-    <button id="kakao-floating-btn" class="hidden pointer-events-auto kakao-bounce text-left bg-[#FEE500] hover:bg-[#fdd800] text-[#191919] rounded-2xl p-3 border-2 border-amber-600 shadow-2xl transition transform active:scale-95">
+    <!-- 세입자 소통 카톡 플로팅 배너 -->
+    <button id="kakao-floating-btn" class="hidden pointer-events-auto kakao-bounce text-left bg-[#FEE500] hover:brightness-105 text-[#3C1E1E] rounded-2xl p-3 border-[3px] border-[#3C1E1E] shadow-[0_5px_0_#3C1E1E,0_10px_20px_rgba(0,0,0,0.2)] transition">
       <div class="flex items-center justify-between">
-        <span class="font-jua text-xs bg-[#3C1E1E] text-[#FEE500] px-2 py-0.5 rounded-full">💬 세입자 카톡 도착! (1)</span>
-        <span class="text-[11px] font-bold animate-pulse">터치하여 답장 ▸</span>
+        <span class="font-jua text-xs bg-[#3C1E1E] text-[#FEE500] px-2 py-0.5 rounded-full">💬 입주민 카톡 (1)</span>
+        <span class="text-[11px] font-jua animate-pulse">답장하기 ▸</span>
       </div>
-      <div id="kakao-banner-sender" class="font-jua text-sm mt-1">101호 김민준 (공시생)</div>
-      <div id="kakao-banner-preview" class="text-xs text-stone-800 truncate mt-0.5">"집주인님 샤워기 수압이 너무 약해요 ㅠㅠ"</div>
+      <div id="kakao-banner-sender" class="font-jua text-sm mt-1">101호 김민준</div>
+      <div id="kakao-banner-preview" class="text-xs text-stone-800 truncate mt-0.5">"집주인님~ 샤워기 수압 점검 부탁드려요!"</div>
     </button>
   </aside>
 
-  <!-- ==================== 우측 플로팅: 큼직한 줌 & 전체보기 컨트롤 ==================== -->
-  <div class="fixed right-2.5 sm:right-4 top-1/2 -translate-y-1/2 z-30 flex flex-col items-center gap-2 pointer-events-auto">
-    <button id="btn-zoom-in" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/95 hover:bg-amber-50 active:scale-95 border-2 border-slate-700 shadow-xl flex flex-col items-center justify-center transition">
-      <span class="font-jua text-xl leading-none text-slate-800">+</span>
-      <span class="font-jua text-[10px] text-slate-600 mt-0.5">확대</span>
+  <!-- ==================== 우측 플로팅: 3D 토이 블록 줌 컨트롤 ==================== -->
+  <div class="fixed right-2.5 sm:right-4 top-1/2 -translate-y-1/2 z-30 flex flex-col items-center gap-2.5 pointer-events-auto">
+    <button id="btn-zoom-in" class="jelly-btn-white w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex flex-col items-center justify-center">
+      <span class="font-jua text-xl leading-none">+</span>
+      <span class="font-jua text-[10px] mt-0.5">확대</span>
     </button>
 
-    <div id="zoom-scale-label" class="px-2 py-0.5 rounded-full bg-slate-900/85 text-amber-300 font-jua text-[11px] border border-slate-700 shadow">
-      62%
+    <div id="zoom-scale-label" class="px-2.5 py-0.5 rounded-full bg-amber-950 text-amber-200 font-jua text-[11px] border-2 border-amber-300 shadow">
+      64%
     </div>
 
-    <button id="btn-zoom-out" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/95 hover:bg-amber-50 active:scale-95 border-2 border-slate-700 shadow-xl flex flex-col items-center justify-center transition">
-      <span class="font-jua text-xl leading-none text-slate-800">−</span>
-      <span class="font-jua text-[10px] text-slate-600 mt-0.5">축소</span>
+    <button id="btn-zoom-out" class="jelly-btn-white w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex flex-col items-center justify-center">
+      <span class="font-jua text-xl leading-none">−</span>
+      <span class="font-jua text-[10px] mt-0.5">축소</span>
     </button>
 
-    <button id="btn-zoom-fit" class="w-12 h-14 sm:w-14 sm:h-16 rounded-2xl bg-amber-400 hover:bg-amber-300 active:scale-95 border-2 border-amber-900 shadow-xl flex flex-col items-center justify-center transition mt-1">
-      <span class="text-lg leading-none">🏠</span>
-      <span class="font-jua text-[10px] text-amber-950 mt-0.5 leading-tight text-center">전체<br/>보기</span>
+    <button id="btn-zoom-fit" class="jelly-btn-amber w-12 h-14 sm:w-14 sm:h-16 rounded-2xl flex flex-col items-center justify-center mt-0.5">
+      <span class="font-jua text-sm leading-tight text-center">🏡<br/><span class="text-[10px]">전체보기</span></span>
     </button>
 
-    <!-- 저장 표시 배지 -->
-    <div id="autosave-indicator" class="mt-1 px-2 py-0.5 rounded-full bg-slate-900/75 text-emerald-300 text-[10px] font-jua opacity-70 transition-opacity">
-      💾 저장됨
+    <div id="autosave-indicator" class="mt-0.5 px-2.5 py-0.5 rounded-full bg-white/90 text-emerald-800 border border-emerald-400 text-[10px] font-jua shadow-sm transition-opacity">
+      💾 자동저장
     </div>
   </div>
 
-  <!-- ==================== 메인 대형 디오라마 월드 뷰포트 (1800 x 1400) ==================== -->
+  <!-- ==================== 메인 3D 미니어처 디오라마 월드 (1800 x 1400) ==================== -->
   <main id="viewport">
     <div id="world-canvas" class="time-morning">
-      <!-- 밤하늘 별 & 떠다니는 미니어처 구름 -->
+      <!-- 따스한 태양 광원 후광 & 밤하늘 별 -->
+      <div class="sky-sun-halo"></div>
       <div class="sky-stars"></div>
-      <div class="diorama-cloud" style="top: 34px; left: 90px; width: 140px; height: 44px;"></div>
-      <div class="diorama-cloud" style="top: 52px; left: 540px; width: 180px; height: 50px; animation-delay: -5s;"></div>
-      <div class="diorama-cloud" style="top: 28px; left: 1250px; width: 165px; height: 46px; animation-delay: -11s;"></div>
 
-      <!-- 좌우 단지 정원 나무 배경 -->
-      <div class="absolute left-[46px] top-[890px] pointer-events-none">
-        <svg width="135" height="220" viewBox="0 0 135 220">
-          <ellipse cx="68" cy="205" rx="48" ry="12" fill="rgba(15,23,42,0.22)"/>
-          <rect x="56" y="128" width="22" height="78" rx="6" fill="#78350f"/>
-          <circle cx="67" cy="96" r="52" fill="#16a34a"/>
-          <circle cx="42" cy="112" r="36" fill="#15803d"/>
-          <circle cx="94" cy="110" r="38" fill="#22c55e"/>
-          <circle cx="67" cy="68" r="36" fill="#4ade80"/>
+      <!-- 입체 볼륨감 뭉게구름 SVG 3종 -->
+      <div class="fluffy-cloud" style="top: 22px; left: 85px;">
+        <svg width="170" height="68" viewBox="0 0 170 68">
+          <ellipse cx="85" cy="50" rx="68" ry="14" fill="#fff1e6"/>
+          <circle cx="52" cy="40" r="22" fill="#ffffff"/>
+          <circle cx="84" cy="30" r="28" fill="#ffffff"/>
+          <circle cx="118" cy="38" r="23" fill="#ffffff"/>
         </svg>
       </div>
-      <div class="absolute left-[1632px] top-[895px] pointer-events-none">
-        <svg width="135" height="220" viewBox="0 0 135 220">
-          <ellipse cx="68" cy="205" rx="48" ry="12" fill="rgba(15,23,42,0.22)"/>
-          <rect x="56" y="128" width="22" height="78" rx="6" fill="#78350f"/>
-          <circle cx="67" cy="96" r="50" fill="#15803d"/>
-          <circle cx="40" cy="115" r="34" fill="#16a34a"/>
-          <circle cx="92" cy="112" r="36" fill="#22c55e"/>
-          <circle cx="68" cy="70" r="34" fill="#86efac"/>
+      <div class="fluffy-cloud" style="top: 36px; left: 640px; animation-delay: -8s;">
+        <svg width="190" height="72" viewBox="0 0 190 72">
+          <ellipse cx="95" cy="54" rx="76" ry="14" fill="#fff1e6"/>
+          <circle cx="56" cy="42" r="24" fill="#ffffff"/>
+          <circle cx="96" cy="30" r="30" fill="#ffffff"/>
+          <circle cx="136" cy="40" r="24" fill="#ffffff"/>
+        </svg>
+      </div>
+      <div class="fluffy-cloud" style="top: 20px; left: 1320px; animation-delay: -15s;">
+        <svg width="175" height="68" viewBox="0 0 175 68">
+          <ellipse cx="88" cy="50" rx="70" ry="14" fill="#fff1e6"/>
+          <circle cx="54" cy="40" r="22" fill="#ffffff"/>
+          <circle cx="90" cy="29" r="27" fill="#ffffff"/>
+          <circle cx="124" cy="39" r="22" fill="#ffffff"/>
         </svg>
       </div>
 
-      <!-- 옥상 루프탑 테라스 -->
-      <div class="rooftop-deck">
-        <div class="flex items-center gap-3">
-          <span class="text-2xl">🪴</span>
-          <span class="text-2xl">☀️</span>
-          <span class="font-jua text-xs text-slate-100 bg-slate-700/80 px-2.5 py-1 rounded-full">태양광 에코 발전중</span>
+      <!-- 좌우 단지 정원 입체 미니어처 가로수 & 꽃밭 SVG -->
+      <div class="absolute left-[34px] top-[875px] pointer-events-none z-[7]">
+        <svg width="154" height="245" viewBox="0 0 154 245">
+          <ellipse cx="77" cy="228" rx="56" ry="13" fill="rgba(120,53,15,0.22)"/>
+          <rect x="64" y="136" width="26" height="92" rx="9" fill="#92400e" stroke="#572408" stroke-width="3"/>
+          <rect x="69" y="142" width="7" height="80" rx="3" fill="#b45309"/>
+          <circle cx="46" cy="116" r="38" fill="#22c55e" stroke="#166534" stroke-width="3"/>
+          <circle cx="108" cy="114" r="38" fill="#16a34a" stroke="#166534" stroke-width="3"/>
+          <circle cx="77" cy="82" r="48" fill="#4ade80" stroke="#166534" stroke-width="3"/>
+          <ellipse cx="62" cy="64" rx="16" ry="9" fill="#bbf7d0" transform="rotate(-18 62 64)"/>
+          <!-- 나무 위 사과/꽃 포인트 -->
+          <circle cx="52" cy="96" r="5" fill="#fb7185"/>
+          <circle cx="98" cy="88" r="5" fill="#fbbf24"/>
+          <circle cx="78" cy="112" r="5" fill="#fb7185"/>
+        </svg>
+      </div>
+
+      <div class="absolute left-[1624px] top-[878px] pointer-events-none z-[7]">
+        <svg width="154" height="245" viewBox="0 0 154 245">
+          <ellipse cx="77" cy="228" rx="56" ry="13" fill="rgba(120,53,15,0.22)"/>
+          <rect x="64" y="136" width="26" height="92" rx="9" fill="#92400e" stroke="#572408" stroke-width="3"/>
+          <rect x="69" y="142" width="7" height="80" rx="3" fill="#b45309"/>
+          <circle cx="46" cy="116" r="38" fill="#22c55e" stroke="#166534" stroke-width="3"/>
+          <circle cx="108" cy="114" r="38" fill="#16a34a" stroke="#166534" stroke-width="3"/>
+          <circle cx="77" cy="82" r="48" fill="#4ade80" stroke="#166534" stroke-width="3"/>
+          <ellipse cx="62" cy="64" rx="16" ry="9" fill="#bbf7d0" transform="rotate(-18 62 64)"/>
+          <circle cx="58" cy="92" r="5" fill="#fde047"/>
+          <circle cx="96" cy="102" r="5" fill="#fb7185"/>
+        </svg>
+      </div>
+
+      <!-- 입체 테라코타 지붕 & 옥상 정원 테라스 -->
+      <div class="rooftop-terrace">
+        <div class="rooftop-railing-bar"></div>
+        <!-- 좌측 옥상 화분 & 벤치 SVG -->
+        <div class="flex items-center gap-3 z-10 -translate-y-2">
+          <svg width="110" height="44" viewBox="0 0 110 44">
+            <rect x="6" y="22" width="28" height="18" rx="4" fill="#fef3c7" stroke="#78350f" stroke-width="2.2"/>
+            <circle cx="14" cy="17" r="9" fill="#4ade80" stroke="#166534" stroke-width="2"/>
+            <circle cx="26" cy="16" r="9" fill="#22c55e" stroke="#166534" stroke-width="2"/>
+            <circle cx="20" cy="12" r="4" fill="#fb7185"/>
+            <rect x="46" y="18" width="54" height="20" rx="6" fill="#fde68a" stroke="#78350f" stroke-width="2.2"/>
+            <text x="73" y="32" text-anchor="middle" font-family="Jua" font-size="11" fill="#78350f">옥상정원</text>
+          </svg>
         </div>
-        <div class="rooftop-sign">🏡 미니미 하우스 (MINIMI HOUSE)</div>
-        <div class="flex items-center gap-3">
-          <span class="font-jua text-xs text-amber-200 bg-slate-700/80 px-2.5 py-1 rounded-full">옥상 힐링정원</span>
-          <span class="text-2xl">🌳</span>
-          <span class="text-2xl">🪑</span>
+
+        <div class="rooftop-sign-3d">🏡 미니미 코지 하우스</div>
+
+        <!-- 우측 옥상 파라솔 & 화분 SVG -->
+        <div class="flex items-center gap-3 z-10 -translate-y-2">
+          <svg width="118" height="46" viewBox="0 0 118 46">
+            <rect x="8" y="20" width="60" height="20" rx="6" fill="#dcfce7" stroke="#166534" stroke-width="2.2"/>
+            <text x="38" y="34" text-anchor="middle" font-family="Jua" font-size="11" fill="#166534">햇살테라스</text>
+            <rect x="80" y="24" width="26" height="16" rx="4" fill="#fed7aa" stroke="#78350f" stroke-width="2.2"/>
+            <circle cx="93" cy="16" r="10" fill="#4ade80" stroke="#166534" stroke-width="2"/>
+            <circle cx="93" cy="14" r="4" fill="#facc15"/>
+          </svg>
         </div>
       </div>
 
-      <!-- 아파트 본체 외벽 -->
-      <div class="building-shell"></div>
+      <!-- 따뜻한 크림&테라코타 파스텔 벽돌 빌딩 본체 -->
+      <div class="building-exterior"></div>
 
-      <!-- 우측 계단실 (2층 <-> 1층 <-> 지상 상가/광장 연결) -->
-      <div class="stairwell-shaft">
-        <div class="stair-steps-visual"></div>
-        <div class="absolute top-3 right-3 bg-slate-800/80 text-white font-jua text-xs px-2.5 py-1 rounded-full">🪜 엘리베이터/계단실</div>
-        <div class="absolute top-[292px] left-3 bg-amber-100 text-amber-900 border border-amber-400 font-jua text-xs px-2 py-0.5 rounded-lg">2F 복도 연결</div>
-        <div class="absolute top-[626px] left-3 bg-sky-100 text-sky-900 border border-sky-400 font-jua text-xs px-2 py-0.5 rounded-lg">1F 복도 연결</div>
-        <div class="absolute bottom-3 left-3 bg-emerald-100 text-emerald-900 border border-emerald-400 font-jua text-xs px-2 py-0.5 rounded-lg">지상 상가 출구</div>
+      <!-- 우측 입체 원목 계단실 (2F <-> 1F <-> 지상 광장) -->
+      <div class="stairwell-3d">
+        <div class="stair-steps-wood"></div>
+        <div class="absolute top-3 right-3 bg-amber-950/85 text-amber-200 font-jua text-xs px-3 py-1 rounded-full border border-amber-400 shadow">🪜 우드 계단실</div>
+        <div class="absolute top-[292px] left-3 bg-amber-100 text-amber-950 border-2 border-amber-600 font-jua text-xs px-2.5 py-0.5 rounded-xl shadow-sm">2F 복도</div>
+        <div class="absolute top-[632px] left-3 bg-orange-100 text-amber-950 border-2 border-amber-600 font-jua text-xs px-2.5 py-0.5 rounded-xl shadow-sm">1F 복도</div>
+        <div class="absolute bottom-4 left-3 bg-emerald-100 text-emerald-950 border-2 border-emerald-600 font-jua text-xs px-2.5 py-0.5 rounded-xl shadow-sm">1층 상가출구</div>
       </div>
 
-      <!-- 2층 복도 & 난간 -->
-      <div class="corridor-strip" style="top: 430px;">
-        <span class="absolute left-3 top-2 font-jua text-xs text-slate-700 bg-white/80 px-2 py-0.5 rounded-full">2F 원룸 복도</span>
-        <div class="corridor-railing"></div>
+      <!-- 2층 슬래브 복도 & 원목 난간 -->
+      <div class="corridor-slab" style="top: 440px;">
+        <span class="absolute left-3 top-1.5 font-jua text-xs text-amber-950 bg-fffbeb bg-white/90 px-2.5 py-0.5 rounded-full border border-amber-400">2F 코지 테라스 복도</span>
+        <div class="corridor-wood-railing"></div>
       </div>
 
-      <!-- 1층 복도 & 난간 -->
-      <div class="corridor-strip" style="top: 765px;">
-        <span class="absolute left-3 top-2 font-jua text-xs text-slate-700 bg-white/80 px-2 py-0.5 rounded-full">1F 원룸 복도</span>
-        <div class="corridor-railing"></div>
+      <!-- 1층 슬래브 복도 & 원목 난간 -->
+      <div class="corridor-slab" style="top: 780px;">
+        <span class="absolute left-3 top-1.5 font-jua text-xs text-amber-950 bg-white/90 px-2.5 py-0.5 rounded-full border border-amber-400">1F 햇살 복도</span>
+        <div class="corridor-wood-railing"></div>
       </div>
 
-      <!-- 중앙 지상 공동현관 로비 & 무인택배함 (x: 720, y: 830, w: 200, h: 250) -->
-      <div class="absolute left-[720px] top-[830px] w-[200px] h-[250px] bg-gradient-to-b from-slate-100 to-slate-200 border-4 border-slate-600 rounded-t-2xl overflow-hidden shadow-inner">
-        <div class="bg-slate-700 text-amber-200 font-jua text-center text-sm py-1.5 border-b-2 border-slate-800">🔐 공동현관 & 택배함</div>
-        <!-- 무인택배함 그래픽 -->
-        <div class="p-3 flex justify-between items-end h-[205px]">
-          <div class="w-[74px] h-[135px] bg-amber-50 border-2 border-slate-500 rounded-lg p-1 grid grid-cols-2 gap-1 shadow">
-            <div class="bg-amber-200 border border-amber-400 rounded flex items-center justify-center text-[10px]">📦</div>
-            <div class="bg-slate-200 border border-slate-300 rounded"></div>
-            <div class="bg-slate-200 border border-slate-300 rounded"></div>
-            <div class="bg-amber-200 border border-amber-400 rounded flex items-center justify-center text-[10px]">📦</div>
-            <div class="bg-emerald-200 border border-emerald-400 rounded col-span-2 flex items-center justify-center text-[9px] font-jua text-emerald-900">무인택배</div>
-          </div>
-          <!-- 유리 자동문 -->
-          <div class="w-[90px] h-[155px] bg-sky-100/90 border-4 border-slate-600 rounded-t-xl flex flex-col items-center justify-between py-2 shadow-inner">
-            <span class="font-jua text-[10px] text-sky-900 bg-white/90 px-2 rounded-full">AUTO DOOR</span>
-            <div class="w-[4px] h-[95px] bg-slate-400"></div>
-            <span class="text-xs">🪴</span>
-          </div>
+      <!-- 중앙 1층 아치형 공동현관 & 입체 택배함 로비 (x: 712, y: 842, w: 214, h: 256) -->
+      <div class="absolute left-[712px] top-[842px] w-[214px] h-[256px] rounded-t-3xl border-[5px] border-[#7c3f1d] bg-gradient-to-b from-[#fffbeb] to-[#fde6c4] shadow-[0_10px_0_#7c3f1d,0_16px_24px_rgba(120,53,15,0.24)] overflow-hidden z-[6]">
+        <div class="h-[42px] bg-gradient-to-r from-[#d97706] to-[#ea580c] border-b-4 border-[#7c3f1d] flex items-center justify-center">
+          <span class="font-jua text-sm text-amber-50 drop-shadow">🏛️ 공동현관 & 안심택배함</span>
         </div>
+        <!-- 고밀도 인라인 3D SVG 택배함 & 아치 자동문 -->
+        <svg width="204" height="208" viewBox="0 0 204 208">
+          <!-- 바닥 타일 -->
+          <rect x="0" y="176" width="204" height="32" fill="#e6ccb2"/>
+          <!-- 좌측 입체 무인택배함 -->
+          <rect x="12" y="28" width="76" height="154" rx="8" fill="#fef3c7" stroke="#78350f" stroke-width="3"/>
+          <rect x="18" y="35" width="64" height="16" rx="4" fill="#38bdf8" stroke="#0369a1" stroke-width="1.8"/>
+          <text x="50" y="47" text-anchor="middle" font-family="Jua" font-size="9" fill="#ffffff">SMART BOX</text>
+          <!-- 택배 칸칸이 + 입체 상자 -->
+          <rect x="18" y="56" width="29" height="26" rx="3" fill="#fde68a" stroke="#b45309" stroke-width="1.6"/>
+          <rect x="22" y="62" width="20" height="16" rx="2" fill="#d97706" stroke="#78350f" stroke-width="1.4"/>
+          <rect x="52" y="56" width="29" height="26" rx="3" fill="#ffffff" stroke="#b45309" stroke-width="1.6"/>
+          <rect x="18" y="87" width="29" height="26" rx="3" fill="#ffffff" stroke="#b45309" stroke-width="1.6"/>
+          <rect x="52" y="87" width="29" height="26" rx="3" fill="#fde68a" stroke="#b45309" stroke-width="1.6"/>
+          <rect x="56" y="93" width="20" height="16" rx="2" fill="#f97316" stroke="#78350f" stroke-width="1.4"/>
+          <rect x="18" y="118" width="63" height="56" rx="4" fill="#fed7aa" stroke="#b45309" stroke-width="1.8"/>
+          <circle cx="72" cy="146" r="3" fill="#78350f"/>
+
+          <!-- 우측 아치형 유리 공동현관문 -->
+          <path d="M102 182 L102 64 A44 44 0 0 1 190 64 L190 182 Z" fill="#bae6fd" stroke="#78350f" stroke-width="3.5"/>
+          <path d="M110 178 L110 66 A36 36 0 0 1 182 66 L182 178 Z" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.8"/>
+          <line x1="146" y1="30" x2="146" y2="180" stroke="#78350f" stroke-width="3"/>
+          <!-- 유리 반사 하이라이트 -->
+          <path d="M118 72 L132 54 L138 58 L124 76 Z" fill="rgba(255,255,255,0.75)"/>
+          <rect x="137" y="106" width="5" height="20" rx="2" fill="#f59e0b" stroke="#78350f" stroke-width="1.2"/>
+          <rect x="150" y="106" width="5" height="20" rx="2" fill="#f59e0b" stroke="#78350f" stroke-width="1.2"/>
+          <!-- 현관 화분 -->
+          <rect x="93" y="160" width="18" height="22" rx="4" fill="#ea580c" stroke="#7c2d12" stroke-width="2"/>
+          <circle cx="102" cy="152" r="11" fill="#22c55e" stroke="#166534" stroke-width="2"/>
+        </svg>
       </div>
 
-      <!-- 호실 렌더링 레이어 (101~103호, 201~203호) -->
+      <!-- 3D 돌하우스 호실 렌더링 레이어 (101~203호) -->
       <div id="rooms-layer"></div>
 
-      <!-- 1층 상가 렌더링 레이어 (24시 편의점, 코인세탁소) -->
+      <!-- 1층 고밀도 SVG 상가 렌더링 레이어 (24시 편의점, 코인세탁소) -->
       <div id="shops-layer"></div>
 
-      <!-- 앞마당 산책로 보도블럭 & 가로등 & 벤치 (y: 1085..1165) -->
-      <div class="absolute left-0 right-0 top-[1085px] h-[80px] bg-gradient-to-b from-amber-100 to-stone-200 border-t-4 border-b-4 border-stone-400 pointer-events-none">
-        <!-- 보도블럭 패턴 -->
-        <div class="w-full h-full opacity-35" style="background-image: repeating-linear-gradient(90deg, #78716c 0px, #78716c 2px, transparent 2px, transparent 60px);"></div>
-        <!-- 벤치 & 분리수거함 & 가로등 소품 -->
-        <div class="absolute left-[135px] top-[14px] text-2xl">🪑</div>
-        <div class="absolute left-[790px] top-[16px] font-jua text-xs bg-white/90 text-slate-700 px-3 py-1 rounded-full border border-slate-400 shadow">🚶 미니미 하우스 앞 상가거리</div>
-        <div class="absolute left-[1655px] top-[12px] text-2xl">♻️🗑️</div>
+      <!-- 앞마당 따뜻한 보도블럭 산책로 & 입체 원목 벤치 & 가로등 (y: 1098..1176) -->
+      <div class="absolute left-0 right-0 top-[1098px] h-[78px] bg-gradient-to-b from-[#fff3d6] to-[#f3d5b5] border-t-4 border-b-4 border-[#b07d62] pointer-events-none z-[4]">
+        <div class="w-full h-full opacity-35" style="background-image: repeating-linear-gradient(90deg, #b07d62 0px, #b07d62 2px, transparent 2px, transparent 56px);"></div>
+
+        <!-- 좌측 입체 공원 원목 벤치 SVG -->
+        <svg width="96" height="52" viewBox="0 0 96 52" class="absolute left-[110px] top-[14px]">
+          <ellipse cx="48" cy="46" rx="40" ry="5" fill="rgba(120,53,15,0.2)"/>
+          <rect x="14" y="10" width="68" height="9" rx="3" fill="#d97706" stroke="#78350f" stroke-width="2"/>
+          <rect x="14" y="21" width="68" height="8" rx="3" fill="#f59e0b" stroke="#78350f" stroke-width="2"/>
+          <rect x="10" y="30" width="76" height="8" rx="4" fill="#b45309" stroke="#572408" stroke-width="2"/>
+          <rect x="18" y="36" width="7" height="11" rx="2" fill="#451a03"/>
+          <rect x="71" y="36" width="7" height="11" rx="2" fill="#451a03"/>
+        </svg>
+
+        <!-- 중앙 거리 명패 -->
+        <div class="absolute left-[756px] top-[18px] jelly-hud-card px-4 py-1 font-jua text-xs text-amber-950">
+          ☀️ 미니미 햇살 상가 산책로
+        </div>
+
+        <!-- 우측 입체 공원 원목 벤치 & 꽃화단 SVG -->
+        <svg width="110" height="52" viewBox="0 0 110 52" class="absolute left-[1500px] top-[14px]">
+          <ellipse cx="52" cy="46" rx="44" ry="5" fill="rgba(120,53,15,0.2)"/>
+          <rect x="12" y="12" width="64" height="9" rx="3" fill="#d97706" stroke="#78350f" stroke-width="2"/>
+          <rect x="8" y="24" width="72" height="9" rx="4" fill="#b45309" stroke="#572408" stroke-width="2"/>
+          <rect x="16" y="33" width="7" height="12" rx="2" fill="#451a03"/>
+          <rect x="65" y="33" width="7" height="12" rx="2" fill="#451a03"/>
+          <rect x="84" y="24" width="20" height="20" rx="4" fill="#fb923c" stroke="#7c2d12" stroke-width="2"/>
+          <circle cx="94" cy="18" r="9" fill="#4ade80" stroke="#166534" stroke-width="2"/>
+          <circle cx="94" cy="16" r="3.5" fill="#f43f5e"/>
+        </svg>
       </div>
 
-      <!-- 가로등 2개 (밤에 불 켜짐) -->
-      <div class="absolute left-[185px] top-[985px] pointer-events-none z-25">
-        <div class="street-lamp-glow absolute -left-10 -top-6 w-24 h-24 rounded-full bg-amber-300/45 blur-md"></div>
-        <div class="w-2 h-28 bg-slate-700 mx-auto rounded"></div>
-        <div class="w-7 h-4 bg-amber-300 border-2 border-slate-800 rounded-full -mt-28 -ml-2.5 shadow"></div>
+      <!-- 입체 빈티지 가로등 2개 (저녁/밤 따뜻한 발광) -->
+      <div class="absolute left-[184px] top-[986px] pointer-events-none z-[18]">
+        <div class="street-lamp-glow absolute -left-11 -top-8 w-28 h-28 rounded-full bg-amber-300/60 blur-md"></div>
+        <svg width="40" height="132" viewBox="0 0 40 132">
+          <ellipse cx="20" cy="126" rx="12" ry="4" fill="rgba(67,20,7,0.28)"/>
+          <rect x="17" y="28" width="6" height="98" rx="3" fill="#573619" stroke="#3b1d08" stroke-width="1.8"/>
+          <path d="M8 28 Q20 12 32 28 Z" fill="#78350f" stroke="#3b1d08" stroke-width="2"/>
+          <circle cx="20" cy="30" r="8" fill="#fef08a" stroke="#ca8a04" stroke-width="2"/>
+        </svg>
       </div>
-      <div class="absolute left-[1615px] top-[985px] pointer-events-none z-25">
-        <div class="street-lamp-glow absolute -left-10 -top-6 w-24 h-24 rounded-full bg-amber-300/45 blur-md"></div>
-        <div class="w-2 h-28 bg-slate-700 mx-auto rounded"></div>
-        <div class="w-7 h-4 bg-amber-300 border-2 border-slate-800 rounded-full -mt-28 -ml-2.5 shadow"></div>
+      <div class="absolute left-[1602px] top-[986px] pointer-events-none z-[18]">
+        <div class="street-lamp-glow absolute -left-11 -top-8 w-28 h-28 rounded-full bg-amber-300/60 blur-md"></div>
+        <svg width="40" height="132" viewBox="0 0 40 132">
+          <ellipse cx="20" cy="126" rx="12" ry="4" fill="rgba(67,20,7,0.28)"/>
+          <rect x="17" y="28" width="6" height="98" rx="3" fill="#573619" stroke="#3b1d08" stroke-width="1.8"/>
+          <path d="M8 28 Q20 12 32 28 Z" fill="#78350f" stroke="#3b1d08" stroke-width="2"/>
+          <circle cx="20" cy="30" r="8" fill="#fef08a" stroke="#ca8a04" stroke-width="2"/>
+        </svg>
       </div>
 
-      <!-- 앞마당 2차선 아스팔트 도로 & 횡단보도 (y: 1165..1335) -->
-      <div class="absolute left-0 right-0 top-[1165px] h-[170px] bg-slate-700 border-b-8 border-emerald-700 overflow-hidden pointer-events-none">
-        <!-- 중앙선 -->
-        <div class="absolute left-0 right-0 top-[82px] h-[6px]" style="background: repeating-linear-gradient(90deg, #facc15 0px, #facc15 48px, transparent 48px, transparent 88px);"></div>
-        <!-- 횡단보도 -->
-        <div class="absolute left-[760px] top-0 bottom-0 w-[120px]" style="background: repeating-linear-gradient(180deg, rgba(255,255,255,0.88) 0px, rgba(255,255,255,0.88) 18px, transparent 18px, transparent 32px);"></div>
+      <!-- 앞마당 파스텔 웜그레이 미니어처 도로 & 횡단보도 (y: 1176..1336) -->
+      <div class="absolute left-0 right-0 top-[1176px] h-[160px] bg-[#7f766f] border-b-8 border-[#52b788] overflow-hidden pointer-events-none z-[4]">
+        <div class="absolute left-0 right-0 top-[76px] h-[6px]" style="background: repeating-linear-gradient(90deg, #fde047 0px, #fde047 46px, transparent 46px, transparent 84px);"></div>
+        <div class="absolute left-[758px] top-0 bottom-0 w-[124px]" style="background: repeating-linear-gradient(180deg, rgba(255,251,235,0.92) 0px, rgba(255,251,235,0.92) 18px, transparent 18px, transparent 32px);"></div>
 
-        <!-- 지나다니는 치킨 배달 스쿠터 & 미니카 -->
+        <!-- 자체 제작 3D 미니어처 배달 스쿠터 SVG -->
         <div class="street-scooter">
-          <div class="flex items-center gap-1 bg-sky-400/95 text-slate-900 px-3 py-1 rounded-full border-2 border-slate-900 shadow-lg font-jua text-xs">
-            <span>🛵💨</span><span>치킨배달 부릉!</span>
-          </div>
+          <svg width="108" height="62" viewBox="0 0 108 62">
+            <ellipse cx="54" cy="56" rx="40" ry="5" fill="rgba(0,0,0,0.26)"/>
+            <rect x="18" y="18" width="26" height="22" rx="5" fill="#fbbf24" stroke="#78350f" stroke-width="2.5"/>
+            <text x="31" y="33" text-anchor="middle" font-family="Jua" font-size="9" fill="#78350f">치킨</text>
+            <path d="M24 40 L74 40 L68 24 L82 24 L88 44 L22 44 Z" fill="#38bdf8" stroke="#0c4a6e" stroke-width="2.5" stroke-linejoin="round"/>
+            <circle cx="32" cy="46" r="10" fill="#1e293b" stroke="#ffffff" stroke-width="2"/>
+            <circle cx="80" cy="46" r="10" fill="#1e293b" stroke="#ffffff" stroke-width="2"/>
+            <circle cx="54" cy="15" r="8" fill="#fb7185" stroke="#881337" stroke-width="2"/>
+          </svg>
         </div>
+
+        <!-- 자체 제작 3D 파스텔 비틀 미니카 SVG -->
         <div class="street-car">
-          <div class="flex items-center gap-1 bg-amber-300 text-slate-900 px-4 py-1.5 rounded-2xl border-2 border-slate-900 shadow-lg font-jua text-xs">
-            <span>🚗</span><span>미니미 택시</span>
-          </div>
+          <svg width="124" height="64" viewBox="0 0 124 64">
+            <ellipse cx="62" cy="57" rx="48" ry="6" fill="rgba(0,0,0,0.26)"/>
+            <path d="M16 42 L24 20 Q42 10 78 12 L98 28 L112 32 L112 46 L14 46 Z" fill="#fde047" stroke="#78350f" stroke-width="2.8" stroke-linejoin="round"/>
+            <path d="M34 22 L56 16 L56 30 L28 30 Z" fill="#bae6fd" stroke="#78350f" stroke-width="2"/>
+            <path d="M62 16 L84 22 L90 30 L62 30 Z" fill="#bae6fd" stroke="#78350f" stroke-width="2"/>
+            <circle cx="34" cy="47" r="11" fill="#292524" stroke="#fef3c7" stroke-width="2.5"/>
+            <circle cx="90" cy="47" r="11" fill="#292524" stroke="#fef3c7" stroke-width="2.5"/>
+          </svg>
         </div>
       </div>
 
-      <!-- 디오라마 보드 하단 잔디 마감층 -->
-      <div class="absolute left-0 right-0 top-[1335px] bottom-0 bg-gradient-to-b from-emerald-500 to-emerald-700 flex items-center justify-center pointer-events-none">
-        <span class="font-jua text-xs text-emerald-50 tracking-widest opacity-85">✦ GOD-LANDLORD DIORAMA WORLD · DRAG TO PAN & PINCH/WHEEL TO ZOOM ✦</span>
+      <!-- 디오라마 하단 잔디 정원 보드 마감 -->
+      <div class="absolute left-0 right-0 top-[1336px] bottom-0 bg-gradient-to-b from-[#74c69d] to-[#40916c] flex items-center justify-center pointer-events-none z-[4]">
+        <span class="font-jua text-xs text-emerald-50 tracking-widest">✦ COZY 3D DOLLHOUSE TYCOON · DRAG TO PAN & PINCH/WHEEL TO ZOOM ✦</span>
       </div>
 
       <!-- 실시간 걸어 다니는 미니미 캐릭터 레이어 -->
       <div id="minimi-layer"></div>
 
-      <!-- 물방울 / 먼지 / 반짝이 / 하트 / 코인 파티클 레이어 -->
+      <!-- 건물주 돌발 케어 클릭 말풍선 레이어 -->
+      <div id="care-bubbles-layer"></div>
+
+      <!-- 코인 수금 폭발 / 물방울 / 먼지 / 하트 파티클 레이어 -->
       <div id="particle-layer"></div>
     </div>
   </main>
 
-  <!-- ==================== 하단 슬라이드업: [🏠 호실 인테리어 & 세입자 관리 패널] ==================== -->
+  <!-- ==================== 하단 3D 슬라이드업: [🏠 호실 인테리어 & 입주민 관리 패널] ==================== -->
   <section id="bottom-panel" class="fixed left-0 right-0 bottom-0 z-40 translate-y-full transition-transform duration-300 ease-out pointer-events-none px-2 sm:px-4 pb-2 sm:pb-3">
-    <div class="pointer-events-auto max-w-5xl mx-auto bg-white/98 backdrop-blur-xl rounded-t-3xl sm:rounded-3xl border-4 border-slate-800 shadow-[0_-12px_40px_rgba(15,23,42,0.45)] overflow-hidden max-h-[54vh] sm:max-h-[50vh] flex flex-col">
+    <div class="pointer-events-auto max-w-5xl mx-auto bg-[#fffdf9] rounded-t-3xl sm:rounded-3xl border-[4px] border-[#78350f] shadow-[0_-8px_35px_rgba(120,53,15,0.32)] overflow-hidden max-h-[54vh] sm:max-h-[50vh] flex flex-col">
       <!-- 상단 헤더 바 -->
-      <div id="panel-header" class="bg-slate-900 text-white px-4 py-2.5 flex items-center justify-between gap-2 shrink-0">
+      <div id="panel-header" class="bg-gradient-to-r from-[#92400e] via-[#b45309] to-[#92400e] text-white px-4 py-2.5 flex items-center justify-between gap-2 shrink-0 border-b-4 border-[#572408]">
         <div class="flex items-center gap-2 flex-wrap">
-          <span id="panel-room-title" class="font-jua text-lg sm:text-xl text-amber-300">🏠 101호</span>
-          <span id="panel-grade-badge" class="font-jua text-xs px-2.5 py-0.5 rounded-full border">칙칙한 반지하 고시원풍</span>
-          <span id="panel-rent-badge" class="font-jua text-xs sm:text-sm bg-emerald-500/20 text-emerald-300 border border-emerald-400/50 px-2.5 py-0.5 rounded-full">월세 25만원</span>
+          <span id="panel-room-title" class="font-jua text-lg sm:text-xl text-amber-200">🏠 101호</span>
+          <span id="panel-grade-badge" class="font-jua text-xs px-2.5 py-0.5 rounded-full border">리모델링 전 구형 원룸</span>
+          <span id="panel-rent-badge" class="font-jua text-xs sm:text-sm bg-amber-950/60 text-emerald-300 border border-emerald-400/60 px-2.5 py-0.5 rounded-full">월세 28만원</span>
         </div>
-        <button id="btn-close-panel" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-jua text-base flex items-center justify-center border border-slate-600">
+        <button id="btn-close-panel" class="jelly-btn-white w-8 h-8 rounded-xl font-jua text-sm flex items-center justify-center">
           ✕
         </button>
       </div>
 
       <!-- 패널 본문 스크롤 영역 -->
-      <div id="panel-body" class="p-3 sm:p-4 overflow-y-auto custom-scroll space-y-3">
-        <!-- JS에서 호실/상가 상태에 맞춰 동적 렌더링 -->
+      <div id="panel-body" class="p-3 sm:p-4 overflow-y-auto custom-scroll space-y-3 bg-[#fffaf2]">
       </div>
     </div>
   </section>
 
-  <!-- ==================== 모달 1: [📢 세입자 구하기 (전단지/부동산 앱)] ==================== -->
-  <div id="recruit-modal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-3">
-    <div class="bg-slate-50 w-full max-w-3xl rounded-3xl border-4 border-slate-800 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-      <div class="bg-emerald-600 text-white px-5 py-3.5 flex items-center justify-between shrink-0">
+  <!-- ==================== 모달 1: [📢 세입자 구하기 (부동산 앱)] ==================== -->
+  <div id="recruit-modal" class="hidden fixed inset-0 z-50 bg-amber-950/55 backdrop-blur-sm flex items-center justify-center p-3">
+    <div class="bg-[#fffaf2] w-full max-w-3xl rounded-3xl border-[4px] border-[#78350f] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+      <div class="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-5 py-3.5 flex items-center justify-between shrink-0 border-b-4 border-emerald-800">
         <div>
           <div class="font-jua text-lg sm:text-xl flex items-center gap-2">
-            <span>📱 미니미 직방 · 입주 희망 지원자 목록</span>
-            <span id="recruit-room-badge" class="text-xs bg-white/20 px-2.5 py-0.5 rounded-full">101호</span>
+            <span>📱 미니미 코지 부동산 · 입주 지원자</span>
+            <span id="recruit-room-badge" class="text-xs bg-white/25 px-2.5 py-0.5 rounded-full">101호</span>
           </div>
-          <p id="recruit-room-info" class="text-xs text-emerald-100 mt-0.5">현재 호실 적정 월세: 37만원 · 조건에 맞는 세입자와 계약하세요!</p>
+          <p id="recruit-room-info" class="text-xs text-emerald-50 mt-0.5">현재 호실 적정 월세와 지원자 예산을 비교해보세요!</p>
         </div>
-        <button id="btn-close-recruit" class="w-9 h-9 rounded-xl bg-emerald-700 hover:bg-emerald-800 font-jua text-lg">✕</button>
+        <button id="btn-close-recruit" class="jelly-btn-white w-9 h-9 rounded-xl font-jua text-base">✕</button>
       </div>
 
       <div id="recruit-cards-grid" class="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 overflow-y-auto custom-scroll">
-        <!-- 3명의 지원자 프로필 카드 렌더링 -->
       </div>
 
-      <div class="px-4 py-3 bg-slate-100 border-t border-slate-200 flex items-center justify-between shrink-0">
-        <span class="text-xs text-slate-600">💡 상위 인테리어를 갖출수록 고소득 직업군 세입자가 높은 월세를 냅니다!</span>
-        <button id="btn-refresh-applicants" class="font-jua text-xs sm:text-sm bg-amber-400 hover:bg-amber-300 text-amber-950 px-3.5 py-2 rounded-xl border-2 border-amber-800 shadow active:scale-95 transition">
-          🔄 새 전단지 돌리기 (10만원)
+      <div class="px-4 py-3 bg-amber-100/70 border-t-2 border-amber-300 flex items-center justify-between gap-2 shrink-0">
+        <span class="text-xs text-amber-950 font-medium">💡 모든 시설을 업그레이드해 세트 효과를 켜면 VIP 입주민이 높은 월세를 냅니다!</span>
+        <button id="btn-refresh-applicants" class="jelly-btn-amber font-jua text-xs sm:text-sm px-3.5 py-2 rounded-xl shrink-0">
+          🔄 새 지원자 찾기 (10만원)
         </button>
       </div>
     </div>
   </div>
 
-  <!-- ==================== 모달 2: [💬 현실 민원 카톡 팝업] ==================== -->
-  <div id="kakao-modal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-3">
-    <div class="w-full max-w-md rounded-3xl border-4 border-[#3C1E1E] bg-[#B2C7D9] shadow-2xl overflow-hidden flex flex-col">
-      <!-- 카톡 상단 바 -->
-      <div class="bg-[#9bbbd4] px-4 py-3 flex items-center justify-between border-b border-slate-400/40">
+  <!-- ==================== 모달 2: [💬 입주민 소통 카톡 팝업] ==================== -->
+  <div id="kakao-modal" class="hidden fixed inset-0 z-50 bg-amber-950/55 backdrop-blur-sm flex items-center justify-center p-3">
+    <div class="w-full max-w-md rounded-3xl border-[4px] border-[#3C1E1E] bg-[#B2C7D9] shadow-2xl overflow-hidden flex flex-col">
+      <div class="bg-[#9bbbd4] px-4 py-3 flex items-center justify-between border-b border-slate-500/30">
         <div class="flex items-center gap-2">
           <span class="text-lg">💬</span>
-          <span id="kakao-modal-header" class="font-jua text-base text-slate-900">101호 세입자 단톡방</span>
+          <span id="kakao-modal-header" class="font-jua text-base text-slate-900">101호 입주민 1:1 톡</span>
         </div>
-        <button id="btn-close-kakao" class="text-slate-700 hover:text-slate-950 font-jua text-base px-2">✕</button>
+        <button id="btn-close-kakao" class="jelly-btn-white w-8 h-8 rounded-xl font-jua text-sm">✕</button>
       </div>
 
-      <!-- 대화 내용 -->
       <div class="p-4 space-y-3">
         <div class="flex items-start gap-2.5">
-          <div id="kakao-avatar-box" class="w-12 h-12 rounded-2xl bg-white border-2 border-slate-700 flex items-center justify-center overflow-hidden shrink-0 shadow"></div>
+          <div id="kakao-avatar-box" class="w-12 h-12 rounded-2xl bg-white border-2 border-amber-900 flex items-center justify-center overflow-hidden shrink-0 shadow"></div>
           <div>
-            <div id="kakao-sender-name" class="font-jua text-xs text-slate-800 mb-1">101호 김민준 · 공시생</div>
+            <div id="kakao-sender-name" class="font-jua text-xs text-slate-800 mb-1">101호 김민준</div>
             <div id="kakao-message-bubble" class="bg-white text-slate-900 rounded-2xl rounded-tl-sm p-3 text-sm leading-relaxed shadow border border-slate-200">
-              집주인님 샤워기 수압이 너무 약해요 ㅠㅠ
             </div>
           </div>
         </div>
 
         <div class="pt-2 border-t border-slate-400/40">
-          <div class="font-jua text-xs text-slate-800 mb-2">👇 갓물주님의 답변 선택하기</div>
-          <div id="kakao-choices-box" class="space-y-2">
-            <!-- 선택지 버튼 3종 -->
-          </div>
+          <div class="font-jua text-xs text-slate-800 mb-2">👇 갓물주님의 케어 선택하기</div>
+          <div id="kakao-choices-box" class="space-y-2"></div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ==================== 모달 3: [🏦 오프라인 부재중 월세 수익] ==================== -->
-  <div id="offline-modal" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-sm rounded-3xl border-4 border-amber-500 shadow-2xl p-5 text-center">
+  <!-- ==================== 모달 3: [🏦 부재중 자동 월세 정산] ==================== -->
+  <div id="offline-modal" class="hidden fixed inset-0 z-50 bg-amber-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="jelly-hud-card w-full max-w-sm p-5 text-center">
       <div class="text-4xl mb-2">🏦✨</div>
-      <h2 class="font-jua text-xl text-slate-900">부재중 월세 & 상가 수익 정산!</h2>
-      <p id="offline-time-text" class="text-xs text-slate-500 mt-1">자리를 비운 동안 미니미들이 열심히 생활했어요.</p>
-      <div class="my-4 bg-amber-50 border-2 border-amber-300 rounded-2xl py-3 px-4">
-        <div class="text-xs text-amber-800">누적 입금액</div>
+      <h2 class="font-jua text-xl text-amber-950">부재중 월세 & 상가 매출 도착!</h2>
+      <p id="offline-time-text" class="text-xs text-amber-900/80 mt-1">자리를 비운 동안 미니미들이 행복하게 지냈어요.</p>
+      <div class="my-4 bg-white border-2 border-amber-400 rounded-2xl py-3 px-4 shadow-inner">
+        <div class="text-xs text-amber-800 font-bold">누적 입금액</div>
         <div class="font-jua text-2xl text-amber-600 mt-0.5">+<span id="offline-gold-amount">0</span>만원</div>
       </div>
-      <button id="btn-claim-offline" class="w-full font-jua text-base bg-amber-400 hover:bg-amber-300 text-amber-950 py-2.5 rounded-2xl border-2 border-amber-900 shadow active:scale-95 transition">
+      <button id="btn-claim-offline" class="jelly-btn-amber w-full font-jua text-base py-2.5 rounded-2xl">
         💰 기분 좋게 수령하기!
       </button>
     </div>
   </div>
 
   <!-- ==================== 상단 중앙 토스트 알림 ==================== -->
-  <div id="toast-container" class="fixed top-[72px] left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-1.5 pointer-events-none"></div>
+  <div id="toast-container" class="fixed top-[76px] left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-1.5 pointer-events-none"></div>
 
-  <!-- 데이터 & 메인 엔진 스크립트 -->
   <script src="./data.js"></script>
   <script src="./app.js"></script>
 </body>
