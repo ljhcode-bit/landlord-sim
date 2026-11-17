@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>갓물주 라이프: 미니미 하우스</title>
+  <!-- 귀여운 한글 웹폰트 (Jua, Gaegu, Noto Sans KR) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Jua&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body class="bg-slate-900 text-slate-800 select-none overflow-hidden">
+
+  <!-- ==================== 상단 메인 HUD ==================== -->
+  <header class="fixed top-0 left-0 right-0 z-40 pointer-events-none px-2.5 pt-2.5 sm:px-4 sm:pt-3">
+    <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <!-- 좌측: 타이틀 & 게임 내 시간대 -->
+      <div class="pointer-events-auto flex items-center gap-2 bg-slate-900/90 backdrop-blur-md text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-2xl border-2 border-slate-700 shadow-xl">
+        <span class="text-xl sm:text-2xl">🏡</span>
+        <div>
+          <div class="font-jua text-sm sm:text-base text-amber-300 leading-tight tracking-wide">갓물주 라이프: 미니미 하우스</div>
+          <div class="flex items-center gap-2 text-xs text-slate-200 mt-0.5">
+            <span id="hud-time-badge" class="font-jua text-sky-300">☀️ 1일차 · 오전 08:00</span>
+            <span class="text-slate-500">|</span>
+            <span id="hud-occupancy" class="text-emerald-300 font-medium">입주 0/2실</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 우측: 보유 자금 & 월세 정산 게이지 & 저장 상태 -->
+      <div class="pointer-events-auto flex items-center gap-2 bg-slate-900/90 backdrop-blur-md text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-2xl border-2 border-amber-400/60 shadow-xl">
+        <div class="flex items-center gap-1.5 pr-2 border-r border-slate-700">
+          <span class="text-lg sm:text-xl">💰</span>
+          <div>
+            <div class="text-[10px] text-slate-400 leading-none">보유 자산</div>
+            <div class="font-jua text-base sm:text-lg text-amber-300 leading-tight"><span id="hud-gold">300</span>만원</div>
+          </div>
+        </div>
+
+        <div class="min-w-[112px] sm:min-w-[138px]">
+          <div class="flex items-center justify-between text-[11px]">
+            <span class="text-emerald-300 font-jua">월세 +<span id="hud-rent-total">0</span>만</span>
+            <span id="hud-payday-sec" class="text-slate-300 text-[10px]">입금 D-18s</span>
+          </div>
+          <div class="w-full h-2 bg-slate-700 rounded-full overflow-hidden mt-1 border border-slate-600">
+            <div id="hud-payday-bar" class="h-full bg-gradient-to-r from-emerald-400 to-amber-300 transition-all duration-300" style="width: 10%"></div>
+          </div>
+        </div>
+
+        <button id="btn-reset-save" title="데이터 초기화" class="ml-1 text-xs bg-slate-800 hover:bg-rose-900/80 text-slate-300 hover:text-rose-200 px-2 py-1.5 rounded-xl border border-slate-700 transition">
+          🔄
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== 좌측 상단 플로팅: [📋 초보 갓물주 미션] & [💬 카톡 알림] ==================== -->
+  <aside class="fixed top-[72px] sm:top-[80px] left-2.5 sm:left-4 z-30 flex flex-col gap-2 max-w-[265px] sm:max-w-[300px] pointer-events-none">
+    <!-- 메인 가이드 퀘스트 버튼 -->
+    <button id="quest-floating-btn" class="pointer-events-auto text-left bg-white/95 hover:bg-amber-50 backdrop-blur-md rounded-2xl p-2.5 sm:p-3 border-2 border-amber-400 shadow-xl transition transform active:scale-95">
+      <div class="flex items-center justify-between gap-2">
+        <span id="quest-step-tag" class="font-jua text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">📋 초보 갓물주 미션 1/10</span>
+        <span id="quest-reward-tag" class="font-jua text-xs text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">🎁 +120만원</span>
+      </div>
+      <div id="quest-title" class="font-jua text-sm sm:text-base text-slate-900 mt-1 leading-snug">101호 곰팡이 벽지 도배하기</div>
+      <div id="quest-desc" class="text-xs text-slate-600 mt-0.5 leading-relaxed">101호를 클릭해 [벽지/장판]을 Lv.1 이상으로 업그레이드하세요.</div>
+      <div id="quest-action-hint" class="mt-1.5 text-[11px] font-jua text-amber-600 flex items-center gap-1">
+        <span>👉 터치하면 해당 위치로 카메라가 이동합니다</span>
+      </div>
+    </button>
+
+    <!-- 세입자 현실 민원 카톡 플로팅 배너 (발생 시 표시) -->
+    <button id="kakao-floating-btn" class="hidden pointer-events-auto kakao-bounce text-left bg-[#FEE500] hover:bg-[#fdd800] text-[#191919] rounded-2xl p-3 border-2 border-amber-600 shadow-2xl transition transform active:scale-95">
+      <div class="flex items-center justify-between">
+        <span class="font-jua text-xs bg-[#3C1E1E] text-[#FEE500] px-2 py-0.5 rounded-full">💬 세입자 카톡 도착! (1)</span>
+        <span class="text-[11px] font-bold animate-pulse">터치하여 답장 ▸</span>
+      </div>
+      <div id="kakao-banner-sender" class="font-jua text-sm mt-1">101호 김민준 (공시생)</div>
+      <div id="kakao-banner-preview" class="text-xs text-stone-800 truncate mt-0.5">"집주인님 샤워기 수압이 너무 약해요 ㅠㅠ"</div>
+    </button>
+  </aside>
+
+  <!-- ==================== 우측 플로팅: 큼직한 줌 & 전체보기 컨트롤 ==================== -->
+  <div class="fixed right-2.5 sm:right-4 top-1/2 -translate-y-1/2 z-30 flex flex-col items-center gap-2 pointer-events-auto">
+    <button id="btn-zoom-in" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/95 hover:bg-amber-50 active:scale-95 border-2 border-slate-700 shadow-xl flex flex-col items-center justify-center transition">
+      <span class="font-jua text-xl leading-none text-slate-800">+</span>
+      <span class="font-jua text-[10px] text-slate-600 mt-0.5">확대</span>
+    </button>
+
+    <div id="zoom-scale-label" class="px-2 py-0.5 rounded-full bg-slate-900/85 text-amber-300 font-jua text-[11px] border border-slate-700 shadow">
+      62%
+    </div>
+
+    <button id="btn-zoom-out" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/95 hover:bg-amber-50 active:scale-95 border-2 border-slate-700 shadow-xl flex flex-col items-center justify-center transition">
+      <span class="font-jua text-xl leading-none text-slate-800">−</span>
+      <span class="font-jua text-[10px] text-slate-600 mt-0.5">축소</span>
+    </button>
+
+    <button id="btn-zoom-fit" class="w-12 h-14 sm:w-14 sm:h-16 rounded-2xl bg-amber-400 hover:bg-amber-300 active:scale-95 border-2 border-amber-900 shadow-xl flex flex-col items-center justify-center transition mt-1">
+      <span class="text-lg leading-none">🏠</span>
+      <span class="font-jua text-[10px] text-amber-950 mt-0.5 leading-tight text-center">전체<br/>보기</span>
+    </button>
+
+    <!-- 저장 표시 배지 -->
+    <div id="autosave-indicator" class="mt-1 px-2 py-0.5 rounded-full bg-slate-900/75 text-emerald-300 text-[10px] font-jua opacity-70 transition-opacity">
+      💾 저장됨
+    </div>
+  </div>
+
+  <!-- ==================== 메인 대형 디오라마 월드 뷰포트 (1800 x 1400) ==================== -->
+  <main id="viewport">
+    <div id="world-canvas" class="time-morning">
+      <!-- 밤하늘 별 & 떠다니는 미니어처 구름 -->
+      <div class="sky-stars"></div>
+      <div class="diorama-cloud" style="top: 34px; left: 90px; width: 140px; height: 44px;"></div>
+      <div class="diorama-cloud" style="top: 52px; left: 540px; width: 180px; height: 50px; animation-delay: -5s;"></div>
+      <div class="diorama-cloud" style="top: 28px; left: 1250px; width: 165px; height: 46px; animation-delay: -11s;"></div>
+
+      <!-- 좌우 단지 정원 나무 배경 -->
+      <div class="absolute left-[46px] top-[890px] pointer-events-none">
+        <svg width="135" height="220" viewBox="0 0 135 220">
+          <ellipse cx="68" cy="205" rx="48" ry="12" fill="rgba(15,23,42,0.22)"/>
+          <rect x="56" y="128" width="22" height="78" rx="6" fill="#78350f"/>
+          <circle cx="67" cy="96" r="52" fill="#16a34a"/>
+          <circle cx="42" cy="112" r="36" fill="#15803d"/>
+          <circle cx="94" cy="110" r="38" fill="#22c55e"/>
+          <circle cx="67" cy="68" r="36" fill="#4ade80"/>
+        </svg>
+      </div>
+      <div class="absolute left-[1632px] top-[895px] pointer-events-none">
+        <svg width="135" height="220" viewBox="0 0 135 220">
+          <ellipse cx="68" cy="205" rx="48" ry="12" fill="rgba(15,23,42,0.22)"/>
+          <rect x="56" y="128" width="22" height="78" rx="6" fill="#78350f"/>
+          <circle cx="67" cy="96" r="50" fill="#15803d"/>
+          <circle cx="40" cy="115" r="34" fill="#16a34a"/>
+          <circle cx="92" cy="112" r="36" fill="#22c55e"/>
+          <circle cx="68" cy="70" r="34" fill="#86efac"/>
+        </svg>
+      </div>
+
+      <!-- 옥상 루프탑 테라스 -->
+      <div class="rooftop-deck">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">🪴</span>
+          <span class="text-2xl">☀️</span>
+          <span class="font-jua text-xs text-slate-100 bg-slate-700/80 px-2.5 py-1 rounded-full">태양광 에코 발전중</span>
+        </div>
+        <div class="rooftop-sign">🏡 미니미 하우스 (MINIMI HOUSE)</div>
+        <div class="flex items-center gap-3">
+          <span class="font-jua text-xs text-amber-200 bg-slate-700/80 px-2.5 py-1 rounded-full">옥상 힐링정원</span>
+          <span class="text-2xl">🌳</span>
+          <span class="text-2xl">🪑</span>
+        </div>
+      </div>
+
+      <!-- 아파트 본체 외벽 -->
+      <div class="building-shell"></div>
+
+      <!-- 우측 계단실 (2층 <-> 1층 <-> 지상 상가/광장 연결) -->
+      <div class="stairwell-shaft">
+        <div class="stair-steps-visual"></div>
+        <div class="absolute top-3 right-3 bg-slate-800/80 text-white font-jua text-xs px-2.5 py-1 rounded-full">🪜 엘리베이터/계단실</div>
+        <div class="absolute top-[292px] left-3 bg-amber-100 text-amber-900 border border-amber-400 font-jua text-xs px-2 py-0.5 rounded-lg">2F 복도 연결</div>
+        <div class="absolute top-[626px] left-3 bg-sky-100 text-sky-900 border border-sky-400 font-jua text-xs px-2 py-0.5 rounded-lg">1F 복도 연결</div>
+        <div class="absolute bottom-3 left-3 bg-emerald-100 text-emerald-900 border border-emerald-400 font-jua text-xs px-2 py-0.5 rounded-lg">지상 상가 출구</div>
+      </div>
+
+      <!-- 2층 복도 & 난간 -->
+      <div class="corridor-strip" style="top: 430px;">
+        <span class="absolute left-3 top-2 font-jua text-xs text-slate-700 bg-white/80 px-2 py-0.5 rounded-full">2F 원룸 복도</span>
+        <div class="corridor-railing"></div>
+      </div>
+
+      <!-- 1층 복도 & 난간 -->
+      <div class="corridor-strip" style="top: 765px;">
+        <span class="absolute left-3 top-2 font-jua text-xs text-slate-700 bg-white/80 px-2 py-0.5 rounded-full">1F 원룸 복도</span>
+        <div class="corridor-railing"></div>
+      </div>
+
+      <!-- 중앙 지상 공동현관 로비 & 무인택배함 (x: 720, y: 830, w: 200, h: 250) -->
+      <div class="absolute left-[720px] top-[830px] w-[200px] h-[250px] bg-gradient-to-b from-slate-100 to-slate-200 border-4 border-slate-600 rounded-t-2xl overflow-hidden shadow-inner">
+        <div class="bg-slate-700 text-amber-200 font-jua text-center text-sm py-1.5 border-b-2 border-slate-800">🔐 공동현관 & 택배함</div>
+        <!-- 무인택배함 그래픽 -->
+        <div class="p-3 flex justify-between items-end h-[205px]">
+          <div class="w-[74px] h-[135px] bg-amber-50 border-2 border-slate-500 rounded-lg p-1 grid grid-cols-2 gap-1 shadow">
+            <div class="bg-amber-200 border border-amber-400 rounded flex items-center justify-center text-[10px]">📦</div>
+            <div class="bg-slate-200 border border-slate-300 rounded"></div>
+            <div class="bg-slate-200 border border-slate-300 rounded"></div>
+            <div class="bg-amber-200 border border-amber-400 rounded flex items-center justify-center text-[10px]">📦</div>
+            <div class="bg-emerald-200 border border-emerald-400 rounded col-span-2 flex items-center justify-center text-[9px] font-jua text-emerald-900">무인택배</div>
+          </div>
+          <!-- 유리 자동문 -->
+          <div class="w-[90px] h-[155px] bg-sky-100/90 border-4 border-slate-600 rounded-t-xl flex flex-col items-center justify-between py-2 shadow-inner">
+            <span class="font-jua text-[10px] text-sky-900 bg-white/90 px-2 rounded-full">AUTO DOOR</span>
+            <div class="w-[4px] h-[95px] bg-slate-400"></div>
+            <span class="text-xs">🪴</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 호실 렌더링 레이어 (101~103호, 201~203호) -->
+      <div id="rooms-layer"></div>
+
+      <!-- 1층 상가 렌더링 레이어 (24시 편의점, 코인세탁소) -->
+      <div id="shops-layer"></div>
+
+      <!-- 앞마당 산책로 보도블럭 & 가로등 & 벤치 (y: 1085..1165) -->
+      <div class="absolute left-0 right-0 top-[1085px] h-[80px] bg-gradient-to-b from-amber-100 to-stone-200 border-t-4 border-b-4 border-stone-400 pointer-events-none">
+        <!-- 보도블럭 패턴 -->
+        <div class="w-full h-full opacity-35" style="background-image: repeating-linear-gradient(90deg, #78716c 0px, #78716c 2px, transparent 2px, transparent 60px);"></div>
+        <!-- 벤치 & 분리수거함 & 가로등 소품 -->
+        <div class="absolute left-[135px] top-[14px] text-2xl">🪑</div>
+        <div class="absolute left-[790px] top-[16px] font-jua text-xs bg-white/90 text-slate-700 px-3 py-1 rounded-full border border-slate-400 shadow">🚶 미니미 하우스 앞 상가거리</div>
+        <div class="absolute left-[1655px] top-[12px] text-2xl">♻️🗑️</div>
+      </div>
+
+      <!-- 가로등 2개 (밤에 불 켜짐) -->
+      <div class="absolute left-[185px] top-[985px] pointer-events-none z-25">
+        <div class="street-lamp-glow absolute -left-10 -top-6 w-24 h-24 rounded-full bg-amber-300/45 blur-md"></div>
+        <div class="w-2 h-28 bg-slate-700 mx-auto rounded"></div>
+        <div class="w-7 h-4 bg-amber-300 border-2 border-slate-800 rounded-full -mt-28 -ml-2.5 shadow"></div>
+      </div>
+      <div class="absolute left-[1615px] top-[985px] pointer-events-none z-25">
+        <div class="street-lamp-glow absolute -left-10 -top-6 w-24 h-24 rounded-full bg-amber-300/45 blur-md"></div>
+        <div class="w-2 h-28 bg-slate-700 mx-auto rounded"></div>
+        <div class="w-7 h-4 bg-amber-300 border-2 border-slate-800 rounded-full -mt-28 -ml-2.5 shadow"></div>
+      </div>
+
+      <!-- 앞마당 2차선 아스팔트 도로 & 횡단보도 (y: 1165..1335) -->
+      <div class="absolute left-0 right-0 top-[1165px] h-[170px] bg-slate-700 border-b-8 border-emerald-700 overflow-hidden pointer-events-none">
+        <!-- 중앙선 -->
+        <div class="absolute left-0 right-0 top-[82px] h-[6px]" style="background: repeating-linear-gradient(90deg, #facc15 0px, #facc15 48px, transparent 48px, transparent 88px);"></div>
+        <!-- 횡단보도 -->
+        <div class="absolute left-[760px] top-0 bottom-0 w-[120px]" style="background: repeating-linear-gradient(180deg, rgba(255,255,255,0.88) 0px, rgba(255,255,255,0.88) 18px, transparent 18px, transparent 32px);"></div>
+
+        <!-- 지나다니는 치킨 배달 스쿠터 & 미니카 -->
+        <div class="street-scooter">
+          <div class="flex items-center gap-1 bg-sky-400/95 text-slate-900 px-3 py-1 rounded-full border-2 border-slate-900 shadow-lg font-jua text-xs">
+            <span>🛵💨</span><span>치킨배달 부릉!</span>
+          </div>
+        </div>
+        <div class="street-car">
+          <div class="flex items-center gap-1 bg-amber-300 text-slate-900 px-4 py-1.5 rounded-2xl border-2 border-slate-900 shadow-lg font-jua text-xs">
+            <span>🚗</span><span>미니미 택시</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 디오라마 보드 하단 잔디 마감층 -->
+      <div class="absolute left-0 right-0 top-[1335px] bottom-0 bg-gradient-to-b from-emerald-500 to-emerald-700 flex items-center justify-center pointer-events-none">
+        <span class="font-jua text-xs text-emerald-50 tracking-widest opacity-85">✦ GOD-LANDLORD DIORAMA WORLD · DRAG TO PAN & PINCH/WHEEL TO ZOOM ✦</span>
+      </div>
+
+      <!-- 실시간 걸어 다니는 미니미 캐릭터 레이어 -->
+      <div id="minimi-layer"></div>
+
+      <!-- 물방울 / 먼지 / 반짝이 / 하트 / 코인 파티클 레이어 -->
+      <div id="particle-layer"></div>
+    </div>
+  </main>
+
+  <!-- ==================== 하단 슬라이드업: [🏠 호실 인테리어 & 세입자 관리 패널] ==================== -->
+  <section id="bottom-panel" class="fixed left-0 right-0 bottom-0 z-40 translate-y-full transition-transform duration-300 ease-out pointer-events-none px-2 sm:px-4 pb-2 sm:pb-3">
+    <div class="pointer-events-auto max-w-5xl mx-auto bg-white/98 backdrop-blur-xl rounded-t-3xl sm:rounded-3xl border-4 border-slate-800 shadow-[0_-12px_40px_rgba(15,23,42,0.45)] overflow-hidden max-h-[54vh] sm:max-h-[50vh] flex flex-col">
+      <!-- 상단 헤더 바 -->
+      <div id="panel-header" class="bg-slate-900 text-white px-4 py-2.5 flex items-center justify-between gap-2 shrink-0">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span id="panel-room-title" class="font-jua text-lg sm:text-xl text-amber-300">🏠 101호</span>
+          <span id="panel-grade-badge" class="font-jua text-xs px-2.5 py-0.5 rounded-full border">칙칙한 반지하 고시원풍</span>
+          <span id="panel-rent-badge" class="font-jua text-xs sm:text-sm bg-emerald-500/20 text-emerald-300 border border-emerald-400/50 px-2.5 py-0.5 rounded-full">월세 25만원</span>
+        </div>
+        <button id="btn-close-panel" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-jua text-base flex items-center justify-center border border-slate-600">
+          ✕
+        </button>
+      </div>
+
+      <!-- 패널 본문 스크롤 영역 -->
+      <div id="panel-body" class="p-3 sm:p-4 overflow-y-auto custom-scroll space-y-3">
+        <!-- JS에서 호실/상가 상태에 맞춰 동적 렌더링 -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 모달 1: [📢 세입자 구하기 (전단지/부동산 앱)] ==================== -->
+  <div id="recruit-modal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-3">
+    <div class="bg-slate-50 w-full max-w-3xl rounded-3xl border-4 border-slate-800 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+      <div class="bg-emerald-600 text-white px-5 py-3.5 flex items-center justify-between shrink-0">
+        <div>
+          <div class="font-jua text-lg sm:text-xl flex items-center gap-2">
+            <span>📱 미니미 직방 · 입주 희망 지원자 목록</span>
+            <span id="recruit-room-badge" class="text-xs bg-white/20 px-2.5 py-0.5 rounded-full">101호</span>
+          </div>
+          <p id="recruit-room-info" class="text-xs text-emerald-100 mt-0.5">현재 호실 적정 월세: 37만원 · 조건에 맞는 세입자와 계약하세요!</p>
+        </div>
+        <button id="btn-close-recruit" class="w-9 h-9 rounded-xl bg-emerald-700 hover:bg-emerald-800 font-jua text-lg">✕</button>
+      </div>
+
+      <div id="recruit-cards-grid" class="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 overflow-y-auto custom-scroll">
+        <!-- 3명의 지원자 프로필 카드 렌더링 -->
+      </div>
+
+      <div class="px-4 py-3 bg-slate-100 border-t border-slate-200 flex items-center justify-between shrink-0">
+        <span class="text-xs text-slate-600">💡 상위 인테리어를 갖출수록 고소득 직업군 세입자가 높은 월세를 냅니다!</span>
+        <button id="btn-refresh-applicants" class="font-jua text-xs sm:text-sm bg-amber-400 hover:bg-amber-300 text-amber-950 px-3.5 py-2 rounded-xl border-2 border-amber-800 shadow active:scale-95 transition">
+          🔄 새 전단지 돌리기 (10만원)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 모달 2: [💬 현실 민원 카톡 팝업] ==================== -->
+  <div id="kakao-modal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-3">
+    <div class="w-full max-w-md rounded-3xl border-4 border-[#3C1E1E] bg-[#B2C7D9] shadow-2xl overflow-hidden flex flex-col">
+      <!-- 카톡 상단 바 -->
+      <div class="bg-[#9bbbd4] px-4 py-3 flex items-center justify-between border-b border-slate-400/40">
+        <div class="flex items-center gap-2">
+          <span class="text-lg">💬</span>
+          <span id="kakao-modal-header" class="font-jua text-base text-slate-900">101호 세입자 단톡방</span>
+        </div>
+        <button id="btn-close-kakao" class="text-slate-700 hover:text-slate-950 font-jua text-base px-2">✕</button>
+      </div>
+
+      <!-- 대화 내용 -->
+      <div class="p-4 space-y-3">
+        <div class="flex items-start gap-2.5">
+          <div id="kakao-avatar-box" class="w-12 h-12 rounded-2xl bg-white border-2 border-slate-700 flex items-center justify-center overflow-hidden shrink-0 shadow"></div>
+          <div>
+            <div id="kakao-sender-name" class="font-jua text-xs text-slate-800 mb-1">101호 김민준 · 공시생</div>
+            <div id="kakao-message-bubble" class="bg-white text-slate-900 rounded-2xl rounded-tl-sm p-3 text-sm leading-relaxed shadow border border-slate-200">
+              집주인님 샤워기 수압이 너무 약해요 ㅠㅠ
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-2 border-t border-slate-400/40">
+          <div class="font-jua text-xs text-slate-800 mb-2">👇 갓물주님의 답변 선택하기</div>
+          <div id="kakao-choices-box" class="space-y-2">
+            <!-- 선택지 버튼 3종 -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 모달 3: [🏦 오프라인 부재중 월세 수익] ==================== -->
+  <div id="offline-modal" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-3xl border-4 border-amber-500 shadow-2xl p-5 text-center">
+      <div class="text-4xl mb-2">🏦✨</div>
+      <h2 class="font-jua text-xl text-slate-900">부재중 월세 & 상가 수익 정산!</h2>
+      <p id="offline-time-text" class="text-xs text-slate-500 mt-1">자리를 비운 동안 미니미들이 열심히 생활했어요.</p>
+      <div class="my-4 bg-amber-50 border-2 border-amber-300 rounded-2xl py-3 px-4">
+        <div class="text-xs text-amber-800">누적 입금액</div>
+        <div class="font-jua text-2xl text-amber-600 mt-0.5">+<span id="offline-gold-amount">0</span>만원</div>
+      </div>
+      <button id="btn-claim-offline" class="w-full font-jua text-base bg-amber-400 hover:bg-amber-300 text-amber-950 py-2.5 rounded-2xl border-2 border-amber-900 shadow active:scale-95 transition">
+        💰 기분 좋게 수령하기!
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== 상단 중앙 토스트 알림 ==================== -->
+  <div id="toast-container" class="fixed top-[72px] left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-1.5 pointer-events-none"></div>
+
+  <!-- 데이터 & 메인 엔진 스크립트 -->
+  <script src="./data.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
