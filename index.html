@@ -124,41 +124,83 @@
       </div>
     </div>
 
+    <!-- 골든벨 피버 타임 실시간 배너 배지 -->
+    <div id="hud-fever-pill" class="hidden pointer-events-none fever-hud-pill self-start">
+      <span id="hud-ico-fever" class="flex items-center"></span>
+      <span id="hud-fever-text">갓물주 골든벨 피버 2.5배! 60초</span>
+    </div>
+
     <!-- 2열 B: 전체화면 단독 룸 뷰 상단 컨트롤 -->
     <div id="room-focus-topbar" class="hidden flex flex-col gap-1.5">
-      <div class="flex items-center gap-2 flex-wrap">
+      <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
         <button id="btn-exit-room-view" type="button" class="pointer-events-auto exit-room-pill-btn">
           <span id="ico-exit-room" class="flex items-center"></span>
           <span>건물 전체로 나가기</span>
         </button>
-        <span class="pointer-events-none hidden sm:inline-flex hud-time-chip !py-1 !px-3 text-[11.5px] text-[#5C4942]">
+        <button id="btn-room-enter-fp" type="button" class="pointer-events-auto tactile-pill-btn tone-mint">
+          <span id="ico-room-fp" class="flex items-center"></span>
+          <span>1인칭 집들이 입장</span>
+        </button>
+        <span class="pointer-events-none hidden md:inline-flex hud-time-chip !py-1 !px-3 text-[11.5px] text-[#5C4942]">
           <span id="ico-rotate-hint" class="flex items-center"></span>
           <span>좌우 드래그로 3D 회전 관찰</span>
         </span>
       </div>
-      <div id="room-switcher-chips" class="pointer-events-auto flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 pr-2"></div>
+      <div id="room-switcher-chips" class="pointer-events-auto flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 pr-2 sm:max-w-[calc(100vw-348px)]"></div>
     </div>
 
     <!-- 2열 C: 단독 상가 클로즈업 뷰 상단 컨트롤 -->
     <div id="shop-focus-topbar" class="hidden flex flex-col gap-1.5">
-      <div class="flex items-center gap-2 flex-wrap">
+      <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
         <button id="btn-exit-shop-view" type="button" class="pointer-events-auto exit-room-pill-btn">
           <span id="ico-exit-shop" class="flex items-center"></span>
           <span>타운 거리로 나가기</span>
+        </button>
+        <button id="btn-shop-enter-fp" type="button" class="pointer-events-auto tactile-pill-btn tone-butter">
+          <span id="ico-shop-fp" class="flex items-center"></span>
+          <span>1인칭 매장 직접 입장</span>
         </button>
       </div>
       <div id="shop-switcher-chips" class="pointer-events-auto flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 pr-2"></div>
     </div>
 
-    <!-- 2열 D: GTA 3인칭 드라이브 모드 상단 바 -->
-    <div id="drive-focus-topbar" class="hidden flex items-center gap-1.5 flex-wrap">
-      <button id="btn-exit-drive-mode" type="button" class="pointer-events-auto exit-room-pill-btn">
-        <span id="ico-exit-drive" class="flex items-center"></span>
-        <span>타운 뷰 복귀</span>
-      </button>
-      <span id="drive-car-badge" class="pointer-events-none kw-chip tone-coral !py-1 !px-2.5"></span>
-      <span id="drive-speed-badge" class="pointer-events-none kw-chip tone-sky !py-1 !px-2.5 font-num">62 km/h</span>
-      <span id="drive-loot-badge" class="pointer-events-none kw-chip tone-gold !py-1 !px-2.5"></span>
+    <!-- 2열 D: 슈퍼카 드라이브 모드 상단 바 (1인칭 운전석 토글 & 하차 입장 포함) -->
+    <div id="drive-focus-topbar" class="hidden flex flex-col gap-1.5">
+      <div class="flex items-center gap-1.5 flex-wrap">
+        <button id="btn-exit-drive-mode" type="button" class="pointer-events-auto exit-room-pill-btn">
+          <span id="ico-exit-drive" class="flex items-center"></span>
+          <span>타운 뷰 복귀</span>
+        </button>
+        <button id="btn-toggle-cockpit" type="button" class="pointer-events-auto tactile-pill-btn tone-butter">
+          <span id="ico-toggle-cockpit" class="flex items-center"></span>
+          <span id="label-toggle-cockpit">1인칭 운전석</span>
+        </button>
+        <button id="btn-drive-step-out" type="button" class="pointer-events-auto tactile-pill-btn tone-mint">
+          <span id="ico-drive-step-out" class="flex items-center"></span>
+          <span>1인칭 상점 입장</span>
+        </button>
+      </div>
+      <div class="flex items-center gap-1.5 flex-wrap">
+        <span id="drive-car-badge" class="pointer-events-none kw-chip tone-coral !py-1 !px-2.5"></span>
+        <span id="drive-speed-badge" class="pointer-events-none kw-chip tone-sky !py-1 !px-2.5 font-num">62 km/h</span>
+        <span id="drive-loot-badge" class="pointer-events-none kw-chip tone-gold !py-1 !px-2.5"></span>
+      </div>
+    </div>
+
+    <!-- 2열 E: 1인칭 갓물주 마실 · 집들이 전용 상단 바 -->
+    <div id="fp-focus-topbar" class="hidden flex flex-col gap-1.5">
+      <div class="flex items-center gap-1.5 flex-wrap">
+        <button id="btn-exit-fp-mode" type="button" class="pointer-events-auto exit-room-pill-btn">
+          <span id="ico-exit-fp" class="flex items-center"></span>
+          <span id="label-exit-fp">거리로 나가기</span>
+        </button>
+        <span id="fp-place-badge" class="pointer-events-none kw-chip tone-gold !py-1 !px-3">바게트 하우스 · 1인칭 입장</span>
+        <button id="btn-fp-switch-dest" type="button" class="pointer-events-auto tactile-pill-btn tone-cream">
+          <span id="ico-fp-dest" class="flex items-center"></span>
+          <span>상점/호실 이동</span>
+        </button>
+      </div>
+      <div id="fp-held-chips-row" class="pointer-events-none flex items-center gap-1.5 flex-wrap"></div>
     </div>
   </header>
 
@@ -235,6 +277,132 @@
         </div>
 
         <div id="fcat-items-grid" class="fcat-cards-row p-2.5 sm:p-3 custom-scroll"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 7A. 1인칭 슈퍼카 운전석(Cockpit) 대시보드 & 카오디오 오버레이 ==================== -->
+  <section id="cockpit-overlay" class="hidden fixed inset-0 z-20 pointer-events-none overflow-hidden">
+    <!-- 오픈카 루프 바이저 (루프 닫힘 시 상단 프레임 연출) -->
+    <div id="cockpit-roof-visor" class="cockpit-visor-frame roof-open"></div>
+
+    <!-- 상단 중앙 룸미러 (모바일에서는 우측 상단 깔끔 배치) -->
+    <div class="hidden sm:flex fixed top-3 right-6 flex-col items-center pointer-events-none">
+      <div id="cockpit-rearview-slot"></div>
+      <span id="cockpit-mirror-caption" class="kw-chip tone-cream !text-[10.5px] !py-0.5 !px-2.5 -mt-1.5">분수대 부티크 거리 주행 중</span>
+    </div>
+
+    <!-- 하단 슈퍼카 가죽 대시보드 + 실시간 회전 스티어링 휠 + 카오디오 디스플레이 -->
+    <div id="cockpit-dash-shell" class="cockpit-dash-panel fixed bottom-[120px] sm:bottom-[82px] left-1/2 -translate-x-1/2 w-[95vw] max-w-3xl pointer-events-auto">
+      <div id="cockpit-mood-strip" class="cockpit-mood-led"></div>
+      <div class="px-2.5 sm:px-5 py-2 sm:py-2.5 flex items-center justify-between gap-2 sm:gap-5">
+        <!-- 좌측: 실시간 조향 가죽 스티어링 휠 -->
+        <div class="relative w-[76px] h-[76px] sm:w-[134px] sm:h-[134px] -mt-5 sm:-mt-10 shrink-0 flex items-center justify-center">
+          <div id="cockpit-wheel-rotator" class="w-full h-full transition-transform duration-75 ease-out"></div>
+        </div>
+
+        <!-- 중앙: 디지털 클러스터 속도계 -->
+        <div class="cockpit-cluster-box shrink-0 text-center px-2 sm:px-3 py-1 sm:py-1.5">
+          <div class="text-[8.5px] sm:text-[9.5px] font-bold text-[#94A3B8] tracking-wider">KM/H</div>
+          <div class="flex items-baseline justify-center gap-1">
+            <span id="cockpit-kmh-num" class="font-num text-[19px] sm:text-[28px] text-[#FFD93D] leading-none">64</span>
+            <span id="cockpit-gear-tag" class="font-title text-[11px] sm:text-[12px] text-[#38E54D]">D</span>
+          </div>
+        </div>
+
+        <!-- 우측: 카오디오 인포테인먼트 & 루프 개폐 컨트롤 -->
+        <div class="cockpit-audio-card flex-1 min-w-0 px-2 sm:px-3.5 py-1.5 sm:py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-3 overflow-hidden">
+          <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
+            <div id="cockpit-eq-bars" class="cockpit-eq-wrap shrink-0">
+              <span></span><span></span><span></span><span></span>
+            </div>
+            <div class="min-w-0">
+              <div id="cockpit-radio-title" class="font-title text-[11.5px] sm:text-[13.5px] text-[#FFFDF7] truncate">Lo-Fi 재즈</div>
+              <div id="cockpit-radio-sub" class="hidden sm:block font-body text-[10px] text-[#CBD5E1] truncate">FM 89.1 · Warm Jazz</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
+            <button id="btn-cockpit-radio" type="button" class="cockpit-ctrl-pill">
+              <span id="ico-cockpit-radio" class="flex items-center"></span>
+              <span>라디오</span>
+            </button>
+            <button id="btn-cockpit-roof" type="button" class="cockpit-ctrl-pill">
+              <span id="ico-cockpit-roof" class="flex items-center"></span>
+              <span id="label-cockpit-roof">오픈카</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 7B. 상가 앞 드라이브 스루 & 차에서 내려 1인칭 입장 프롬프트 ==================== -->
+  <div id="drive-proximity-bar" class="hidden fixed top-[134px] sm:top-[100px] left-2.5 right-2.5 sm:left-auto sm:right-4 z-30 pointer-events-auto diary-card !p-2 flex items-center justify-between gap-1.5 sm:gap-2.5 sm:w-auto max-w-[96vw]">
+    <div class="flex items-center gap-1.5 min-w-0">
+      <span id="prox-shop-ico" class="flex items-center shrink-0"></span>
+      <div class="min-w-0">
+        <div id="prox-shop-name" class="font-title text-[12px] sm:text-[13px] text-[#3A2E2B] truncate">바게트 하우스</div>
+        <div class="hidden sm:block font-body text-[10.5px] font-bold text-[#69544C] whitespace-nowrap">드라이브 스루 · 하차 입장</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-1.5 shrink-0">
+      <button id="btn-drive-thru-order" type="button" class="jelly-action-btn pill btn-gold-lip !py-1.5 !px-2.5 sm:!px-3 !text-[11px] sm:!text-[11.5px]">
+        <span id="ico-drive-thru" class="flex items-center"></span>
+        <span>드라이브 스루</span>
+      </button>
+      <button id="btn-prox-enter-fp" type="button" class="jelly-action-btn pill btn-mint-lip !py-1.5 !px-2.5 sm:!px-3 !text-[11px] sm:!text-[11.5px]">
+        <span id="ico-prox-enter" class="flex items-center"></span>
+        <span>하차 입장</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== 7C. 1인칭 갓물주 상점 쇼핑 · 골든벨 플렉스 · 집들이 방문 HUD ==================== -->
+  <section id="fp-mode-hud" class="hidden fixed bottom-2.5 left-2.5 right-2.5 z-30 pointer-events-none flex flex-col items-center gap-2">
+    <!-- 상점 진열대 3D 상품 빠른 터치 쇼핑 바 (상점 모드 시 표시) -->
+    <div id="fp-shop-shelf-strip" class="pointer-events-auto w-full max-w-3xl diary-card !p-2 flex items-center gap-1.5 overflow-x-auto no-scrollbar"></div>
+
+    <!-- 하단 메인 1인칭 컨트롤 독 -->
+    <div class="pointer-events-auto drive-dashboard-bar w-full max-w-3xl px-3 py-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <!-- 상점 전용 액션: 골든벨 울리기 + 세입자 방 집들이 방문 -->
+      <div id="fp-shop-actions" class="flex items-center justify-center gap-1.5 sm:gap-2 flex-wrap sm:order-2">
+        <button id="btn-ring-golden-bell" type="button" class="jelly-action-btn pill btn-gold-lip golden-bell-cta !py-2 !px-3.5 sm:!px-4">
+          <span id="ico-golden-bell" class="flex items-center"></span>
+          <span>매장 골든벨 울리기 (150만)</span>
+        </button>
+        <button id="btn-fp-visit-tenant" type="button" class="jelly-action-btn pill btn-mint-lip !py-2 !px-3.5">
+          <span id="ico-fp-visit-tenant" class="flex items-center"></span>
+          <span>세입자 호실 집들이 방문</span>
+        </button>
+      </div>
+
+      <!-- 세입자 방 집들이 전용 액션: 선물 건네주기 + 다른 방 이동 -->
+      <div id="fp-room-actions" class="hidden flex items-center justify-center gap-1.5 sm:gap-2 flex-wrap sm:order-2">
+        <button id="btn-fp-give-gift" type="button" class="jelly-action-btn pill btn-coral-lip !py-2 !px-4">
+          <span id="ico-fp-give-gift" class="flex items-center"></span>
+          <span id="label-fp-give-gift">사 온 선물 건네주기 (월세 영구 +20%!)</span>
+        </button>
+        <button id="btn-fp-other-room" type="button" class="jelly-action-btn pill btn-gold-lip !py-2 !px-3.5">
+          <span id="ico-fp-other-room" class="flex items-center"></span>
+          <span>다른 호실 방문</span>
+        </button>
+      </div>
+
+      <!-- 1인칭 보행(Head-bobbing) & 시선 회전 패드 -->
+      <div class="flex items-center justify-between w-full sm:w-auto sm:contents">
+        <div class="flex items-center gap-1.5 shrink-0 sm:order-1">
+          <button id="btn-fp-left" type="button" class="drive-pedal-btn !min-w-[40px] !h-[38px] !px-2.5" aria-label="왼쪽 시선">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M12.5 4.5L6.5 10L12.5 15.5" stroke="#3A2E2B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button id="btn-fp-right" type="button" class="drive-pedal-btn !min-w-[40px] !h-[38px] !px-2.5" aria-label="오른쪽 시선">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M7.5 4.5L13.5 10L7.5 15.5" stroke="#3A2E2B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+
+        <div class="flex items-center gap-1.5 shrink-0 sm:order-3">
+          <button id="btn-fp-back" type="button" class="drive-pedal-btn !h-[38px] !px-2.5 !text-[11.5px]">뒷걸음</button>
+          <button id="btn-fp-fwd" type="button" class="drive-pedal-btn gas-accent !h-[38px] !px-3 !text-[11.5px]">걸어가기</button>
+        </div>
       </div>
     </div>
   </section>
@@ -451,8 +619,43 @@
     </div>
   </div>
 
-  <!-- 토스트 알림 컨테이너 -->
-  <div id="toast-container" class="fixed top-[148px] left-3 right-3 sm:top-3.5 sm:left-[482px] sm:right-auto z-50 flex flex-col items-center sm:items-start gap-1.5 pointer-events-none sm:max-w-[340px]"></div>
+  <!-- ==================== 15. 골든벨 플렉스 선언 배너 ==================== -->
+  <div id="golden-bell-banner" class="hidden fixed inset-x-3 top-[184px] sm:top-[180px] z-[62] pointer-events-none flex justify-center">
+    <div class="golden-bell-slam diary-card !bg-[#FFFBEB] !border-4 !border-[#FFD93D] px-5 py-3.5 max-w-lg text-center space-y-1 shadow-2xl">
+      <div class="flex items-center justify-center gap-2 font-title text-[16px] sm:text-[19px] text-[#B45309]">
+        <span id="banner-ico-bell" class="flex items-center"></span>
+        <span>땡땡땡!! 오늘 이 가게 메뉴는 건물주가 전부 쏩니다!!</span>
+      </div>
+      <div class="font-body text-[12px] font-extrabold text-[#D6384C]">
+        전 세대 행복도 즉시 MAX · 60초간 모든 월세 & 상가 매출 2.5배 피버 발동!
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 16. 1인칭 상점 입장 & 세입자 집들이 호실 선택 모달 ==================== -->
+  <div id="fp-visit-modal" class="hidden fixed inset-0 z-[56] pastel-modal-backdrop flex items-center justify-center p-2.5 sm:p-4">
+    <div class="cozy-planner-shell w-full max-w-2xl max-h-[88vh]">
+      <div class="cozy-planner-inner">
+        <div class="px-4 py-3 flex items-center justify-between border-b border-[#EED6BE] shrink-0" style="background: linear-gradient(90deg, #FFFDF7 0%, #F7EFE5 100%);">
+          <div class="flex items-center gap-2.5">
+            <span id="fp-modal-ico" class="flex items-center"></span>
+            <span id="fp-modal-title" class="diary-modal-title">1인칭 갓물주 방문지 선택</span>
+          </div>
+          <button id="btn-close-fp-modal" type="button" class="btn-close-round" aria-label="닫기">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M3.5 3.5L10.5 10.5M10.5 3.5L3.5 10.5" stroke="#3A2E2B" stroke-width="2.3" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div class="grid grid-cols-2 gap-2 px-3.5 pt-2.5 pb-2 bg-[#F7EFE5] border-b border-[#EED6BE] shrink-0">
+          <button type="button" id="fp-tab-shops" class="fcat-tab-btn active">부티크 상가 & 1층 매장 (5곳)</button>
+          <button type="button" id="fp-tab-rooms" class="fcat-tab-btn">세입자 호실 집들이 방문</button>
+        </div>
+        <div id="fp-visit-cards-grid" class="p-3.5 space-y-2.5 overflow-y-auto custom-scroll"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 토스트 알림 컨테이너 (상단 HUD·우측 인스펙터·룸미러와 절대 겹치지 않는 상단 중앙 하프 슬롯) -->
+  <div id="toast-container" class="fixed top-[178px] sm:top-[132px] left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-1.5 pointer-events-none w-[92vw] sm:w-auto sm:max-w-[440px]"></div>
 
   <script src="./data.js"></script>
   <script type="module" src="./app.js"></script>

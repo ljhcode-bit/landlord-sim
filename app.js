@@ -89,6 +89,8 @@ function makeResidentialBuilding(lotId, devType, title, withStarterTenant = fals
       ownedFurniture: fState.ownedFurniture,
       equippedFurniture: fState.equippedFurniture,
       soundproofed: false,
+      giftBonusPct: 0,
+      giftedItems: [],
       household: null,
       rentTimer: 0,
       trashStage: 0,
@@ -178,6 +180,8 @@ function ensureRoomSchema(room) {
       room.equippedFurniture[k] = defF.equippedFurniture[k];
     }
   }
+  if (typeof room.giftBonusPct !== 'number') room.giftBonusPct = 0;
+  if (!Array.isArray(room.giftedItems)) room.giftedItems = [];
   syncRoomInteriorStats(room);
 }
 
@@ -193,6 +197,12 @@ function createInitialState() {
     gold: 1250,
     day: 1,
     gameMinutes: 9 * 60,
+    feverTimer: 0,
+    goldenKeys: 0,
+    heldGifts: {
+      left: null,
+      right: null
+    },
     claimedQuests: [],
     lots,
     buildings,
@@ -213,10 +223,11 @@ function createInitialState() {
 
 let state = createInitialState();
 
-// --------------------- Three.js 전역 변수 및 듀얼 카메라 레지스트리 ---------------------
+// --------------------- Three.js 전역 변수 및 트리플 카메라 레지스트리 ---------------------
 let scene;
 let camera;        // 타운/호실/상가용 직교 카메라 (OrthographicCamera)
-let driveCamera;   // GTA 3인칭 추격용 원근 카메라 (PerspectiveCamera)
+let driveCamera;   // 3인칭 추격 및 1인칭 운전석 콕핏 카메라 (PerspectiveCamera)
+let fpCamera;      // 1인칭 상점 입장 & 세입자 방 집들이 카메라 (PerspectiveCamera, 1.6m 눈높이)
 let renderer;
 let controls;
 let dirLight;
@@ -229,7 +240,9 @@ let studioStageDisc;
 let islandRootGroup;
 
 function getActiveCamera() {
-  return driveState.active ? driveCamera : camera;
+  if (fpState.active) return fpCamera;
+  if (driveState.active) return driveCamera;
+  return camera;
 }
 
 const raycaster = new THREE.Raycaster();
@@ -283,6 +296,14 @@ const RING_ROAD_WAYPOINTS = [
 
 const driveState = {
   active: false,
+  cockpitView: false,
+  roofOpen: true,
+  radioChannelIdx: 0,
+  steerVisualDeg: 0,
+  driveThruPauseTimer: 0,
+  nearestShopId: 'shop_bakery',
+  driveThruCooldowns: {},
+  driveThruRunners: [],
   autoCruise: true,
   waypointIdx: 1,
   x: VIP_PARKING_POS.x,
@@ -304,6 +325,42 @@ const driveState = {
   wheels: [],
   camCurrentPos: new THREE.Vector3(),
   camCurrentLook: new THREE.Vector3()
+};
+
+// --------------------- 1인칭 갓물주 상점 입장 · 골든벨 · 세입자 집들이 상태 ---------------------
+const FP_STAGE_ORIGIN = new THREE.Vector3(0, 82, 0);
+const fpState = {
+  active: false,
+  mode: 'shop',        // 'shop' | 'room'
+  returnToDrive: false,
+  shopId: 'shop_bakery',
+  roomId: null,
+  modalTab: 'shops',
+  pos: new THREE.Vector3(0, 83.62, 2.5),
+  yaw: 0,
+  pitch: -0.05,
+  walkPhase: 0,
+  entryWalkTimer: 0,
+  doorHinge: null,
+  doorAngle: 0,
+  bellPivot: null,
+  bellSwingTimer: 0,
+  cheerTimer: 0,
+  stageGroup: null,
+  roomTempGroup: null,
+  handsGroup: null,
+  leftHandSlot: null,
+  rightHandSlot: null,
+  pickables: [],
+  labelPins: [],
+  npcActors: [],
+  hostResidentMesh: null,
+  hostOrigPos: null,
+  bounds: { minX: -4.2, maxX: 4.2, minZ: 0.9, maxZ: 3.7, eyeY: 83.62 },
+  keys: { forward: false, backward: false, left: false, right: false },
+  draggingLook: false,
+  lastPointerX: 0,
+  lastPointerY: 0
 };
 
 const hudAnim = {
@@ -589,34 +646,159 @@ function triggerSquashStretch(obj, intensity = 1.0) {
   });
 }
 
-// Web Audio API 경적 & 배기음 합성기 (외부 파일 불필요, 안전 예외처리)
+// Web Audio API 경적 · 카오디오 BGM 라디오 · 골든벨 · 집들이 초인종 합성기
 let sharedAudioCtx = null;
+let radioIntervalId = null;
+let radioStepTick = 0;
+
+function ensureAudioCtx() {
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) return null;
+  if (!sharedAudioCtx) sharedAudioCtx = new AudioCtx();
+  if (sharedAudioCtx.state === 'suspended') sharedAudioCtx.resume();
+  return sharedAudioCtx;
+}
+
 function playSupercarHornSound(carId = 'car_supercar') {
   try {
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    if (!AudioCtx) return;
-    if (!sharedAudioCtx) sharedAudioCtx = new AudioCtx();
-    if (sharedAudioCtx.state === 'suspended') sharedAudioCtx.resume();
-
-    const now = sharedAudioCtx.currentTime;
+    const ctx = ensureAudioCtx();
+    if (!ctx) return;
+    const now = ctx.currentTime;
     const freqs = carId === 'car_scooter' ? [523, 659] : carId === 'car_supercar' ? [330, 415] : [277, 349];
 
     freqs.forEach((f) => {
-      const osc = sharedAudioCtx.createOscillator();
-      const gain = sharedAudioCtx.createGain();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
       osc.type = 'sawtooth';
       osc.frequency.setValueAtTime(f, now);
       osc.frequency.exponentialRampToValueAtTime(f * 1.04, now + 0.16);
       gain.gain.setValueAtTime(0.08, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.34);
       osc.connect(gain);
-      gain.connect(sharedAudioCtx.destination);
+      gain.connect(ctx.destination);
       osc.start(now);
       osc.stop(now + 0.35);
     });
   } catch (e) {
     // 오디오 제한 환경 무시
   }
+}
+
+function playSynthTone(freq, type = 'triangle', duration = 0.24, volume = 0.04, delay = 0) {
+  try {
+    const ctx = ensureAudioCtx();
+    if (!ctx) return;
+    const t0 = ctx.currentTime + delay;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(Math.max(0.001, volume), t0);
+    gain.gain.exponentialRampToValueAtTime(0.0008, t0 + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(t0);
+    osc.stop(t0 + duration + 0.02);
+  } catch (e) {
+    // 무시
+  }
+}
+
+function stopCarRadioBGM() {
+  if (radioIntervalId) {
+    clearInterval(radioIntervalId);
+    radioIntervalId = null;
+  }
+}
+
+function startOrUpdateCarRadioBGM() {
+  stopCarRadioBGM();
+  if (!driveState.active) return;
+  const ch = FP_RADIO_CHANNELS[driveState.radioChannelIdx % FP_RADIO_CHANNELS.length];
+  if (!ch || ch.id === 'off') return;
+
+  const stepMs = ch.id === 'lofi' ? 320 : ch.id === 'citypop' ? 210 : 170;
+  radioIntervalId = setInterval(() => {
+    if (!driveState.active) {
+      stopCarRadioBGM();
+      return;
+    }
+    radioStepTick = (radioStepTick + 1) % 16;
+
+    if (ch.id === 'lofi') {
+      // Lo-Fi 재즈 7th 코드 워킹
+      const chords = [
+        [261.6, 329.6, 392.0, 493.9],
+        [293.7, 349.2, 440.0, 523.3],
+        [246.9, 293.7, 392.0, 493.9],
+        [220.0, 261.6, 329.6, 392.0]
+      ];
+      if (radioStepTick % 4 === 0) {
+        const chord = chords[Math.floor(radioStepTick / 4) % chords.length];
+        chord.forEach((f, idx) => playSynthTone(f, 'triangle', 0.55, 0.022, idx * 0.03));
+      } else if (radioStepTick % 2 === 1) {
+        playSynthTone(130.8, 'sine', 0.18, 0.024, 0);
+      }
+    } else if (ch.id === 'citypop') {
+      // 신나는 시티팝 펑키 신스 아르페지오
+      const arp = [392.0, 493.9, 587.3, 659.3, 587.3, 493.9, 523.3, 784.0];
+      const bass = [130.8, 130.8, 146.8, 164.8];
+      playSynthTone(arp[radioStepTick % arp.length], 'triangle', 0.18, 0.026, 0);
+      if (radioStepTick % 2 === 0) {
+        playSynthTone(bass[Math.floor(radioStepTick / 4) % bass.length], 'sawtooth', 0.16, 0.018, 0);
+      }
+    } else if (ch.id === 'club') {
+      // 클럽 비트 포온더플로어 킥 + 옥타브 신스 베이스
+      try {
+        const ctx = ensureAudioCtx();
+        if (ctx && radioStepTick % 2 === 0) {
+          const t0 = ctx.currentTime;
+          const kick = ctx.createOscillator();
+          const kg = ctx.createGain();
+          kick.type = 'sine';
+          kick.frequency.setValueAtTime(140, t0);
+          kick.frequency.exponentialRampToValueAtTime(42, t0 + 0.12);
+          kg.gain.setValueAtTime(0.06, t0);
+          kg.gain.exponentialRampToValueAtTime(0.001, t0 + 0.14);
+          kick.connect(kg);
+          kg.connect(ctx.destination);
+          kick.start(t0);
+          kick.stop(t0 + 0.15);
+        }
+      } catch (e) {
+        // 무시
+      }
+      const electro = [110, 220, 130.8, 261.6, 146.8, 293.7, 164.8, 329.6];
+      playSynthTone(electro[radioStepTick % electro.length], 'sawtooth', 0.13, 0.02, 0.02);
+    }
+  }, stepMs);
+}
+
+function playGoldenBellSound() {
+  // 땡! 땡! 땡!! 경쾌한 황금 종소리 3연타 + 팡파레 화음
+  [0, 0.24, 0.48].forEach((d) => {
+    playSynthTone(1046.5, 'triangle', 0.55, 0.07, d);
+    playSynthTone(1568.0, 'sine', 0.45, 0.05, d);
+    playSynthTone(2093.0, 'sine', 0.35, 0.035, d + 0.01);
+  });
+  [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+    playSynthTone(f, 'triangle', 0.7, 0.04, 0.68 + i * 0.05);
+  });
+}
+
+function playDoorbellChimeSound() {
+  // 띵~ 동~ 따뜻한 집들이 초인종
+  playSynthTone(659.25, 'triangle', 0.36, 0.06, 0);
+  playSynthTone(1318.5, 'sine', 0.25, 0.025, 0);
+  playSynthTone(523.25, 'triangle', 0.52, 0.06, 0.28);
+  playSynthTone(1046.5, 'sine', 0.35, 0.025, 0.28);
+}
+
+function playShopDoorChimeSound() {
+  // 상점 입장 딸랑~ 도어벨
+  [784.0, 987.8, 1174.7, 1568.0].forEach((f, idx) => {
+    playSynthTone(f, 'sine', 0.28, 0.038, idx * 0.06);
+  });
 }
 
 // =========================================================
@@ -2649,6 +2831,9 @@ function createVehicle3D(carId = 'car_scooter') {
   shadow.position.y = 0.02;
   grp.add(shadow);
 
+  let driverRef = null;
+  let roofRef = null;
+
   // 차량 진행 방향은 로컬 +Z
   if (carId === 'car_scooter') {
     shadow.scale.set(1.6, 2.6, 1);
@@ -2671,6 +2856,7 @@ function createVehicle3D(carId = 'car_scooter') {
     driver.scale.setScalar(0.92);
     driver.position.set(0, 0.54, -0.22);
     grp.add(driver);
+    driverRef = driver;
   } else if (carId === 'car_sedan') {
     shadow.scale.set(2.5, 4.4, 1);
     makeWheel(-0.98, 0.4, 1.18, 0.4, false);
@@ -2680,8 +2866,10 @@ function createVehicle3D(carId = 'car_scooter') {
 
     const bodyMat = makeClayMat(0x7C4728, { roughness: 0.32, metalness: 0.15 });
     grp.add(createRoundedToyMesh(2.05, 0.68, 3.85, bodyMat, 0, 0.66, 0, 0.18));
-    grp.add(createRoundedToyMesh(1.78, 0.66, 2.05, MAT.cream, 0, 1.28, -0.15, 0.2));
-    grp.add(createRoundedToyMesh(1.82, 0.46, 1.88, MAT.partitionGlass, 0, 1.24, -0.15, 0.1, false, false, false));
+    roofRef = createRoundedToyMesh(1.78, 0.66, 2.05, MAT.cream, 0, 1.28, -0.15, 0.2);
+    roofRef.visible = !driveState.roofOpen;
+    grp.add(roofRef);
+    grp.add(createRoundedToyMesh(1.82, 0.46, 0.14, MAT.partitionGlass, 0, 1.12, 0.78, 0.05, false, false, false));
     // 크롬 그릴 & 원형 헤드라이트
     grp.add(createRoundedToyMesh(1.1, 0.36, 0.12, MAT.silver, 0, 0.64, 1.94, 0.04));
     for (const lx of [-0.68, 0.68]) {
@@ -2690,6 +2878,11 @@ function createVehicle3D(carId = 'car_scooter') {
       hl.position.set(lx, 0.72, 1.94);
       grp.add(hl);
     }
+    const sedanDriver = createChibiPerson3D('landlord_driver');
+    sedanDriver.scale.setScalar(0.84);
+    sedanDriver.position.set(-0.34, 0.56, -0.16);
+    grp.add(sedanDriver);
+    driverRef = sedanDriver;
   } else if (carId === 'car_supercar') {
     // 페라리 레드 오픈 컨버터블 슈퍼카
     shadow.scale.set(2.8, 4.9, 1);
@@ -2706,10 +2899,14 @@ function createVehicle3D(carId = 'car_scooter') {
     grp.add(hood);
     grp.add(createRoundedToyMesh(0.28, 0.06, 4.25, MAT.gold, 0, 0.86, 0, 0.02));
 
-    // 경사진 스포츠 윈드실드
+    // 경사진 스포츠 윈드실드 + 개폐 가능한 소프트탑 루프
     const windshield = createRoundedToyMesh(1.92, 0.56, 0.12, MAT.partitionGlass, 0, 1.06, 0.48, 0.05, false, false, false);
     windshield.rotation.x = -0.52;
     grp.add(windshield);
+
+    roofRef = createRoundedToyMesh(1.88, 0.42, 1.65, MAT.charcoal, 0, 1.28, -0.28, 0.14);
+    roofRef.visible = !driveState.roofOpen;
+    grp.add(roofRef);
 
     // 오픈카 실내 카멜 가죽 시트 & 황금 왕관 건물주 오너 탑승!
     grp.add(createRoundedToyMesh(1.62, 0.46, 0.32, MAT.leatherCamel, 0, 0.92, -0.56, 0.08));
@@ -2717,6 +2914,7 @@ function createVehicle3D(carId = 'car_scooter') {
     ownerDriver.scale.setScalar(0.88);
     ownerDriver.position.set(-0.36, 0.56, -0.22);
     grp.add(ownerDriver);
+    driverRef = ownerDriver;
 
     // 리어 에어로 윙 스포일러 & 듀얼 머플러 & 테일램프
     grp.add(createRoundedToyMesh(0.14, 0.36, 0.22, MAT.charcoal, -0.78, 0.98, -1.92, 0.03));
@@ -2747,19 +2945,27 @@ function createVehicle3D(carId = 'car_scooter') {
 
     grp.add(createRoundedToyMesh(2.26, 0.68, 5.85, MAT.limoCream, 0, 0.68, 0, 0.16));
     grp.add(createRoundedToyMesh(2.3, 0.12, 5.88, MAT.gold, 0, 0.56, 0, 0.04));
-    grp.add(createRoundedToyMesh(1.96, 0.68, 3.85, MAT.limoCream, 0, 1.3, -0.28, 0.18));
-    grp.add(createRoundedToyMesh(2.0, 0.46, 3.55, MAT.charcoal, 0, 1.28, -0.28, 0.08));
+    roofRef = createRoundedToyMesh(1.96, 0.68, 3.85, MAT.limoCream, 0, 1.3, -0.28, 0.18);
+    roofRef.visible = !driveState.roofOpen;
+    grp.add(roofRef);
+    grp.add(createRoundedToyMesh(1.96, 0.52, 0.14, MAT.partitionGlass, 0, 1.15, 1.62, 0.05, false, false, false));
     // 보닛 위 황금 왕관 엠블럼
     const hoodCrown = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.16, 0.24, 6), MAT.gold);
     hoodCrown.position.set(0, 1.14, 2.55);
     grp.add(hoodCrown);
+    const limoDriver = createChibiPerson3D('landlord_driver');
+    limoDriver.scale.setScalar(0.84);
+    limoDriver.position.set(-0.38, 0.58, 0.95);
+    grp.add(limoDriver);
+    driverRef = limoDriver;
     for (const lx of [-0.76, 0.76]) {
       grp.add(createRoundedToyMesh(0.42, 0.18, 0.12, MAT.neonYellow, lx, 0.72, 2.92, 0.04));
       grp.add(createRoundedToyMesh(0.46, 0.16, 0.1, MAT.neonCoral, lx, 0.72, -2.92, 0.04));
     }
   }
 
-  grp.userData = { wheels };
+  if (driverRef) driverRef.visible = !driveState.cockpitView;
+  grp.userData = { wheels, driverRef, roofRef };
   return grp;
 }
 
@@ -3798,6 +4004,24 @@ function rebuildRoom3D(lotId, room) {
     rGrp.add(loftRug, bedMesh, sofaMesh);
   }
 
+  // 세입자 집들이 선물 증정품 테이블 영구 진열 (케이크·커피·꽃다발 등)
+  if (Array.isArray(room.giftedItems) && room.giftedItems.length > 0) {
+    const giftTable = new THREE.Group();
+    const tx = room.layoutType === 'tworoom' ? -1.15 : room.layoutType === 'loft' ? 1.55 : 0.15;
+    const tz = -0.22;
+    giftTable.add(createRoundedToyMesh(1.45, 0.09, 0.92, MAT.white, 0, 0.62, 0, 0.04));
+    giftTable.add(createRoundedToyMesh(0.14, 0.6, 0.14, MAT.gold, -0.48, 0.31, 0, 0.03));
+    giftTable.add(createRoundedToyMesh(0.14, 0.6, 0.14, MAT.gold, 0.48, 0.31, 0, 0.03));
+    room.giftedItems.slice(-3).forEach((gid, idx) => {
+      const prop = create3DGiftPropMesh(gid, false);
+      prop.scale.setScalar(0.82);
+      prop.position.set(-0.38 + idx * 0.38, 0.67, 0);
+      giftTable.add(prop);
+    });
+    giftTable.position.set(tx, 0.14, tz);
+    rGrp.add(giftTable);
+  }
+
   // 쓰레기방 오염 단계 시각 표현 (히키코모리 등)
   if (room.trashStage > 0) {
     for (let t = 0; t < room.trashStage * 2; t++) {
@@ -3806,6 +4030,99 @@ function rebuildRoom3D(lotId, room) {
       rGrp.add(bag);
     }
   }
+}
+
+// 1인칭 진열대 상품 & 손 파지(Held Hands) & 집들이 테이블 공용 3D 기프트 메쉬
+function create3DGiftPropMesh(itemId = 'item_cake', packagedBox = false) {
+  const grp = new THREE.Group();
+  if (itemId === 'item_cake') {
+    if (packagedBox) {
+      // 핑크 파스텔 리본 케이크 상자
+      grp.add(createRoundedToyMesh(0.46, 0.34, 0.46, MAT.cream, 0, 0.18, 0, 0.05));
+      grp.add(createRoundedToyMesh(0.48, 0.08, 0.48, MAT.pinkSoft, 0, 0.36, 0, 0.03));
+      grp.add(createRoundedToyMesh(0.09, 0.38, 0.49, MAT.supercarRed, 0, 0.2, 0, 0.02));
+      grp.add(createRoundedToyMesh(0.49, 0.38, 0.09, MAT.supercarRed, 0, 0.2, 0, 0.02));
+      const bowL = new THREE.Mesh(GEO.sphere, MAT.supercarRed);
+      bowL.scale.set(0.14, 0.09, 0.09);
+      bowL.position.set(-0.08, 0.43, 0);
+      const bowR = bowL.clone();
+      bowR.position.set(0.08, 0.43, 0);
+      grp.add(bowL, bowR);
+    } else {
+      // 딸기 생크림 홀케이크
+      const plate = new THREE.Mesh(GEO.cyl, MAT.white);
+      plate.scale.set(0.76, 0.06, 0.76);
+      plate.position.y = 0.03;
+      const sponge = new THREE.Mesh(GEO.cyl, MAT.pinkSoft);
+      sponge.scale.set(0.62, 0.28, 0.62);
+      sponge.position.y = 0.19;
+      const icing = new THREE.Mesh(GEO.cyl, MAT.white);
+      icing.scale.set(0.64, 0.1, 0.64);
+      icing.position.y = 0.32;
+      grp.add(plate, sponge, icing);
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2;
+        const berry = new THREE.Mesh(GEO.sphere, MAT.supercarRed);
+        berry.scale.set(0.11, 0.14, 0.11);
+        berry.position.set(Math.cos(a) * 0.2, 0.41, Math.sin(a) * 0.2);
+        grp.add(berry);
+      }
+    }
+  } else if (itemId === 'item_croissant') {
+    if (packagedBox) {
+      grp.add(createRoundedToyMesh(0.36, 0.44, 0.26, MAT.paperBag, 0, 0.22, 0, 0.04));
+      const cr1 = createRoundedToyMesh(0.24, 0.14, 0.16, MAT.gold, -0.04, 0.46, 0, 0.05);
+      cr1.rotation.z = 0.2;
+      const cr2 = createRoundedToyMesh(0.22, 0.14, 0.15, MAT.butterOak, 0.06, 0.44, 0.04, 0.05);
+      cr2.rotation.z = -0.22;
+      grp.add(cr1, cr2);
+    } else {
+      const tray = createRoundedToyMesh(0.68, 0.06, 0.48, MAT.woodWarm, 0, 0.04, 0, 0.03);
+      grp.add(tray);
+      for (let i = -1; i <= 1; i++) {
+        const cr = createRoundedToyMesh(0.18, 0.14, 0.34, MAT.gold, i * 0.2, 0.14, 0, 0.06);
+        grp.add(cr);
+      }
+    }
+  } else if (itemId === 'item_coffee') {
+    // 시그니처 아인슈페너 크림 라떼컵
+    const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.12, 0.38, 16), MAT.white);
+    cup.position.y = 0.2;
+    const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.152, 0.138, 0.15, 16), MAT.leatherCamel);
+    sleeve.position.y = 0.19;
+    const creamDome = new THREE.Mesh(getPuffyDomeGeo(0.16, 0.18), MAT.cream);
+    creamDome.position.y = 0.42;
+    const straw = new THREE.Mesh(GEO.cyl, MAT.parasolGreen);
+    straw.scale.set(0.035, 0.24, 0.035);
+    straw.position.set(0.06, 0.48, 0);
+    straw.rotation.z = -0.22;
+    grp.add(cup, sleeve, creamDome, straw);
+  } else if (itemId === 'item_bouquet') {
+    // 대형 장미 꽃다발
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(0.26, 0.52, 14), MAT.pinkSoft);
+    cone.rotation.x = Math.PI;
+    cone.position.y = 0.26;
+    const ribbon = createRoundedToyMesh(0.22, 0.08, 0.22, MAT.gold, 0, 0.2, 0, 0.03);
+    grp.add(cone, ribbon);
+    const cols = [MAT.supercarRed, MAT.coral, MAT.pinkSoft, MAT.duckYellow, MAT.supercarRed];
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2;
+      const rose = new THREE.Mesh(GEO.sphere, cols[i]);
+      rose.scale.setScalar(0.16);
+      rose.position.set(Math.cos(a) * 0.11, 0.54 + (i === 0 ? 0.05 : 0), Math.sin(a) * 0.11);
+      grp.add(rose);
+    }
+  } else {
+    // 편의점 프리미엄 도시락
+    grp.add(createRoundedToyMesh(0.54, 0.12, 0.4, MAT.charcoal, 0, 0.07, 0, 0.04));
+    grp.add(createRoundedToyMesh(0.22, 0.06, 0.32, MAT.white, -0.12, 0.14, 0, 0.02));
+    grp.add(createRoundedToyMesh(0.22, 0.06, 0.15, MAT.coral, 0.12, 0.14, -0.08, 0.02));
+    grp.add(createRoundedToyMesh(0.22, 0.06, 0.15, MAT.gold, 0.12, 0.14, 0.08, 0.02));
+    if (packagedBox) {
+      grp.add(createRoundedToyMesh(0.1, 0.16, 0.42, MAT.mint, 0, 0.1, 0, 0.02));
+    }
+  }
+  return grp;
 }
 
 // 호실 내부 세입자 & 반려동물 동기화 및 일상 루틴 AI
@@ -3952,16 +4269,18 @@ function findRoomById(roomId) {
 }
 
 function updateXRayAndFocusHighlights(dt) {
-  const focusedRm = findRoomById(focusedRoomId);
-  const inRoomFocus = !!focusedRm && !driveState.active;
-  const inShopFocus = !!focusedShopId && !driveState.active;
+  const inFpShop = fpState.active && fpState.mode === 'shop';
+  const inFpRoom = fpState.active && fpState.mode === 'room';
+  const targetRoomObj = inFpRoom ? findRoomById(fpState.roomId) : findRoomById(focusedRoomId);
+  const inRoomFocus = (!!targetRoomObj && (inFpRoom || (!driveState.active && !fpState.active)));
+  const inShopFocus = !!focusedShopId && !driveState.active && !fpState.active;
 
   // 스튜디오 배경 전환
-  scene.background = (inRoomFocus || inShopFocus) ? TEX.studioBackdrop : TEX.skyBackdrop;
+  scene.background = (inRoomFocus || inShopFocus || inFpShop) ? TEX.studioBackdrop : TEX.skyBackdrop;
   if (studioStageDisc) {
-    if (inRoomFocus) {
-      const lot = state.lots.find((l) => l.lotId === focusedRm.lotId);
-      studioStageDisc.position.set((lot?.x || 0) + focusedRm.lx, focusedRm.ly - 0.18, (lot?.z || 0) + focusedRm.lz);
+    if (inRoomFocus && targetRoomObj) {
+      const lot = state.lots.find((l) => l.lotId === targetRoomObj.lotId);
+      studioStageDisc.position.set((lot?.x || 0) + targetRoomObj.lx, targetRoomObj.ly - 0.18, (lot?.z || 0) + targetRoomObj.lz);
       studioStageDisc.visible = true;
     } else if (inShopFocus) {
       const stpl = STANDALONE_SHOPS_TEMPLATE.find((s) => s.shopId === focusedShopId);
@@ -3974,29 +4293,32 @@ function updateXRayAndFocusHighlights(dt) {
 
   // 스튜디오 보조광 강도 제어
   if (studioKeyLight) {
-    const targetInt = (inRoomFocus || inShopFocus) ? 1.15 : 0.0;
+    const targetInt = (inRoomFocus || inShopFocus || inFpShop) ? 1.2 : 0.0;
     studioKeyLight.intensity = THREE.MathUtils.lerp(studioKeyLight.intensity, targetInt, Math.min(1, dt * 8));
-    studioFillLight.intensity = THREE.MathUtils.lerp(studioFillLight.intensity, targetInt * 0.65, Math.min(1, dt * 8));
-    studioRimLight.intensity = THREE.MathUtils.lerp(studioRimLight.intensity, targetInt * 0.5, Math.min(1, dt * 8));
+    studioFillLight.intensity = THREE.MathUtils.lerp(studioFillLight.intensity, targetInt * 0.68, Math.min(1, dt * 8));
+    studioRimLight.intensity = THREE.MathUtils.lerp(studioRimLight.intensity, targetInt * 0.52, Math.min(1, dt * 8));
   }
 
-  // 아일랜드/단독상가/차량/거리 입주민/구름 가시성 제어 (룸 단독 뷰에서는 선택한 방만 100% 집중!)
-  if (islandRootGroup) islandRootGroup.visible = !inRoomFocus;
-  if (driveState.carRootGroup) driveState.carRootGroup.visible = !inRoomFocus && !inShopFocus;
+  // 아일랜드/단독상가/차량/거리 입주민/구름 가시성 제어
+  if (islandRootGroup) islandRootGroup.visible = !inRoomFocus && !inFpShop;
+  if (driveState.carRootGroup) driveState.carRootGroup.visible = !inRoomFocus && !inShopFocus && !inFpShop;
+  if (driveState.vehicleMesh?.userData?.driverRef) {
+    driveState.vehicleMesh.userData.driverRef.visible = !(driveState.active && driveState.cockpitView);
+  }
   for (const cl of cloudActors) {
-    cl.mesh.visible = !inRoomFocus && !inShopFocus;
+    cl.mesh.visible = !inRoomFocus && !inShopFocus && !inFpShop;
   }
   for (const w of streetOutingActors) {
-    w.mesh.visible = !inRoomFocus && (!inShopFocus || w.targetShopId === focusedShopId);
+    w.mesh.visible = !inRoomFocus && !inFpShop && (!inShopFocus || w.targetShopId === focusedShopId);
   }
   for (const sid of Object.keys(standaloneShop3D)) {
-    standaloneShop3D[sid].group.visible = !inRoomFocus && (!inShopFocus || sid === focusedShopId);
+    standaloneShop3D[sid].group.visible = !inRoomFocus && !inFpShop && (!inShopFocus || sid === focusedShopId);
   }
 
   // 주거 빌딩 외벽 투시율(Shell Opacity) 계산
   let targetShell = 1.0;
   if (driveState.active) {
-    targetShell = 1.0; // 드라이브 모드에서는 건물 외관 100% 선명!
+    targetShell = 1.0;
   } else if (inRoomFocus) {
     targetShell = 0.0;
   } else if (camera.zoom > 1.38) {
@@ -4008,11 +4330,11 @@ function updateXRayAndFocusHighlights(dt) {
     const entry = lot3D[lid];
     if (!entry) continue;
 
-    if (inShopFocus) {
+    if (inShopFocus || inFpShop) {
       entry.root.visible = false;
       continue;
     }
-    if (inRoomFocus && lid !== focusedRm.lotId) {
+    if (inRoomFocus && targetRoomObj && lid !== targetRoomObj.lotId) {
       entry.root.visible = false;
       continue;
     }
@@ -4027,18 +4349,19 @@ function updateXRayAndFocusHighlights(dt) {
         sm.mat.opacity = sm.baseOpacity * currentShellOpacity;
       }
 
-      // 룸 단독 뷰일 때 현재 선택한 호실만 남기고 나머지 방은 완벽히 숨김
       for (const rid of Object.keys(entry.roomsMap)) {
-        entry.roomsMap[rid].visible = !inRoomFocus || rid === focusedRm.id;
+        entry.roomsMap[rid].visible = !inRoomFocus || rid === targetRoomObj.id;
       }
     }
   }
 
-  updateSelectedRoomFrame3D(inRoomFocus ? focusedRm : null);
+  updateSelectedRoomFrame3D((inRoomFocus && !inFpRoom) ? targetRoomObj : null);
 
   if (dom.xrayBadge) {
-    if (driveState.active) {
-      dom.xrayBadge.textContent = '3인칭 드라이브';
+    if (fpState.active) {
+      dom.xrayBadge.textContent = fpState.mode === 'shop' ? '1인칭 상점' : '1인칭 집들이';
+    } else if (driveState.active) {
+      dom.xrayBadge.textContent = driveState.cockpitView ? '1인칭 운전석' : '3인칭 드라이브';
     } else if (inRoomFocus) {
       dom.xrayBadge.textContent = '단독 룸 뷰';
     } else if (inShopFocus) {
@@ -4052,8 +4375,12 @@ function updateXRayAndFocusHighlights(dt) {
 
 
 // =========================================================
-// 10. 수익/행복도 경제 엔진 · 파티클 · 말풍선 · 월세/매출 버블 시스템
+// 10. 수익/행복도 경제 엔진 (골든벨 2.5배 피버 & 집들이 선물 영구 +20% 반영)
 // =========================================================
+function getFeverMultiplier() {
+  return (state.feverTimer || 0) > 0 ? 2.5 : 1.0;
+}
+
 function calcGlobalSynergyPct() {
   let pct = 0;
   for (const lot of state.lots) {
@@ -4090,8 +4417,9 @@ function calcRoomEffectiveRent(bState, room) {
       base = Math.round(base * 1.15);
     }
   }
+  const giftMult = 1 + (room.giftBonusPct || 0) / 100;
   const mult = 1 + (calcGlobalSynergyPct() + calcBuildingInfraBonusPct(bState)) / 100;
-  return Math.round(base * mult);
+  return Math.round(base * mult * giftMult * getFeverMultiplier());
 }
 
 function calcStandaloneShopStats(shopId) {
@@ -4114,14 +4442,20 @@ function calcStandaloneShopStats(shopId) {
   if (carDef.rentBonusPct > 0) {
     cycleRev = Math.round(cycleRev * (1 + carDef.rentBonusPct / 100));
   }
-  return { visitRev, cycleRev, upgCount };
+  const fMult = getFeverMultiplier();
+  return {
+    visitRev: Math.round(visitRev * fMult),
+    cycleRev: Math.round(cycleRev * fMult),
+    upgCount
+  };
 }
 
 function calcCycleNetIncome() {
   let sum = 0;
+  const fMult = getFeverMultiplier();
   for (const b of Object.values(state.buildings)) {
-    // 1층 편의점 + 코인세탁소 기본 상가 수익
-    sum += (b.shopsLv.mart || 1) * 15 + (b.shopsLv.wash || 1) * 13;
+    // 1층 편의점 + 코인세탁소 기본 상가 수익 (골든벨 피버 2.5배 적용)
+    sum += Math.round(((b.shopsLv.mart || 1) * 15 + (b.shopsLv.wash || 1) * 13) * fMult);
     for (const rm of b.rooms) {
       if (rm.unlocked && rm.household) {
         sum += calcRoomEffectiveRent(b, rm);
@@ -4133,7 +4467,7 @@ function calcCycleNetIncome() {
   }
   for (const lot of state.lots) {
     if (lot.owned && lot.devType && !DEVELOPMENT_CATALOG[lot.devType]?.isResidential) {
-      sum += DEVELOPMENT_CATALOG[lot.devType]?.cycleProfit || 0;
+      sum += Math.round((DEVELOPMENT_CATALOG[lot.devType]?.cycleProfit || 0) * fMult);
     }
   }
   for (const tpl of STANDALONE_SHOPS_TEMPLATE) {
@@ -4740,26 +5074,35 @@ function startWalkerReturnHome(ac, tpl) {
 // 12. 카메라 전환 (모바일 세로 390x844 풀 프레이밍 대응)
 // =========================================================
 function syncTopBarsByMode() {
-  const inDrive = driveState.active;
-  const inRoom = !!focusedRoomId && !inDrive;
-  const inShop = !!focusedShopId && !inDrive;
+  const inFp = fpState.active;
+  const inDrive = driveState.active && !inFp;
+  const inRoom = !!focusedRoomId && !inDrive && !inFp;
+  const inShop = !!focusedShopId && !inDrive && !inFp;
 
-  dom.hudTownControls?.classList.toggle('hidden', inDrive || inRoom || inShop);
+  dom.hudTownControls?.classList.toggle('hidden', inDrive || inRoom || inShop || inFp);
   dom.roomFocusTopbar?.classList.toggle('hidden', !inRoom);
   dom.shopFocusTopbar?.classList.toggle('hidden', !inShop);
   dom.driveFocusTopbar?.classList.toggle('hidden', !inDrive);
+  dom.fpFocusTopbar?.classList.toggle('hidden', !inFp);
 
   dom.roomFocusPanel?.classList.toggle('hidden', !inRoom);
   dom.shopFocusPanel?.classList.toggle('hidden', !inShop);
   dom.furnitureCatalogSheet?.classList.toggle('hidden', !(inRoom || inShop));
   dom.driveModeHud?.classList.toggle('hidden', !inDrive);
-  dom.bottomTownBar?.classList.toggle('hidden', inDrive || inRoom || inShop);
+  dom.cockpitOverlay?.classList.toggle('hidden', !(inDrive && driveState.cockpitView));
+  dom.driveProximityBar?.classList.toggle('hidden', !inDrive);
+  dom.fpModeHud?.classList.toggle('hidden', !inFp);
+  dom.bottomTownBar?.classList.toggle('hidden', inDrive || inRoom || inShop || inFp);
   dom.isolationVignette?.classList.toggle('hidden', !(inRoom || inShop));
 
   updateCollectAllButtonVisibility();
 }
 
 function setOverviewCamera(animate = true) {
+  if (fpState.active) {
+    exitFirstPersonMode(false);
+    return;
+  }
   if (driveState.active) {
     exitDriveMode();
     return;
@@ -5003,9 +5346,147 @@ function syncDriveTopBadges() {
   if (cruiseLbl) {
     cruiseLbl.textContent = driveState.autoCruise ? '자율 크루징 ON' : '수동 주행 (WASD)';
   }
+  const ckLbl = document.getElementById('label-toggle-cockpit');
+  if (ckLbl) {
+    ckLbl.textContent = driveState.cockpitView ? '3인칭 추격 시점' : '1인칭 운전석';
+  }
+  syncCockpitDashboardUI();
 }
 
-function enterDriveMode() {
+function syncCockpitDashboardUI() {
+  const ch = FP_RADIO_CHANNELS[driveState.radioChannelIdx % FP_RADIO_CHANNELS.length];
+  const moodEl = document.getElementById('cockpit-mood-strip');
+  if (moodEl && ch) {
+    moodEl.style.background = ch.moodHex;
+    moodEl.style.boxShadow = `0 0 16px ${ch.glowRgba}`;
+  }
+  const rTitle = document.getElementById('cockpit-radio-title');
+  const rSub = document.getElementById('cockpit-radio-sub');
+  const eqWrap = document.getElementById('cockpit-eq-bars');
+  if (rTitle && ch) rTitle.textContent = ch.label;
+  if (rSub && ch) rSub.textContent = ch.sub;
+  if (eqWrap && ch) eqWrap.classList.toggle('paused', ch.id === 'off');
+
+  const visor = document.getElementById('cockpit-roof-visor');
+  if (visor) visor.classList.toggle('roof-open', !!driveState.roofOpen);
+  const roofLbl = document.getElementById('label-cockpit-roof');
+  if (roofLbl) roofLbl.textContent = driveState.roofOpen ? '오픈카 ON' : '루프 닫힘';
+  if (driveState.vehicleMesh?.userData?.roofRef) {
+    driveState.vehicleMesh.userData.roofRef.visible = !driveState.roofOpen;
+  }
+}
+
+function toggleCockpitView(forceState = null) {
+  if (!driveState.active) return;
+  driveState.cockpitView = typeof forceState === 'boolean' ? forceState : !driveState.cockpitView;
+  driveCamera.fov = driveState.cockpitView ? 68 : 58;
+  driveCamera.updateProjectionMatrix();
+
+  if (driveState.vehicleMesh?.userData?.driverRef) {
+    driveState.vehicleMesh.userData.driverRef.visible = !driveState.cockpitView;
+  }
+  if (driveState.cockpitView) {
+    startOrUpdateCarRadioBGM();
+    showToast('1인칭 슈퍼카 운전석 시점! 카오디오 라디오와 핸들 조향이 활성화되었습니다!', 'gold');
+  } else {
+    showToast('3인칭 슈퍼카 추격 시점으로 전환했습니다!', 'sky');
+  }
+  syncTopBarsByMode();
+  syncDriveTopBadges();
+}
+
+function cycleCarRadioChannel() {
+  driveState.radioChannelIdx = (driveState.radioChannelIdx + 1) % FP_RADIO_CHANNELS.length;
+  const ch = FP_RADIO_CHANNELS[driveState.radioChannelIdx];
+  syncCockpitDashboardUI();
+  startOrUpdateCarRadioBGM();
+  showToast(`카오디오 채널 변경: [${ch.label}]`, 'gold');
+}
+
+function toggleConvertibleRoof() {
+  driveState.roofOpen = !driveState.roofOpen;
+  syncCockpitDashboardUI();
+  showToast(driveState.roofOpen ? '오픈카 컨버터블 루프를 활짝 열었습니다!' : '루프를 닫아 아늑한 콕핏 모드로 전환했습니다!', 'sky');
+}
+
+function updateDriveShopProximityUI() {
+  if (!driveState.active) return;
+  let best = FP_SHOP_DESTINATIONS[0];
+  let minDist = Infinity;
+  for (const dest of FP_SHOP_DESTINATIONS) {
+    const d = Math.hypot(dest.roadX - driveState.x, dest.roadZ - driveState.z);
+    if (d < minDist) {
+      minDist = d;
+      best = dest;
+    }
+  }
+  driveState.nearestShopId = best.id;
+
+  const icoEl = document.getElementById('prox-shop-ico');
+  const nameEl = document.getElementById('prox-shop-name');
+  if (icoEl) icoEl.innerHTML = createCustomSVGIcon(best.icon, 22);
+  if (nameEl) {
+    nameEl.textContent = minDist < 12.5 ? `${best.name} 앞 통과 중!` : `가까운 매장 · ${best.name}`;
+  }
+}
+
+function triggerDriveThruOrder(targetShopId = null) {
+  if (!driveState.active) return;
+  const sid = targetShopId || driveState.nearestShopId || 'shop_bakery';
+  const dest = FP_SHOP_DESTINATIONS.find((s) => s.id === sid) || FP_SHOP_DESTINATIONS[0];
+
+  // 상가 앞 도로 위치로 부드럽게 정차 정렬
+  if (Math.hypot(dest.roadX - driveState.x, dest.roadZ - driveState.z) > 8.5) {
+    driveState.x = dest.roadX;
+    driveState.z = 7.0;
+    if (driveState.carRootGroup) {
+      driveState.carRootGroup.position.set(driveState.x, 0.22, driveState.z);
+    }
+  }
+  driveState.driveThruPauseTimer = 2.8;
+  driveState.speed = 0;
+  driveState.driveThruCooldowns[dest.id] = 12.0;
+
+  // 앞유리 정면 시야(3.6m 전방 우측)로 매장 직원이 달려 나와 인사하도록 배치!
+  const fwdX = Math.sin(driveState.heading);
+  const fwdZ = Math.cos(driveState.heading);
+  const sideSign = dest.roadZ >= 7.0 ? 1 : -1;
+  const startZ = dest.roadZ >= 7.0 ? 11.8 : 2.8;
+  const targetX = driveState.x + fwdX * 3.6 - fwdZ * 0.9 * sideSign;
+  const targetZ = driveState.z + fwdZ * 3.6 + fwdX * 0.9 * sideSign;
+
+  const clerk = createChibiPerson3D(dest.staffRole);
+  clerk.userData.carryBag.visible = true;
+  clerk.position.set(targetX, 0.24, startZ);
+  scene.add(clerk);
+
+  driveState.driveThruRunners.push({
+    mesh: clerk,
+    tx: targetX,
+    tz: targetZ,
+    life: 3.6,
+    greeted: false,
+    dest
+  });
+
+  // 양손 슬롯에 모닝커피 + 매장 시그니처 간식 즉시 적재!
+  if (!state.heldGifts) state.heldGifts = { left: null, right: null };
+  state.heldGifts.left = 'item_coffee';
+  if (dest.driveThruItem && dest.driveThruItem !== 'item_coffee') {
+    state.heldGifts.right = dest.driveThruItem;
+  }
+  syncHeldHands3DAndChips();
+
+  playShopDoorChimeSound();
+  addGold(25);
+  spawnPoofParticles3D(targetX, 1.5, targetZ, 0xFFD93D, 12);
+  showSpeechBubble3D(`dt_${dest.id}`, targetX, 2.15, targetZ, dest.driveThruQuote, 3.8);
+  showToast(`[${dest.name} 드라이브 스루] 모닝커피 & 테이크아웃 픽업 완료! (+25만)`, 'gold');
+  saveGameState();
+}
+
+function enterDriveMode(startInCockpit = false) {
+  if (fpState.active) exitFirstPersonMode(false);
   if (focusedRoomId) focusedRoomId = null;
   if (focusedShopId) {
     const prevS = focusedShopId;
@@ -5016,9 +5497,11 @@ function enterDriveMode() {
   dom.notebookModal?.classList.add('hidden');
 
   driveState.active = true;
+  driveState.cockpitView = !!startInCockpit;
   driveState.autoCruise = true;
   driveState.waypointIdx = 1;
   driveState.sessionLoot = 0;
+  driveState.driveThruPauseTimer = 0;
 
   driveState.x = 24.5;
   driveState.y = 0.22;
@@ -5026,9 +5509,15 @@ function enterDriveMode() {
   driveState.heading = -Math.PI * 0.5;
   driveState.speed = 9.2;
 
+  driveCamera.fov = driveState.cockpitView ? 68 : 58;
+  driveCamera.updateProjectionMatrix();
+
   if (driveState.carRootGroup) {
     driveState.carRootGroup.position.set(driveState.x, driveState.y, driveState.z);
     driveState.carRootGroup.rotation.y = driveState.heading;
+  }
+  if (driveState.vehicleMesh?.userData?.driverRef) {
+    driveState.vehicleMesh.userData.driverRef.visible = !driveState.cockpitView;
   }
 
   if (rentBubbles.length < 3) {
@@ -5047,19 +5536,31 @@ function enterDriveMode() {
   controls.enabled = false;
   syncTopBarsByMode();
   syncDriveTopBadges();
+  updateDriveShopProximityUI();
+  if (driveState.cockpitView) startOrUpdateCarRadioBGM();
   playSupercarHornSound(state.garage?.currentCar || 'car_scooter');
-  showToast('3인칭 드라이브 출발! WASD 조작 및 자동 코인 수금 지원', 'coral');
+  showToast('드라이브 출발! 상단 [1인칭 운전석] 전환 및 상가 앞 [드라이브 스루]가 가능합니다!', 'coral');
 }
 
 function exitDriveMode() {
   if (!driveState.active) return;
+  stopCarRadioBGM();
   driveState.active = false;
+  driveState.cockpitView = false;
   driveState.keys.forward = false;
   driveState.keys.backward = false;
   driveState.keys.left = false;
   driveState.keys.right = false;
   driveState.speed = 0;
 
+  for (const rn of driveState.driveThruRunners) {
+    scene.remove(rn.mesh);
+  }
+  driveState.driveThruRunners.length = 0;
+
+  if (driveState.vehicleMesh?.userData?.driverRef) {
+    driveState.vehicleMesh.userData.driverRef.visible = true;
+  }
   if (driveState.carRootGroup) {
     driveState.carRootGroup.position.set(VIP_PARKING_POS.x, VIP_PARKING_POS.y + 0.06, VIP_PARKING_POS.z);
     driveState.carRootGroup.rotation.y = Math.PI * 0.5;
@@ -5108,16 +5609,49 @@ function triggerCarHorn() {
 function tickDriveMode(dt, elapsed) {
   if (!driveState.active || !driveState.carRootGroup) return;
 
+  // 드라이브 스루 쿨다운 및 달려 나온 직원 애니메이션 처리
+  for (const k of Object.keys(driveState.driveThruCooldowns)) {
+    driveState.driveThruCooldowns[k] = Math.max(0, driveState.driveThruCooldowns[k] - dt);
+  }
+  for (let i = driveState.driveThruRunners.length - 1; i >= 0; i--) {
+    const rn = driveState.driveThruRunners[i];
+    rn.life -= dt;
+    if (rn.life <= 0) {
+      scene.remove(rn.mesh);
+      driveState.driveThruRunners.splice(i, 1);
+      continue;
+    }
+    const dx = rn.tx - rn.mesh.position.x;
+    const dz = rn.tz - rn.mesh.position.z;
+    const dist = Math.hypot(dx, dz);
+    if (dist > 0.14) {
+      rn.mesh.position.x += (dx / dist) * Math.min(dist, 5.5 * dt);
+      rn.mesh.position.z += (dz / dist) * Math.min(dist, 5.5 * dt);
+      rn.mesh.rotation.y = Math.atan2(dx, dz);
+      const sw = Math.sin(elapsed * 16) * 0.6;
+      rn.mesh.userData.legL.rotation.x = sw;
+      rn.mesh.userData.legR.rotation.x = -sw;
+    } else {
+      rn.mesh.lookAt(driveState.x, rn.mesh.position.y, driveState.z);
+      rn.mesh.userData.armL.rotation.z = 2.2 + Math.sin(elapsed * 14) * 0.35;
+      rn.mesh.position.y = 0.24 + Math.abs(Math.sin(elapsed * 9)) * 0.12;
+    }
+  }
+
   const carDef = getCarDef(state.garage?.currentCar || 'car_scooter');
   const maxSpd = carDef.maxSpeed || 18.0;
   const manualInput = driveState.keys.forward || driveState.keys.backward || driveState.keys.left || driveState.keys.right;
+  const prevHeading = driveState.heading;
 
   if (manualInput && driveState.autoCruise) {
     driveState.autoCruise = false;
     syncDriveTopBadges();
   }
 
-  if (driveState.autoCruise) {
+  if (driveState.driveThruPauseTimer > 0) {
+    driveState.driveThruPauseTimer -= dt;
+    driveState.speed *= Math.pow(0.04, dt);
+  } else if (driveState.autoCruise) {
     // 아스팔트 순환 도로 웨이포인트 자동 크루징 주행
     const wp = RING_ROAD_WAYPOINTS[driveState.waypointIdx % RING_ROAD_WAYPOINTS.length];
     const dx = wp.x - driveState.x;
@@ -5153,6 +5687,31 @@ function tickDriveMode(dt, elapsed) {
       const revSign = driveState.speed >= 0 ? 1 : -1;
       driveState.heading += turnDir * revSign * 2.15 * dt;
     }
+
+    // 상가 앞 도로에 수동 정차 시 자동 드라이브 스루 발동!
+    if (Math.abs(driveState.speed) < 0.9 && !driveState.keys.forward && !driveState.keys.backward) {
+      for (const dest of FP_SHOP_DESTINATIONS) {
+        const distShop = Math.hypot(dest.roadX - driveState.x, dest.roadZ - driveState.z);
+        if (distShop < 6.2 && !(driveState.driveThruCooldowns[dest.id] > 0)) {
+          triggerDriveThruOrder(dest.id);
+          break;
+        }
+      }
+    }
+  }
+
+  // 스티어링 휠 실시간 조향 각도 계산 (좌회전 시 반시계 -deg, 우회전 시 시계 +deg)
+  let deltaH = driveState.heading - prevHeading;
+  while (deltaH > Math.PI) deltaH -= Math.PI * 2;
+  while (deltaH < -Math.PI) deltaH += Math.PI * 2;
+  const manualTurn = (driveState.keys.right ? 1 : 0) - (driveState.keys.left ? 1 : 0);
+  const targetWheelDeg = manualTurn !== 0
+    ? manualTurn * 40
+    : THREE.MathUtils.clamp((-deltaH / Math.max(0.008, dt)) * 22, -42, 42);
+  driveState.steerVisualDeg = THREE.MathUtils.lerp(driveState.steerVisualDeg, targetWheelDeg, Math.min(1, dt * 10));
+  const wheelRotEl = document.getElementById('cockpit-wheel-rotator');
+  if (wheelRotEl && driveState.cockpitView) {
+    wheelRotEl.style.transform = `rotate(${driveState.steerVisualDeg.toFixed(1)}deg)`;
   }
 
   const fwdX = Math.sin(driveState.heading);
@@ -5174,12 +5733,10 @@ function tickDriveMode(dt, elapsed) {
   driveState.carRootGroup.position.set(driveState.x, 0.22 + Math.sin(elapsed * 22) * 0.015, driveState.z);
   driveState.carRootGroup.rotation.y = driveState.heading;
 
-  // 바퀴 회전 애니메이션
   for (const w of driveState.wheels) {
     w.rotation.x += driveState.speed * dt * 1.6;
   }
 
-  // 배기구 귀여운 연기 파티클
   driveState.exhaustTimer -= dt;
   if (Math.abs(driveState.speed) > 4.5 && driveState.exhaustTimer <= 0) {
     driveState.exhaustTimer = 0.16;
@@ -5197,31 +5754,55 @@ function tickDriveMode(dt, elapsed) {
     });
   }
 
-  // ==================== GTA식 3인칭 로우앵글 추격 카메라 추적 ====================
-  const chaseDist = carDef.id === 'car_limo' ? 7.6 : 5.9;
-  const chaseHeight = 2.38;
-  const desiredCamPos = new THREE.Vector3(
-    driveState.x - fwdX * chaseDist,
-    chaseHeight,
-    driveState.z - fwdZ * chaseDist
-  );
-  const desiredLook = new THREE.Vector3(
-    driveState.x + fwdX * 8.2,
-    1.55,
-    driveState.z + fwdZ * 8.2
-  );
-
-  driveState.camCurrentPos.lerp(desiredCamPos, Math.min(1, dt * 8.5));
-  driveState.camCurrentLook.lerp(desiredLook, Math.min(1, dt * 10.5));
-  driveCamera.position.copy(driveState.camCurrentPos);
-  driveCamera.lookAt(driveState.camCurrentLook);
-
-  // 실시간 디지털 속도계 표시 업데이트
-  const speedEl = document.getElementById('drive-speed-badge');
-  if (speedEl) {
-    const kmh = Math.round(Math.abs(driveState.speed) * 6.8);
-    speedEl.textContent = `${kmh} km/h`;
+  // ==================== 1인칭 운전석(Cockpit) vs 3인칭 추격 카메라 분기 ====================
+  if (driveState.cockpitView) {
+    const hoodFwd = carDef.id === 'car_limo' ? 1.55 : carDef.id === 'car_scooter' ? 0.35 : 0.68;
+    const eyeVib = Math.abs(driveState.speed) > 0.5 ? Math.sin(elapsed * 18) * 0.012 : 0;
+    const eyePos = new THREE.Vector3(
+      driveState.x + fwdX * hoodFwd,
+      1.62 + eyeVib,
+      driveState.z + fwdZ * hoodFwd
+    );
+    const lookTarget = new THREE.Vector3(
+      driveState.x + fwdX * 18.0,
+      1.48,
+      driveState.z + fwdZ * 18.0
+    );
+    driveState.camCurrentPos.lerp(eyePos, Math.min(1, dt * 18));
+    driveState.camCurrentLook.lerp(lookTarget, Math.min(1, dt * 18));
+    driveCamera.position.copy(driveState.camCurrentPos);
+    driveCamera.lookAt(driveState.camCurrentLook);
+  } else {
+    const chaseDist = carDef.id === 'car_limo' ? 7.6 : 5.9;
+    const chaseHeight = 2.38;
+    const desiredCamPos = new THREE.Vector3(
+      driveState.x - fwdX * chaseDist,
+      chaseHeight,
+      driveState.z - fwdZ * chaseDist
+    );
+    const desiredLook = new THREE.Vector3(
+      driveState.x + fwdX * 8.2,
+      1.55,
+      driveState.z + fwdZ * 8.2
+    );
+    driveState.camCurrentPos.lerp(desiredCamPos, Math.min(1, dt * 8.5));
+    driveState.camCurrentLook.lerp(desiredLook, Math.min(1, dt * 10.5));
+    driveCamera.position.copy(driveState.camCurrentPos);
+    driveCamera.lookAt(driveState.camCurrentLook);
   }
+
+  // 실시간 디지털 속도계 (상단 배지 & 1인칭 클러스터 동시 업데이트)
+  const kmh = Math.round(Math.abs(driveState.speed) * 6.8);
+  const speedEl = document.getElementById('drive-speed-badge');
+  if (speedEl) speedEl.textContent = `${kmh} km/h`;
+  const ckKmhEl = document.getElementById('cockpit-kmh-num');
+  if (ckKmhEl) ckKmhEl.textContent = String(kmh);
+  const ckGearEl = document.getElementById('cockpit-gear-tag');
+  if (ckGearEl) {
+    ckGearEl.textContent = Math.abs(driveState.speed) < 0.2 ? 'P' : driveState.speed < 0 ? 'R' : 'D';
+  }
+
+  updateDriveShopProximityUI();
 
   // ==================== 주변 건물·상가 코인 자석(Magnetic Vacuum) 자동 수금 ====================
   const bonusPct = carDef.driveTipPct || 20;
@@ -5247,6 +5828,967 @@ function tickDriveMode(dt, elapsed) {
         syncDriveTopBadges();
       }
     }
+  }
+}
+
+// =========================================================
+// 13B. 1인칭 갓물주 상점 입장 · 3D 진열대 쇼핑 · 골든벨 피버 · 세입자 집들이 엔진
+// =========================================================
+function initFirstPersonHands3D() {
+  if (!fpCamera) return;
+  const handsGrp = new THREE.Group();
+  fpCamera.add(handsGrp);
+
+  const skinMat = makeClayMat(0xFFE2D1, { roughness: 0.45 });
+  const cuffMat = makeClayMat(0xE11D48, { roughness: 0.42 });
+  const goldTrim = makeClayMat(0xFFD93D, { roughness: 0.3, metalness: 0.2 });
+
+  const makeArmHand = (sideSign) => {
+    const h = new THREE.Group();
+    const sleeve = createRoundedToyMesh(0.14, 0.24, 0.14, cuffMat, 0, -0.14, 0.12, 0.04);
+    sleeve.rotation.x = 0.72;
+    const cuff = createRoundedToyMesh(0.155, 0.045, 0.155, goldTrim, 0, -0.04, 0.03, 0.02);
+    cuff.rotation.x = 0.72;
+    const palm = new THREE.Mesh(GEO.sphere, skinMat);
+    palm.scale.set(0.12, 0.11, 0.13);
+    h.add(sleeve, cuff, palm);
+    // 시야 중앙을 가리지 않고 화면 좌·우 하단 모서리에 귀엽게 파지되도록 배치
+    h.position.set(sideSign * 0.52, -0.44, -0.94);
+    return h;
+  };
+
+  const leftHand = makeArmHand(-1);
+  const rightHand = makeArmHand(1);
+  const leftSlot = new THREE.Group();
+  leftSlot.position.set(0.02, 0.03, -0.03);
+  leftHand.add(leftSlot);
+
+  const rightSlot = new THREE.Group();
+  rightSlot.position.set(-0.02, 0.03, -0.03);
+  rightHand.add(rightSlot);
+
+  handsGrp.add(leftHand, rightHand);
+  handsGrp.visible = false;
+
+  fpState.handsGroup = handsGrp;
+  fpState.leftHandSlot = leftSlot;
+  fpState.rightHandSlot = rightSlot;
+  syncHeldHands3DAndChips();
+}
+
+function clearGroupChildren(grp) {
+  if (!grp) return;
+  while (grp.children.length > 0) {
+    grp.remove(grp.children[0]);
+  }
+}
+
+function syncHeldHands3DAndChips() {
+  if (!state.heldGifts) state.heldGifts = { left: null, right: null };
+  clearGroupChildren(fpState.leftHandSlot);
+  clearGroupChildren(fpState.rightHandSlot);
+
+  if (fpState.leftHandSlot && state.heldGifts.left) {
+    const m = create3DGiftPropMesh(state.heldGifts.left, true);
+    m.scale.setScalar(0.41);
+    m.rotation.y = 0.25;
+    fpState.leftHandSlot.add(m);
+  }
+  if (fpState.rightHandSlot && state.heldGifts.right) {
+    const m = create3DGiftPropMesh(state.heldGifts.right, true);
+    m.scale.setScalar(0.41);
+    m.rotation.y = -0.25;
+    fpState.rightHandSlot.add(m);
+  }
+
+  const row = document.getElementById('fp-held-chips-row');
+  if (row) {
+    const chips = [];
+    for (const side of ['left', 'right']) {
+      const gid = state.heldGifts[side];
+      if (!gid) continue;
+      const def = FP_GIFT_ITEMS.find((x) => x.id === gid);
+      if (def) {
+        chips.push(`
+          <span class="kw-chip tone-${def.tone} !py-0.5 !px-2.5">
+            ${createCustomSVGIcon(def.icon, 15)}
+            <span>${side === 'left' ? '왼손' : '오른손'}: ${def.shortName}</span>
+          </span>
+        `);
+      }
+    }
+    if ((state.goldenKeys || 0) > 0) {
+      chips.push(`
+        <span class="kw-chip tone-gold !py-0.5 !px-2.5">
+          ${createCustomSVGIcon('garage_key', 14)}
+          <span>황금열쇠 ${state.goldenKeys}개</span>
+        </span>
+      `);
+    }
+    row.innerHTML = chips.length > 0
+      ? chips.join('')
+      : `<span class="kw-chip tone-cream !py-0.5 !px-2.5">${createCustomSVGIcon('gift_ribbon_box', 14)}<span>양손 비어 있음 · 진열대 3D 상품을 클릭해 담아보세요!</span></span>`;
+  }
+
+  const giveBtnLbl = document.getElementById('label-fp-give-gift');
+  if (giveBtnLbl) {
+    const hasGift = !!(state.heldGifts.left || state.heldGifts.right);
+    giveBtnLbl.textContent = hasGift
+      ? '사 온 선물 건네주기 (월세 영구 +20%!)'
+      : '상점 가서 집들이 선물 사 오기';
+  }
+}
+
+function clearFpStageAndTempProps() {
+  for (const el of fpState.labelPins) {
+    el.el.remove();
+  }
+  fpState.labelPins.length = 0;
+  fpState.pickables.length = 0;
+  fpState.npcActors.length = 0;
+  fpState.bellPivot = null;
+  fpState.doorHinge = null;
+
+  if (fpState.stageGroup) {
+    scene.remove(fpState.stageGroup);
+    fpState.stageGroup = null;
+  }
+  if (fpState.roomTempGroup && fpState.roomTempGroup.parent) {
+    fpState.roomTempGroup.parent.remove(fpState.roomTempGroup);
+    fpState.roomTempGroup = null;
+  }
+  if (fpState.hostResidentMesh && fpState.hostOrigPos) {
+    fpState.hostResidentMesh.position.copy(fpState.hostOrigPos);
+  }
+  fpState.hostResidentMesh = null;
+  fpState.hostOrigPos = null;
+}
+
+function createFpPinBadge(wx, wy, wz, htmlContent, onClickFn) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'shop-float-badge pointer-events-auto !text-[11px] !py-1 !px-2.5';
+  btn.innerHTML = htmlContent;
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    onClickFn();
+  });
+  dom.shopsLayer?.appendChild(btn);
+  fpState.labelPins.push({ el: btn, wx, wy, wz });
+}
+
+function enterFirstPersonShop(shopId = 'shop_bakery', rememberDrive = null) {
+  const dest = FP_SHOP_DESTINATIONS.find((s) => s.id === shopId) || FP_SHOP_DESTINATIONS[0];
+  const wasInDrive = rememberDrive !== null ? rememberDrive : driveState.active;
+
+  if (driveState.active) {
+    stopCarRadioBGM();
+    driveState.active = false;
+    driveState.speed = 0;
+  }
+  if (focusedRoomId) focusedRoomId = null;
+  if (focusedShopId) {
+    const prevS = focusedShopId;
+    focusedShopId = null;
+    rebuildStandaloneShop3D(prevS);
+  }
+  dom.fpVisitModal?.classList.add('hidden');
+  clearFpStageAndTempProps();
+
+  fpState.active = true;
+  fpState.mode = 'shop';
+  fpState.returnToDrive = !!wasInDrive;
+  fpState.shopId = dest.id;
+  fpState.roomId = null;
+  fpState.yaw = 0;
+  fpState.pitch = -0.05;
+  fpState.entryWalkTimer = 0.95;
+  fpState.doorAngle = 0.1;
+  fpState.cheerTimer = 0;
+
+  // ==================== 1인칭 전용 풀스케일 부티크 상점 인테리어 스테이지 구축 ====================
+  const stg = new THREE.Group();
+  stg.position.copy(FP_STAGE_ORIGIN);
+  scene.add(stg);
+  fpState.stageGroup = stg;
+
+  const W = 12.8;
+  const D = 10.2;
+  const H = 4.8;
+  const wallMat = makeClayMat(dest.wallColor || 0xFFF5EB, { map: TEX.wallPeach, roughness: 0.62 });
+  const trimMat = makeClayMat(dest.accentColor || 0xFF6B6B, { roughness: 0.48 });
+  const floorMat = makeClayMat(0xFFFFFF, { map: TEX.floor2, roughness: 0.52 });
+
+  // 마루 바닥, 천장, 서까래 원목 빔, 좌우/후면 벽체
+  stg.add(createRoundedToyMesh(W, 0.2, D, floorMat, 0, -0.1, 0, 0.06));
+  stg.add(createRoundedToyMesh(W, 0.22, D, MAT.cream, 0, H + 0.1, 0, 0.06));
+  for (let bz = -3.6; bz <= 3.6; bz += 2.4) {
+    stg.add(createRoundedToyMesh(W - 0.3, 0.22, 0.28, MAT.woodWarm, 0, H - 0.12, bz, 0.04));
+    const lamp = new THREE.Mesh(GEO.sphere, MAT.neonYellow);
+    lamp.scale.setScalar(0.28);
+    lamp.position.set(0, H - 0.42, bz);
+    stg.add(lamp);
+  }
+  stg.add(createRoundedToyMesh(W, H, 0.26, wallMat, 0, H * 0.5, -D * 0.5, 0.06));
+  stg.add(createRoundedToyMesh(0.26, H, D, wallMat, -W * 0.5, H * 0.5, 0, 0.06));
+  stg.add(createRoundedToyMesh(0.26, H, D, wallMat, W * 0.5, H * 0.5, 0, 0.06));
+  // 전면 통유리 프레임 & 열리는 출입문 힌지 연출
+  stg.add(createRoundedToyMesh(4.2, H, 0.24, wallMat, -4.1, H * 0.5, D * 0.5, 0.05));
+  stg.add(createRoundedToyMesh(4.2, H, 0.24, wallMat, 4.1, H * 0.5, D * 0.5, 0.05));
+
+  const doorHinge = new THREE.Group();
+  doorHinge.position.set(-1.1, 0, D * 0.5 - 0.1);
+  doorHinge.add(createRoundedToyMesh(1.95, 3.2, 0.12, trimMat, 0.98, 1.6, 0, 0.05));
+  doorHinge.add(createRoundedToyMesh(1.55, 2.35, 0.14, MAT.partitionGlass, 0.98, 1.75, 0, 0.04, false, false, false));
+  stg.add(doorHinge);
+  fpState.doorHinge = doorHinge;
+
+  // 뒷벽 업종별 시그니처 설비 & 간판 보드
+  const signKind = dest.id === 'shop_roastery' ? 'roastery' : dest.id === 'shop_flower' ? 'flores' : dest.id === 'shop_mart1f' ? 'mart' : dest.id === 'shop_wash1f' ? 'wash' : 'patisserie';
+  const backSign = createFramedSignboard3D(5.8, 1.05, signKind);
+  backSign.position.set(0, 3.55, -D * 0.5 + 0.24);
+  stg.add(backSign);
+
+  if (dest.id === 'shop_bakery') {
+    stg.add(createRoundedToyMesh(2.6, 2.3, 0.95, MAT.gold, -3.4, 1.2, -D * 0.5 + 0.75, 0.1));
+    stg.add(createRoundedToyMesh(1.4, 0.5, 0.14, MAT.ovenFire, -3.4, 1.25, -D * 0.5 + 1.25, 0.04));
+  } else if (dest.id === 'shop_roastery') {
+    stg.add(createRoundedToyMesh(2.2, 2.2, 0.9, MAT.walnutTrim, -3.4, 1.15, -D * 0.5 + 0.75, 0.1));
+    const cr = createFruitWoodenCrate3D('mix');
+    cr.position.set(-3.8, 0.02, -1.2);
+    stg.add(cr);
+  } else if (dest.id === 'shop_mart1f') {
+    for (let rx = -4.2; rx <= -2.4; rx += 1.8) {
+      stg.add(createRoundedToyMesh(1.55, 2.5, 0.75, MAT.sky, rx, 1.28, -D * 0.5 + 0.65, 0.08));
+      stg.add(createRoundedToyMesh(1.32, 1.9, 0.8, MAT.white, rx, 1.32, -D * 0.5 + 0.68, 0.05));
+    }
+  } else if (dest.id === 'shop_wash1f') {
+    for (let wx = -4.4; wx <= -2.2; wx += 1.1) {
+      stg.add(createRoundedToyMesh(0.98, 1.45, 0.75, MAT.white, wx, 0.75, -D * 0.5 + 0.65, 0.08));
+      const dr = new THREE.Mesh(GEO.torus, MAT.sky);
+      dr.scale.setScalar(0.58);
+      dr.position.set(wx, 0.82, -D * 0.5 + 1.05);
+      stg.add(dr);
+    }
+  } else {
+    for (let fx = -4.2; fx <= -2.4; fx += 0.9) {
+      const pot = new THREE.Mesh(GEO.cyl, MAT.terracottaCoral);
+      pot.scale.set(0.42, 0.48, 0.42);
+      pot.position.set(fx, 0.25, -D * 0.5 + 0.9);
+      const bl = new THREE.Mesh(getPuffyDomeGeo(0.35, 0.42), MAT.pinkSoft);
+      bl.position.set(fx, 0.68, -D * 0.5 + 0.9);
+      stg.add(pot, bl);
+    }
+  }
+
+  // ==================== 메인 쇼케이스 카운터 & 5종 3D 클릭형 진열 상품 ====================
+  stg.add(createRoundedToyMesh(5.6, 0.96, 1.12, MAT.woodWarm, -0.65, 0.48, -0.85, 0.08));
+  stg.add(createRoundedToyMesh(5.76, 0.1, 1.24, MAT.white, -0.65, 1.01, -0.85, 0.04));
+
+  FP_GIFT_ITEMS.forEach((item, idx) => {
+    const ix = -2.65 + idx * 1.02;
+    const iy = 1.06;
+    const iz = -0.78;
+
+    const prop = create3DGiftPropMesh(item.id, false);
+    prop.position.set(ix, iy, iz);
+    prop.scale.setScalar(1.06);
+    stg.add(prop);
+
+    const hit = new THREE.Mesh(
+      new THREE.BoxGeometry(0.96, 0.95, 1.0),
+      new THREE.MeshBasicMaterial({ visible: false })
+    );
+    hit.position.set(ix, iy + 0.32, iz);
+    hit.userData = { kind: 'fpShopItem', itemId: item.id, visualMesh: prop };
+    stg.add(hit);
+    fpState.pickables.push(hit);
+
+    createFpPinBadge(
+      FP_STAGE_ORIGIN.x + ix,
+      FP_STAGE_ORIGIN.y + iy + 0.62,
+      FP_STAGE_ORIGIN.z + iz,
+      `${createCustomSVGIcon(item.icon, 13)}<span>${item.shortName}</span><span class="text-[#B45309]">${item.cost}만</span>`,
+      () => buyFpShowcaseItem(item.id, prop)
+    );
+  });
+
+  // ==================== 우측 로얄 스탠드 & 반짝이는 3D 황금 종 (기본 시야 내 선명 노출!) ====================
+  const bellStand = new THREE.Group();
+  bellStand.position.set(2.48, 0, -0.62);
+  bellStand.add(createRoundedToyMesh(0.98, 1.12, 0.98, MAT.walnutTrim, 0, 0.56, 0, 0.08));
+  bellStand.add(createRoundedToyMesh(1.08, 0.14, 1.08, MAT.supercarRed, 0, 1.16, 0, 0.05));
+  bellStand.add(createRoundedToyMesh(0.12, 0.92, 0.12, MAT.gold, -0.34, 1.65, 0, 0.03));
+  bellStand.add(createRoundedToyMesh(0.12, 0.92, 0.12, MAT.gold, 0.34, 1.65, 0, 0.03));
+  bellStand.add(createRoundedToyMesh(0.88, 0.14, 0.16, MAT.gold, 0, 2.1, 0, 0.04));
+
+  const bellPivot = new THREE.Group();
+  bellPivot.position.set(0, 2.04, 0);
+  const bellCone = new THREE.Mesh(new THREE.ConeGeometry(0.34, 0.52, 20), MAT.gold);
+  bellCone.position.y = -0.28;
+  addToonHullOutline(bellCone, 1.07);
+  const bellRim = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.055, 10, 24), MAT.gold);
+  bellRim.rotation.x = Math.PI / 2;
+  bellRim.position.y = -0.52;
+  const clapper = new THREE.Mesh(GEO.sphere, MAT.coral);
+  clapper.scale.setScalar(0.16);
+  clapper.position.y = -0.58;
+  bellPivot.add(bellCone, bellRim, clapper);
+  bellStand.add(bellPivot);
+  stg.add(bellStand);
+  fpState.bellPivot = bellPivot;
+
+  const bellHit = new THREE.Mesh(
+    new THREE.BoxGeometry(1.35, 1.6, 1.35),
+    new THREE.MeshBasicMaterial({ visible: false })
+  );
+  bellHit.position.set(2.48, 1.62, -0.62);
+  bellHit.userData = { kind: 'fpGoldenBell' };
+  stg.add(bellHit);
+  fpState.pickables.push(bellHit);
+
+  createFpPinBadge(
+    FP_STAGE_ORIGIN.x + 2.48,
+    FP_STAGE_ORIGIN.y + 2.42,
+    FP_STAGE_ORIGIN.z - 0.62,
+    `${createCustomSVGIcon('golden_bell', 15)}<span class="text-[#B45309]">골든벨 (150만)</span>`,
+    () => ringShopGoldenBell()
+  );
+
+  // ==================== 카운터 직원 단상(상반신·얼굴 100% 노출) & 손님 영접 리액션 ====================
+  stg.add(createRoundedToyMesh(1.8, 0.44, 1.1, MAT.woodDark, -0.45, 0.22, -2.05, 0.05));
+  const clerkMesh = createChibiPerson3D(dest.staffRole);
+  clerkMesh.position.set(-0.45, 0.44, -2.05);
+  stg.add(clerkMesh);
+  fpState.npcActors.push({ mesh: clerkMesh, isClerk: true, baseY: 0.44, phase: 0 });
+
+  const custConfigs = [
+    { role: 'newlywed', x: -3.65, z: 0.25, quote: dest.customerQuotes[0] },
+    { role: 'streamer', x: 3.65, z: 0.45, quote: dest.customerQuotes[1] }
+  ];
+  stg.add(createRoundedToyMesh(1.05, 0.78, 1.05, MAT.white, -3.65, 0.4, 1.25, 0.08));
+  stg.add(createRoundedToyMesh(1.05, 0.78, 1.05, MAT.white, 3.65, 0.4, 1.45, 0.08));
+
+  custConfigs.forEach((cfg, idx) => {
+    const cm = createChibiPerson3D(cfg.role);
+    cm.position.set(cfg.x, 0.04, cfg.z);
+    stg.add(cm);
+    fpState.npcActors.push({ mesh: cm, isClerk: false, baseY: 0.04, phase: idx * 1.5 + 0.8 });
+    showSpeechBubble3D(`fp_cust_${idx}`, FP_STAGE_ORIGIN.x + cfg.x, FP_STAGE_ORIGIN.y + 2.15, FP_STAGE_ORIGIN.z + cfg.z, cfg.quote, 5.2);
+  });
+
+  showSpeechBubble3D('fp_clerk_welcome', FP_STAGE_ORIGIN.x - 0.45, FP_STAGE_ORIGIN.y + 2.75, FP_STAGE_ORIGIN.z - 2.05, dest.welcomeQuote, 5.8);
+
+  // 1.62m 사람 눈높이 진입 시작점 (진열대 5종 + 황금 종 + 직원 + 손님이 한 화면에 모두 들어오는 최적 거리)
+  fpState.entryWalkTimer = 0.55;
+  fpState.bounds = {
+    minX: FP_STAGE_ORIGIN.x - 4.2,
+    maxX: FP_STAGE_ORIGIN.x + 4.2,
+    minZ: FP_STAGE_ORIGIN.z + 1.45,
+    maxZ: FP_STAGE_ORIGIN.z + 4.35,
+    eyeY: FP_STAGE_ORIGIN.y + 1.62
+  };
+  fpState.pos.set(FP_STAGE_ORIGIN.x + 0.0, fpState.bounds.eyeY, FP_STAGE_ORIGIN.z + 4.2);
+  fpCamera.position.copy(fpState.pos);
+  if (fpState.handsGroup) fpState.handsGroup.visible = true;
+
+  controls.enabled = false;
+  playShopDoorChimeSound();
+  syncFpModeHUD();
+  syncTopBarsByMode();
+  showToast(`[${dest.name}] 1인칭 입장! 진열대 3D 상품을 터치하거나 골든벨을 울려보세요!`, 'gold');
+}
+
+function buyFpShowcaseItem(itemId, visualMesh = null) {
+  const item = FP_GIFT_ITEMS.find((x) => x.id === itemId);
+  if (!item) return;
+  if (!spendGold(item.cost)) return;
+
+  if (!state.heldGifts) state.heldGifts = { left: null, right: null };
+  if (item.slot === 'left') {
+    state.heldGifts.left = item.id;
+  } else {
+    state.heldGifts.right = item.id;
+  }
+  syncHeldHands3DAndChips();
+
+  if (visualMesh) {
+    triggerSquashStretch(visualMesh, 1.35);
+    const wp = new THREE.Vector3();
+    visualMesh.getWorldPosition(wp);
+    spawnPoofParticles3D(wp.x, wp.y + 0.35, wp.z, 0xFFD93D, 10);
+  }
+  if (fpState.handsGroup) {
+    triggerSquashStretch(fpState.handsGroup, 1.15);
+  }
+  playShopDoorChimeSound();
+  showSpeechBubble3D(
+    'fp_clerk_welcome',
+    FP_STAGE_ORIGIN.x - 0.45,
+    FP_STAGE_ORIGIN.y + 2.75,
+    FP_STAGE_ORIGIN.z - 2.05,
+    `갓물주님! [${item.name}] 정성껏 포장해 손에 들려드렸습니다!!`,
+    3.6
+  );
+  showToast(item.buyMsg, 'mint');
+  saveGameState();
+}
+
+let goldenBellBannerTimeout = null;
+function ringShopGoldenBell() {
+  if (!fpState.active || fpState.mode !== 'shop') return;
+  if (!spendGold(150)) return;
+
+  playGoldenBellSound();
+  fpState.bellSwingTimer = 3.6;
+  fpState.cheerTimer = 5.5;
+
+  // 매장 내부 화려한 폭죽 파티클 폭발!
+  const fireworkCols = [0xFFD93D, 0xFF6B6B, 0x38E54D, 0x4CC2FF, 0xF472B6];
+  for (let b = 0; b < 5; b++) {
+    const bx = FP_STAGE_ORIGIN.x - 3.2 + b * 1.65;
+    const by = FP_STAGE_ORIGIN.y + 2.9 + (b % 2) * 0.45;
+    const bz = FP_STAGE_ORIGIN.z - 1.2;
+    spawnPoofParticles3D(bx, by, bz, fireworkCols[b % fireworkCols.length], 12);
+  }
+
+  // 전 세대 행복도 즉시 100% MAX + 60초간 월세/상가 수익 2.5배 피버 타임 발동!
+  for (const b of Object.values(state.buildings)) {
+    for (const rm of b.rooms) {
+      if (rm.household) rm.household.happiness = 100;
+    }
+  }
+  state.feverTimer = 60.0;
+
+  // 양손이 비어 있다면 골든벨 서비스 선물 세트 자동 증정!
+  if (!state.heldGifts.left) state.heldGifts.left = 'item_coffee';
+  if (!state.heldGifts.right) state.heldGifts.right = 'item_cake';
+  syncHeldHands3DAndChips();
+  updateTopHUDTargets();
+
+  showSpeechBubble3D(
+    'fp_clerk_welcome',
+    FP_STAGE_ORIGIN.x - 0.45,
+    FP_STAGE_ORIGIN.y + 2.75,
+    FP_STAGE_ORIGIN.z - 2.05,
+    '땡땡땡!! 갓물주님이 전 메뉴 골든벨을 울리셨습니다!! 만세~!!',
+    4.8
+  );
+  fpState.npcActors.forEach((ac, idx) => {
+    if (!ac.isClerk) {
+      const wp = new THREE.Vector3();
+      ac.mesh.getWorldPosition(wp);
+      showSpeechBubble3D(`fp_cheer_${idx}`, wp.x, wp.y + 2.1, wp.z, '와아아!! 우리 건물주님 클라스 미쳤다!! 평생 살게요!!', 4.8);
+    }
+  });
+
+  const banner = document.getElementById('golden-bell-banner');
+  if (banner) {
+    banner.classList.remove('hidden');
+    if (goldenBellBannerTimeout) clearTimeout(goldenBellBannerTimeout);
+    goldenBellBannerTimeout = setTimeout(() => banner.classList.add('hidden'), 4300);
+  }
+  showToast('골든벨 발동! 행복도 MAX + 60초간 모든 월세·상가 수익 2.5배 폭증!', 'gold');
+  saveGameState();
+}
+
+function enterFirstPersonRoom(roomId) {
+  const rm = findRoomById(roomId);
+  if (!rm) return;
+  const lot = state.lots.find((l) => l.lotId === rm.lotId);
+  if (!lot) return;
+
+  // 미개방이거나 공실인 방도 바로 집들이 체험이 가능하도록 자동 안내/보정 지원
+  if (!rm.unlocked) {
+    showToast(`${rm.name}호는 아직 미개방 호실입니다! 먼저 호실을 개방해 주세요.`, 'coral');
+    return;
+  }
+
+  const wasInDrive = fpState.active ? fpState.returnToDrive : driveState.active;
+  if (driveState.active) {
+    stopCarRadioBGM();
+    driveState.active = false;
+  }
+  focusedRoomId = null;
+  if (focusedShopId) {
+    const prevS = focusedShopId;
+    focusedShopId = null;
+    rebuildStandaloneShop3D(prevS);
+  }
+  dom.fpVisitModal?.classList.add('hidden');
+  clearFpStageAndTempProps();
+
+  fpState.active = true;
+  fpState.mode = 'room';
+  fpState.returnToDrive = !!wasInDrive;
+  fpState.roomId = rm.id;
+  fpState.entryWalkTimer = 0.28;
+  fpState.pitch = -0.07;
+
+  const rWorldX = lot.x + rm.lx;
+  const rWorldY = rm.ly;
+  const rWorldZ = lot.z + rm.lz;
+
+  // 평형별 가구(빔프로젝터·캐노피 침대·복층 계단) + 티테이블 + 세입자가 한눈에 들어오는 황금 구도
+  let spawnOffsetX = 0;
+  let initialYaw = 0;
+  const tableLocalX = rm.layoutType === 'tworoom' ? -1.15 : rm.layoutType === 'loft' ? 1.55 : 0.15;
+  const tableLocalZ = -0.22;
+  const greetLocalX = tableLocalX + (rm.layoutType === 'tworoom' ? -0.15 : -0.25);
+  const greetLocalZ = -1.18;
+
+  if (rm.layoutType === 'tworoom') {
+    spawnOffsetX = -1.65;
+    initialYaw = -0.34;
+  } else if (rm.layoutType === 'loft') {
+    spawnOffsetX = 2.45;
+    initialYaw = 0.38;
+  } else if (rm.layoutType === 'studio') {
+    spawnOffsetX = 0.65;
+    initialYaw = 0.16;
+  }
+  fpState.yaw = initialYaw;
+
+  fpState.bounds = {
+    minX: rWorldX - rm.rw * 0.36,
+    maxX: rWorldX + rm.rw * 0.36,
+    minZ: rWorldZ + 0.55,
+    maxZ: rWorldZ + rm.rd * 0.42,
+    eyeY: rWorldY + 1.62
+  };
+  fpState.pos.set(rWorldX + spawnOffsetX, fpState.bounds.eyeY, rWorldZ + rm.rd * 0.42);
+  fpCamera.position.copy(fpState.pos);
+  if (fpState.handsGroup) fpState.handsGroup.visible = true;
+
+  // 360도 회전 시 뒷면 허공이 보이지 않도록 실내 현관문 마감벽 + 천장 조명 + 선물 티테이블 배치
+  const rGrp = lot3D[rm.lotId]?.roomsMap?.[rm.id];
+  if (rGrp) {
+    const tempGrp = new THREE.Group();
+    const decorDef = getFurnitureItemDef('decor', rm.equippedFurniture.decor);
+    const wallTex = TEX[decorDef?.wallKey || 'wallPeach'] || TEX.wallPeach;
+    const fWallMat = makeClayMat(0xFFFFFF, { map: wallTex, roughness: 0.62 });
+
+    // 전면 실내 벽체 & 아늑한 원목 현관문 (180도 뒤돌아볼 때 실제 현관 연출)
+    const frontZ = rm.rd * 0.5 - 0.08;
+    tempGrp.add(createRoundedToyMesh(rm.rw - 0.24, rm.rh - 0.22, 0.14, fWallMat, 0, rm.rh * 0.5, frontZ, 0.05));
+    tempGrp.add(createRoundedToyMesh(1.45, 2.55, 0.2, MAT.walnutTrim, spawnOffsetX, 1.35, frontZ - 0.05, 0.06));
+    const knob = new THREE.Mesh(GEO.sphere, MAT.gold);
+    knob.scale.setScalar(0.12);
+    knob.position.set(spawnOffsetX + 0.48, 1.25, frontZ - 0.16);
+    tempGrp.add(knob);
+
+    const ceilLamp = new THREE.Mesh(GEO.sphere, MAT.neonYellow);
+    ceilLamp.scale.setScalar(0.32);
+    ceilLamp.position.set(0, rm.rh - 0.32, 0.2);
+    tempGrp.add(ceilLamp);
+
+    if (!rm.giftedItems || rm.giftedItems.length === 0) {
+      tempGrp.add(createRoundedToyMesh(1.45, 0.09, 0.92, MAT.white, tableLocalX, 0.76, tableLocalZ, 0.04));
+      tempGrp.add(createRoundedToyMesh(0.14, 0.6, 0.14, MAT.gold, tableLocalX - 0.48, 0.45, tableLocalZ, 0.03));
+      tempGrp.add(createRoundedToyMesh(0.14, 0.6, 0.14, MAT.gold, tableLocalX + 0.48, 0.45, tableLocalZ, 0.03));
+    }
+    rGrp.add(tempGrp);
+    fpState.roomTempGroup = tempGrp;
+  }
+
+  // 세입자가 티테이블 너머 적당한 거리(약 3.8m)에서 전신과 말풍선이 100% 보이도록 마중 인사!
+  const actors = residentActors[rm.id];
+  if (actors && actors.length > 0) {
+    const host = actors[0].mesh;
+    fpState.hostResidentMesh = host;
+    fpState.hostOrigPos = host.position.clone();
+    host.position.set(greetLocalX, 0.16, greetLocalZ);
+    actors[0].waitTimer = 999;
+
+    showSpeechBubble3D(
+      `fp_room_host_${rm.id}`,
+      rWorldX + greetLocalX,
+      rWorldY + 1.98,
+      rWorldZ + greetLocalZ,
+      `띵동~ 어머! 건물주님이 직접 저희 ${rm.name}호에 놀러 오셨네요!! 어서 오세요!`,
+      5.5
+    );
+  }
+
+  controls.enabled = false;
+  playDoorbellChimeSound();
+  syncFpModeHUD();
+  syncTopBarsByMode();
+  showToast(`띵동~ [${rm.name}호] 1인칭 집들이 입장! 좌우 드래그로 내가 꾸민 방을 구경하고 선물을 건네보세요!`, 'mint');
+}
+
+function giveHousewarmingGiftAction() {
+  if (!fpState.active || fpState.mode !== 'room') return;
+  const rm = findRoomById(fpState.roomId);
+  if (!rm) return;
+
+  const hasGift = !!(state.heldGifts?.left || state.heldGifts?.right);
+  if (!hasGift) {
+    openFpVisitModal('shops');
+    showToast('양손에 들고 있는 선물이 없습니다! 먼저 상점에 들러 케이크나 꽃다발을 골라보세요!', 'gold');
+    return;
+  }
+
+  if (!rm.household) {
+    showToast('현재 공실입니다! 세입자가 입주한 호실에 선물을 전달해 보세요!', 'coral');
+    return;
+  }
+
+  const lot = state.lots.find((l) => l.lotId === rm.lotId);
+  const deliveredNames = [];
+  if (!Array.isArray(rm.giftedItems)) rm.giftedItems = [];
+
+  for (const side of ['right', 'left']) {
+    const gid = state.heldGifts[side];
+    if (gid) {
+      rm.giftedItems.push(gid);
+      const def = FP_GIFT_ITEMS.find((x) => x.id === gid);
+      if (def) deliveredNames.push(def.shortName);
+      state.heldGifts[side] = null;
+    }
+  }
+
+  // 영구 임대료 +20% 보너스 & 행복도 100% & 감사의 황금 열쇠 + 히든 팁 코인 다발 증정!
+  const firstTimeBonus = (rm.giftBonusPct || 0) < 20;
+  rm.giftBonusPct = Math.max(20, (rm.giftBonusPct || 0) + (firstTimeBonus ? 20 : 5));
+  rm.household.happiness = 100;
+  state.goldenKeys = (state.goldenKeys || 0) + 1;
+  const tipCoins = 180;
+  addGold(tipCoins);
+
+  // 방 3D 테이블에 방금 건넨 케이크·꽃다발·커피 즉시 진열 + 실내 현관 벽체 유지!
+  rebuildRoom3D(rm.lotId, rm);
+  syncBuildingResidents3D(rm.lotId);
+
+  const rGrpAfter = lot3D[rm.lotId]?.roomsMap?.[rm.id];
+  if (rGrpAfter) {
+    const tempGrp = new THREE.Group();
+    const decorDef = getFurnitureItemDef('decor', rm.equippedFurniture.decor);
+    const wallTex = TEX[decorDef?.wallKey || 'wallPeach'] || TEX.wallPeach;
+    const fWallMat = makeClayMat(0xFFFFFF, { map: wallTex, roughness: 0.62 });
+    const frontZ = rm.rd * 0.5 - 0.08;
+    const doorX = rm.layoutType === 'tworoom' ? -1.65 : rm.layoutType === 'loft' ? 2.45 : 0.65;
+    tempGrp.add(createRoundedToyMesh(rm.rw - 0.24, rm.rh - 0.22, 0.14, fWallMat, 0, rm.rh * 0.5, frontZ, 0.05));
+    tempGrp.add(createRoundedToyMesh(1.45, 2.55, 0.2, MAT.walnutTrim, doorX, 1.35, frontZ - 0.05, 0.06));
+    rGrpAfter.add(tempGrp);
+    fpState.roomTempGroup = tempGrp;
+  }
+
+  const tableLocalX = rm.layoutType === 'tworoom' ? -1.15 : rm.layoutType === 'loft' ? 1.55 : 0.15;
+  const greetLocalX = tableLocalX + 0.55;
+  const greetLocalZ = -1.12;
+
+  const actors = residentActors[rm.id];
+  if (actors && actors.length > 0) {
+    const host = actors[0].mesh;
+    fpState.hostResidentMesh = host;
+    fpState.hostOrigPos = host.position.clone();
+    host.position.set(greetLocalX, 0.16, greetLocalZ);
+    actors[0].waitTimer = 999;
+    triggerSquashStretch(host, 1.4);
+
+    const wx = (lot?.x || 0) + rm.lx + greetLocalX;
+    const wy = rm.ly + 1.98;
+    const wz = (lot?.z || 0) + rm.lz + greetLocalZ;
+    spawnPoofParticles3D((lot?.x || 0) + rm.lx + tableLocalX, rm.ly + 1.15, (lot?.z || 0) + rm.lz - 0.22, 0xFF6B6B, 16);
+    spawnShockwaveRing3D((lot?.x || 0) + rm.lx + tableLocalX, rm.ly + 0.22, (lot?.z || 0) + rm.lz - 0.22, 0xFFD93D, 4.2);
+    showSpeechBubble3D(
+      `fp_room_host_${rm.id}`,
+      wx,
+      wy,
+      wz,
+      `세상에! 건물주님이 직접 [${deliveredNames.join(' & ')}] 선물을 사 들고 오시다니 평생 여기서 살게요!!`,
+      6.0
+    );
+  }
+
+  playGoldenBellSound();
+  syncHeldHands3DAndChips();
+  syncFpModeHUD();
+  updateTopHUDTargets();
+  showToast(
+    `[${rm.name}호 재계약 확정!] 임대료 영구 +${rm.giftBonusPct}% 상승 & 감사의 황금 열쇠 + 보너스 ${tipCoins}만 획득!`,
+    'gold'
+  );
+  saveGameState();
+}
+
+function syncFpModeHUD() {
+  const isShop = fpState.mode === 'shop';
+  document.getElementById('fp-shop-shelf-strip')?.classList.toggle('hidden', !isShop);
+  document.getElementById('fp-shop-actions')?.classList.toggle('hidden', !isShop);
+  document.getElementById('fp-room-actions')?.classList.toggle('hidden', isShop);
+
+  const exitLbl = document.getElementById('label-exit-fp');
+  if (exitLbl) {
+    exitLbl.textContent = fpState.returnToDrive ? '차량 운전석 복귀' : '타운 거리로 나가기';
+  }
+
+  const placeBadge = document.getElementById('fp-place-badge');
+  if (placeBadge) {
+    if (isShop) {
+      const dest = FP_SHOP_DESTINATIONS.find((s) => s.id === fpState.shopId) || FP_SHOP_DESTINATIONS[0];
+      placeBadge.innerHTML = `${createCustomSVGIcon(dest.icon, 15)}<span>${dest.name} · 1인칭 방문</span>`;
+    } else {
+      const rm = findRoomById(fpState.roomId);
+      const fam = rm?.household?.familyName || '공실 투어';
+      placeBadge.innerHTML = `${createCustomSVGIcon('doorbell_visit', 15)}<span>${rm?.name || ''}호 (${fam}) · 1인칭 집들이</span>`;
+    }
+  }
+
+  const strip = document.getElementById('fp-shop-shelf-strip');
+  if (strip && isShop) {
+    strip.innerHTML = FP_GIFT_ITEMS.map((it) => `
+      <button type="button" data-fp-buy="${it.id}" class="fp-shelf-pill shrink-0">
+        ${createCustomSVGIcon(it.icon, 18)}
+        <span>${it.shortName}</span>
+        <span class="text-[#B45309]">${it.cost}만</span>
+      </button>
+    `).join('');
+    strip.querySelectorAll('[data-fp-buy]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const iid = btn.getAttribute('data-fp-buy');
+        const hitObj = fpState.pickables.find((p) => p.userData?.itemId === iid);
+        buyFpShowcaseItem(iid, hitObj?.userData?.visualMesh || null);
+      });
+    });
+  }
+
+  syncHeldHands3DAndChips();
+}
+
+function openFpVisitModal(defaultTab = 'shops') {
+  fpState.modalTab = defaultTab;
+  renderFpVisitModalCards();
+  dom.fpVisitModal?.classList.remove('hidden');
+}
+
+function renderFpVisitModalCards() {
+  const grid = document.getElementById('fp-visit-cards-grid');
+  const tabShops = document.getElementById('fp-tab-shops');
+  const tabRooms = document.getElementById('fp-tab-rooms');
+  if (!grid) return;
+
+  const isShops = fpState.modalTab === 'shops';
+  tabShops?.classList.toggle('active', isShops);
+  tabRooms?.classList.toggle('active', !isShops);
+
+  if (isShops) {
+    grid.innerHTML = FP_SHOP_DESTINATIONS.map((dest) => `
+      <div class="diary-card flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-11 h-11 rounded-2xl bg-[#FFFDF7] border-2 border-[#E8CCB0] flex items-center justify-center shrink-0">
+            ${createCustomSVGIcon(dest.icon, 26)}
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="font-title text-[14.5px] text-[#3A2E2B]">${dest.name}</span>
+              <span class="kw-chip tone-${dest.tone}">${dest.badge}</span>
+            </div>
+            <div class="font-body text-[11.5px] font-semibold text-[#69544C] mt-0.5 truncate">
+              상주 스태프: ${dest.staffName} · 진열대 3D 쇼핑 & 골든벨 가능
+            </div>
+          </div>
+        </div>
+        <button type="button" data-enter-fp-shop="${dest.id}" class="jelly-action-btn btn-gold-lip px-3.5 py-2 shrink-0">
+          ${createCustomSVGIcon('walk_enter_door', 16)}
+          <span>1인칭 입장</span>
+        </button>
+      </div>
+    `).join('');
+
+    grid.querySelectorAll('[data-enter-fp-shop]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        enterFirstPersonShop(btn.getAttribute('data-enter-fp-shop'));
+      });
+    });
+  } else {
+    const b = state.buildings.lot_main;
+    grid.innerHTML = b.rooms.map((rm) => {
+      const meta = ROOM_TYPE_META[rm.layoutType] || ROOM_TYPE_META.studio;
+      const hDef = rm.household ? HOUSEHOLD_TYPES[rm.household.type] : null;
+      const appDef = getFurnitureItemDef('appliance', rm.equippedFurniture?.appliance);
+      return `
+        <div class="diary-card flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0 flex-1">
+            ${rm.household
+              ? createHouseholdAvatarSVG(rm.household.type, 46)
+              : `<div class="w-11 h-11 rounded-2xl bg-[#FFFDF7] border-2 border-[#E8CCB0] flex items-center justify-center shrink-0">${createCustomSVGIcon(rm.unlocked ? meta.svgIcon : 'padlock_gold', 24)}</div>`}
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="hotel-num-tag">${rm.name}호</span>
+                <span class="kw-chip tone-${meta.tone}">${meta.shortBadge}</span>
+                ${hDef ? `<span class="role-accent-badge" style="background:${hDef.accentHex};">${hDef.label}</span>` : ''}
+                ${(rm.giftBonusPct || 0) > 0 ? `<span class="kw-chip tone-gold">평생단골 +${rm.giftBonusPct}%</span>` : ''}
+              </div>
+              <div class="font-body text-[11.5px] font-semibold text-[#69544C] mt-0.5 break-keep">
+                ${!rm.unlocked
+                  ? `미개방 호실 (${rm.unlockCost}만 개방 후 VIP 세입자 맞이 가능)`
+                  : rm.household
+                    ? `${rm.household.familyName} 거주 중 · ${appDef?.name || '기본 가전'}`
+                    : '공실 (1인칭 내부 투어 또는 즉시 VIP 입주 가능)'}
+              </div>
+            </div>
+          </div>
+          ${rm.unlocked && rm.household
+            ? `<button type="button" data-enter-fp-room="${rm.id}" class="jelly-action-btn btn-mint-lip px-3.5 py-2 shrink-0">${createCustomSVGIcon('doorbell_visit', 16)}<span>띵동~ 방문</span></button>`
+            : `<button type="button" data-quick-vip-room="${rm.id}" class="jelly-action-btn btn-coral-lip px-3 py-2 shrink-0">${createCustomSVGIcon('contract_scroll', 15)}<span>${rm.unlocked ? '즉시 입주&방문' : `${rm.unlockCost}만 개방&방문`}</span></button>`}
+        </div>
+      `;
+    }).join('');
+
+    grid.querySelectorAll('[data-enter-fp-room]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        enterFirstPersonRoom(btn.getAttribute('data-enter-fp-room'));
+      });
+    });
+
+    grid.querySelectorAll('[data-quick-vip-room]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const rm = findRoomById(btn.getAttribute('data-quick-vip-room'));
+        if (!rm) return;
+        if (!rm.unlocked) {
+          if (!spendGold(rm.unlockCost)) return;
+          rm.unlocked = true;
+        }
+        if (!rm.household) {
+          const meta = ROOM_TYPE_META[rm.layoutType] || ROOM_TYPE_META.studio;
+          const tKey = meta.preferredBy[0] || 'newlywed';
+          const hDef = HOUSEHOLD_TYPES[tKey];
+          rm.household = {
+            type: tKey,
+            familyName: `${FAMILY_LAST_NAMES[Math.floor(Math.random() * FAMILY_LAST_NAMES.length)]}${GIVEN_NAMES[Math.floor(Math.random() * GIVEN_NAMES.length)]} 세대`,
+            maxBudget: hDef.maxRent,
+            happiness: 96
+          };
+          rm.rentTimer = 5.0;
+        }
+        rebuildRoom3D(rm.lotId, rm);
+        syncBuildingResidents3D(rm.lotId);
+        updateTopHUDTargets();
+        saveGameState();
+        enterFirstPersonRoom(rm.id);
+      });
+    });
+  }
+}
+
+function exitFirstPersonMode(returnToDriveOverride = null) {
+  if (!fpState.active) return;
+  const shouldDrive = returnToDriveOverride !== null ? returnToDriveOverride : fpState.returnToDrive;
+  const visitedRoomId = fpState.mode === 'room' ? fpState.roomId : null;
+
+  fpState.active = false;
+  fpState.keys.forward = false;
+  fpState.keys.backward = false;
+  fpState.keys.left = false;
+  fpState.keys.right = false;
+  if (fpState.handsGroup) fpState.handsGroup.visible = false;
+
+  clearFpStageAndTempProps();
+  if (visitedRoomId) {
+    const rm = findRoomById(visitedRoomId);
+    if (rm) syncBuildingResidents3D(rm.lotId);
+  }
+
+  if (shouldDrive) {
+    enterDriveMode(true);
+  } else {
+    controls.enabled = true;
+    setOverviewCamera(true);
+  }
+}
+
+function tickFirstPersonMode(dt, elapsed) {
+  if (!fpState.active || !fpCamera) return;
+
+  // 입장 시 자동 문 열림 & 두 걸음 전진 연출 (Head-bobbing 동반)
+  let moving = false;
+  if (fpState.doorHinge && fpState.doorAngle < 1.35) {
+    fpState.doorAngle = Math.min(1.35, fpState.doorAngle + dt * 2.6);
+    fpState.doorHinge.rotation.y = fpState.doorAngle;
+  }
+
+  if (fpState.entryWalkTimer > 0) {
+    fpState.entryWalkTimer -= dt;
+    fpState.pos.z -= dt * 1.45;
+    moving = true;
+  }
+
+  const turnInput = (fpState.keys.left ? 1 : 0) - (fpState.keys.right ? 1 : 0);
+  if (turnInput !== 0) {
+    fpState.yaw += turnInput * 1.65 * dt;
+  }
+
+  const moveInput = (fpState.keys.forward ? 1 : 0) - (fpState.keys.backward ? 1 : 0);
+  if (moveInput !== 0) {
+    const lookSin = Math.sin(fpState.yaw);
+    const lookCos = Math.cos(fpState.yaw);
+    fpState.pos.x -= lookSin * moveInput * 3.4 * dt;
+    fpState.pos.z -= lookCos * moveInput * 3.4 * dt;
+    moving = true;
+  }
+
+  fpState.pos.x = THREE.MathUtils.clamp(fpState.pos.x, fpState.bounds.minX, fpState.bounds.maxX);
+  fpState.pos.z = THREE.MathUtils.clamp(fpState.pos.z, fpState.bounds.minZ, fpState.bounds.maxZ);
+
+  if (moving) {
+    fpState.walkPhase += dt * 10.5;
+  }
+  const headBobY = moving ? Math.sin(fpState.walkPhase) * 0.055 : Math.sin(elapsed * 2.2) * 0.012;
+  const headBobX = moving ? Math.cos(fpState.walkPhase * 0.5) * 0.025 : 0;
+
+  fpCamera.position.set(fpState.pos.x + headBobX, fpState.bounds.eyeY + headBobY, fpState.pos.z);
+  fpCamera.rotation.order = 'YXZ';
+  fpCamera.rotation.y = fpState.yaw;
+  fpCamera.rotation.x = THREE.MathUtils.clamp(fpState.pitch, -0.45, 0.45);
+
+  // 1인칭 양손(커피·케이크·꽃다발) 자연스러운 보행 흔들림
+  if (fpState.handsGroup) {
+    fpState.handsGroup.position.x = Math.cos(fpState.walkPhase * 0.5) * (moving ? 0.018 : 0.004);
+    fpState.handsGroup.position.y = Math.abs(Math.sin(fpState.walkPhase)) * (moving ? -0.022 : 0) + Math.sin(elapsed * 2.5) * 0.006;
+  }
+
+  // 황금 종 흔들림 애니메이션
+  if (fpState.bellPivot) {
+    if (fpState.bellSwingTimer > 0) {
+      fpState.bellSwingTimer -= dt;
+      fpState.bellPivot.rotation.z = Math.sin(elapsed * 24) * 0.48 * Math.min(1, fpState.bellSwingTimer);
+    } else {
+      fpState.bellPivot.rotation.z = Math.sin(elapsed * 2.2) * 0.05;
+    }
+  }
+
+  if (fpState.cheerTimer > 0) fpState.cheerTimer -= dt;
+
+  // 매장 직원 & 손님들이 항상 나를 바라보며 박수/만세 리액션!
+  for (const ac of fpState.npcActors) {
+    const wp = new THREE.Vector3();
+    ac.mesh.getWorldPosition(wp);
+    const dx = fpCamera.position.x - wp.x;
+    const dz = fpCamera.position.z - wp.z;
+    ac.mesh.rotation.y = Math.atan2(dx, dz);
+
+    if (fpState.cheerTimer > 0) {
+      // 골든벨 만세 점프!
+      ac.mesh.position.y = ac.baseY + Math.abs(Math.sin(elapsed * 12 + ac.phase)) * 0.28;
+      ac.mesh.userData.armL.rotation.z = 2.6 + Math.sin(elapsed * 16) * 0.25;
+      ac.mesh.userData.armR.rotation.z = -2.6 - Math.sin(elapsed * 16) * 0.25;
+    } else {
+      // 갓물주 영접 박수 짝짝 리액션
+      ac.mesh.position.y = ac.baseY + Math.abs(Math.sin(elapsed * 5 + ac.phase)) * 0.06;
+      const clap = Math.sin(elapsed * 11 + ac.phase) * 0.38;
+      ac.mesh.userData.armL.rotation.z = 1.05 + clap;
+      ac.mesh.userData.armR.rotation.z = -1.05 - clap;
+    }
+  }
+
+  // 세입자 집들이 모드일 때 세입자가 내 눈을 맞추며 인사!
+  if (fpState.mode === 'room' && fpState.hostResidentMesh) {
+    const wp = new THREE.Vector3();
+    fpState.hostResidentMesh.getWorldPosition(wp);
+    fpState.hostResidentMesh.rotation.y = Math.atan2(fpCamera.position.x - wp.x, fpCamera.position.z - wp.z);
+    fpState.hostResidentMesh.userData.armR.rotation.z = -2.1 + Math.sin(elapsed * 9) * 0.35;
   }
 }
 
@@ -5348,6 +6890,7 @@ function renderFocusedRoomInspector() {
           <div class="flex items-center gap-1.5 mt-1.5 flex-wrap">
             <span class="kw-chip tone-gold !py-0.5 !px-2">${createCustomSVGIcon('coin_stack', 14)}<span>주기 ${effRent}만</span></span>
             <span class="kw-chip tone-coral !py-0.5 !px-2">${createCustomSVGIcon('sparkle_heart_gauge', 14)}<span>${happyVal}%</span></span>
+            ${(rm.giftBonusPct || 0) > 0 ? `<span class="kw-chip tone-mint !py-0.5 !px-2">${createCustomSVGIcon('gift_ribbon_box', 13)}<span>평생단골 +${rm.giftBonusPct}%</span></span>` : ''}
           </div>
         </div>
       </div>
@@ -6210,6 +7753,24 @@ function openRenameModal(lotId) {
 // 16. 시뮬레이션 루프 · 롤링 넘버 HUD · 3D 오버레이 무겹침 투영
 // =========================================================
 function tickSimulationEconomyAndCrises(dt) {
+  // 60초 갓물주 골든벨 피버 타임 카운트다운 및 상단 HUD 동기화
+  if ((state.feverTimer || 0) > 0) {
+    const prevActive = state.feverTimer > 0;
+    state.feverTimer = Math.max(0, state.feverTimer - dt);
+    if (dom.hudFeverPill) {
+      dom.hudFeverPill.classList.toggle('hidden', state.feverTimer <= 0);
+    }
+    if (dom.hudFeverText && state.feverTimer > 0) {
+      dom.hudFeverText.textContent = `갓물주 골든벨 피버 2.5배! ${Math.ceil(state.feverTimer)}초`;
+    }
+    if (prevActive && state.feverTimer <= 0) {
+      updateTopHUDTargets();
+      showToast('골든벨 피버 타임이 종료되었습니다!', 'sky');
+    }
+  } else if (dom.hudFeverPill && !dom.hudFeverPill.classList.contains('hidden')) {
+    dom.hudFeverPill.classList.add('hidden');
+  }
+
   state.gameMinutes += dt * 4.5;
   if (state.gameMinutes >= 24 * 60) {
     state.gameMinutes -= 24 * 60;
@@ -6228,7 +7789,7 @@ function tickSimulationEconomyAndCrises(dt) {
     b.shopCycleTimer = (b.shopCycleTimer || 9.0) - dt;
     if (b.shopCycleTimer <= 0) {
       b.shopCycleTimer = 11.0;
-      const shopProfit = (b.shopsLv.mart || 1) * 15 + (b.shopsLv.wash || 1) * 13;
+      const shopProfit = Math.round(((b.shopsLv.mart || 1) * 15 + (b.shopsLv.wash || 1) * 13) * getFeverMultiplier());
       if (b.manager.hired) {
         addGold(shopProfit);
       } else {
@@ -6437,8 +7998,8 @@ function ensureShopOverlayBadge(shopId) {
 }
 
 function isInTopHudSafeZone(x, y) {
-  const hudW = window.innerWidth < 640 ? window.innerWidth : 478;
-  const hudH = window.innerWidth < 640 ? 112 : 118;
+  const hudW = window.innerWidth < 640 ? window.innerWidth : 540;
+  const hudH = window.innerWidth < 640 ? 185 : 148;
   return x < hudW && y < hudH;
 }
 
@@ -6447,11 +8008,29 @@ function isInBottomRightFabZone(x, y) {
 }
 
 function updateAllProjectedOverlays(dt) {
-  const hideTownBadges = !!focusedRoomId || !!focusedShopId;
+  const hideTownBadges = !!focusedRoomId || !!focusedShopId || fpState.active;
   const vw = window.innerWidth;
   const vh = window.innerHeight;
 
   const visibleShopBoxes = [];
+
+  // 0) 1인칭 상점 쇼케이스 상품 & 골든벨 플로팅 배지 투영
+  for (const pin of fpState.labelPins) {
+    if (!fpState.active || fpState.mode !== 'shop') {
+      pin.el.style.display = 'none';
+      continue;
+    }
+    const pt = projectWorldToScreen(pin.wx, pin.wy, pin.wz);
+    if (!pt.visible || pt.x < 35 || pt.x > vw - 35 || pt.y < 95 || pt.y > vh - 145) {
+      pin.el.style.display = 'none';
+    } else {
+      const halfW = Math.max(68, (pin.el.offsetWidth || 136) * 0.5 + 6);
+      const cx = THREE.MathUtils.clamp(pt.x, halfW, Math.max(halfW, vw - halfW));
+      pin.el.style.display = 'inline-flex';
+      pin.el.style.left = `${cx}px`;
+      pin.el.style.top = `${pt.y}px`;
+    }
+  }
 
   // 1) 단독 상가 플로팅 배지 투영 (뷰포트 좌우 클리핑 원천 방지 클램프)
   for (const tpl of STANDALONE_SHOPS_TEMPLATE) {
@@ -6496,7 +8075,7 @@ function updateAllProjectedOverlays(dt) {
 
   // 3) 월세 & 상가 매출 코인 버블 투영 (상가 지붕 배지와 2D 충돌 시 자동 하단 이격)
   for (const rb of rentBubbles) {
-    if (focusedRoomId) {
+    if (focusedRoomId || fpState.active) {
       rb.el.style.display = 'none';
       continue;
     }
@@ -6573,6 +8152,12 @@ function loadGameState() {
           : ['car_scooter'],
         currentCar: parsed.garage?.currentCar || 'car_scooter'
       },
+      heldGifts: {
+        left: parsed.heldGifts?.left || null,
+        right: parsed.heldGifts?.right || null
+      },
+      feverTimer: Number(parsed.feverTimer) > 0 ? Number(parsed.feverTimer) : 0,
+      goldenKeys: Number(parsed.goldenKeys) || 0,
       stats: { ...fresh.stats, ...(parsed.stats || {}) }
     };
 
@@ -6611,6 +8196,9 @@ function initThreeScene() {
   );
 
   driveCamera = new THREE.PerspectiveCamera(58, aspect, 0.3, 320);
+  fpCamera = new THREE.PerspectiveCamera(72, aspect, 0.12, 220);
+  scene.add(fpCamera);
+  initFirstPersonHands3D();
 
   renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -6670,9 +8258,14 @@ function initThreeScene() {
     driveCamera.aspect = asp;
     driveCamera.updateProjectionMatrix();
 
+    if (fpCamera) {
+      fpCamera.aspect = asp;
+      fpCamera.updateProjectionMatrix();
+    }
+
     renderer.setSize(window.innerWidth, window.innerHeight);
 
-    if (!focusedRoomId && !focusedShopId && !driveState.active) {
+    if (!focusedRoomId && !focusedShopId && !driveState.active && !fpState.active) {
       setOverviewCamera(false);
     }
   });
@@ -6704,18 +8297,34 @@ function cacheDOMElements() {
   dom.btnQuickExpand = document.getElementById('btn-quick-expand');
   dom.btnCollectAll = document.getElementById('btn-collect-all');
 
+  dom.hudFeverPill = document.getElementById('hud-fever-pill');
+  dom.hudFeverText = document.getElementById('hud-fever-text');
+
   dom.roomFocusTopbar = document.getElementById('room-focus-topbar');
   dom.btnExitRoomView = document.getElementById('btn-exit-room-view');
+  dom.btnRoomEnterFp = document.getElementById('btn-room-enter-fp');
   dom.roomSwitcherChips = document.getElementById('room-switcher-chips');
 
   dom.shopFocusTopbar = document.getElementById('shop-focus-topbar');
   dom.btnExitShopView = document.getElementById('btn-exit-shop-view');
+  dom.btnShopEnterFp = document.getElementById('btn-shop-enter-fp');
   dom.shopSwitcherChips = document.getElementById('shop-switcher-chips');
 
   dom.driveFocusTopbar = document.getElementById('drive-focus-topbar');
   dom.btnExitDriveMode = document.getElementById('btn-exit-drive-mode');
+  dom.btnToggleCockpit = document.getElementById('btn-toggle-cockpit');
+  dom.btnDriveStepOut = document.getElementById('btn-drive-step-out');
   dom.driveCarBadge = document.getElementById('drive-car-badge');
   dom.driveLootBadge = document.getElementById('drive-loot-badge');
+
+  dom.fpFocusTopbar = document.getElementById('fp-focus-topbar');
+  dom.btnExitFpMode = document.getElementById('btn-exit-fp-mode');
+  dom.btnFpSwitchDest = document.getElementById('btn-fp-switch-dest');
+
+  dom.cockpitOverlay = document.getElementById('cockpit-overlay');
+  dom.driveProximityBar = document.getElementById('drive-proximity-bar');
+  dom.fpModeHud = document.getElementById('fp-mode-hud');
+  dom.fpVisitModal = document.getElementById('fp-visit-modal');
 
   dom.roomFocusPanel = document.getElementById('room-focus-panel');
   dom.rfRoomNum = document.getElementById('rf-room-num');
@@ -6831,6 +8440,32 @@ function cacheDOMElements() {
   setSvg('rename-ico-crown', 'crown_badge', 22);
   setSvg('rename-ico-pen', 'quill_edit', 17);
   setSvg('stamp-ico-slot', 'evict_stamp', 30);
+  setSvg('hud-ico-fever', 'fever_flame', 18);
+  setSvg('ico-room-fp', 'doorbell_visit', 17);
+  setSvg('ico-shop-fp', 'walk_enter_door', 17);
+  setSvg('ico-toggle-cockpit', 'cockpit_eye', 17);
+  setSvg('ico-drive-step-out', 'walk_enter_door', 17);
+  setSvg('ico-exit-fp', 'back_return', 17);
+  setSvg('ico-fp-dest', 'doorbell_visit', 16);
+  setSvg('ico-cockpit-radio', 'radio_note', 15);
+  setSvg('ico-cockpit-roof', 'convertible_roof', 15);
+  setSvg('ico-drive-thru', 'drive_thru_cup', 15);
+  setSvg('ico-prox-enter', 'walk_enter_door', 15);
+  setSvg('ico-golden-bell', 'golden_bell', 18);
+  setSvg('ico-fp-visit-tenant', 'doorbell_visit', 18);
+  setSvg('ico-fp-give-gift', 'gift_ribbon_box', 18);
+  setSvg('ico-fp-other-room', 'studio_unit', 17);
+  setSvg('banner-ico-bell', 'golden_bell', 24);
+  setSvg('fp-modal-ico', 'walk_enter_door', 24);
+
+  const wheelSlot = document.getElementById('cockpit-wheel-rotator');
+  if (wheelSlot && typeof createCockpitSteeringWheelSVG === 'function') {
+    wheelSlot.innerHTML = createCockpitSteeringWheelSVG();
+  }
+  const mirrorSlot = document.getElementById('cockpit-rearview-slot');
+  if (mirrorSlot && typeof createCockpitRearviewSVG === 'function') {
+    mirrorSlot.innerHTML = createCockpitRearviewSVG();
+  }
   if (dom.rfBtnRename) dom.rfBtnRename.innerHTML = createCustomSVGIcon('quill_edit', 14);
 
   const binderEl = document.getElementById('notebook-binder-rings');
@@ -6845,6 +8480,25 @@ function bindAllUIEvents() {
   renderer.domElement.addEventListener('pointerdown', (e) => {
     downX = e.clientX;
     downY = e.clientY;
+    if (fpState.active) {
+      fpState.draggingLook = true;
+      fpState.lastPointerX = e.clientX;
+      fpState.lastPointerY = e.clientY;
+    }
+  });
+
+  window.addEventListener('pointermove', (e) => {
+    if (!fpState.active || !fpState.draggingLook) return;
+    const dx = e.clientX - fpState.lastPointerX;
+    const dy = e.clientY - fpState.lastPointerY;
+    fpState.lastPointerX = e.clientX;
+    fpState.lastPointerY = e.clientY;
+    fpState.yaw -= dx * 0.0045;
+    fpState.pitch = THREE.MathUtils.clamp(fpState.pitch - dy * 0.0032, -0.42, 0.42);
+  });
+
+  window.addEventListener('pointerup', () => {
+    fpState.draggingLook = false;
   });
 
   renderer.domElement.addEventListener('pointerup', (e) => {
@@ -6856,6 +8510,20 @@ function bindAllUIEvents() {
     pointerNDC.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
     raycaster.setFromCamera(pointerNDC, getActiveCamera());
+
+    if (fpState.active) {
+      const fpHits = raycaster.intersectObjects(fpState.pickables, false);
+      if (fpHits.length > 0) {
+        const fud = fpHits[0].object.userData;
+        if (fud.kind === 'fpShopItem' && fud.itemId) {
+          buyFpShowcaseItem(fud.itemId, fud.visualMesh);
+        } else if (fud.kind === 'fpGoldenBell') {
+          ringShopGoldenBell();
+        }
+      }
+      return;
+    }
+
     const hits = raycaster.intersectObjects(pickableMeshes, false);
     if (hits.length === 0) return;
 
@@ -6882,9 +8550,62 @@ function bindAllUIEvents() {
 
   dom.btnExitRoomView?.addEventListener('click', () => exitRoomFocusMode());
   dom.btnCloseRoomFocus?.addEventListener('click', () => exitRoomFocusMode());
+  dom.btnRoomEnterFp?.addEventListener('click', () => {
+    if (focusedRoomId) enterFirstPersonRoom(focusedRoomId);
+  });
+
   dom.btnExitShopView?.addEventListener('click', () => exitShopFocusMode());
   dom.btnCloseShopFocus?.addEventListener('click', () => exitShopFocusMode());
+  dom.btnShopEnterFp?.addEventListener('click', () => {
+    if (focusedShopId) enterFirstPersonShop(focusedShopId, false);
+  });
+
   dom.btnExitDriveMode?.addEventListener('click', () => exitDriveMode());
+  dom.btnToggleCockpit?.addEventListener('click', () => toggleCockpitView());
+  dom.btnDriveStepOut?.addEventListener('click', () => openFpVisitModal('shops'));
+
+  document.getElementById('btn-cockpit-radio')?.addEventListener('click', () => cycleCarRadioChannel());
+  document.getElementById('btn-cockpit-roof')?.addEventListener('click', () => toggleConvertibleRoof());
+  document.getElementById('btn-drive-thru-order')?.addEventListener('click', () => triggerDriveThruOrder());
+  document.getElementById('btn-prox-enter-fp')?.addEventListener('click', () => {
+    enterFirstPersonShop(driveState.nearestShopId || 'shop_bakery', true);
+  });
+
+  dom.btnExitFpMode?.addEventListener('click', () => exitFirstPersonMode());
+  dom.btnFpSwitchDest?.addEventListener('click', () => {
+    openFpVisitModal(fpState.mode === 'shop' ? 'rooms' : 'shops');
+  });
+  document.getElementById('btn-ring-golden-bell')?.addEventListener('click', () => ringShopGoldenBell());
+  document.getElementById('btn-fp-visit-tenant')?.addEventListener('click', () => openFpVisitModal('rooms'));
+  document.getElementById('btn-fp-give-gift')?.addEventListener('click', () => giveHousewarmingGiftAction());
+  document.getElementById('btn-fp-other-room')?.addEventListener('click', () => openFpVisitModal('rooms'));
+
+  document.getElementById('btn-close-fp-modal')?.addEventListener('click', () => dom.fpVisitModal?.classList.add('hidden'));
+  document.getElementById('fp-tab-shops')?.addEventListener('click', () => {
+    fpState.modalTab = 'shops';
+    renderFpVisitModalCards();
+  });
+  document.getElementById('fp-tab-rooms')?.addEventListener('click', () => {
+    fpState.modalTab = 'rooms';
+    renderFpVisitModalCards();
+  });
+
+  const bindFpHoldBtn = (id, keyName) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const setVal = (v) => {
+      fpState.keys[keyName] = v;
+      el.classList.toggle('pressed', v);
+    };
+    el.addEventListener('pointerdown', (ev) => { ev.preventDefault(); setVal(true); });
+    el.addEventListener('pointerup', () => setVal(false));
+    el.addEventListener('pointerleave', () => setVal(false));
+    el.addEventListener('pointercancel', () => setVal(false));
+  };
+  bindFpHoldBtn('btn-fp-left', 'left');
+  bindFpHoldBtn('btn-fp-right', 'right');
+  bindFpHoldBtn('btn-fp-fwd', 'forward');
+  bindFpHoldBtn('btn-fp-back', 'backward');
 
   dom.rfBtnRename?.addEventListener('click', () => {
     const rm = findRoomById(focusedRoomId);
@@ -6944,18 +8665,29 @@ function bindAllUIEvents() {
   window.addEventListener('keydown', (e) => {
     if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
     if (e.key === 'Escape') {
-      if (driveState.active) exitDriveMode();
+      if (fpState.active) exitFirstPersonMode();
+      else if (driveState.active) exitDriveMode();
       else if (focusedRoomId) exitRoomFocusMode();
       else if (focusedShopId) exitShopFocusMode();
       return;
     }
-    if (!driveState.active) return;
 
     const k = e.key.toLowerCase();
+    if (fpState.active) {
+      if (k === 'w' || e.key === 'ArrowUp') fpState.keys.forward = true;
+      else if (k === 's' || e.key === 'ArrowDown') fpState.keys.backward = true;
+      else if (k === 'a' || e.key === 'ArrowLeft') fpState.keys.left = true;
+      else if (k === 'd' || e.key === 'ArrowRight') fpState.keys.right = true;
+      return;
+    }
+
+    if (!driveState.active) return;
+
     if (k === 'w' || e.key === 'ArrowUp') driveState.keys.forward = true;
     else if (k === 's' || e.key === 'ArrowDown') driveState.keys.backward = true;
     else if (k === 'a' || e.key === 'ArrowLeft') driveState.keys.left = true;
     else if (k === 'd' || e.key === 'ArrowRight') driveState.keys.right = true;
+    else if (k === 'v' || k === 'c') toggleCockpitView();
     else if (k === ' ' || k === 'h') {
       e.preventDefault();
       triggerCarHorn();
@@ -6964,10 +8696,10 @@ function bindAllUIEvents() {
 
   window.addEventListener('keyup', (e) => {
     const k = e.key.toLowerCase();
-    if (k === 'w' || e.key === 'ArrowUp') driveState.keys.forward = false;
-    else if (k === 's' || e.key === 'ArrowDown') driveState.keys.backward = false;
-    else if (k === 'a' || e.key === 'ArrowLeft') driveState.keys.left = false;
-    else if (k === 'd' || e.key === 'ArrowRight') driveState.keys.right = false;
+    if (k === 'w' || e.key === 'ArrowUp') { driveState.keys.forward = false; fpState.keys.forward = false; }
+    else if (k === 's' || e.key === 'ArrowDown') { driveState.keys.backward = false; fpState.keys.backward = false; }
+    else if (k === 'a' || e.key === 'ArrowLeft') { driveState.keys.left = false; fpState.keys.left = false; }
+    else if (k === 'd' || e.key === 'ArrowRight') { driveState.keys.right = false; fpState.keys.right = false; }
   });
 
   dom.btnZoomIn?.addEventListener('click', () => {
@@ -7047,9 +8779,10 @@ window.addEventListener('DOMContentLoaded', () => {
     tickBuildingResidentsAI(dt, elapsed);
     tickStreetOutingAndDiningAI(dt, elapsed);
     tickDriveMode(dt, elapsed);
+    tickFirstPersonMode(dt, elapsed);
     tickAnimationsAndEffects(dt, elapsed);
 
-    if (!driveState.active) {
+    if (!driveState.active && !fpState.active) {
       controls.update();
     }
     updateXRayAndFocusHighlights(dt);

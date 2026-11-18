@@ -444,6 +444,170 @@ function createCustomSVGIcon(name, size = 24) {
         </g>`;
       break;
 
+    case 'cockpit_eye':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <path d="M3.5 16C6.8 9.8 11.2 7.2 16 7.2C20.8 7.2 25.2 9.8 28.5 16C25.2 22.2 20.8 24.8 16 24.8C11.2 24.8 6.8 22.2 3.5 16Z" fill="url(#${uid}_cream)" stroke="#3A2E2B" stroke-width="1.6" stroke-linejoin="round"/>
+          <circle cx="16" cy="16" r="5.2" fill="url(#${uid}_sky)" stroke="#3A2E2B" stroke-width="1.4"/>
+          <circle cx="16" cy="16" r="2.3" fill="#3A2E2B"/>
+          <circle cx="14.4" cy="14.2" r="1.2" fill="#FFFFFF"/>
+        </g>`;
+      break;
+
+    case 'radio_note':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <rect x="4.5" y="10" width="23" height="16.5" rx="4" fill="url(#${uid}_purple)" stroke="#3A2E2B" stroke-width="1.6"/>
+          <circle cx="11.2" cy="18.2" r="4.1" fill="url(#${uid}_gold)" stroke="#3A2E2B" stroke-width="1.3"/>
+          <circle cx="11.2" cy="18.2" r="1.5" fill="#3A2E2B"/>
+          <line x1="17.8" y1="14.5" x2="24" y2="14.5" stroke="#FFFDF7" stroke-width="2" stroke-linecap="round"/>
+          <line x1="17.8" y1="18.5" x2="22.5" y2="18.5" stroke="#FFD93D" stroke-width="2" stroke-linecap="round"/>
+          <line x1="17.8" y1="22.2" x2="24.5" y2="22.2" stroke="#8BF598" stroke-width="2" stroke-linecap="round"/>
+          <line x1="9" y1="10" x2="21.5" y2="4.5" stroke="#3A2E2B" stroke-width="2.2" stroke-linecap="round"/>
+          <circle cx="22" cy="4.5" r="2" fill="url(#${uid}_coral)" stroke="#3A2E2B" stroke-width="1"/>
+        </g>`;
+      break;
+
+    case 'convertible_roof':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <path d="M4.5 20.5L8.2 14.8H23.8L27.5 20.5V24.5H4.5V20.5Z" fill="url(#${uid}_redcar)" stroke="#3A2E2B" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M9.5 14.5C11.5 9.2 17.5 8.5 21.8 11.2" fill="none" stroke="url(#${uid}_gold)" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="3 2"/>
+          <circle cx="10.2" cy="24.5" r="3.1" fill="#1E293B" stroke="#3A2E2B" stroke-width="1.2"/>
+          <circle cx="21.8" cy="24.5" r="3.1" fill="#1E293B" stroke="#3A2E2B" stroke-width="1.2"/>
+        </g>`;
+      break;
+
+    case 'drive_thru_cup':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <path d="M9 10.5H21L19.4 26.2H10.6L9 10.5Z" fill="url(#${uid}_cream)" stroke="#3A2E2B" stroke-width="1.6" stroke-linejoin="round"/>
+          <rect x="9.8" y="15.2" width="10.4" height="5.2" rx="1.2" fill="url(#${uid}_wood)" stroke="#3A2E2B" stroke-width="1.3"/>
+          <rect x="7.8" y="7.8" width="14.4" height="3.2" rx="1.5" fill="url(#${uid}_coral)" stroke="#3A2E2B" stroke-width="1.4"/>
+          <path d="M16 7.8L18.5 3.8" stroke="#179E29" stroke-width="2.4" stroke-linecap="round"/>
+          <circle cx="24.2" cy="21.5" r="4.2" fill="url(#${uid}_gold)" stroke="#3A2E2B" stroke-width="1.3"/>
+        </g>`;
+      break;
+
+    case 'walk_enter_door':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <rect x="6" y="4.5" width="14.5" height="23" rx="2.8" fill="url(#${uid}_wood)" stroke="#3A2E2B" stroke-width="1.6"/>
+          <polygon points="9,6.2 18.5,4.2 18.5,25.8 9,27.5" fill="url(#${uid}_cream)" stroke="#3A2E2B" stroke-width="1.4" stroke-linejoin="round"/>
+          <circle cx="16.2" cy="16" r="1.5" fill="url(#${uid}_gold)" stroke="#3A2E2B" stroke-width="1"/>
+          <path d="M20.5 16H28M28 16L24.5 12.5M28 16L24.5 19.5" fill="none" stroke="url(#${uid}_mint)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>`;
+      break;
+
+    case 'golden_bell':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <circle cx="16" cy="5.6" r="2.4" fill="url(#${uid}_coral)" stroke="#3A2E2B" stroke-width="1.3"/>
+          <path d="M8.5 21.5C8.5 13.5 10.5 8 16 8C21.5 8 23.5 13.5 23.5 21.5L26.5 24.2H5.5L8.5 21.5Z" fill="url(#${uid}_gold)" stroke="#3A2E2B" stroke-width="1.7" stroke-linejoin="round"/>
+          <circle cx="16" cy="25.8" r="2.8" fill="#E59A0B" stroke="#3A2E2B" stroke-width="1.4"/>
+          <path d="M12.2 11.5C10.8 14 10.5 17.5 10.5 20.2" fill="none" stroke="#FFFDF7" stroke-width="2" stroke-linecap="round"/>
+          <path d="M4.2 11.5C2.8 13.8 2.8 17.2 4.2 19.5M27.8 11.5C29.2 13.8 29.2 17.2 27.8 19.5" fill="none" stroke="#FFD93D" stroke-width="2.2" stroke-linecap="round"/>
+        </g>`;
+      break;
+
+    case 'fever_flame':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <path d="M16.5 3.8C18.5 8.5 25.5 11.2 25.5 18.2C25.5 23.8 21.2 27.5 16 27.5C10.8 27.5 6.5 23.8 6.5 18.2C6.5 13.5 9.8 10.2 11.5 7.8C11.2 10.8 12.8 12.2 13.8 12.2C13.2 8.8 14.5 5.8 16.5 3.8Z" fill="url(#${uid}_coral)" stroke="#3A2E2B" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M16 13.2C18.2 15.8 20.5 17.5 20.5 20.8C20.5 23.5 18.5 25.5 16 25.5C13.5 25.5 11.5 23.5 11.5 20.8C11.5 18.2 13.8 15.8 16 13.2Z" fill="url(#${uid}_gold)"/>
+        </g>`;
+      break;
+
+    case 'doorbell_visit':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <rect x="6.5" y="4.5" width="19" height="23" rx="5" fill="url(#${uid}_cream)" stroke="#3A2E2B" stroke-width="1.6"/>
+          <circle cx="16" cy="16" r="5.5" fill="url(#${uid}_gold)" stroke="#3A2E2B" stroke-width="1.5"/>
+          <circle cx="16" cy="16" r="2.3" fill="url(#${uid}_coral)"/>
+          <path d="M23.5 6.5L27.5 4.8V11.2" fill="none" stroke="url(#${uid}_mint)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>`;
+      break;
+
+    case 'gift_ribbon_box':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <rect x="6.5" y="12.5" width="19" height="14.5" rx="3" fill="url(#${uid}_cream)" stroke="#3A2E2B" stroke-width="1.6"/>
+          <rect x="5.2" y="9" width="21.6" height="4.8" rx="2" fill="url(#${uid}_coral)" stroke="#3A2E2B" stroke-width="1.6"/>
+          <rect x="14" y="9" width="4" height="18" fill="url(#${uid}_gold)" stroke="#3A2E2B" stroke-width="1.2"/>
+          <path d="M16 9C12.5 4.5 8.5 5.2 9.5 8.5C10.2 9.5 13.5 9 16 9ZM16 9C19.5 4.5 23.5 5.2 22.5 8.5C21.8 9.5 18.5 9 16 9Z" fill="url(#${uid}_coral)" stroke="#3A2E2B" stroke-width="1.4"/>
+        </g>`;
+      break;
+
+    case 'item_cake_ico':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <ellipse cx="16" cy="25" rx="11.5" ry="3.2" fill="#FFFDF7" stroke="#3A2E2B" stroke-width="1.4"/>
+          <rect x="6.5" y="13.5" width="19" height="10.8" rx="3.5" fill="#FFB3C6" stroke="#3A2E2B" stroke-width="1.6"/>
+          <path d="M6.5 16.5Q9.8 19.5 12.8 16.5Q16 19.5 19.2 16.5Q22.5 19.5 25.5 16.5V13.5H6.5Z" fill="#FFFDF7" stroke="#3A2E2B" stroke-width="1.3"/>
+          <circle cx="11.5" cy="10.5" r="2.5" fill="url(#${uid}_coral)" stroke="#3A2E2B" stroke-width="1.2"/>
+          <circle cx="16" cy="9.5" r="2.7" fill="url(#${uid}_coral)" stroke="#3A2E2B" stroke-width="1.2"/>
+          <circle cx="20.5" cy="10.5" r="2.5" fill="url(#${uid}_coral)" stroke="#3A2E2B" stroke-width="1.2"/>
+        </g>`;
+      break;
+
+    case 'item_croissant_ico':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <path d="M4.8 20.5C4.8 12.5 10 8.5 16 8.5C22 8.5 27.2 12.5 27.2 20.5C27.2 23.2 24.2 24.5 21.5 23C19.5 21.8 17.8 21.8 16 21.8C14.2 21.8 12.5 21.8 10.5 23C7.8 24.5 4.8 23.2 4.8 20.5Z" fill="url(#${uid}_gold)" stroke="#3A2E2B" stroke-width="1.6"/>
+          <path d="M11.5 10.2Q13.5 15.8 11.5 21.5M20.5 10.2Q18.5 15.8 20.5 21.5" fill="none" stroke="#9A5825" stroke-width="1.6" stroke-linecap="round"/>
+        </g>`;
+      break;
+
+    case 'item_coffee_ico':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <path d="M9 12.5H23L21.2 26.5H10.8L9 12.5Z" fill="url(#${uid}_cream)" stroke="#3A2E2B" stroke-width="1.6" stroke-linejoin="round"/>
+          <rect x="9.8" y="16.8" width="12.4" height="5.2" rx="1.2" fill="url(#${uid}_leather)" stroke="#3A2E2B" stroke-width="1.3"/>
+          <path d="M8.5 12.5C8.5 7.5 12.5 5.5 16 5.5C19.5 5.5 23.5 7.5 23.5 12.5Z" fill="#FFFDF7" stroke="#3A2E2B" stroke-width="1.5"/>
+          <circle cx="16" cy="5.5" r="1.5" fill="#B86B35"/>
+        </g>`;
+      break;
+
+    case 'item_bouquet_ico':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <polygon points="9.5,15.5 22.5,15.5 18.2,27.2 13.8,27.2" fill="#FFE4EC" stroke="#3A2E2B" stroke-width="1.6" stroke-linejoin="round"/>
+          <rect x="13.2" y="21.2" width="5.6" height="2.4" rx="1" fill="url(#${uid}_gold)" stroke="#3A2E2B" stroke-width="1"/>
+          <circle cx="12" cy="11.5" r="4" fill="url(#${uid}_coral)" stroke="#3A2E2B" stroke-width="1.3"/>
+          <circle cx="20" cy="11.5" r="4" fill="#FF8FA3" stroke="#3A2E2B" stroke-width="1.3"/>
+          <circle cx="16" cy="8.5" r="4.3" fill="url(#${uid}_redcar)" stroke="#3A2E2B" stroke-width="1.4"/>
+        </g>`;
+      break;
+
+    case 'item_bento_ico':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <rect x="4.5" y="9" width="23" height="17" rx="3.8" fill="#3A2E2B" stroke="#3A2E2B" stroke-width="1.6"/>
+          <rect x="6.8" y="11.2" width="8.5" height="12.6" rx="2" fill="#FFFDF7"/>
+          <circle cx="11" cy="17.5" r="1.8" fill="#FF6B6B"/>
+          <rect x="16.8" y="11.2" width="8.4" height="5.8" rx="1.6" fill="url(#${uid}_coral)"/>
+          <rect x="16.8" y="18.2" width="8.4" height="5.6" rx="1.6" fill="url(#${uid}_gold)"/>
+        </g>`;
+      break;
+
+    case 'mart_ico':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <rect x="5.5" y="11" width="21" height="15.5" rx="3" fill="url(#${uid}_cream)" stroke="#3A2E2B" stroke-width="1.6"/>
+          <rect x="4.5" y="6.5" width="23" height="5.5" rx="2.2" fill="url(#${uid}_mint)" stroke="#3A2E2B" stroke-width="1.6"/>
+          <rect x="13" y="17.5" width="6" height="9" rx="1.5" fill="url(#${uid}_sky)" stroke="#3A2E2B" stroke-width="1.3"/>
+        </g>`;
+      break;
+
+    case 'wash_ico':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <rect x="6.5" y="5.5" width="19" height="21.5" rx="3.8" fill="url(#${uid}_cream)" stroke="#3A2E2B" stroke-width="1.6"/>
+          <circle cx="16" cy="17.5" r="6" fill="url(#${uid}_sky)" stroke="#3A2E2B" stroke-width="1.5"/>
+          <path d="M11.5 17.5Q14 15 16 17.5Q18 20 20.5 17.5" fill="none" stroke="#FFFDF7" stroke-width="2" stroke-linecap="round"/>
+        </g>`;
+      break;
+
     default:
       body = `
         <g filter="url(#${uid}_sh)">
@@ -1633,11 +1797,236 @@ const QUEST_LIST = [
   }
 ];
 
+const FP_RADIO_CHANNELS = [
+  { id: 'lofi', label: 'Lo-Fi 재즈', sub: 'FM 89.1 · Warm Jazz', moodHex: '#FFB703', glowRgba: 'rgba(255, 183, 3, 0.55)' },
+  { id: 'citypop', label: '신나는 시티팝', sub: 'FM 95.7 · Sunset Pop', moodHex: '#FF6B9D', glowRgba: 'rgba(255, 107, 157, 0.58)' },
+  { id: 'club', label: '클럽 비트', sub: 'FM 104.3 · Electro Club', moodHex: '#38E54D', glowRgba: 'rgba(56, 229, 77, 0.58)' },
+  { id: 'off', label: '카오디오 OFF', sub: '배기음 집중 모드', moodHex: '#94A3B8', glowRgba: 'rgba(148, 163, 184, 0.25)' }
+];
+
+const FP_SHOP_DESTINATIONS = [
+  {
+    id: 'shop_bakery',
+    name: '바게트 하우스',
+    badge: '프랑스 제과점',
+    icon: 'bakery_ico',
+    tone: 'coral',
+    roadX: -16.2,
+    roadZ: 7.0,
+    staffRole: 'baker',
+    staffName: '파티시에 피에르',
+    wallColor: 0xFFF3E6,
+    accentColor: 0xFF6B6B,
+    welcomeQuote: '헉! 우리 동네 갓물주님 행차하셨다!! 갓 구운 빵 대령할게요!!',
+    customerQuotes: [
+      '우와 실물 영접!! 건물주님 아우라 대박~!',
+      '박수 짝짝짝!! 바게트 하우스 건물주님 최고예요!'
+    ],
+    driveThruItem: 'item_croissant',
+    driveThruQuote: '건물주님! 차 안에서 바로 드실 모닝커피와 버터 크루아상 대령했습니다!'
+  },
+  {
+    id: 'shop_roastery',
+    name: '미니미 로스터스',
+    badge: '스페셜티 카페',
+    icon: 'roastery_ico',
+    tone: 'mint',
+    roadX: 16.2,
+    roadZ: 7.0,
+    staffRole: 'barista',
+    staffName: '바리스타 루카스',
+    wallColor: 0xF2FBF5,
+    accentColor: 0x2D6A4F,
+    welcomeQuote: '헉! 우리 동네 갓물주님 행차하셨다!! 최상급 스페셜티 원두 내릴게요!!',
+    customerQuotes: [
+      '세상에 갓물주님이다!! 포스 장난 아니네요!!',
+      '우리 카페 오너님 오셨다~ 박수 짝짝짝!!'
+    ],
+    driveThruItem: 'item_coffee',
+    driveThruQuote: '건물주님! 차 안에서 바로 드실 모닝커피 대령했습니다!'
+  },
+  {
+    id: 'shop_flower',
+    name: '플로레스 앤 코',
+    badge: '유럽풍 플라워샵',
+    icon: 'flower_ico',
+    tone: 'sky',
+    roadX: 23.0,
+    roadZ: 5.5,
+    staffRole: 'florist',
+    staffName: '플로리스트 클레어',
+    wallColor: 0xFDF2F8,
+    accentColor: 0xBE185D,
+    welcomeQuote: '헉! 우리 동네 갓물주님 행차하셨다!! 오늘 가장 예쁜 장미를 준비했어요!!',
+    customerQuotes: [
+      '와아~ 건물주님 센스 최고예요!!',
+      '꽃집 향기보다 건물주님 후광이 더 눈부셔요!'
+    ],
+    driveThruItem: 'item_bouquet',
+    driveThruQuote: '건물주님! 차 안에서 향기롭게 감상하실 생화 부케 대령했습니다!'
+  },
+  {
+    id: 'shop_mart1f',
+    name: '1층 해피마트 24',
+    badge: '빌딩 1층 편의점',
+    icon: 'mart_ico',
+    tone: 'gold',
+    roadX: -11.4,
+    roadZ: 6.2,
+    staffRole: 'student',
+    staffName: '알바생 민수',
+    wallColor: 0xF0FDF4,
+    accentColor: 0x16A34A,
+    welcomeQuote: '헉! 우리 빌딩 갓물주님 행차하셨다!! 충성충성 어서 오십시오!!',
+    customerQuotes: [
+      '우와 이 빌딩 주인님이시래!! 부럽다~!',
+      '편의점 진열대 쓸어가시는 클라스 대박!!'
+    ],
+    driveThruItem: 'item_bento',
+    driveThruQuote: '건물주님! 차 안에서 든든히 드실 프리미엄 도시락과 모닝커피 대령했습니다!'
+  },
+  {
+    id: 'shop_wash1f',
+    name: '1층 뽀송 워시 라운지',
+    badge: '세탁 & 무인카페',
+    icon: 'wash_ico',
+    tone: 'sky',
+    roadX: 3.0,
+    roadZ: 6.2,
+    staffRole: 'newlywed',
+    staffName: '라운지 매니저 소망',
+    wallColor: 0xF0F9FF,
+    accentColor: 0x0284C7,
+    welcomeQuote: '헉! 우리 빌딩 갓물주님 행차하셨다!! 뽀송 라운지 커피 바로 내릴게요!!',
+    customerQuotes: [
+      '빨래 기다리다 갓물주님 영접하네!! 대박~!',
+      '건물 관리가 너무 깨끗해서 살기 최고예요!'
+    ],
+    driveThruItem: 'item_coffee',
+    driveThruQuote: '건물주님! 차 안에서 바로 드실 라운지 모닝커피 대령했습니다!'
+  }
+];
+
+const FP_GIFT_ITEMS = [
+  {
+    id: 'item_cake',
+    name: '딸기 생크림 홀케이크',
+    shortName: '딸기 홀케이크',
+    cost: 18,
+    icon: 'item_cake_ico',
+    slot: 'right',
+    tone: 'coral',
+    buyMsg: '딸기 생크림 홀케이크 구매! 오른손에 핑크 리본 케이크 상자를 들었습니다!'
+  },
+  {
+    id: 'item_croissant',
+    name: '갓 구운 버터 크루아상',
+    shortName: '버터 크루아상',
+    cost: 9,
+    icon: 'item_croissant_ico',
+    slot: 'right',
+    tone: 'gold',
+    buyMsg: '갓 구운 버터 크루아상 세트 구매! 따뜻한 베이커리 봉투를 들었습니다!'
+  },
+  {
+    id: 'item_coffee',
+    name: '시그니처 아인슈페너',
+    shortName: '아인슈페너',
+    cost: 7,
+    icon: 'item_coffee_ico',
+    slot: 'left',
+    tone: 'mint',
+    buyMsg: '시그니처 아인슈페너 구매! 왼손에 달콤한 크림 커피잔을 들었습니다!'
+  },
+  {
+    id: 'item_bouquet',
+    name: '대형 장미 꽃다발',
+    shortName: '장미 꽃다발',
+    cost: 22,
+    icon: 'item_bouquet_ico',
+    slot: 'right',
+    tone: 'coral',
+    buyMsg: '대형 장미 꽃다발 구매! 화사한 리본 장미 부케를 품에 안았습니다!'
+  },
+  {
+    id: 'item_bento',
+    name: '편의점 프리미엄 도시락',
+    shortName: '프리미엄 도시락',
+    cost: 10,
+    icon: 'item_bento_ico',
+    slot: 'right',
+    tone: 'sky',
+    buyMsg: '편의점 프리미엄 도시락 구매! 정갈한 보자기 도시락을 들었습니다!'
+  }
+];
+
+function createCockpitSteeringWheelSVG() {
+  return `
+    <svg viewBox="0 0 220 220" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg" class="select-none drop-shadow-xl">
+      <defs>
+        <linearGradient id="cw_leather" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#4A3731"/>
+          <stop offset="50%" stop-color="#2B1F1C"/>
+          <stop offset="100%" stop-color="#1A1210"/>
+        </linearGradient>
+        <linearGradient id="cw_metal" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#F8FAFC"/>
+          <stop offset="50%" stop-color="#94A3B8"/>
+          <stop offset="100%" stop-color="#475569"/>
+        </linearGradient>
+        <linearGradient id="cw_gold" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#FFF5A8"/>
+          <stop offset="55%" stop-color="#FFD93D"/>
+          <stop offset="100%" stop-color="#C97A05"/>
+        </linearGradient>
+      </defs>
+      <!-- 패들 시프터 (- / +) -->
+      <rect x="44" y="72" width="22" height="38" rx="6" fill="url(#cw_metal)" stroke="#1E293B" stroke-width="2.5"/>
+      <text x="55" y="96" text-anchor="middle" fill="#1E293B" font-family="Jua, sans-serif" font-size="16">-</text>
+      <rect x="154" y="72" width="22" height="38" rx="6" fill="url(#cw_metal)" stroke="#1E293B" stroke-width="2.5"/>
+      <text x="165" y="96" text-anchor="middle" fill="#1E293B" font-family="Jua, sans-serif" font-size="16">+</text>
+
+      <!-- 3-스포크 메탈 프레임 -->
+      <path d="M30 108H190V128L128 134V192H92V134L30 128V108Z" fill="url(#cw_metal)" stroke="#1E293B" stroke-width="3" stroke-linejoin="round"/>
+      <rect x="103" y="144" width="14" height="38" rx="4" fill="#334155"/>
+
+      <!-- 가죽 스티어링 림 외곽 & 스티치 -->
+      <circle cx="110" cy="110" r="88" stroke="#140D0B" stroke-width="26"/>
+      <circle cx="110" cy="110" r="88" stroke="url(#cw_leather)" stroke-width="21"/>
+      <circle cx="110" cy="110" r="79" stroke="#D97706" stroke-width="1.6" stroke-dasharray="5 4" opacity="0.85"/>
+
+      <!-- 12시 방향 레드 레이싱 센터 마커 -->
+      <path d="M101 22.5H119L117 44H103L101 22.5Z" fill="#FF4757" stroke="#1E293B" stroke-width="2"/>
+
+      <!-- 중앙 가죽 에어백 허브 & 갓물주 황금 크라운 엠블럼 -->
+      <circle cx="110" cy="114" r="34" fill="url(#cw_leather)" stroke="#CBD5E1" stroke-width="3.5"/>
+      <circle cx="110" cy="114" r="26" fill="#231815" stroke="url(#cw_gold)" stroke-width="2"/>
+      <path d="M96 122L99.5 104L105.5 111L110 101L114.5 111L120.5 104L124 122Z" fill="url(#cw_gold)" stroke="#3A2E2B" stroke-width="1.6" stroke-linejoin="round"/>
+    </svg>`;
+}
+
+function createCockpitRearviewSVG() {
+  return `
+    <svg viewBox="0 0 240 62" width="210" height="54" fill="none" xmlns="http://www.w3.org/2000/svg" class="select-none drop-shadow-lg">
+      <rect x="112" y="0" width="16" height="16" rx="4" fill="#334155" stroke="#1E293B" stroke-width="2"/>
+      <rect x="8" y="11" width="224" height="46" rx="22" fill="#1E293B" stroke="#FFFFFF" stroke-width="2.5"/>
+      <rect x="15" y="16" width="210" height="36" rx="17" fill="#BAE6FD"/>
+      <path d="M15 39Q75 31 130 38T225 36V52H15Z" fill="#86EFAC" opacity="0.85"/>
+      <rect x="88" y="24" width="44" height="18" rx="4" fill="#FCA5A5" opacity="0.85"/>
+      <path d="M28 19H84L68 49H18Z" fill="#FFFFFF" opacity="0.32"/>
+    </svg>`;
+}
+
 window.createCustomSVGIcon = createCustomSVGIcon;
 window.createCatalogThumbnailSVG = createCatalogThumbnailSVG;
 window.createFurnitureArtworkSVG = createFurnitureArtworkSVG;
 window.createNotebookArtworkSVG = createNotebookArtworkSVG;
 window.createHouseholdAvatarSVG = createHouseholdAvatarSVG;
+window.createCockpitSteeringWheelSVG = createCockpitSteeringWheelSVG;
+window.createCockpitRearviewSVG = createCockpitRearviewSVG;
+window.FP_RADIO_CHANNELS = FP_RADIO_CHANNELS;
+window.FP_SHOP_DESTINATIONS = FP_SHOP_DESTINATIONS;
+window.FP_GIFT_ITEMS = FP_GIFT_ITEMS;
 window.GAME_BALANCE = GAME_BALANCE;
 window.BUILDING_NAME_PRESETS = BUILDING_NAME_PRESETS;
 window.INITIAL_ISLAND_LOTS = INITIAL_ISLAND_LOTS;
