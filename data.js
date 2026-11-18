@@ -1,16 +1,377 @@
 // =========================================================
-// 【갓물주 라이프 3D: 미니미 타운】 통합 데이터 모듈 (data.js)
-// 5종 세대 유형(학생/신혼부부/4인가족/노부부/히키코모리), 층간소음/악취 상성,
-// 공용 인프라 4종, 관리인 ROI & 위임 정책, 플로팅 아일랜드 부지(태양광/농장/신축)
+// 【갓물주 라이프 3D: 미니미 타운 (2026 Art & UI Remaster)】 데이터 & 커스텀 SVG 엔진 (data.js)
+// - 다층 그라데이션·하이라이트·드롭섀도우 커스텀 벡터 SVG 아이콘 18종 생성기
+// - 5대 세대 일러스트 프로필 아바타 SVG 생성기
+// - 세대 상성(층간소음/히키코모리 쓰레기방 악취), 관리인 ROI, 공용시설, 아일랜드 부지 데이터
 // =========================================================
 
+let svgUidSeq = 0;
+
+// [요구사항 3] 이모지 남발 금지! 다층 linearGradient + 광택 ellipse + feDropShadow 커스텀 벡터 아이콘 생성기
+function createCustomSVGIcon(name, size = 24) {
+  const uid = `ico_${name}_${++svgUidSeq}`;
+  const commonDefs = `
+    <defs>
+      <filter id="${uid}_sh" x="-20%" y="-20%" width="145%" height="155%">
+        <feDropShadow dx="0" dy="2" stdDeviation="1.4" flood-color="#7c5238" flood-opacity="0.28"/>
+      </filter>
+      <linearGradient id="${uid}_gold" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#FFF3B0"/>
+        <stop offset="48%" stop-color="#FACC15"/>
+        <stop offset="100%" stop-color="#EA8D00"/>
+      </linearGradient>
+      <linearGradient id="${uid}_coral" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#FFB3C1"/>
+        <stop offset="55%" stop-color="#FF758F"/>
+        <stop offset="100%" stop-color="#E63963"/>
+      </linearGradient>
+      <linearGradient id="${uid}_mint" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#A7F3D0"/>
+        <stop offset="55%" stop-color="#34D399"/>
+        <stop offset="100%" stop-color="#059669"/>
+      </linearGradient>
+      <linearGradient id="${uid}_sky" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#BAE6FD"/>
+        <stop offset="55%" stop-color="#38BDF8"/>
+        <stop offset="100%" stop-color="#0284C7"/>
+      </linearGradient>
+      <linearGradient id="${uid}_cream" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#FFFFFF"/>
+        <stop offset="100%" stop-color="#FDE8D3"/>
+      </linearGradient>
+      <linearGradient id="${uid}_wood" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#E6A15C"/>
+        <stop offset="100%" stop-color="#9C5A25"/>
+      </linearGradient>
+      <linearGradient id="${uid}_navy" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#4F6BED"/>
+        <stop offset="100%" stop-color="#1E3A8A"/>
+      </linearGradient>
+    </defs>
+  `;
+
+  let body = '';
+
+  switch (name) {
+    // 1. 입체 황금 코인 다발
+    case 'coin_stack':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <ellipse cx="13" cy="23.5" rx="8.5" ry="4" fill="#D97706"/>
+          <ellipse cx="13" cy="21.5" rx="8.5" ry="4" fill="url(#${uid}_gold)" stroke="#B45309" stroke-width="1.2"/>
+          <ellipse cx="13" cy="18" rx="8.5" ry="4" fill="#D97706"/>
+          <ellipse cx="13" cy="16" rx="8.5" ry="4" fill="url(#${uid}_gold)" stroke="#B45309" stroke-width="1.2"/>
+          <circle cx="20.5" cy="14.5" r="8.2" fill="url(#${uid}_gold)" stroke="#B45309" stroke-width="1.4"/>
+          <circle cx="20.5" cy="14.5" r="5.8" fill="none" stroke="#FFFBEB" stroke-width="1.2" opacity="0.8"/>
+          <path d="M18.2 12.2L19.5 17L20.5 13.6L21.5 17L22.8 12.2" fill="none" stroke="#92400E" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          <ellipse cx="17.8" cy="10.2" rx="2.6" ry="1.2" fill="#FFFFFF" opacity="0.75" transform="rotate(-25 17.8 10.2)"/>
+        </g>`;
+      break;
+
+    // 2. 빨간 지붕 코지 하우스
+    case 'red_house':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <rect x="20" y="6" width="4" height="7" rx="1.5" fill="url(#${uid}_wood)"/>
+          <rect x="6.5" y="14" width="19" height="13" rx="3.5" fill="url(#${uid}_cream)" stroke="#D4A373" stroke-width="1.3"/>
+          <path d="M3.5 15.5L16 5.2L28.5 15.5C29.3 16.2 28.8 17.5 27.7 17.5H4.3C3.2 17.5 2.7 16.2 3.5 15.5Z" fill="url(#${uid}_coral)" stroke="#C9184A" stroke-width="1.3"/>
+          <rect x="13.5" y="19.5" width="5" height="7.5" rx="2" fill="url(#${uid}_wood)"/>
+          <rect x="8.5" y="18.5" width="3.8" height="3.8" rx="1" fill="url(#${uid}_sky)"/>
+          <rect x="19.8" y="18.5" width="3.8" height="3.8" rx="1" fill="url(#${uid}_sky)"/>
+          <ellipse cx="12.5" cy="10.5" rx="3.5" ry="1.3" fill="#FFFFFF" opacity="0.6" transform="rotate(-32 12.5 10.5)"/>
+        </g>`;
+      break;
+
+    // 3. 황금 열쇠
+    case 'gold_key':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <circle cx="11" cy="12" r="6.5" fill="url(#${uid}_gold)" stroke="#B45309" stroke-width="1.4"/>
+          <circle cx="11" cy="12" r="2.6" fill="#FFFDF9" stroke="#B45309" stroke-width="1.2"/>
+          <path d="M16.5 14.5L26.5 22.5L24.2 25.5L22 23.8L23.5 21.8L20.8 19.8L19.2 21.8L17 20L18.8 17.8" fill="url(#${uid}_gold)" stroke="#B45309" stroke-width="1.3" stroke-linejoin="round"/>
+          <ellipse cx="8.8" cy="8.6" rx="2.2" ry="1.1" fill="#FFFFFF" opacity="0.8" transform="rotate(-30 8.8 8.6)"/>
+        </g>`;
+      break;
+
+    // 4. 하트 게이지
+    case 'heart_gauge':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <path d="M16 26.5C16 26.5 4.5 19.2 4.5 11.4C4.5 7.4 7.7 4.5 11.3 4.5C13.6 4.5 15.2 5.7 16 7.3C16.8 5.7 18.4 4.5 20.7 4.5C24.3 4.5 27.5 7.4 27.5 11.4C27.5 19.2 16 26.5 16 26.5Z" fill="url(#${uid}_coral)" stroke="#C9184A" stroke-width="1.3"/>
+          <ellipse cx="10.5" cy="9.4" rx="3.2" ry="1.7" fill="#FFFFFF" opacity="0.72" transform="rotate(-28 10.5 9.4)"/>
+        </g>`;
+      break;
+
+    // 5. 타운 수첩
+    case 'town_notebook':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <rect x="22" y="7" width="4.5" height="4.5" rx="1.5" fill="url(#${uid}_coral)"/>
+          <rect x="22" y="13" width="4.5" height="4.5" rx="1.5" fill="url(#${uid}_mint)"/>
+          <rect x="22" y="19" width="4.5" height="4.5" rx="1.5" fill="url(#${uid}_sky)"/>
+          <rect x="6" y="4" width="17.5" height="24" rx="4.5" fill="url(#${uid}_cream)" stroke="#B07D56" stroke-width="1.5"/>
+          <rect x="6" y="4" width="4.2" height="24" rx="2" fill="url(#${uid}_coral)"/>
+          <rect x="12.5" y="9" width="8" height="3.2" rx="1.5" fill="url(#${uid}_gold)"/>
+          <rect x="12.5" y="14.5" width="7" height="2.4" rx="1.2" fill="#D4A373"/>
+          <rect x="12.5" y="19" width="8" height="2.4" rx="1.2" fill="#E6CCB2"/>
+          <ellipse cx="15" cy="6.4" rx="4" ry="1" fill="#FFFFFF" opacity="0.8"/>
+        </g>`;
+      break;
+
+    // 6. 퀘스트 트로피
+    case 'quest_trophy':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <path d="M8 8H5.5C4.5 8 4 9 4.3 10.5C4.8 13 6.8 14.8 9.2 15" fill="none" stroke="url(#${uid}_gold)" stroke-width="2.4" stroke-linecap="round"/>
+          <path d="M24 8H26.5C27.5 8 28 9 27.7 10.5C27.2 13 25.2 14.8 22.8 15" fill="none" stroke="url(#${uid}_gold)" stroke-width="2.4" stroke-linecap="round"/>
+          <path d="M8.5 5.5H23.5V12.5C23.5 17 20.1 20 16 20C11.9 20 8.5 17 8.5 12.5V5.5Z" fill="url(#${uid}_gold)" stroke="#B45309" stroke-width="1.4"/>
+          <rect x="14" y="19.5" width="4" height="4.5" rx="1" fill="url(#${uid}_gold)" stroke="#B45309" stroke-width="1.2"/>
+          <rect x="10" y="23.5" width="12" height="3.8" rx="1.9" fill="url(#${uid}_wood)" stroke="#78350F" stroke-width="1.2"/>
+          <polygon points="16,8.5 17.2,11.2 20,11.5 17.9,13.4 18.5,16.2 16,14.7 13.5,16.2 14.1,13.4 12,11.5 14.8,11.2" fill="#FFFBEB"/>
+          <ellipse cx="12" cy="8" rx="2.4" ry="1" fill="#FFFFFF" opacity="0.75"/>
+        </g>`;
+      break;
+
+    // 7. 관리인 제복 모자
+    case 'manager_cap':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <path d="M5 17C5 11.5 9.8 7.5 16 7.5C22.2 7.5 27 11.5 27 17L24.5 20.5H7.5L5 17Z" fill="url(#${uid}_navy)" stroke="#1E3A8A" stroke-width="1.4"/>
+          <path d="M6.5 20C10.5 23.8 21.5 23.8 25.5 20L27 21.8C22 26.2 10 26.2 5 21.8L6.5 20Z" fill="#1E293B"/>
+          <rect x="7.5" y="17.8" width="17" height="2.4" rx="1.2" fill="url(#${uid}_gold)"/>
+          <circle cx="16" cy="13.2" r="2.6" fill="url(#${uid}_gold)" stroke="#92400E" stroke-width="1"/>
+          <ellipse cx="12" cy="10.2" rx="3.5" ry="1.2" fill="#FFFFFF" opacity="0.45" transform="rotate(-15 12 10.2)"/>
+        </g>`;
+      break;
+
+    // 8. 확성기(민원/세대관리)
+    case 'megaphone':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <path d="M6 13.5L21.5 6.5V23.5L6 16.5V13.5Z" fill="url(#${uid}_coral)" stroke="#C9184A" stroke-width="1.3" stroke-linejoin="round"/>
+          <rect x="4" y="12.5" width="4" height="5.5" rx="2" fill="url(#${uid}_cream)" stroke="#B07D56" stroke-width="1.2"/>
+          <path d="M8.5 17.5L10.5 24.5C10.8 25.5 9.8 26.2 8.8 26L6.8 25C6 24.6 5.8 23.6 6.2 22.8L7 17" fill="url(#${uid}_gold)" stroke="#B45309" stroke-width="1.2"/>
+          <ellipse cx="21.5" cy="15" rx="2.4" ry="8.5" fill="url(#${uid}_cream)" stroke="#C9184A" stroke-width="1.3"/>
+          <path d="M25.5 11.5C27 13 27 17 25.5 18.5" fill="none" stroke="#FF758F" stroke-width="2" stroke-linecap="round"/>
+        </g>`;
+      break;
+
+    // 9. 특수청소 빗자루
+    case 'broom_clean':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <line x1="23.5" y1="4.5" x2="13.5" y2="17.5" stroke="url(#${uid}_wood)" stroke-width="3.4" stroke-linecap="round"/>
+          <path d="M9.5 16L17.5 20.5L13.5 27.2C10.5 26.5 6.8 24 5.2 21.5L9.5 16Z" fill="url(#${uid}_gold)" stroke="#B45309" stroke-width="1.3" stroke-linejoin="round"/>
+          <rect x="9.5" y="15.5" width="8.2" height="2.5" rx="1.2" transform="rotate(29 9.5 15.5)" fill="url(#${uid}_coral)"/>
+          <circle cx="24.5" cy="13.5" r="1.8" fill="url(#${uid}_sky)"/>
+          <circle cx="7" cy="10.5" r="2.2" fill="url(#${uid}_mint)"/>
+        </g>`;
+      break;
+
+    // 10. 퇴거 도장
+    case 'evict_stamp':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <circle cx="16" cy="9" r="4.5" fill="url(#${uid}_coral)" stroke="#9F1239" stroke-width="1.3"/>
+          <path d="M13.5 12.5H18.5L20 19.5H12L13.5 12.5Z" fill="url(#${uid}_coral)" stroke="#9F1239" stroke-width="1.3"/>
+          <rect x="6.5" y="19.5" width="19" height="4.2" rx="2" fill="url(#${uid}_cream)" stroke="#9F1239" stroke-width="1.3"/>
+          <rect x="8" y="23.7" width="16" height="2.8" rx="1.2" fill="#E11D48"/>
+          <ellipse cx="14.5" cy="7.5" rx="1.8" ry="0.9" fill="#FFFFFF" opacity="0.75"/>
+        </g>`;
+      break;
+
+    // 11. 유리 엘리베이터
+    case 'elevator':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <rect x="6" y="4" width="20" height="24" rx="4.5" fill="url(#${uid}_sky)" stroke="#0369A1" stroke-width="1.4"/>
+          <rect x="9" y="8" width="14" height="17" rx="2.5" fill="#FFFDF9" opacity="0.88"/>
+          <line x1="16" y1="8" x2="16" y2="25" stroke="#38BDF8" stroke-width="1.6"/>
+          <polygon points="13,5.2 15,7.2 11,7.2" fill="#FFFBEB"/>
+          <polygon points="19,7.2 21,5.2 17,5.2" fill="#FDE047"/>
+        </g>`;
+      break;
+
+    // 12. 분리수거 리사이클
+    case 'recycle_bin':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <rect x="7" y="6.5" width="18" height="3.5" rx="1.7" fill="url(#${uid}_mint)" stroke="#047857" stroke-width="1.3"/>
+          <path d="M8.5 10H23.5L21.8 26.5C21.7 27.3 21 28 20.2 28H11.8C11 28 10.3 27.3 10.2 26.5L8.5 10Z" fill="url(#${uid}_mint)" stroke="#047857" stroke-width="1.3"/>
+          <circle cx="16" cy="18.5" r="4.2" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-dasharray="5 2.5"/>
+          <ellipse cx="12.5" cy="13.5" rx="1.6" ry="3.5" fill="#FFFFFF" opacity="0.42"/>
+        </g>`;
+      break;
+
+    // 13. 태양광 패널
+    case 'solar_panel':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <circle cx="23.5" cy="7.5" r="4" fill="url(#${uid}_gold)"/>
+          <polygon points="6,13 21,11 25,23 4,25" fill="url(#${uid}_navy)" stroke="#BAE6FD" stroke-width="1.5" stroke-linejoin="round"/>
+          <line x1="13.5" y1="12" x2="14.5" y2="24" stroke="#7DD3FC" stroke-width="1.2"/>
+          <line x1="5" y1="19" x2="23" y2="17" stroke="#7DD3FC" stroke-width="1.2"/>
+          <rect x="13" y="24" width="3" height="4" rx="1" fill="#94A3B8"/>
+        </g>`;
+      break;
+
+    // 14. 딸기 농장
+    case 'berry_farm':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <path d="M16 27.5C10.5 27.5 6.5 21 6.5 14.8C6.5 10.5 10.2 8.5 16 8.5C21.8 8.5 25.5 10.5 25.5 14.8C25.5 21 21.5 27.5 16 27.5Z" fill="url(#${uid}_coral)" stroke="#C9184A" stroke-width="1.3"/>
+          <path d="M10 9.5C12 6 15 6.5 16 9C17 6.5 20 6 22 9.5C19.5 11.2 12.5 11.2 10 9.5Z" fill="url(#${uid}_mint)" stroke="#059669" stroke-width="1.2"/>
+          <circle cx="12.5" cy="15.5" r="1" fill="#FFF3B0"/>
+          <circle cx="16" cy="18" r="1" fill="#FFF3B0"/>
+          <circle cx="19.5" cy="15.5" r="1" fill="#FFF3B0"/>
+          <circle cx="14.2" cy="22" r="1" fill="#FFF3B0"/>
+          <circle cx="18" cy="22" r="1" fill="#FFF3B0"/>
+          <ellipse cx="11.2" cy="13.2" rx="2.4" ry="1.2" fill="#FFFFFF" opacity="0.65" transform="rotate(-30 11.2 13.2)"/>
+        </g>`;
+      break;
+
+    // 15. 강아지 발바닥
+    case 'paw_print':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <ellipse cx="16" cy="20.5" rx="6.5" ry="5.2" fill="url(#${uid}_coral)" stroke="#C9184A" stroke-width="1.2"/>
+          <ellipse cx="8.5" cy="13.5" rx="2.6" ry="3.4" fill="url(#${uid}_coral)" transform="rotate(-20 8.5 13.5)"/>
+          <ellipse cx="13.5" cy="10" rx="2.6" ry="3.5" fill="url(#${uid}_coral)" transform="rotate(-6 13.5 10)"/>
+          <ellipse cx="18.8" cy="10" rx="2.6" ry="3.5" fill="url(#${uid}_coral)" transform="rotate(6 18.8 10)"/>
+          <ellipse cx="23.5" cy="13.5" rx="2.6" ry="3.4" fill="url(#${uid}_coral)" transform="rotate(20 23.5 13.5)"/>
+          <ellipse cx="14.2" cy="18.8" rx="2.4" ry="1.1" fill="#FFFFFF" opacity="0.65"/>
+        </g>`;
+      break;
+
+    // 16. 방음 시공 망치
+    case 'soundproof_hammer':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <line x1="8" y1="25" x2="18.5" y2="13.5" stroke="url(#${uid}_wood)" stroke-width="3.6" stroke-linecap="round"/>
+          <rect x="13" y="6" width="12" height="7" rx="3" transform="rotate(42 19 9.5)" fill="url(#${uid}_sky)" stroke="#0284C7" stroke-width="1.3"/>
+          <ellipse cx="18.5" cy="7.8" rx="2.5" ry="1" fill="#FFFFFF" opacity="0.7" transform="rotate(42 18.5 7.8)"/>
+        </g>`;
+      break;
+
+    // 17. 이사/호실 이동 박스
+    case 'relocate_move':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <rect x="6" y="9" width="15" height="14" rx="3" fill="url(#${uid}_wood)" stroke="#78350F" stroke-width="1.3"/>
+          <rect x="11.5" y="9" width="4" height="5.5" fill="url(#${uid}_gold)"/>
+          <path d="M18 16H27M27 16L23.5 12.5M27 16L23.5 19.5" fill="none" stroke="#059669" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>`;
+      break;
+
+    // 18. 중재 선물 상자
+    default:
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <rect x="6.5" y="11" width="19" height="15" rx="3.5" fill="url(#${uid}_gold)" stroke="#B45309" stroke-width="1.3"/>
+          <rect x="5.5" y="8.5" width="21" height="4.5" rx="2" fill="url(#${uid}_gold)" stroke="#B45309" stroke-width="1.3"/>
+          <rect x="14" y="8.5" width="4" height="17.5" fill="url(#${uid}_coral)"/>
+          <circle cx="13" cy="7" r="2.8" fill="none" stroke="#FF6B8B" stroke-width="2.2"/>
+          <circle cx="19" cy="7" r="2.8" fill="none" stroke="#FF6B8B" stroke-width="2.2"/>
+        </g>`;
+      break;
+  }
+
+  return `<svg width="${size}" height="${size}" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="inline-block shrink-0 select-none">${commonDefs}${body}</svg>`;
+}
+
+// [요구사항 4] 5대 세대 유형 커스텀 일러스트 프로필 아바타 SVG
+function createHouseholdAvatarSVG(type, size = 56) {
+  const uid = `ava_${type}_${++svgUidSeq}`;
+  const bgMap = {
+    student: ['#DBEAFE', '#93C5FD'],
+    newlywed: ['#FCE7F3', '#F9A8D4'],
+    family4: ['#D1FAE5', '#6EE7B7'],
+    elderly: ['#FEF3C7', '#FCD34D'],
+    hikikomori: ['#EDE9FE', '#C4B5FD']
+  };
+  const [c1, c2] = bgMap[type] || bgMap.student;
+
+  let charArt = '';
+  if (type === 'hikikomori') {
+    charArt = `
+      <path d="M12 56C12 40 20 34 32 34C44 34 52 40 52 56Z" fill="#581C87"/>
+      <circle cx="32" cy="30" r="16" fill="#6B21A8"/>
+      <ellipse cx="32" cy="33" rx="11.5" ry="10" fill="#F3E8FF"/>
+      <ellipse cx="27.5" cy="34" rx="2.6" ry="1.2" fill="#A855F7" opacity="0.5"/>
+      <ellipse cx="36.5" cy="34" rx="2.6" ry="1.2" fill="#A855F7" opacity="0.5"/>
+      <circle cx="27.5" cy="32" r="2.1" fill="#1E1B4B"/>
+      <circle cx="36.5" cy="32" r="2.1" fill="#1E1B4B"/>
+      <circle cx="28.2" cy="31.3" r="0.8" fill="#FFFFFF"/>
+      <circle cx="37.2" cy="31.3" r="0.8" fill="#FFFFFF"/>
+      <path d="M29 38Q32 36.5 35 38" stroke="#4C1D95" stroke-width="1.6" stroke-linecap="round"/>`;
+  } else if (type === 'newlywed') {
+    charArt = `
+      <circle cx="23" cy="31" r="10.5" fill="#FFE4D6"/>
+      <path d="M12 29C12 19 34 19 34 29C29 24 17 24 12 29Z" fill="#3B2314"/>
+      <circle cx="41" cy="32" r="10" fill="#FFE4D6"/>
+      <circle cx="45" cy="21" r="4.5" fill="#7C3F1D"/>
+      <path d="M31 30C31 21 51 21 51 30C46 25 36 25 31 30Z" fill="#7C3F1D"/>
+      <circle cx="20" cy="32" r="1.7" fill="#1E293B"/><circle cx="26" cy="32" r="1.7" fill="#1E293B"/>
+      <circle cx="38" cy="33" r="1.7" fill="#1E293B"/><circle cx="44" cy="33" r="1.7" fill="#1E293B"/>
+      <ellipse cx="36" cy="35.5" rx="2.2" ry="1.2" fill="#FF8FA3"/><ellipse cx="46" cy="35.5" rx="2.2" ry="1.2" fill="#FF8FA3"/>
+      <path d="M32 14C32 11.5 35 11.5 35 14C35 11.5 38 11.5 38 14C38 17 35 19.5 35 19.5C35 19.5 32 17 32 14Z" fill="#FF6B8B"/>`;
+  } else if (type === 'family4') {
+    charArt = `
+      <circle cx="22" cy="27" r="9.5" fill="#FFE4D6"/>
+      <path d="M12.5 25C13 16 31 16 31.5 25Z" fill="#292524"/>
+      <circle cx="42" cy="27" r="9.5" fill="#FFE4D6"/>
+      <path d="M32.5 25C33 16 51 16 51.5 25Z" fill="#92400E"/>
+      <circle cx="25" cy="43" r="7.5" fill="#FFE4D6"/>
+      <circle cx="39" cy="43" r="7.5" fill="#FFE4D6"/>
+      <circle cx="23" cy="43" r="1.4" fill="#1E293B"/><circle cx="27" cy="43" r="1.4" fill="#1E293B"/>
+      <circle cx="37" cy="43" r="1.4" fill="#1E293B"/><circle cx="41" cy="43" r="1.4" fill="#1E293B"/>`;
+  } else if (type === 'elderly') {
+    charArt = `
+      <circle cx="23" cy="32" r="10.5" fill="#FFE4D6"/>
+      <path d="M12.5 30C13 20 33 20 33.5 30Z" fill="#E5E7EB"/>
+      <circle cx="41" cy="32" r="10" fill="#FFE4D6"/>
+      <circle cx="41" cy="20" r="4.5" fill="#F3F4F6"/>
+      <path d="M31 30C31.5 21 50.5 21 51 30Z" fill="#F3F4F6"/>
+      <circle cx="20" cy="32.5" r="2.8" fill="none" stroke="#78350F" stroke-width="1.3"/>
+      <circle cx="26" cy="32.5" r="2.8" fill="none" stroke="#78350F" stroke-width="1.3"/>
+      <path d="M38 32.5Q39.5 31 41 32.5M42.5 32.5Q44 31 45.5 32.5" stroke="#451A03" stroke-width="1.5" stroke-linecap="round"/>`;
+  } else {
+    charArt = `
+      <path d="M16 58C16 44 23 39 32 39C41 39 48 44 48 58Z" fill="#60A5FA"/>
+      <path d="M18 30C18 18 46 18 46 30" fill="none" stroke="#FF6B8B" stroke-width="4" stroke-linecap="round"/>
+      <rect x="14" y="26" width="5" height="10" rx="2.5" fill="#FF6B8B"/>
+      <rect x="45" y="26" width="5" height="10" rx="2.5" fill="#FF6B8B"/>
+      <circle cx="32" cy="31" r="12.5" fill="#FFE4D6"/>
+      <path d="M19.5 29C20 17 44 17 44.5 29C39 23 25 23 19.5 29Z" fill="#292524"/>
+      <circle cx="27.5" cy="32" r="2.2" fill="#1E293B"/><circle cx="36.5" cy="32" r="2.2" fill="#1E293B"/>
+      <circle cx="28.3" cy="31.1" r="0.9" fill="#FFFFFF"/><circle cx="37.3" cy="31.1" r="0.9" fill="#FFFFFF"/>
+      <ellipse cx="24" cy="35" rx="2.6" ry="1.4" fill="#FF8FA3" opacity="0.7"/>
+      <ellipse cx="40" cy="35" rx="2.6" ry="1.4" fill="#FF8FA3" opacity="0.7"/>
+      <path d="M29.5 36.5Q32 39 34.5 36.5" fill="none" stroke="#7C2D12" stroke-width="1.6" stroke-linecap="round"/>`;
+  }
+
+  return `
+    <svg width="${size}" height="${size}" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" class="shrink-0 select-none">
+      <defs>
+        <linearGradient id="${uid}_bg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${c1}"/>
+          <stop offset="100%" stop-color="${c2}"/>
+        </linearGradient>
+        <clipPath id="${uid}_clip"><rect x="3" y="3" width="58" height="58" rx="20"/></clipPath>
+      </defs>
+      <rect x="3" y="3" width="58" height="58" rx="20" fill="url(#${uid}_bg)" stroke="#FFFFFF" stroke-width="3"/>
+      <g clip-path="url(#${uid}_clip)">${charArt}</g>
+    </svg>`;
+}
+
+// --------------------- 핵심 게임 밸런스 및 데이터 ---------------------
 const GAME_BALANCE = {
-  roomWidth: 5.4,
-  roomDepth: 4.5,
-  wallHeight: 2.55,
-  evictionGraceSec: 30, // 행복도 30% 이하 시 자진 퇴거 카운트다운 30초
+  roomWidth: 5.5,
+  roomDepth: 4.6,
+  wallHeight: 2.6,
+  evictionGraceSec: 30,
   managerHireFee: 50,
-  managerSalaryPerCycle: 95, // 초반 1~2호실일 땐 배보다 배꼽이 큰 현실적 고정 급여!
+  managerSalaryPerCycle: 95, // 초반 1~2호실일 땐 배보다 배꼽이 큰 현실적 지배인 급여!
   managerCycleSec: 14,
   specialCleanCost: 45,
   soundproofCost: 75,
@@ -18,175 +379,117 @@ const GAME_BALANCE = {
   relocateCost: 20
 };
 
-// 플로팅 아일랜드 부지(Lots) 배치 (중앙 시냇물 & 아치형 다리 주변 6개 핵심 구역)
 const INITIAL_ISLAND_LOTS = [
-  {
-    lotId: 'lot_main',
-    name: '중앙 수변 1번지',
-    x: -4.8,
-    z: -4.2,
-    landPrice: 0,
-    owned: true,
-    devType: 'mixed_1',
-    title: '미니미 주상복합 1호관'
-  },
-  {
-    lotId: 'lot_solar',
-    name: '서쪽 햇살언덕 2번지',
-    x: -18.5,
-    z: -3.5,
-    landPrice: 320,
-    owned: false,
-    devType: null,
-    title: null
-  },
-  {
-    lotId: 'lot_farm',
-    name: '남서 시냇가 3번지',
-    x: -14.2,
-    z: 10.6,
-    landPrice: 420,
-    owned: false,
-    devType: null,
-    title: null
-  },
-  {
-    lotId: 'lot_east',
-    name: '다리 건너 동쪽 4번지',
-    x: 13.8,
-    z: -4.5,
-    landPrice: 680,
-    owned: false,
-    devType: null,
-    title: null
-  },
-  {
-    lotId: 'lot_south_e',
-    name: '벚꽃 수변 5번지',
-    x: 13.2,
-    z: 10.4,
-    landPrice: 1200,
-    owned: false,
-    devType: null,
-    title: null
-  },
-  {
-    lotId: 'lot_north',
-    name: '북쪽 전망대 6번지',
-    x: 4.5,
-    z: -16.8,
-    landPrice: 2400,
-    owned: false,
-    devType: null,
-    title: null
-  }
+  { lotId: 'lot_main', name: '중앙 수변 1번지', x: -4.8, z: -4.2, landPrice: 0, owned: true, devType: 'mixed_1', title: '미니미 주상복합 1호관' },
+  { lotId: 'lot_solar', name: '서쪽 햇살언덕 2번지', x: -18.6, z: -3.5, landPrice: 320, owned: false, devType: null, title: null },
+  { lotId: 'lot_farm', name: '남서 시냇가 3번지', x: -14.2, z: 10.6, landPrice: 420, owned: false, devType: null, title: null },
+  { lotId: 'lot_east', name: '아치교 동쪽 4번지', x: 13.8, z: -4.5, landPrice: 680, owned: false, devType: null, title: null },
+  { lotId: 'lot_south_e', name: '벚꽃 수변 5번지', x: 13.2, z: 10.4, landPrice: 1200, owned: false, devType: null, title: null },
+  { lotId: 'lot_north', name: '북쪽 전망대 6번지', x: 4.5, z: -16.8, landPrice: 2400, owned: false, devType: null, title: null }
 ];
 
-// 빈 부지 개발 카탈로그 (태양광 발전소 / 도시 농장 / 벚꽃 공원 / 베이커리 카페 / 주상복합 2호관)
 const DEVELOPMENT_CATALOG = {
   solar_plant: {
     type: 'solar_plant',
     name: '친환경 태양광 발전소',
-    icon: '🌱',
+    svgIcon: 'solar_panel',
     buildCost: 220,
     isResidential: false,
     cycleSec: 9,
     cycleProfit: 52,
     rentSynergyPct: 5,
-    desc: '햇살을 받아 깨끗한 전력을 생산합니다! 관리비 걱정 없이 9초마다 +52만원의 쏠쏠한 전력 판매 수익이 들어옵니다.'
+    desc: '따스한 햇살로 친환경 전력을 생산하여 9초마다 +52만 원의 패시브 수익을 창출합니다.'
   },
   urban_farm: {
     type: 'urban_farm',
     name: '힐링 도시 농장 & 텃밭',
-    icon: '🍓',
+    svgIcon: 'berry_farm',
     buildCost: 280,
     isResidential: false,
     cycleSec: 11,
     cycleProfit: 74,
     rentSynergyPct: 8,
-    desc: '씨앗 ➔ 초록 새싹 ➔ 빨간 딸기 열매로 3단계 자라나는 3D 텃밭! 수확할 때마다 +74만원 수익과 입주민 힐링 효과를 줍니다.'
+    desc: '씨앗에서 초록 새싹, 탐스러운 딸기 열매로 3단계 자라나며 수확 수익(+74만)과 힐링을 선물합니다.'
   },
   sakura_park: {
     type: 'sakura_park',
     name: '파스텔 벚꽃 힐링 공원',
-    icon: '🌸',
+    svgIcon: 'paw_print',
     buildCost: 340,
     isResidential: false,
     cycleSec: 12,
     cycleProfit: 38,
     rentSynergyPct: 15,
-    desc: '분수대와 벚꽃나무가 어우러진 공원! 인접 주거 건물의 월세를 +15% 높여주고 층간소음 스트레스를 완화합니다.'
+    desc: '벚꽃 산책로가 주변 주거 건물의 월세를 +15% 높여주고 층간소음 스트레스를 다독여줍니다.'
   },
   bakery_cafe: {
     type: 'bakery_cafe',
-    name: '오가닉 베이커리 & 카페',
-    icon: '☕',
+    name: '크림 베이커리 & 카페',
+    svgIcon: 'gift_box',
     buildCost: 460,
     isResidential: false,
     cycleSec: 10,
     cycleProfit: 92,
     rentSynergyPct: 12,
-    desc: '갓 구운 크루아상과 원두커피 향이 퍼지는 핫플 상가! 높은 상권 매출(+92만)과 슬세권 월세 +12% 시너지를 발휘합니다.'
+    desc: '고소한 빵 냄새가 퍼지는 핫플레이스 상가! 높은 상권 매출(+92만)과 슬세권 +12% 시너지를 줍니다.'
   },
   mixed_2: {
     type: 'mixed_2',
     name: '프리미엄 주상복합 2호관',
-    icon: '🏢',
+    svgIcon: 'red_house',
     buildCost: 780,
     isResidential: true,
-    baseRoomRent: 52,
+    baseRoomRent: 54,
     rentSynergyPct: 10,
-    desc: '1층 상가(24H 마트·세탁소)와 6개의 고급 호실을 갖춘 새 주상복합 빌딩! 직접 호실을 꾸미고 지배인을 둘 수 있습니다.'
+    desc: '1층 상가와 6개의 하이엔드 호실을 갖춘 새 주상복합! 직접 리모델링하고 지배인을 둘 수 있습니다.'
   },
   mixed_1: {
     type: 'mixed_1',
     name: '주상복합 1호관',
-    icon: '🏠',
+    svgIcon: 'red_house',
     buildCost: 0,
     isResidential: true,
-    baseRoomRent: 32,
+    baseRoomRent: 34,
     rentSynergyPct: 0,
     desc: '1층 24H MINI MART & WASH PONG 상가와 상층부 6개 주거 호실을 갖춘 첫 출발 건물입니다.'
   }
 };
 
-// 건물 공용 인프라 4종 정의 (3D 외관 생성 및 세입자 불만 직결)
 const PUBLIC_INFRA_CATALOG = {
   elevator: {
     key: 'elevator',
     name: '유리 전망 엘리베이터',
-    icon: '🛗',
+    svgIcon: 'elevator',
     cost: 160,
     rentBonusPct: 10,
-    desc: '미설치 시 2층 거주 노부부·4인가족이 계단 불만을 호소합니다! 설치 시 투명 외벽 승강기가 실시간 운행됩니다.'
+    desc: '미설치 시 2층 노부부·4인가족이 계단 불만을 호소합니다. 설치 시 투명 외벽 승강기가 운행됩니다.'
   },
   recycling: {
     key: 'recycling',
     name: '클린 분리수거장',
-    icon: '♻️',
+    svgIcon: 'recycle_bin',
     cost: 110,
     rentBonusPct: 6,
-    desc: '미설치 시 건물 옆에 검은 쓰레기봉투 더미가 쌓여 위생도가 하락합니다! 설치 시 색상별 3D 분리수거 부스가 생성됩니다.'
+    desc: '미설치 시 건물 옆에 쓰레기봉투 더미가 생깁니다. 설치 시 파스텔 3색 분리수거 부스가 조립됩니다.'
   },
   parcel_box: {
     key: 'parcel_box',
     name: '스마트 무인택배함',
-    icon: '📮',
+    svgIcon: 'relocate_move',
     cost: 95,
     rentBonusPct: 6,
-    desc: '정문 입구 옆 안심 무인택배함! 택배 분실 불만을 없애고 전 세대 만족도와 월세를 +6% 높입니다.'
+    desc: '정문 입구 옆 안심 택배함! 택배 분실 걱정을 없애고 전 세대 만족도와 월세를 +6% 높입니다.'
   },
   rooftop_garden: {
     key: 'rooftop_garden',
     name: '옥상 루프탑 가든',
-    icon: '🌿',
+    svgIcon: 'berry_farm',
     cost: 210,
     rentBonusPct: 12,
-    desc: '지붕 위 파고라와 화단 정원을 조성해 세입자 이탈률을 대폭 낮추고 건물 프리미엄 월세를 +12% 상승시킵니다.'
+    desc: '옥상 화단과 쉼터를 조성해 세입자 이탈률을 낮추고 프리미엄 월세를 +12% 상승시킵니다.'
   }
 };
 
-// 주상복합 내 6개 호실 레이아웃 (1층 상가 위 2층=101~103호, 3층=201~203호 구조로 1층 상가 육안 식별 극대화!)
 const ROOM_SLOTS_TEMPLATE = [
   { subId: '101', name: '101호', floor: 1, col: 0, lx: -5.6, ly: 3.05, lz: 0.2, cycleSec: 9.5, unlockCost: 0, defaultUnlocked: true },
   { subId: '102', name: '102호', floor: 1, col: 1, lx: 0.0, ly: 3.05, lz: 0.2, cycleSec: 11.0, unlockCost: 0, defaultUnlocked: true },
@@ -196,46 +499,44 @@ const ROOM_SLOTS_TEMPLATE = [
   { subId: '203', name: '203호', floor: 2, col: 2, lx: 5.6, ly: 5.85, lz: 0.2, cycleSec: 11.4, unlockCost: 380, defaultUnlocked: false }
 ];
 
-// 호실 인테리어 등급 (Lv.0 ~ Lv.3)
 const ROOM_INTERIOR_TIERS = [
-  { level: 0, name: '노후 시멘트 공실', cost: 0, rentAdd: 0, desc: '갈라진 시멘트 바닥과 얼룩진 벽면 상태' },
-  { level: 1, name: '파스텔 스윗 리모델링', cost: 65, rentAdd: 28, desc: '화사한 메이플 마루와 파스텔 벽지, 기본 맞춤 가구 완비' },
-  { level: 2, name: '코지 헤링본 풀옵션', cost: 160, rentAdd: 68, desc: '따뜻한 오크 헤링본 마루와 웨인스코팅, 세대별 고급 가구 세팅' },
-  { level: 3, name: '로얄 부티크 스위트', cost: 340, rentAdd: 135, desc: '비앙코 골드 대리석과 최고급 명품 가구 풀세트 (+세트효과 25%)' }
+  { level: 0, name: '노후 시멘트 공실', cost: 0, rentAdd: 0, desc: '리모델링 전 기본 바닥과 벽면 상태' },
+  { level: 1, name: '파스텔 스트라이프 룸', cost: 65, rentAdd: 28, desc: '파스텔 스트라이프 벽지와 메이플 원목 마루 시공' },
+  { level: 2, name: '코지 헤링본 하우스', cost: 160, rentAdd: 68, desc: '따뜻한 오크 헤링본 원목 마루와 크림 웨인스코팅 마감' },
+  { level: 3, name: '로얄 크림 부티크', cost: 340, rentAdd: 135, desc: '샴페인 골드 몰딩과 최고급 풀옵션 스위트 (+세트보너스 25%)' }
 ];
 
-// 5대 세대 유형 (학생 / 신혼부부 / 4인 가족 / 노부부 / 은둔형 히키코모리)
 const HOUSEHOLD_TYPES = {
   student: {
     type: 'student',
     label: '대학생·취준생',
-    icon: '🎓',
-    badgeColor: '#3b82f6',
+    tagChips: ['#야행성', '#기타연주', '#가성비원룸'],
+    accentHex: '#60A5FA',
     memberCount: 1,
     minRent: 58,
     maxRent: 108,
-    noiseOutput: 45, // 야행성·기타 연주 소음
+    noiseOutput: 45,
     noiseSensitivity: 25,
     odorSensitivity: 45,
     needsElevator: false,
     needsRecycling: false,
     isHoarder: false,
-    traitDesc: '야행성 · 밤샘 과제 & 기타 연주 소음 주의',
-    furnitureDesc: '싱글 침대 · 듀얼모니터 책상 · 게이밍의자 · 미니 행거 · 어쿠스틱 기타',
+    traitDesc: '야행성 생활 · 밤샘 과제 및 통기타 연주 소음 주의',
+    furnitureDesc: '라운드 싱글침대 · 듀얼모니터 데스크 · 본체 · 게이밍체어 · 미니행거 · 기타',
     happyQuotes: [
-      '듀얼 모니터에서 인강 들으니 집중 최고! 💻',
-      '1층 24H 편의점이 바로 아래라 천국이네 🍙',
-      '새 마루에서 기타 치니까 울림이 너무 좋다 🎸'
+      '듀얼 모니터 빛이 영롱해서 인강이 귀에 쏙쏙 들어와요!',
+      '1층 24H 미니마트가 바로 아래라 야식 사 먹기 최고예요!',
+      '헤링본 마루 위에서 기타 치니까 소리가 참 따뜻하네요~'
     ],
-    noiseVictimQuotes: ['윗방 쿵쿵거리는 소리 때문에 시험공부를 못 하겠어요! 😫'],
-    odorVictimQuotes: ['옆방에서 무슨 퀴퀴한 냄새가 복도까지 나요.. 🤢'],
-    infraQuotes: ['무인택배함이 있으면 인강 교재 받기 편할 텐데 📦']
+    noiseVictimQuotes: ['윗방에서 쿵쿵거려서 시험공부 집중이 하나도 안 돼요!'],
+    odorVictimQuotes: ['옆방에서 무슨 퀴퀴한 냄새가 복도까지 새어 나와요..'],
+    infraQuotes: ['무인택배함이 있으면 교재 택배 받기가 훨씬 편할 텐데요!']
   },
   newlywed: {
     type: 'newlywed',
     label: '신혼부부',
-    icon: '💍',
-    badgeColor: '#ec4899',
+    tagChips: ['#핑크스윗홈', '#분리수거중시', '#깔끔부부'],
+    accentHex: '#FF758F',
     memberCount: 2,
     minRent: 120,
     maxRent: 215,
@@ -245,117 +546,112 @@ const HOUSEHOLD_TYPES = {
     needsElevator: false,
     needsRecycling: true,
     isHoarder: false,
-    traitDesc: '깔끔한 인테리어 · 분리수거장 & 코인세탁소 중시',
-    furnitureDesc: '핑크/크림 퀸침대 · 2인 패브릭 소파 · 아일랜드 식탁 & 커피머신 · 전신거울',
+    traitDesc: '감성 인테리어 선호 · 클린 분리수거장 & 세탁소 중시',
+    furnitureDesc: '핑크 쿠션 퀸침대 · 팔걸이 패브릭 소파 · 러그 · 아일랜드 식탁 & 커피머신 · 전신거울',
     happyQuotes: [
-      '여보~ 아일랜드 식탁에서 내려 마시는 모닝커피 최고야 ☕💕',
-      '신혼집 인테리어가 너무 화사해서 매일 행복해요 🌸',
-      '1층 워시퐁 세탁소 덕분에 이불 빨래도 뽀송뽀송! 🧺'
+      '여보~ 아일랜드 식탁에서 내려 마시는 모닝커피 향기 너무 좋다!',
+      '파스텔 벽지랑 소파 색감이 동화 속 신혼집 같아요!',
+      '1층 워시퐁 코인세탁소 덕분에 이불 빨래가 솜사탕처럼 뽀송해요~'
     ],
-    noiseVictimQuotes: ['윗집 발망치 소리 때문에 신혼 단잠을 다 설쳤어요! ⚡'],
-    odorVictimQuotes: ['옆집 문 앞에 배달 쓰레기 쌓아둔 것 좀 봐요, 벌레 나올 것 같아! 🤢'],
-    infraQuotes: ['분리수거장이 아직 없어서 재활용 버리기가 너무 불편해요 ♻️']
+    noiseVictimQuotes: ['윗집 발망치 소리 때문에 신혼 단잠을 다 설쳤어요!'],
+    odorVictimQuotes: ['옆집 문 앞에 배달 쓰레기 쌓아둔 것 좀 봐요, 벌레 나올 것 같아요!'],
+    infraQuotes: ['클린 분리수거장이 아직 없어서 재활용 버리기가 불편해요~']
   },
   family4: {
     type: 'family4',
     label: '4인 가족',
-    icon: '👨‍👩‍👧‍👦',
-    badgeColor: '#10b981',
+    tagChips: ['#발망치주의', '#고수익세대', '#엘리베이터중시'],
+    accentHex: '#34D399',
     memberCount: 4,
     minRent: 180,
     maxRent: 320,
-    noiseOutput: 85, // 아이들 발망치 층간소음 매우 높음!
+    noiseOutput: 85,
     noiseSensitivity: 30,
     odorSensitivity: 75,
     needsElevator: true,
     needsRecycling: true,
     isHoarder: false,
-    traitDesc: '고수익 우량 세대 · 아이들 발망치 층간소음 높음 · 엘리베이터 중시',
-    furnitureDesc: '낮은 가벽 · 4인 식탁 · 대형 L자 소파 & TV · 어린이 3D 2층 침대 · 장난감 매트',
+    traitDesc: '든든한 고액 월세 세대 · 아이들 발망치 층간소음 높음 · 엘리베이터 중시',
+    furnitureDesc: '낮은 우드 가벽 · 4인 식탁 · 대형 L자 소파 & TV · 어린이 2층 침대 · 장난감 매트',
     happyQuotes: [
-      '아이들이 2층 침대랑 놀이매트를 너무 좋아해요! 🧸✨',
-      '온 가족이 둘러앉아 저녁 먹는 시간이 제일 행복하네요 🍲',
-      '동네에 산책할 시냇물 다리랑 공원이 있어 아이 키우기 딱이에요!'
+      '아이들이 2층 침대 사다리 오르내리며 너무 신나해요!',
+      '온 가족이 도란도란 둘러앉아 저녁 먹는 시간이 제일 행복해요~',
+      '마을 시냇물 다리에서 강아지들이 뛰어노는 풍경이 참 평화로워요!'
     ],
-    noiseVictimQuotes: ['애들아 살살 걸어라~ 아랫집에서 올라오시겠다 💦'],
-    odorVictimQuotes: ['아이들 키우는 집인데 옆방 악취 때문에 창문을 못 열겠어요!! 😡'],
-    infraQuotes: ['유모차랑 장바구니 들고 2층 계단 오르내리기 너무 힘들어요 🛗']
+    noiseVictimQuotes: ['애들아 살살 걸어라~ 아랫집 어르신들 놀라시겠다!'],
+    odorVictimQuotes: ['아이들 키우는 집인데 옆방 악취 때문에 환기를 못 시키겠어요!'],
+    infraQuotes: ['아이들 데리고 장바구니 들고 2층 계단 오르기가 꽤 숨차네요~']
   },
   elderly: {
     type: 'elderly',
     label: '노부부',
-    icon: '🍵',
-    badgeColor: '#d97706',
+    tagChips: ['#소음민감', '#악취민감', '#엘리베이터필수'],
+    accentHex: '#FBBF24',
     memberCount: 2,
     minRent: 110,
     maxRent: 185,
     noiseOutput: 5,
-    noiseSensitivity: 92, // 층간소음에 극도로 민감!
-    odorSensitivity: 90, // 악취에 극도로 민감!
-    needsElevator: true, // 2층 이상 시 엘리베이터 필수!
+    noiseSensitivity: 92,
+    odorSensitivity: 90,
+    needsElevator: true,
     needsRecycling: false,
     isHoarder: false,
     traitDesc: '조용한 모범 세대 · 층간소음/악취 극도로 민감 · 2층은 엘리베이터 필수',
-    furnitureDesc: '따뜻한 원목 마루 · 트윈 침대 · 흔들의자 2개 · 다도 좌탁 · 난초 & 분재 선반',
+    furnitureDesc: '원목 트윈 침대 · 흔들의자 2개 · 다도 좌탁 & 찻주전자 · 난초 & 분재 선반',
     happyQuotes: [
-      '영감, 흔들의자에 앉아 따뜻한 녹차 한 잔 마시니 신선놀음이구려 🍵',
-      '분재에 새순이 돋았어요~ 채광이 참 포근한 집이야 🪴',
-      '조용하고 공기 맑은 동네라 노후 보내기 참 좋구먼 ☀️'
+      '영감, 흔들의자에 앉아 따뜻한 녹차 한 잔 마시니 참 평온하구려~',
+      '분재에 예쁜 새순이 돋았어요, 햇살이 참 고운 집이야!',
+      '유리 엘리베이터가 부드럽게 오르내리니 마실 나가기 참 편하구먼!'
     ],
-    noiseVictimQuotes: ['윗집은 밤마다 애들이 왜 이렇게 뛰어다니는 거야! 머리가 지끈거려! ⚡💢'],
-    odorVictimQuotes: ['옆방에서 무슨 썩은 냄새가 진동을 해요! 못 살겠어요 집주인 양반! 🤢'],
-    infraQuotes: ['무릎 관절이 시큰거려서 엘리베이터 없이는 2층 계단 못 다니겠소.. 🛗']
+    noiseVictimQuotes: ['윗집은 밤마다 애들이 왜 이렇게 뛰어다니는 거야! 머리가 지끈거려!'],
+    odorVictimQuotes: ['옆방에서 무슨 썩은 냄새가 진동을 해요! 도저히 못 살겠소 집주인 양반!'],
+    infraQuotes: ['무릎 관절이 시큰거려서 엘리베이터 없이는 2층 계단 못 다니겠소..']
   },
   hikikomori: {
     type: 'hikikomori',
     label: '은둔형 히키코모리',
-    icon: '🗑️',
-    badgeColor: '#6b21a8',
+    tagChips: ['#월세칼입금', '#쓰레기방주의', '#악취민원주의'],
+    accentHex: '#A855F7',
     memberCount: 1,
     minRent: 135,
-    maxRent: 235, // 온라인 작업으로 월세는 꼬박꼬박 아주 잘 냄!
+    maxRent: 235,
     noiseOutput: 15,
     noiseSensitivity: 20,
     odorSensitivity: 0,
     needsElevator: false,
     needsRecycling: false,
-    isHoarder: true, // 핵심 문제 세입자: 방 안에 피자박스·쓰레기봉투 산더미 누적!
-    traitDesc: '월세 칼입금 고액 세입자 · 외출 제로 · 방치 시 쓰레기산 & 이웃 악취 대재앙!',
-    furnitureDesc: '어두운 조명 · 트리플 모니터 PC석 · 바닥 매트리스 · (시간 경과 시 쓰레기 더미 누적)',
+    isHoarder: true,
+    traitDesc: '월세는 꼬박꼬박 잘 내지만 방에 피자박스·쓰레기봉투를 쌓아 이웃 악취 유발!',
+    furnitureDesc: '어두운 무드 조명 · 트리플 모니터 PC석 & 본체 · 바닥 매트리스 · (쓰레기 더미 누적)',
     happyQuotes: [
-      '배달 시켜야지... 밖은 위험해... 모니터 3대가 내 세상이야 🖥️',
-      '이번 달 외주비 들어왔다.. 월세는 바로 자동이체 완료... 💸',
-      '피자 다 먹었으니 박스는 저기 탑 위에 올려두자... 🍕'
+      '배달 시켜야지... 밖은 위험해... 모니터 3대가 내 세상이야...',
+      '외주 정산금 들어왔다... 이번 달 월세도 자동이체 완료...',
+      '피자 다 먹었으니 박스는 저기 탑 위에 차곡차곡 올려두자...'
     ],
-    cleanedGrumbleQuote: '아, 치우지 말라니까요... 다 쓸 데 있는 내 보물들인데... 😒',
-    evictedQuote: '칫... 월세 한 번도 안 밀렸는데 너무하네... 짐 싸서 나갑니다... 📦'
+    cleanedGrumbleQuote: '아, 치우지 말라니까요... 다 쓸 데 있는 내 보물들인데...',
+    evictedQuote: '칫... 월세 한 번도 안 밀렸는데 너무하네... 짐 싸서 나갑니다...'
   }
 };
 
 const FAMILY_LAST_NAMES = ['김', '이', '박', '최', '정', '강', '조', '윤', '장', '임', '한', '오', '서', '신', '권', '송', '유', '홍'];
 const GIVEN_NAMES = ['민준', '서연', '도윤', '지우', '하은', '지호', '수빈', '현우', '소율', '연우', '다은', '태오', '영숙', '철수', '순자', '만수'];
 
-// 돌발 케어 이벤트 정의
 const CARE_BUBBLE_TYPES = [
-  { id: 'pipe_fix', icon: '🔧', label: '배관 수리', cashReward: 42, toastMsg: '🔧 배관 수리 완료! 보너스 수리비 +42만원을 받았어요!' },
-  { id: 'parcel_deliver', icon: '📦', label: '택배 전달', cashReward: 45, toastMsg: '📦 택배 안심 전달! 입주민이 감사 팁 +45만원을 보냈어요!' },
-  { id: 'street_sweep', icon: '🧹', label: '거리 청소', cashReward: 50, toastMsg: '🧹 타운 돌담길과 복도를 반짝반짝 청소해 +50만원 보너스를 받았어요!' },
-  { id: 'smart_light', icon: '💡', label: '조명 교체', cashReward: 48, toastMsg: '💡 따뜻한 무드전구 교체 완료! +48만원 보너스가 입금됐어요!' }
+  { id: 'pipe_fix', svgIcon: 'soundproof_hammer', label: '배관 점검', cashReward: 42, toastMsg: '배관 수압 점검 완료! 보너스 관리비 +42만 원을 받았어요!' },
+  { id: 'parcel_deliver', svgIcon: 'relocate_move', label: '택배 전달', cashReward: 45, toastMsg: '안심 택배 전달 완료! 감사 팁 +45만 원이 입금됐어요!' },
+  { id: 'street_sweep', svgIcon: 'broom_clean', label: '돌담길 청소', cashReward: 50, toastMsg: '아일랜드 돌담길을 반짝반짝 쓸어 쾌적 보너스 +50만 원을 받았어요!' },
+  { id: 'smart_light', svgIcon: 'gold_key', label: '무드등 교체', cashReward: 48, toastMsg: '따스한 크림 무드전구 교체 완료! +48만 원 보너스 수령!' }
 ];
 
-// 메인 퀘스트 & 업적 10단계
 const QUEST_LIST = [
   {
     id: 'mq1',
-    title: '101호 파스텔 스윗 리모델링하기',
-    desc: '1호관 101호를 터치해 클로즈업한 뒤 인테리어를 Lv.1 이상으로 업그레이드하세요!',
+    title: '101호 파스텔 스트라이프 리모델링',
+    desc: '1호관 101호를 터치해 클로즈업한 뒤 인테리어를 Lv.1 이상으로 시공하세요!',
     reward: 160,
     focusLot: 'lot_main',
     focusSubRoom: '101',
-    check: (st) => {
-      const r = st.buildings.lot_main?.rooms.find((x) => x.subId === '101');
-      return r && r.interiorLv >= 1;
-    }
+    check: (st) => (st.buildings.lot_main?.rooms.find((x) => x.subId === '101')?.interiorLv || 0) >= 1
   },
   {
     id: 'mq2',
@@ -364,24 +660,21 @@ const QUEST_LIST = [
     reward: 180,
     focusLot: 'lot_main',
     focusSubRoom: '101',
-    check: (st) => {
-      const r = st.buildings.lot_main?.rooms.find((x) => x.subId === '101');
-      return r && !!r.household;
-    }
+    check: (st) => !!st.buildings.lot_main?.rooms.find((x) => x.subId === '101')?.household
   },
   {
     id: 'mq3',
-    title: '102호도 리모델링 후 두 번째 세대 받기',
-    desc: '옆방 102호도 단장해 2세대 이상 거주하는 활기찬 주상복합을 만드세요!',
+    title: '102호도 리모델링 후 두 번째 세대 입주',
+    desc: '옆방 102호도 예쁘게 단장해 2세대 이상이 오손도손 사는 주상복합을 만드세요!',
     reward: 240,
     focusLot: 'lot_main',
     focusSubRoom: '102',
-    check: (st) => st.buildings.lot_main?.rooms.filter((x) => !!x.household).length >= 2
+    check: (st) => (st.buildings.lot_main?.rooms.filter((x) => !!x.household).length || 0) >= 2
   },
   {
     id: 'mq4',
-    title: '건물 공용시설(분리수거장 또는 택배함) 설치',
-    desc: '우측 하단 [📋 타운 수첩 ➔ 건물 공용시설] 탭에서 분리수거장이나 무인택배함을 설치하세요!',
+    title: '건물 공용시설(분리수거장/택배함/엘리베이터) 설치',
+    desc: '우측 하단 타운 수첩의 [시설·장부] 탭에서 공용 인프라를 1개 이상 설치하세요!',
     reward: 260,
     openTab: 'infra',
     check: (st) => {
@@ -391,59 +684,60 @@ const QUEST_LIST = [
   },
   {
     id: 'mq5',
-    title: '2층 호실(201호) 개방 & 유리 엘리베이터 설치',
-    desc: '201호를 분양 오픈하고 2층 입주민을 위한 [🛗 유리 전망 엘리베이터]를 설치하세요!',
+    title: '2층 호실(201호) 개방 & 유리 엘리베이터 완비',
+    desc: '201호를 분양 오픈하고 2층 입주민을 위한 유리 전망 엘리베이터를 설치하세요!',
     reward: 380,
     focusLot: 'lot_main',
     focusSubRoom: '201',
     check: (st) => {
       const b = st.buildings.lot_main;
-      const r201 = b?.rooms.find((x) => x.subId === '201');
-      return r201 && r201.unlocked && b.infra.elevator;
+      return !!b?.rooms.find((x) => x.subId === '201')?.unlocked && !!b?.infra.elevator;
     }
   },
   {
     id: 'mq6',
-    title: '서쪽 언덕에 [🌱 친환경 태양광 발전소] 건설',
-    desc: '줌아웃해 서쪽 2번지 빈 부지를 터치하고 태양광 발전소(또는 원하는 시설)를 개발하세요!',
+    title: '서쪽 언덕에 친환경 태양광 발전소 건설',
+    desc: '줌아웃해 서쪽 2번지 부지를 터치하고 태양광 발전소(또는 원하는 시설)를 세우세요!',
     reward: 450,
     focusLot: 'lot_solar',
     check: (st) => st.lots.filter((l) => l.owned).length >= 2
   },
   {
     id: 'mq7',
-    title: '시냇가 부지에 [🍓 힐링 도시 농장] 일구기',
-    desc: '3번째 부지를 개발해 씨앗부터 빨간 딸기까지 자라나는 텃밭이나 공원을 조성하세요!',
+    title: '시냇가 부지에 힐링 딸기 농장 일구기',
+    desc: '3번째 부지를 개발해 씨앗부터 딸기 열매까지 자라나는 도시 농장이나 공원을 조성하세요!',
     reward: 550,
     focusLot: 'lot_farm',
     check: (st) => st.lots.filter((l) => l.owned).length >= 3
   },
   {
     id: 'mq8',
-    title: '쓰레기방 특수청소·방음시공 또는 세입자 관리 1회',
-    desc: '문제 세대(히키코모리 쓰레기방 청소/내쫓기 또는 층간소음 방음시공/중재)를 1회 해결해보세요!',
+    title: '쓰레기방 특수청소·방음시공·중재 등 세대 케어 1회',
+    desc: '히키코모리 특수청소/강제퇴거 또는 층간소음 방음시공/중재선물을 1회 실행해보세요!',
     reward: 480,
     openTab: 'tenants',
     check: (st) => st.stats.crisisResolved >= 1 || st.stats.evictions >= 1
   },
   {
     id: 'mq9',
-    title: '전문 건물 관리인(지배인) 선임해보기',
-    desc: '호실을 충분히 늘려 수익을 확보한 뒤 [📋 타운 수첩 ➔ 관리인 고용]에서 지배인을 선임하세요!',
+    title: '전문 건물 지배인 선임 & 위임 슬라이더 설정',
+    desc: '호실 수익을 충분히 확보한 뒤 [관리인] 탭에서 1층 상주 지배인을 고용하세요!',
     reward: 600,
     openTab: 'manager',
     check: (st) => Object.values(st.buildings).some((b) => b.manager.hired)
   },
   {
     id: 'mq10',
-    title: '아치다리 건너 동쪽 타운까지 5개 부지 개발!',
-    desc: '플로팅 아일랜드의 5개 이상 부지를 개발해 꿈의 코지 부동산 타운을 완성하세요!',
+    title: '아치교 건너 동쪽 타운까지 5개 부지 개발!',
+    desc: '플로팅 아일랜드의 5개 이상 부지를 개발해 꿈의 파스텔 부동산 타운을 완성하세요!',
     reward: 1500,
     focusLot: 'lot_east',
     check: (st) => st.lots.filter((l) => l.owned).length >= 5
   }
 ];
 
+window.createCustomSVGIcon = createCustomSVGIcon;
+window.createHouseholdAvatarSVG = createHouseholdAvatarSVG;
 window.GAME_BALANCE = GAME_BALANCE;
 window.INITIAL_ISLAND_LOTS = INITIAL_ISLAND_LOTS;
 window.DEVELOPMENT_CATALOG = DEVELOPMENT_CATALOG;
