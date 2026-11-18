@@ -11,9 +11,11 @@
   <link rel="manifest" href="./manifest.json" />
   <title>갓물주 라이프 3D: 미니미 타운</title>
 
-  <link rel="preload" href="https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2105_2@1.0/Cafe24Ssurround.woff" as="font" type="font/woff" crossorigin />
-  <link rel="preload" href="https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/CookieRun-Regular.woff" as="font" type="font/woff" crossorigin />
-  <link rel="preload" href="https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2304-01@1.0/omyu_pretty.woff2" as="font" type="font/woff2" crossorigin />
+  <!-- Google Fonts Jua (타이틀·숫자·버튼용) & Pretendard (상세 본문용) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css" />
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script type="importmap">
@@ -34,7 +36,7 @@
   <!-- 전체화면 단독 룸/상가 뷰 전용 소프트 스튜디오 비네팅 -->
   <div id="room-isolation-vignette" class="hidden fixed inset-0 z-10 pointer-events-none"></div>
 
-  <!-- ==================== 2. 3D 투영(Project) 오버레이 레이어 ==================== -->
+  <!-- ==================== 2. 3D 공간 밀착 투영(Project) 오버레이 레이어 ==================== -->
   <div id="overlay-3d-layer">
     <div id="lots-overlay-layer"></div>
     <div id="shops-overlay-layer"></div>
@@ -46,297 +48,346 @@
     <div id="jackpot-overlay-layer"></div>
   </div>
 
-  <!-- 코인 비행 레이어 -->
+  <!-- 코인 비행 & HUD 플로팅 텍스트 레이어 -->
   <div id="flying-coin-layer" class="fixed inset-0 z-40 pointer-events-none overflow-hidden"></div>
 
-  <!-- ==================== 3. 겹침 없는 상단 3캡슐 HUD & 모드별 상단 컨트롤 ==================== -->
-  <header class="fixed top-2 left-2 right-2 sm:right-auto sm:left-3.5 sm:top-3 z-30 flex flex-col gap-1.5 pointer-events-none sm:w-[436px]">
-    <!-- 1열: 3개 핵심 상태 캡슐 한 줄 고정 정렬 -->
-    <div class="hud-top-row pointer-events-auto">
-      <div id="hud-badge-gold" class="hud-clay-badge hud-stat-pill">
+  <!-- ==================== 3. 글래스모피즘 플로팅 필(Floating Pill) 상단 HUD ==================== -->
+  <header class="fixed top-2.5 left-2.5 right-2.5 sm:right-auto sm:left-4 sm:top-3.5 z-30 flex flex-col gap-2 pointer-events-none sm:w-auto sm:max-w-[700px]">
+    <!-- 1열: 3대 핵심 재화 아일랜드 필 배지 -->
+    <div class="hud-top-row pointer-events-auto sm:w-[464px]">
+      <div id="hud-badge-gold" class="hud-glass-pill relative">
         <span id="hud-ico-gold" class="flex items-center justify-center shrink-0"></span>
-        <div class="leading-tight min-w-0">
-          <div class="text-[9.5px] sm:text-[10px] font-display text-[#7A6254] leading-none truncate">보유자산</div>
-          <div id="hud-gold-wrap" class="font-title text-[12.5px] sm:text-base text-[#4A3728] leading-tight mt-0.5 whitespace-nowrap">
-            <span id="hud-gold" class="font-num">1,250</span><span class="text-[10px] ml-0.5">만</span>
+        <div class="leading-tight min-w-0 flex-1">
+          <div class="hud-pill-label">보유자산</div>
+          <div id="hud-gold-wrap" class="hud-pill-num text-[#3A2E2B]">
+            <span id="hud-gold" class="font-num">1,250</span><span class="hud-unit">만</span>
+          </div>
+        </div>
+        <div id="hud-gold-pop-anchor" class="absolute left-1/2 -bottom-1 pointer-events-none"></div>
+      </div>
+
+      <div id="hud-badge-yield" class="hud-glass-pill">
+        <span id="hud-ico-yield" class="flex items-center justify-center shrink-0"></span>
+        <div class="leading-tight min-w-0 flex-1">
+          <div class="hud-pill-label">주기순익</div>
+          <div id="hud-net-income" class="hud-pill-num text-[#15803D]">+28만</div>
+        </div>
+      </div>
+
+      <div id="hud-badge-happy" class="hud-glass-pill">
+        <span id="hud-ico-happy" class="flex items-center justify-center shrink-0"></span>
+        <div class="leading-tight min-w-0 flex-1">
+          <div class="flex items-center justify-between gap-1">
+            <span class="hud-pill-label">행복도</span>
+            <span id="hud-happiness" class="hud-pill-num !text-[12.5px] sm:!text-[14px] text-[#E03E52]">100%</span>
+          </div>
+          <div class="hud-mini-gauge-track mt-1">
+            <div id="hud-happy-bar" class="hud-mini-gauge-fill" style="width: 100%;"></div>
           </div>
         </div>
       </div>
-
-      <div id="hud-badge-yield" class="hud-clay-badge hud-stat-pill">
-        <span id="hud-ico-yield" class="flex items-center justify-center shrink-0"></span>
-        <div class="leading-tight min-w-0">
-          <div class="text-[9.5px] sm:text-[10px] font-display text-[#7A6254] leading-none truncate">주기순익</div>
-          <div id="hud-net-income" class="font-num text-[12.5px] sm:text-base text-[#0D9488] leading-tight mt-0.5 whitespace-nowrap">+28만</div>
-        </div>
-      </div>
-
-      <div id="hud-badge-happy" class="hud-clay-badge hud-stat-pill">
-        <span id="hud-ico-happy" class="flex items-center justify-center shrink-0"></span>
-        <div class="leading-tight min-w-0">
-          <div class="text-[9.5px] sm:text-[10px] font-display text-[#7A6254] leading-none truncate">행복도</div>
-          <div id="hud-happiness" class="font-num text-[12.5px] sm:text-base text-[#E11D48] leading-tight mt-0.5 whitespace-nowrap">100%</div>
-        </div>
-      </div>
     </div>
 
-    <!-- 2열 A: 타운 전체 뷰 보조 컨트롤 바 (드라이브 모드 & 차고 버튼 포함) -->
-    <div id="hud-town-controls" class="flex items-center gap-1.5 flex-wrap">
-      <button id="btn-overview-cam" title="타운 전체 보기" class="pointer-events-auto milk-float-btn border-sky">
+    <!-- 2열 A: 타운 전체 뷰 액션 캡슐 바 (모바일 390px 1행 정렬 대응) -->
+    <div id="hud-town-controls" class="flex items-center gap-1 sm:gap-2 flex-wrap">
+      <button id="btn-overview-cam" type="button" title="타운 전체 보기" class="pointer-events-auto tactile-pill-btn tone-cream">
         <span id="hud-ico-overview" class="flex items-center"></span>
-        <span>타운 전체뷰</span>
+        <span>타운뷰</span>
       </button>
 
-      <button id="btn-enter-drive" title="GTA식 3인칭 거리 주행 모드" class="pointer-events-auto drive-launch-pill">
-        <span>🏎️ 내 차 타기 (드라이브 모드)</span>
+      <button id="btn-enter-drive" type="button" title="3인칭 거리 드라이브" class="pointer-events-auto drive-launch-pill">
+        <span id="hud-ico-drive" class="flex items-center"></span>
+        <span class="sm:hidden">드라이브</span>
+        <span class="hidden sm:inline">드라이브 모드</span>
       </button>
 
-      <button id="btn-open-garage" title="건물주 슈퍼카 차고 열기" class="pointer-events-auto milk-float-btn border-gold">
-        <span>🔑 차고</span>
+      <button id="btn-open-garage" type="button" title="VIP 슈퍼카 차고" class="pointer-events-auto tactile-pill-btn tone-butter">
+        <span id="hud-ico-garage" class="flex items-center"></span>
+        <span class="sm:hidden">차고</span>
+        <span class="hidden sm:inline">VIP 차고</span>
       </button>
 
-      <button id="btn-collect-all" class="hidden pointer-events-auto milk-float-btn border-gold animate-bounce">
+      <button id="btn-quick-expand" type="button" title="신규 부지 착공 및 증축" class="pointer-events-auto tactile-pill-btn tone-sky">
+        <span id="hud-ico-expand" class="flex items-center"></span>
+        <span class="sm:hidden">착공</span>
+        <span class="hidden sm:inline">부지착공</span>
+      </button>
+
+      <button id="btn-collect-all" type="button" class="hidden pointer-events-auto tactile-pill-btn tone-mint animate-bounce">
         <span id="hud-ico-collect" class="flex items-center"></span>
-        <span>일괄수금!</span>
+        <span>일괄수금</span>
       </button>
 
-      <div class="pointer-events-auto hidden xl:inline-flex milk-float-pill">
-        <span id="hud-time-text" class="font-display text-[11px] text-[#4A3728]">1일차 09:00</span>
-        <span id="hud-xray-badge" class="font-display text-[10.5px] px-2 py-0.5 rounded-full bg-[#E0F2FE] text-[#0369A1] border border-[#BAE6FD]">외관 100%</span>
+      <div class="pointer-events-auto hidden xl:inline-flex hud-time-chip">
+        <span id="hud-time-text" class="font-title text-[11.5px] text-[#3A2E2B]">1일차 09:00</span>
+        <span id="hud-xray-badge" class="kw-chip tone-sky !py-0.5 !px-2">외관 100%</span>
       </div>
     </div>
 
-    <!-- 2열 B: 전체화면 단독 룸 뷰 상단 바 -->
+    <!-- 2열 B: 전체화면 단독 룸 뷰 상단 컨트롤 -->
     <div id="room-focus-topbar" class="hidden flex flex-col gap-1.5">
-      <div class="flex items-center gap-1.5 flex-wrap">
-        <button id="btn-exit-room-view" class="pointer-events-auto exit-room-pill-btn">
-          <span>🔙 건물 전체로 나가기</span>
+      <div class="flex items-center gap-2 flex-wrap">
+        <button id="btn-exit-room-view" type="button" class="pointer-events-auto exit-room-pill-btn">
+          <span id="ico-exit-room" class="flex items-center"></span>
+          <span>건물 전체로 나가기</span>
         </button>
-        <span class="pointer-events-none hidden sm:inline-flex milk-float-pill !py-1 !px-2.5 text-[11px] text-[#7A6254]">
-          ↻ 좌우 드래그로 방 내부 회전 관찰
+        <span class="pointer-events-none hidden sm:inline-flex hud-time-chip !py-1 !px-3 text-[11.5px] text-[#5C4942]">
+          <span id="ico-rotate-hint" class="flex items-center"></span>
+          <span>좌우 드래그로 3D 회전 관찰</span>
         </span>
       </div>
-      <div id="room-switcher-chips" class="pointer-events-auto flex items-center gap-1 overflow-x-auto custom-scroll pb-0.5"></div>
+      <div id="room-switcher-chips" class="pointer-events-auto flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 pr-2"></div>
     </div>
 
-    <!-- 2열 C: 단독 상가 클로즈업 뷰 상단 바 -->
+    <!-- 2열 C: 단독 상가 클로즈업 뷰 상단 컨트롤 -->
     <div id="shop-focus-topbar" class="hidden flex flex-col gap-1.5">
-      <div class="flex items-center gap-1.5 flex-wrap">
-        <button id="btn-exit-shop-view" class="pointer-events-auto exit-room-pill-btn">
-          <span>🔙 타운 거리로 나가기</span>
+      <div class="flex items-center gap-2 flex-wrap">
+        <button id="btn-exit-shop-view" type="button" class="pointer-events-auto exit-room-pill-btn">
+          <span id="ico-exit-shop" class="flex items-center"></span>
+          <span>타운 거리로 나가기</span>
         </button>
       </div>
-      <div id="shop-switcher-chips" class="pointer-events-auto flex items-center gap-1 overflow-x-auto custom-scroll pb-0.5"></div>
+      <div id="shop-switcher-chips" class="pointer-events-auto flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 pr-2"></div>
     </div>
 
-    <!-- 2열 D: GTA 3인칭 드라이브 모드 상단 복귀 & 상태 바 -->
+    <!-- 2열 D: GTA 3인칭 드라이브 모드 상단 바 -->
     <div id="drive-focus-topbar" class="hidden flex items-center gap-1.5 flex-wrap">
-      <button id="btn-exit-drive-mode" class="pointer-events-auto exit-room-pill-btn">
-        <span>🔙 타운 뷰로 복귀</span>
+      <button id="btn-exit-drive-mode" type="button" class="pointer-events-auto exit-room-pill-btn">
+        <span id="ico-exit-drive" class="flex items-center"></span>
+        <span>타운 뷰 복귀</span>
       </button>
-      <span id="drive-car-badge" class="pointer-events-none kw-chip tone-coral !py-1 !px-2.5">🛵 민트 베스파 스쿠터</span>
-      <span id="drive-loot-badge" class="pointer-events-none kw-chip tone-gold !py-1 !px-2.5">🧲 드라이브 수금 +0만</span>
+      <span id="drive-car-badge" class="pointer-events-none kw-chip tone-coral !py-1 !px-2.5"></span>
+      <span id="drive-speed-badge" class="pointer-events-none kw-chip tone-sky !py-1 !px-2.5 font-num">62 km/h</span>
+      <span id="drive-loot-badge" class="pointer-events-none kw-chip tone-gold !py-1 !px-2.5"></span>
     </div>
   </header>
 
-  <!-- ==================== 4. 전체화면 룸 뷰 우측 상단 컴팩트 세대 카드 ==================== -->
-  <aside id="room-focus-panel" class="hidden fixed top-[112px] lg:top-3.5 right-2.5 sm:right-4 z-30 w-[244px] sm:w-[274px] max-h-[calc(100vh-310px)] diary-inspector-shell flex flex-col overflow-hidden">
-    <div class="px-3 py-2 flex items-center justify-between border-b border-[#F2D7B6] shrink-0" style="background: linear-gradient(180deg, #FFFDF7 0%, #FFF4E4 100%);">
-      <div class="flex items-center gap-1.5 min-w-0">
-        <span id="rf-room-num" class="hotel-num-tag shrink-0">101</span>
-        <span id="rf-type-badge" class="kw-chip tone-sky !py-0.5 !px-2 shrink-0">🏠 원룸</span>
-        <span id="rf-title" class="diary-card-title truncate hidden sm:inline">해피 미니미 타운 1차</span>
-        <button id="rf-btn-rename" title="빌딩 이름 변경" class="ribbon-edit-chip shrink-0"></button>
+  <!-- ==================== 4. 전체화면 룸 뷰 세대 인스펙터 카드 ==================== -->
+  <aside id="room-focus-panel" class="hidden fixed top-[130px] sm:top-3.5 left-2.5 right-2.5 sm:left-auto sm:right-4 z-30 sm:w-[310px] max-h-[calc(100vh-290px)] diary-inspector-shell flex flex-col overflow-hidden">
+    <div class="px-3 py-2.5 flex items-center justify-between gap-1.5 border-b border-[#EED6BE] shrink-0" style="background: linear-gradient(180deg, #FFFDF7 0%, #F7EFE5 100%);">
+      <div class="flex items-center gap-1.5 min-w-0 flex-nowrap">
+        <span id="rf-room-num" class="hotel-num-tag shrink-0">101호</span>
+        <span id="rf-type-badge" class="kw-chip tone-sky !py-0.5 !px-2 shrink-0">원룸</span>
         <span id="rf-tier-badge" class="diary-pill-badge shrink-0">Lv.0</span>
+        <button id="rf-btn-rename" type="button" title="빌딩 이름 변경" class="ribbon-edit-chip shrink-0"></button>
       </div>
       <div class="flex items-center gap-1 shrink-0">
-        <button id="btn-toggle-rf-body" title="세대 카드 접기/펼치기" class="btn-close-round !w-6 !h-6 !text-[10px]">▾</button>
-        <button id="btn-close-room-focus" title="건물 전체로 나가기" class="btn-close-round !w-6 !h-6">✕</button>
+        <button id="btn-toggle-rf-body" type="button" title="세대 카드 접기/펼치기" class="btn-close-round" aria-label="접기">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M3 5L7 9L11 5" stroke="#3A2E2B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button id="btn-close-room-focus" type="button" title="건물 전체로 나가기" class="btn-close-round" aria-label="닫기">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M3.5 3.5L10.5 10.5M10.5 3.5L3.5 10.5" stroke="#3A2E2B" stroke-width="2.2" stroke-linecap="round"/></svg>
+        </button>
       </div>
     </div>
-    <div id="rf-body" class="p-2.5 overflow-y-auto custom-scroll space-y-2"></div>
+    <div id="rf-body" class="p-2.5 sm:p-3 pb-3.5 overflow-y-auto custom-scroll space-y-2.5"></div>
   </aside>
 
-  <!-- ==================== 5. 단독 상가 클로즈업 우측 인수·매출 카드 ==================== -->
-  <aside id="shop-focus-panel" class="hidden fixed top-[108px] lg:top-3.5 right-2.5 sm:right-4 z-30 w-[252px] sm:w-[286px] max-h-[calc(100vh-290px)] diary-inspector-shell flex flex-col overflow-hidden">
-    <div class="px-3 py-2 flex items-center justify-between border-b border-[#F2D7B6] shrink-0" style="background: linear-gradient(180deg, #FFFDF7 0%, #FFF4E4 100%);">
-      <div class="flex items-center gap-1.5 min-w-0">
-        <span id="sf-emoji" class="text-base">🥐</span>
+  <!-- ==================== 5. 단독 상가 클로즈업 직영 인수 · 매출 카드 ==================== -->
+  <aside id="shop-focus-panel" class="hidden fixed top-[134px] sm:top-3.5 left-2.5 right-2.5 sm:left-auto sm:right-4 z-30 sm:w-[304px] max-h-[calc(100vh-300px)] diary-inspector-shell flex flex-col overflow-hidden">
+    <div class="px-3.5 py-2.5 flex items-center justify-between gap-2 border-b border-[#EED6BE] shrink-0" style="background: linear-gradient(180deg, #FFFDF7 0%, #F7EFE5 100%);">
+      <div class="flex items-center gap-2 min-w-0">
+        <span id="sf-icon-slot" class="flex items-center shrink-0"></span>
         <span id="sf-title" class="diary-card-title truncate">바게트 하우스</span>
         <span id="sf-owner-badge" class="kw-chip tone-gold !py-0.5 !px-2 shrink-0">미인수</span>
       </div>
-      <button id="btn-close-shop-focus" title="타운 거리로 나가기" class="btn-close-round !w-6 !h-6">✕</button>
+      <button id="btn-close-shop-focus" type="button" title="타운 거리로 나가기" class="btn-close-round" aria-label="닫기">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M3.5 3.5L10.5 10.5M10.5 3.5L3.5 10.5" stroke="#3A2E2B" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </button>
     </div>
-    <div id="sf-body" class="p-2.5 overflow-y-auto custom-scroll space-y-2"></div>
+    <div id="sf-body" class="p-3 overflow-y-auto custom-scroll space-y-2.5"></div>
   </aside>
 
-  <!-- ==================== 6. 인테리어 가구 & 단독 상가 업그레이드 바텀시트 ==================== -->
-  <section id="furniture-catalog-sheet" class="hidden fixed bottom-0 left-0 right-0 z-30 pointer-events-none flex justify-center px-2 sm:px-4 pb-2 sm:pb-2.5">
+  <!-- ==================== 6. 인테리어 가구 & 단독 상가 설비 상점 바텀시트 ==================== -->
+  <section id="furniture-catalog-sheet" class="hidden fixed bottom-0 left-0 right-0 z-30 pointer-events-none flex justify-center px-2 sm:px-4 pb-2 sm:pb-3">
     <div class="pointer-events-auto furniture-sheet-shell w-full max-w-4xl">
-      <div class="px-3 py-1.5 flex items-center justify-between gap-2 border-b border-[#F2D7B6]" style="background: linear-gradient(90deg, #FFFDF7 0%, #FFF5EC 55%, #F2FCF9 100%);">
+      <div class="px-3.5 py-2 flex items-center justify-between gap-2 border-b border-[#EED6BE]" style="background: linear-gradient(90deg, #FFFDF7 0%, #F7EFE5 100%);">
         <div class="flex items-center gap-2 min-w-0 flex-wrap">
-          <span id="fcat-sheet-title" class="font-title text-[13px] sm:text-[14.5px] text-[#3E2C23] whitespace-nowrap">🛋️ 인테리어 가구 카탈로그</span>
-          <span id="fcat-room-badge" class="kw-chip tone-coral !py-0.5 !px-2">101호 · 원룸 스튜디오</span>
-          <span id="fcat-bonus-badge" class="kw-chip tone-mint !py-0.5 !px-2">인테리어 +0만</span>
+          <span id="fcat-header-ico" class="flex items-center shrink-0"></span>
+          <span id="fcat-sheet-title" class="font-title text-[14px] sm:text-[15.5px] text-[#3A2E2B] whitespace-nowrap">인테리어 가구 상점</span>
+          <span id="fcat-room-badge" class="kw-chip tone-coral !py-0.5 !px-2.5">101호 · 원룸</span>
+          <span id="fcat-bonus-badge" class="kw-chip tone-mint !py-0.5 !px-2.5">인테리어 +0만</span>
         </div>
-        <button id="btn-toggle-catalog" type="button" class="diary-pill-badge cursor-pointer hover:!bg-[#FFF3CD] shrink-0">
-          ▼ 접기
+        <button id="btn-toggle-catalog" type="button" class="tactile-mini-toggle shrink-0">
+          <span id="fcat-toggle-label">접기</span>
         </button>
       </div>
 
       <div id="fcat-collapsible-body" class="bg-[#FFFDF7]">
-        <!-- 호실 모드에서만 노출되는 4개 가구 카테고리 탭 -->
-        <div id="fcat-tabs-row" class="grid grid-cols-4 gap-1.5 px-2.5 pt-2 pb-1.5 bg-[#FFF9F0] border-b border-[#F2DEC4]">
+        <!-- 4개 가구 카테고리 탭 (커스텀 SVG + 모바일 390px 무잘림 라벨) -->
+        <div id="fcat-tabs-row" class="grid grid-cols-4 gap-1.5 px-2.5 pt-2.5 pb-2 bg-[#F7EFE5] border-b border-[#EED6BE]">
           <button type="button" data-fcat="bed" class="fcat-tab-btn active">
-            <span>🛏️ 침실/침대</span>
+            <span id="fcat-ico-bed" class="flex items-center shrink-0"></span>
+            <span>침실/침대</span>
           </button>
           <button type="button" data-fcat="sofa" class="fcat-tab-btn">
-            <span>🛋️ 거실/소파</span>
+            <span id="fcat-ico-sofa" class="flex items-center shrink-0"></span>
+            <span>거실/소파</span>
           </button>
           <button type="button" data-fcat="appliance" class="fcat-tab-btn">
-            <span>🖥️ 주방/가전</span>
+            <span id="fcat-ico-appliance" class="flex items-center shrink-0"></span>
+            <span>주방/가전</span>
           </button>
           <button type="button" data-fcat="decor" class="fcat-tab-btn">
-            <span>🎨 벽지/바닥/복층계단</span>
+            <span id="fcat-ico-decor" class="flex items-center shrink-0"></span>
+            <span>벽지/마루</span>
           </button>
         </div>
 
-        <div id="fcat-items-grid" class="fcat-cards-row p-2.5 custom-scroll"></div>
+        <div id="fcat-items-grid" class="fcat-cards-row p-2.5 sm:p-3 custom-scroll"></div>
       </div>
     </div>
   </section>
 
-  <!-- ==================== 7. [1단계 5] GTA 3인칭 드라이브 모드 대시보드 컨트롤 ==================== -->
+  <!-- ==================== 7. 아케이드 젤리 쿠션 드라이브 대시보드 (좌 조향 · 우 페달 인체공학 배치) ==================== -->
   <section id="drive-mode-hud" class="hidden fixed bottom-2.5 left-2.5 right-2.5 z-30 pointer-events-none flex flex-col items-center gap-1.5">
-    <div class="pointer-events-auto drive-dashboard-bar w-full max-w-2xl px-2.5 py-2 flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
-      <!-- 좌측: 조향 패드 (모바일 & 마우스 터치 지원 — 선명한 SVG 화살표) -->
-      <div class="flex items-center gap-1.5 shrink-0">
-        <button id="btn-steer-left" type="button" class="drive-pedal-btn" aria-label="좌회전">
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M12.5 4.5L6.5 10L12.5 15.5" stroke="#3E2C23" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div class="pointer-events-auto drive-dashboard-bar w-full max-w-2xl px-3 py-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <!-- 상단(모바일)/중앙(PC): 크루징 · 클락션 · 차고 -->
+      <div class="flex items-center justify-center gap-1.5 sm:gap-2 sm:order-2">
+        <button id="btn-toggle-cruise" type="button" class="jelly-action-btn pill btn-mint-lip !py-1.5 sm:!py-2 !px-3 sm:!px-3.5 !text-[11.5px] sm:!text-[12.5px]">
+          <span id="ico-drive-cruise" class="flex items-center"></span>
+          <span id="label-drive-cruise">자율 크루징 ON</span>
         </button>
-        <button id="btn-steer-right" type="button" class="drive-pedal-btn" aria-label="우회전">
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M7.5 4.5L13.5 10L7.5 15.5" stroke="#3E2C23" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <button id="btn-car-horn" type="button" class="jelly-action-btn pill btn-coral-lip !py-1.5 sm:!py-2 !px-3 sm:!px-4 !text-[11.5px] sm:!text-[12.5px]">
+          <span id="ico-drive-horn" class="flex items-center"></span>
+          <span>경적 빵빵!</span>
         </button>
-      </div>
-
-      <!-- 중앙: 자율 크루징 토글 · 클락션(빵빵!) · 차량 교체 차고 -->
-      <div class="flex items-center justify-center gap-1.5 flex-wrap">
-        <button id="btn-toggle-cruise" type="button" class="jelly-action-btn pill btn-mint-lip !py-1.5 !px-3">
-          <span>🔄 자율 크루징 ON</span>
-        </button>
-        <button id="btn-car-horn" type="button" class="jelly-action-btn pill btn-coral-lip !py-1.5 !px-3.5">
-          <span>🎺 경적 울리기 (빵빵!)</span>
-        </button>
-        <button id="btn-drive-garage" type="button" class="jelly-action-btn pill btn-gold-lip !py-1.5 !px-3">
-          <span>🔑 차고</span>
+        <button id="btn-drive-garage" type="button" class="jelly-action-btn pill btn-gold-lip !py-1.5 sm:!py-2 !px-3 sm:!px-3.5 !text-[11.5px] sm:!text-[12.5px]">
+          <span id="ico-drive-garage" class="flex items-center"></span>
+          <span>차고</span>
         </button>
       </div>
 
-      <!-- 우측: 가속 / 후진 페달 (선명한 SVG 화살표 + 텍스트) -->
-      <div class="flex items-center gap-1.5 shrink-0">
-        <button id="btn-brake-pedal" type="button" class="drive-pedal-btn !text-[11.5px] gap-1" aria-label="감속/후진">
-          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3.5 6L8 10.5L12.5 6" stroke="#3E2C23" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span>후진</span>
-        </button>
-        <button id="btn-gas-pedal" type="button" class="drive-pedal-btn gas-accent !text-[11.5px] gap-1" aria-label="가속">
-          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3.5 10L8 5.5L12.5 10" stroke="#3E2C23" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span>가속</span>
-        </button>
+      <!-- 모바일 양손 그립(좌 조향 ↔ 우 페달) / PC 양끝 배치 래퍼 -->
+      <div class="flex items-center justify-between w-full sm:contents">
+        <!-- 좌측: 3D 쿠션 조향 패드 -->
+        <div class="flex items-center gap-2 shrink-0 sm:order-1">
+          <button id="btn-steer-left" type="button" class="drive-pedal-btn" aria-label="좌회전">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12.5 4.5L6.5 10L12.5 15.5" stroke="#3A2E2B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button id="btn-steer-right" type="button" class="drive-pedal-btn" aria-label="우회전">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M7.5 4.5L13.5 10L7.5 15.5" stroke="#3A2E2B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+
+        <!-- 우측: 3D 쿠션 가속 / 후진 페달 -->
+        <div class="flex items-center gap-2 shrink-0 sm:order-3">
+          <button id="btn-brake-pedal" type="button" class="drive-pedal-btn gap-1" aria-label="감속/후진">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3.5 6L8 10.5L12.5 6" stroke="#3A2E2B" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>후진</span>
+          </button>
+          <button id="btn-gas-pedal" type="button" class="drive-pedal-btn gas-accent gap-1" aria-label="가속">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3.5 10L8 5.5L12.5 10" stroke="#3A2E2B" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>가속</span>
+          </button>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- ==================== 8. 우측 하단 밀크 화이트 카메라 바 & 원형 수첩 FAB ==================== -->
-  <div id="bottom-town-bar" class="fixed bottom-2.5 right-2.5 sm:bottom-4 sm:right-4 z-30 flex items-center gap-2 pointer-events-none">
-    <div class="pointer-events-auto milk-cam-bar px-2 py-1 flex items-center gap-1">
-      <button id="btn-zoom-in" title="확대 (내부 투시)" class="w-7 h-7 rounded-full hover:bg-[#FFF5EA] font-title text-base text-[#4A3728] transition-colors">+</button>
-      <button id="btn-zoom-out" title="축소 (마을 전체)" class="w-7 h-7 rounded-full hover:bg-[#FFF5EA] font-title text-base text-[#4A3728] transition-colors">−</button>
-      <button id="btn-cam-rotate" title="카메라 90도 회전" class="w-7 h-7 rounded-full hover:bg-[#FFF5EA] font-title text-sm text-[#4A3728] transition-colors">↻</button>
-      <button id="btn-reset-save" title="데이터 초기화" class="px-2 h-7 rounded-full hover:bg-[#FFE8EE] font-display text-[11px] text-[#6E5649] transition-colors whitespace-nowrap">초기화</button>
+  <!-- ==================== 8. 우측 하단 3D 줌 컨트롤 & 가죽 다이어리 수첩 FAB ==================== -->
+  <div id="bottom-town-bar" class="fixed bottom-3 right-3 sm:bottom-4 sm:right-4 z-30 flex items-center gap-2.5 pointer-events-none">
+    <div class="pointer-events-auto milk-cam-bar px-2.5 py-1.5 flex items-center gap-1">
+      <button id="btn-zoom-in" type="button" title="확대 (내부 투시)" class="cam-icon-btn" aria-label="확대">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 3V13M3 8H13" stroke="#3A2E2B" stroke-width="2.5" stroke-linecap="round"/></svg>
+      </button>
+      <button id="btn-zoom-out" type="button" title="축소 (마을 전체)" class="cam-icon-btn" aria-label="축소">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3.5 8H12.5" stroke="#3A2E2B" stroke-width="2.5" stroke-linecap="round"/></svg>
+      </button>
+      <button id="btn-cam-rotate" type="button" title="카메라 90도 회전" class="cam-icon-btn" aria-label="회전">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M12.5 6.5A5 5 0 1 0 11.8 11.2M12.8 3.5V7H9.3" stroke="#3A2E2B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button id="btn-reset-save" type="button" title="데이터 초기화" class="px-2.5 h-7 rounded-full hover:bg-[#FFE8EE] font-title text-[11.5px] text-[#5C4942] transition-colors whitespace-nowrap">초기화</button>
     </div>
 
-    <button id="fab-notebook" aria-label="타운 도감 수첩 열기" class="pointer-events-auto fab-artwork-circle">
+    <button id="fab-notebook" type="button" aria-label="타운 경영 수첩 열기" class="pointer-events-auto fab-artwork-circle">
       <span id="fab-svg-slot" class="fab-icon-wrap flex items-center justify-center"></span>
-      <span class="font-title text-[11px] text-[#3E2C23] leading-none mt-0.5">수첩</span>
+      <span class="font-title text-[11.5px] text-[#3A2E2B] leading-none mt-0.5">수첩</span>
 
-      <span id="fab-red-dot" class="hidden urgent-coral-dot absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px] px-1 font-num text-[11px] flex items-center justify-center">
+      <span id="fab-red-dot" class="hidden urgent-coral-dot absolute -top-1.5 -right-1.5 min-w-[23px] h-[23px] px-1 font-num text-[11.5px] flex items-center justify-center">
         1
       </span>
     </button>
   </div>
 
-  <!-- ==================== 9. 건물주 슈퍼카 차고(Car Shop) 모달 ==================== -->
+  <!-- ==================== 9. 건물주 VIP 슈퍼카 차고 모달 ==================== -->
   <div id="garage-modal" class="hidden fixed inset-0 z-50 pastel-modal-backdrop flex items-center justify-center p-2.5 sm:p-4">
-    <div class="cozy-planner-shell w-full max-w-2xl max-h-[86vh]">
+    <div class="cozy-planner-shell w-full max-w-2xl max-h-[93vh]">
       <div class="cozy-planner-inner">
-        <div class="px-3.5 py-2.5 flex items-center justify-between border-b border-[#F2D7B6] shrink-0" style="background: linear-gradient(90deg, #FFFDF7 0%, #FFF0F3 55%, #FFFBEB 100%);">
-          <div class="flex items-center gap-2 flex-wrap">
+        <div class="px-4 py-2.5 flex items-center justify-between border-b border-[#EED6BE] shrink-0" style="background: linear-gradient(90deg, #FFFDF7 0%, #F7EFE5 100%);">
+          <div class="flex items-center gap-2.5 flex-wrap">
             <span id="garage-ico-header" class="flex items-center"></span>
-            <span class="diary-modal-title">🏎️ 건물주 VIP 슈퍼카 차고</span>
-            <span class="kw-chip tone-gold">VIP 골드 주차구역</span>
+            <span class="diary-modal-title">건물주 VIP 슈퍼카 차고</span>
+            <span class="kw-chip tone-gold">전용 골드 주차구역</span>
           </div>
-          <button id="btn-close-garage" class="btn-close-round">✕</button>
+          <button id="btn-close-garage" type="button" class="btn-close-round" aria-label="닫기">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M3.5 3.5L10.5 10.5M10.5 3.5L3.5 10.5" stroke="#3A2E2B" stroke-width="2.3" stroke-linecap="round"/></svg>
+          </button>
         </div>
-        <div id="garage-cards-grid" class="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2.5 overflow-y-auto custom-scroll"></div>
+        <div id="garage-cards-grid" class="p-3 pb-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5 overflow-y-auto custom-scroll"></div>
       </div>
     </div>
   </div>
 
-  <!-- ==================== 10. 밝은 바닐라 크림 단일 통합형 타운 수첩 모달 ==================== -->
+  <!-- ==================== 10. 택타일 코지 팝 타운 경영 수첩 모달 ==================== -->
   <div id="notebook-modal" class="hidden fixed inset-0 z-50 pastel-modal-backdrop flex items-center justify-center p-2.5 sm:p-4">
-    <div class="cozy-planner-shell w-full max-w-2xl h-[85vh] max-h-[580px]">
+    <div class="cozy-planner-shell w-full max-w-2xl h-[86vh] max-h-[610px]">
       <div id="notebook-binder-rings" class="planner-top-rings"></div>
 
       <div class="cozy-planner-inner">
-        <div class="px-3.5 py-2.5 flex items-center justify-between border-b border-[#F2D7B6] shrink-0" style="background: linear-gradient(90deg, #FFFDF7 0%, #FFF5EC 55%, #F2FCF9 100%);">
-          <div class="flex items-center gap-2 min-w-0">
+        <div class="px-4 py-3 flex items-center justify-between border-b border-[#EED6BE] shrink-0" style="background: linear-gradient(90deg, #FFFDF7 0%, #F7EFE5 100%);">
+          <div class="flex items-center gap-2.5 min-w-0">
             <span id="modal-ico-notebook" class="flex items-center shrink-0"></span>
             <span class="diary-modal-title whitespace-nowrap">타운 경영 수첩</span>
-            <span id="modal-quest-summary" class="diary-pill-badge !bg-[#FFF3CD] !text-[#854D0E] !border-[#FDE047] shrink-0">0/10</span>
-            <span id="modal-alert-summary" class="hidden diary-pill-badge !bg-[#FFE4EC] !text-[#BE123C] !border-[#FDA4AF] shrink-0"></span>
+            <span id="modal-quest-summary" class="kw-chip tone-gold shrink-0">0/10</span>
+            <span id="modal-alert-summary" class="hidden kw-chip tone-coral shrink-0"></span>
           </div>
-          <button id="btn-close-notebook" class="btn-close-round">✕</button>
+          <button id="btn-close-notebook" type="button" class="btn-close-round" aria-label="닫기">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M3.5 3.5L10.5 10.5M10.5 3.5L3.5 10.5" stroke="#3A2E2B" stroke-width="2.3" stroke-linecap="round"/></svg>
+          </button>
         </div>
 
-        <div class="grid grid-cols-4 gap-1.5 px-2.5 pt-2.5 pb-2 bg-[#FFF9F0] border-b border-[#F2D7B6] shrink-0">
-          <button data-ntab="quests" class="ntab-btn diary-index-tab active">
-            <span id="tab-ico-quests" class="hidden sm:flex items-center shrink-0"></span>
+        <div class="grid grid-cols-4 gap-2 px-3 pt-2.5 pb-2.5 bg-[#F7EFE5] border-b border-[#EED6BE] shrink-0">
+          <button type="button" data-ntab="quests" class="ntab-btn diary-index-tab active">
+            <span id="tab-ico-quests" class="flex items-center shrink-0"></span>
             <span>퀘스트</span>
-            <span id="tab-dot-quests" class="hidden w-2 h-2 rounded-full bg-[#FF4D6D] shrink-0"></span>
+            <span id="tab-dot-quests" class="hidden w-2.5 h-2.5 rounded-full bg-[#FF6B6B] border border-white shrink-0"></span>
           </button>
-          <button data-ntab="tenants" class="ntab-btn diary-index-tab">
-            <span id="tab-ico-tenants" class="hidden sm:flex items-center shrink-0"></span>
+          <button type="button" data-ntab="tenants" class="ntab-btn diary-index-tab">
+            <span id="tab-ico-tenants" class="flex items-center shrink-0"></span>
             <span>세대도감</span>
-            <span id="tab-dot-tenants" class="hidden w-2 h-2 rounded-full bg-[#FF4D6D] shrink-0 animate-ping"></span>
+            <span id="tab-dot-tenants" class="hidden w-2.5 h-2.5 rounded-full bg-[#FF6B6B] shrink-0 animate-ping"></span>
           </button>
-          <button data-ntab="manager" class="ntab-btn diary-index-tab">
-            <span id="tab-ico-manager" class="hidden sm:flex items-center shrink-0"></span>
+          <button type="button" data-ntab="manager" class="ntab-btn diary-index-tab">
+            <span id="tab-ico-manager" class="flex items-center shrink-0"></span>
             <span>관리인</span>
           </button>
-          <button data-ntab="infra" class="ntab-btn diary-index-tab">
-            <span id="tab-ico-infra" class="hidden sm:flex items-center shrink-0"></span>
+          <button type="button" data-ntab="infra" class="ntab-btn diary-index-tab">
+            <span id="tab-ico-infra" class="flex items-center shrink-0"></span>
             <span>건물장부</span>
           </button>
         </div>
 
-        <div id="notebook-unified-body" class="planner-unified-sheet flex-1 overflow-y-auto custom-scroll p-3 sm:p-4 space-y-2.5"></div>
+        <div id="notebook-unified-body" class="planner-unified-sheet flex-1 overflow-y-auto custom-scroll p-3.5 sm:p-4 space-y-3"></div>
       </div>
     </div>
   </div>
 
-  <!-- ==================== 11. 신규 부지 개발 모달 ==================== -->
+  <!-- ==================== 11. 신규 부지 착공 & 증축 모달 ==================== -->
   <div id="lot-dev-modal" class="hidden fixed inset-0 z-50 pastel-modal-backdrop flex items-center justify-center p-3">
-    <div class="cozy-planner-shell w-full max-w-xl max-h-[84vh]">
+    <div class="cozy-planner-shell w-full max-w-xl max-h-[85vh]">
       <div class="cozy-planner-inner">
-        <div class="px-3.5 py-2.5 flex items-center justify-between border-b border-[#F2D7B6] shrink-0" style="background: linear-gradient(90deg, #F0FDF9 0%, #FFFDF7 100%);">
-          <div class="flex items-center gap-2 flex-wrap">
+        <div class="px-4 py-3 flex items-center justify-between border-b border-[#EED6BE] shrink-0" style="background: linear-gradient(90deg, #FFFDF7 0%, #F7EFE5 100%);">
+          <div class="flex items-center gap-2.5 flex-wrap">
             <span id="dev-ico-header" class="flex items-center"></span>
-            <span class="diary-modal-title">신규 부지 착공</span>
-            <span id="dev-lot-badge" class="diary-pill-badge"></span>
+            <span class="diary-modal-title">타운 부지 매입 & 착공</span>
+            <span id="dev-lot-badge" class="kw-chip tone-mint"></span>
           </div>
-          <button id="btn-close-dev-modal" class="btn-close-round">✕</button>
+          <button id="btn-close-dev-modal" type="button" class="btn-close-round" aria-label="닫기">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M3.5 3.5L10.5 10.5M10.5 3.5L3.5 10.5" stroke="#3A2E2B" stroke-width="2.3" stroke-linecap="round"/></svg>
+          </button>
         </div>
-        <div id="dev-cards-grid" class="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2.5 overflow-y-auto custom-scroll"></div>
+        <div id="dev-cards-grid" class="p-3.5 grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-y-auto custom-scroll"></div>
       </div>
     </div>
   </div>
@@ -345,41 +396,45 @@
   <div id="recruit-modal" class="hidden fixed inset-0 z-50 pastel-modal-backdrop flex items-center justify-center p-3">
     <div class="cozy-planner-shell w-full max-w-2xl max-h-[86vh]">
       <div class="cozy-planner-inner">
-        <div class="px-3.5 py-2.5 flex items-center justify-between border-b border-[#F2D7B6] shrink-0" style="background: linear-gradient(90deg, #FFF5F7 0%, #FFFDF7 100%);">
-          <div class="flex items-center gap-2 flex-wrap">
+        <div class="px-4 py-3 flex items-center justify-between border-b border-[#EED6BE] shrink-0" style="background: linear-gradient(90deg, #FFFDF7 0%, #F7EFE5 100%);">
+          <div class="flex items-center gap-2.5 flex-wrap">
             <span id="rec-ico-header" class="flex items-center"></span>
-            <span class="diary-modal-title">입주 세대 선택</span>
-            <span id="rec-room-title" class="diary-pill-badge"></span>
+            <span class="diary-modal-title">입주 세대 심사 & 계약</span>
+            <span id="rec-room-title" class="kw-chip tone-coral"></span>
           </div>
-          <div class="flex items-center gap-1.5">
-            <button id="btn-refresh-rec" class="jelly-action-btn pill btn-gold-lip !py-1 !px-2.5">후보 교체 10만</button>
-            <button id="btn-close-recruit" class="btn-close-round">✕</button>
+          <div class="flex items-center gap-2">
+            <button id="btn-refresh-rec" type="button" class="jelly-action-btn pill btn-gold-lip !py-1.5 !px-3">후보 교체 10만</button>
+            <button id="btn-close-recruit" type="button" class="btn-close-round" aria-label="닫기">
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M3.5 3.5L10.5 10.5M10.5 3.5L3.5 10.5" stroke="#3A2E2B" stroke-width="2.3" stroke-linecap="round"/></svg>
+            </button>
           </div>
         </div>
-        <div id="rec-cards-grid" class="p-3 grid grid-cols-1 sm:grid-cols-3 gap-2.5 overflow-y-auto custom-scroll"></div>
+        <div id="rec-cards-grid" class="p-3.5 grid grid-cols-1 sm:grid-cols-3 gap-3 overflow-y-auto custom-scroll"></div>
       </div>
     </div>
   </div>
 
-  <!-- ==================== 13. 빌딩 이름 현판 각인 미니 모달 ==================== -->
+  <!-- ==================== 13. 빌딩 이름 현판 각인 모달 ==================== -->
   <div id="rename-building-modal" class="hidden fixed inset-0 z-[58] pastel-modal-backdrop flex items-center justify-center p-3">
     <div class="cozy-planner-shell w-full max-w-sm">
-      <div class="cozy-planner-inner p-3.5 space-y-2.5">
-        <div class="flex items-center justify-between border-b border-[#F2D7B6] pb-2">
+      <div class="cozy-planner-inner p-4 space-y-3">
+        <div class="flex items-center justify-between border-b border-[#EED6BE] pb-2.5">
           <div class="flex items-center gap-2">
             <span id="rename-ico-crown" class="flex items-center"></span>
-            <span class="diary-modal-title">빌딩 현판 이름 변경</span>
+            <span class="diary-modal-title">빌딩 현판 이름 각인</span>
           </div>
-          <button id="btn-close-rename" class="btn-close-round">✕</button>
+          <button id="btn-close-rename" type="button" class="btn-close-round" aria-label="닫기">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M3.5 3.5L10.5 10.5M10.5 3.5L3.5 10.5" stroke="#3A2E2B" stroke-width="2.3" stroke-linecap="round"/></svg>
+          </button>
         </div>
 
-        <input id="input-building-name" type="text" maxlength="16" placeholder="예: 럭키 팰리스, 진형 타워" class="diary-rename-input" />
+        <input id="input-building-name" type="text" maxlength="16" placeholder="예: 럭키 팰리스, 드림 로프트 타워" class="diary-rename-input" />
 
         <div id="rename-presets-row" class="flex flex-wrap gap-1.5"></div>
 
         <div class="flex justify-end gap-2 pt-1">
-          <button id="btn-cancel-rename" class="diary-pill-badge cursor-pointer !px-3 !py-1.5">취소</button>
-          <button id="btn-confirm-rename" class="jelly-action-btn btn-coral-lip px-3.5 py-1.5">
+          <button id="btn-cancel-rename" type="button" class="tactile-pill-btn tone-cream !px-3.5 !py-1.5">취소</button>
+          <button id="btn-confirm-rename" type="button" class="jelly-action-btn btn-coral-lip px-4 py-2">
             <span id="rename-ico-pen" class="flex items-center"></span>
             <span>현판 새기기</span>
           </button>
@@ -390,14 +445,14 @@
 
   <!-- ==================== 14. 퇴거 도장 스탬프 연출 오버레이 ==================== -->
   <div id="eviction-stamp-overlay" class="hidden fixed inset-0 z-[60] pointer-events-none">
-    <div id="eviction-stamp-box" class="absolute left-1/2 top-1/2 diary-card !bg-[#FFFFFF] !border-4 !border-[#FF758F] !px-5 !py-3 flex items-center gap-2.5 font-title text-lg sm:text-2xl text-[#BE123C]">
+    <div id="eviction-stamp-box" class="stamp-slam-anim absolute left-1/2 top-1/2 diary-card !bg-[#FFFDF7] !border-4 !border-[#FF6B6B] !px-6 !py-3.5 flex items-center gap-3 font-title text-xl sm:text-2xl text-[#D6384C]">
       <span id="stamp-ico-slot" class="flex items-center"></span>
       <span>퇴거 집행 완료</span>
     </div>
   </div>
 
-  <!-- 토스트 알림 컨테이너 (모바일 세로에서는 상단 HUD 아래, 가로/PC에서는 상단 우측 빈 하늘 영역에 깔끔 배치) -->
-  <div id="toast-container" class="fixed top-[106px] left-3 right-3 sm:top-3.5 sm:left-[456px] sm:right-auto z-50 flex flex-col items-center sm:items-start gap-1.5 pointer-events-none sm:max-w-[350px]"></div>
+  <!-- 토스트 알림 컨테이너 -->
+  <div id="toast-container" class="fixed top-[148px] left-3 right-3 sm:top-3.5 sm:left-[482px] sm:right-auto z-50 flex flex-col items-center sm:items-start gap-1.5 pointer-events-none sm:max-w-[340px]"></div>
 
   <script src="./data.js"></script>
   <script type="module" src="./app.js"></script>
