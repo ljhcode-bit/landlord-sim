@@ -1,9 +1,11 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" class="light" style="color-scheme: light only;">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="theme-color" content="#FFFBF2" />
+  <meta name="color-scheme" content="light only" />
+  <meta name="supported-color-schemes" content="light" />
+  <meta name="theme-color" content="#AEE2FF" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <link rel="manifest" href="./manifest.json" />
@@ -27,7 +29,7 @@
 </head>
 <body class="select-none overflow-hidden">
 
-  <!-- ==================== 1. WebGL 3D 부티크 디오라마 뷰포트 ==================== -->
+  <!-- ==================== 1. WebGL 3D 파스텔 타운 뷰포트 ==================== -->
   <div id="webgl-container"></div>
 
   <!-- ==================== 2. 3D 투영(Project) 오버레이 레이어 ==================== -->
@@ -35,73 +37,71 @@
     <div id="lots-overlay-layer"></div>
     <div id="rooms-overlay-layer"></div>
     <div id="crisis-pins-layer"></div>
+    <div id="rent-bubbles-layer"></div>
     <div id="speech-overlay-layer"></div>
     <div id="care-overlay-layer"></div>
     <div id="jackpot-overlay-layer"></div>
   </div>
 
-  <!-- ==================== 3. 상단 좌측 독립형 화이트 클레이 캡슐 HUD ==================== -->
-  <header class="fixed top-3 left-3 sm:top-3.5 sm:left-4 z-30 flex flex-wrap items-center gap-2 pointer-events-none">
-    <!-- 캡슐 1: 골드 보유 자산 -->
-    <div id="hud-badge-gold" class="pointer-events-auto hud-clay-badge px-3.5 py-1.5 flex items-center gap-2">
-      <span id="hud-ico-gold" class="flex items-center justify-center"></span>
-      <div class="leading-tight">
-        <div class="text-[10.5px] font-display text-[#7A685F] leading-none">보유 자산</div>
-        <div id="hud-gold-wrap" class="font-title text-sm sm:text-lg text-[#43342E] leading-tight mt-0.5 sticker-tilt">
-          <span id="hud-gold" class="font-num">460</span><span class="text-xs ml-0.5">만</span>
+  <!-- 코인 상단 비행 레이어 -->
+  <div id="flying-coin-layer" class="fixed inset-0 z-40 pointer-events-none overflow-hidden"></div>
+
+  <!-- ==================== 3. [버그 수정 1] 절대 겹치지 않는 상단 3캡슐 HUD & 밀크 화이트 플로팅 버튼 ==================== -->
+  <header class="fixed top-2.5 left-2.5 right-2.5 sm:right-auto sm:left-4 sm:top-3.5 z-30 flex flex-col gap-1.5 pointer-events-none sm:w-[430px]">
+    <!-- 1열: 3개 핵심 상태 캡슐 한 줄 정렬 (display: flex; justify-content: space-between; gap: 6px;) -->
+    <div class="hud-top-row pointer-events-auto">
+      <!-- 캡슐 1: 보유 자산 -->
+      <div id="hud-badge-gold" class="hud-clay-badge hud-stat-pill">
+        <span id="hud-ico-gold" class="flex items-center justify-center shrink-0"></span>
+        <div class="leading-tight min-w-0">
+          <div class="text-[10px] font-display text-[#7A6254] leading-none truncate">보유자산</div>
+          <div id="hud-gold-wrap" class="font-title text-[13px] sm:text-base text-[#4A3728] leading-tight mt-0.5 whitespace-nowrap">
+            <span id="hud-gold" class="font-num">460</span><span class="text-[10.5px] ml-0.5">만</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 캡슐 2: 주기 순익 -->
+      <div id="hud-badge-yield" class="hud-clay-badge hud-stat-pill">
+        <span id="hud-ico-yield" class="flex items-center justify-center shrink-0"></span>
+        <div class="leading-tight min-w-0">
+          <div class="text-[10px] font-display text-[#7A6254] leading-none truncate">주기순익</div>
+          <div id="hud-net-income" class="font-num text-[13px] sm:text-base text-[#0D9488] leading-tight mt-0.5 whitespace-nowrap">+28만</div>
+        </div>
+      </div>
+
+      <!-- 캡슐 3: 타운 행복도 -->
+      <div id="hud-badge-happy" class="hud-clay-badge hud-stat-pill">
+        <span id="hud-ico-happy" class="flex items-center justify-center shrink-0"></span>
+        <div class="leading-tight min-w-0">
+          <div class="text-[10px] font-display text-[#7A6254] leading-none truncate">행복도</div>
+          <div id="hud-happiness" class="font-num text-[13px] sm:text-base text-[#E11D48] leading-tight mt-0.5 whitespace-nowrap">100%</div>
         </div>
       </div>
     </div>
 
-    <!-- 캡슐 2: 주기 순수익 -->
-    <div id="hud-badge-yield" class="pointer-events-auto hud-clay-badge px-3.5 py-1.5 flex items-center gap-2">
-      <span id="hud-ico-yield" class="flex items-center justify-center"></span>
-      <div class="leading-tight">
-        <div class="text-[10.5px] font-display text-[#7A685F] leading-none">주기 순익</div>
-        <div id="hud-net-income" class="font-num text-xs sm:text-base text-[#059669] leading-tight mt-0.5">+28만</div>
+    <!-- 2열: 밝은 밀크 화이트 보조 컨트롤 버튼 (전체뷰 / 일괄수금 / 시간표시) -->
+    <div class="flex items-center gap-1.5 flex-wrap">
+      <button id="btn-overview-cam" title="타운 전체 보기" class="pointer-events-auto milk-float-btn border-sky">
+        <span id="hud-ico-overview" class="flex items-center"></span>
+        <span>전체뷰</span>
+      </button>
+
+      <button id="btn-collect-all" class="hidden pointer-events-auto milk-float-btn border-gold animate-bounce">
+        <span id="hud-ico-collect" class="flex items-center"></span>
+        <span>일괄수금!</span>
+      </button>
+
+      <div class="pointer-events-auto hidden md:inline-flex milk-float-pill">
+        <span id="hud-time-text" class="font-display text-[11px] text-[#4A3728]">1일차 09:00</span>
+        <span id="hud-xray-badge" class="font-display text-[10.5px] px-2 py-0.5 rounded-full bg-[#E0F2FE] text-[#0369A1] border border-[#BAE6FD]">외관 100%</span>
       </div>
     </div>
-
-    <!-- 캡슐 3: 타운 행복도 -->
-    <div id="hud-badge-happy" class="pointer-events-auto hud-clay-badge px-3.5 py-1.5 flex items-center gap-2">
-      <span id="hud-ico-happy" class="flex items-center justify-center"></span>
-      <div class="leading-tight">
-        <div class="text-[10.5px] font-display text-[#7A685F] leading-none">타운 행복</div>
-        <div id="hud-happiness" class="font-num text-xs sm:text-base text-[#E11D48] leading-tight mt-0.5">100%</div>
-      </div>
-    </div>
-
-    <!-- 캡슐 4: 시간 & 내부 투시 상태 -->
-    <div class="pointer-events-auto hidden md:flex hud-clay-badge px-3 py-1.5 items-center gap-2">
-      <span id="hud-time-text" class="font-display text-xs text-[#43342E]">1일차 09:00</span>
-      <span id="hud-xray-badge" class="font-display text-[11px] px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] border border-[#FCD34D]">외관 100%</span>
-    </div>
-
-    <!-- 원터치 전체 마을 시점 복귀 -->
-    <button id="btn-overview-cam" title="타운 전체 보기" class="pointer-events-auto jelly-action-btn pill btn-sky-lip px-3.5 py-1.5">
-      <span id="hud-ico-overview" class="flex items-center"></span>
-      <span>전체뷰</span>
-    </button>
-
-    <!-- 지붕 대기 수익 일괄 수금 버튼 -->
-    <button id="btn-collect-all" class="hidden pointer-events-auto jelly-action-btn pill btn-gold-lip px-3.5 py-1.5 animate-bounce">
-      <span id="hud-ico-collect" class="flex items-center"></span>
-      <span>일괄수금</span>
-    </button>
   </header>
 
-  <!-- 세로 화면 회전 배지 -->
-  <div id="portrait-hint" class="fixed top-3 right-3 z-30 hud-clay-badge px-3 py-1.5 items-center gap-1.5 text-xs font-display text-[#43342E]">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E11D48" stroke-width="2.4" stroke-linecap="round">
-      <rect x="4" y="6" width="16" height="12" rx="3" />
-      <path d="M19 3l2 2-2 2" />
-    </svg>
-    <span>가로 모드 권장</span>
-  </div>
-
-  <!-- ==================== 4. 호실 클로즈업 전용 무(無)줄글 부티크 인스펙터 ==================== -->
-  <aside id="room-focus-panel" class="hidden fixed top-16 right-3 sm:right-4 z-30 w-[288px] sm:w-[310px] max-h-[calc(100vh-148px)] diary-inspector-shell flex flex-col overflow-hidden">
-    <div class="px-3 py-2 flex items-center justify-between border-b border-[#E6CCB2] shrink-0" style="background: linear-gradient(180deg, #FFF5EC 0%, #FCEBD9 100%);">
+  <!-- ==================== 4. 호실 클로즈업 전용 밝은 크림 인스펙터 ==================== -->
+  <aside id="room-focus-panel" class="hidden fixed top-24 sm:top-16 right-2.5 sm:right-4 z-30 w-[282px] sm:w-[308px] max-h-[calc(100vh-172px)] diary-inspector-shell flex flex-col overflow-hidden">
+    <div class="px-3 py-2 flex items-center justify-between border-b border-[#F2D7B6] shrink-0" style="background: linear-gradient(180deg, #FFFDF7 0%, #FFF4E4 100%);">
       <div class="flex items-center gap-1.5 min-w-0">
         <span id="rf-room-num" class="hotel-num-tag shrink-0">101</span>
         <span id="rf-title" class="diary-card-title truncate">해피 미니미 타운 1차</span>
@@ -113,18 +113,18 @@
     <div id="rf-body" class="p-2.5 overflow-y-auto custom-scroll space-y-2"></div>
   </aside>
 
-  <!-- ==================== 5. 우측 하단 미니 카메라 컨트롤 & 66x66px 원형 리플 FAB ==================== -->
-  <div class="fixed bottom-3.5 right-3.5 sm:bottom-4 sm:right-4 z-30 flex items-center gap-2.5 pointer-events-none">
-    <div class="pointer-events-auto hud-clay-badge px-2 py-1 flex items-center gap-1">
-      <button id="btn-zoom-in" title="확대 (내부 투시)" class="w-7 h-7 rounded-full hover:bg-[#FFF0E5] font-title text-base text-[#43342E] transition-colors">+</button>
-      <button id="btn-zoom-out" title="축소 (마을 전체)" class="w-7 h-7 rounded-full hover:bg-[#FFF0E5] font-title text-base text-[#43342E] transition-colors">−</button>
-      <button id="btn-cam-rotate" title="카메라 90도 회전" class="w-7 h-7 rounded-full hover:bg-[#FFF0E5] font-title text-sm text-[#43342E] transition-colors">↻</button>
-      <button id="btn-reset-save" title="데이터 초기화" class="px-2 h-7 rounded-full hover:bg-[#FFE4E9] font-display text-[11px] text-[#7A685F] transition-colors">초기화</button>
+  <!-- ==================== 5. 우측 하단 밀크 화이트 카메라 바 & 원형 수첩 FAB ==================== -->
+  <div class="fixed bottom-3 right-3 sm:bottom-4 sm:right-4 z-30 flex items-center gap-2 pointer-events-none">
+    <div class="pointer-events-auto milk-cam-bar px-2 py-1 flex items-center gap-1">
+      <button id="btn-zoom-in" title="확대 (내부 투시)" class="w-7 h-7 rounded-full hover:bg-[#FFF5EA] font-title text-base text-[#4A3728] transition-colors">+</button>
+      <button id="btn-zoom-out" title="축소 (마을 전체)" class="w-7 h-7 rounded-full hover:bg-[#FFF5EA] font-title text-base text-[#4A3728] transition-colors">−</button>
+      <button id="btn-cam-rotate" title="카메라 90도 회전" class="w-7 h-7 rounded-full hover:bg-[#FFF5EA] font-title text-sm text-[#4A3728] transition-colors">↻</button>
+      <button id="btn-reset-save" title="데이터 초기화" class="px-2 h-7 rounded-full hover:bg-[#FFE8EE] font-display text-[11px] text-[#6E5649] transition-colors whitespace-nowrap">초기화</button>
     </div>
 
     <button id="fab-notebook" aria-label="타운 도감 수첩 열기" class="pointer-events-auto fab-artwork-circle">
       <span id="fab-svg-slot" class="fab-icon-wrap flex items-center justify-center"></span>
-      <span class="font-title text-[11px] text-[#43342E] leading-none mt-0.5">수첩</span>
+      <span class="font-title text-[11px] text-[#3E2C23] leading-none mt-0.5">수첩</span>
 
       <span id="fab-red-dot" class="hidden urgent-coral-dot absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px] px-1 font-num text-[11px] flex items-center justify-center">
         1
@@ -132,66 +132,57 @@
     </button>
   </div>
 
-  <!-- ==================== 6. [요구사항 1 & 2] 무(無)줄글 스프링 가죽 다이어리 도감 모달 ==================== -->
+  <!-- ==================== 6. [버그 수정 3] 밝은 바닐라 크림 단일 통합형 타운 수첩 모달 ==================== -->
   <div id="notebook-modal" class="hidden fixed inset-0 z-50 pastel-modal-backdrop flex items-center justify-center p-2.5 sm:p-4">
-    <div class="cozy-planner-shell w-full max-w-4xl h-[84vh] max-h-[540px]">
+    <div class="cozy-planner-shell w-full max-w-2xl h-[85vh] max-h-[580px]">
+      <!-- 상단 장식용 스프링 링 -->
+      <div id="notebook-binder-rings" class="planner-top-rings"></div>
+
       <div class="cozy-planner-inner">
-        <!-- 다이어리 상단 스티치 헤더 (줄글 0%, 아이콘 요약 칩만 표시) -->
-        <div class="px-3.5 py-2 flex items-center justify-between border-b border-[#E6CCB2] shrink-0" style="background: linear-gradient(90deg, #FFF5EA 0%, #FFEFF3 55%, #EFFBF5 100%);">
-          <div class="flex items-center gap-2 min-w-0 flex-wrap">
+        <!-- 밝은 크림 헤더 -->
+        <div class="px-3.5 py-2.5 flex items-center justify-between border-b border-[#F2D7B6] shrink-0" style="background: linear-gradient(90deg, #FFFDF7 0%, #FFF5EC 55%, #F2FCF9 100%);">
+          <div class="flex items-center gap-2 min-w-0">
             <span id="modal-ico-notebook" class="flex items-center shrink-0"></span>
-            <span class="diary-modal-title truncate">타운 경영 도감</span>
-            <span id="modal-quest-summary" class="diary-pill-badge !bg-[#FEF3C7] !text-[#92400E] !border-[#FCD34D] shrink-0">0/10</span>
-            <span id="modal-alert-summary" class="hidden diary-pill-badge !bg-[#FFE4E9] !text-[#BE123C] !border-[#FDA4AF] shrink-0"></span>
+            <span class="diary-modal-title whitespace-nowrap">타운 경영 수첩</span>
+            <span id="modal-quest-summary" class="diary-pill-badge !bg-[#FFF3CD] !text-[#854D0E] !border-[#FDE047] shrink-0">0/10</span>
+            <span id="modal-alert-summary" class="hidden diary-pill-badge !bg-[#FFE4EC] !text-[#BE123C] !border-[#FDA4AF] shrink-0"></span>
           </div>
           <button id="btn-close-notebook" class="btn-close-round">✕</button>
         </div>
 
-        <!-- 좌측 북마크 인덱스/목록 + 중앙 SVG 스프링 바인더 + 우측 도감 속지 -->
-        <div class="flex-1 flex flex-col sm:flex-row min-h-0 overflow-hidden relative">
-          <!-- 좌측 속지 -->
-          <div class="planner-left-sheet flex flex-col min-h-0 shrink-0">
-            <!-- 4색 인덱스 북마크 탭 -->
-            <div class="grid grid-cols-4 sm:grid-cols-2 gap-1.5 p-2.5 border-b border-[#E6CCB2] shrink-0">
-              <button data-ntab="quests" class="ntab-btn diary-index-tab active">
-                <span id="tab-ico-quests" class="flex items-center"></span>
-                <span>퀘스트</span>
-                <span id="tab-dot-quests" class="hidden w-2 h-2 rounded-full bg-[#E11D48] ml-auto"></span>
-              </button>
-              <button data-ntab="tenants" class="ntab-btn diary-index-tab">
-                <span id="tab-ico-tenants" class="flex items-center"></span>
-                <span>세대도감</span>
-                <span id="tab-dot-tenants" class="hidden w-2 h-2 rounded-full bg-[#E11D48] ml-auto animate-ping"></span>
-              </button>
-              <button data-ntab="manager" class="ntab-btn diary-index-tab">
-                <span id="tab-ico-manager" class="flex items-center"></span>
-                <span>관리인</span>
-              </button>
-              <button data-ntab="infra" class="ntab-btn diary-index-tab">
-                <span id="tab-ico-infra" class="flex items-center"></span>
-                <span>건물장부</span>
-              </button>
-            </div>
-
-            <!-- 좌측 인덱스 리스트 -->
-            <div id="split-left-list" class="flex-1 overflow-y-auto custom-scroll p-2.5 flex flex-col gap-1.5 max-h-[132px] sm:max-h-none"></div>
-          </div>
-
-          <!-- 중앙 SVG 스프링 바인더 고리 열 -->
-          <div id="notebook-binder-rings" class="planner-binder-spine"></div>
-
-          <!-- 우측 무(無)줄글 도감 속지 -->
-          <div id="split-right-detail" class="planner-right-sheet flex-1 overflow-y-auto custom-scroll p-3 sm:p-4"></div>
+        <!-- 절대 줄바꿈되지 않는 상단 4개 인덱스 탭 (퀘스트 / 세대도감 / 관리인 / 건물장부) -->
+        <div class="grid grid-cols-4 gap-1.5 px-2.5 pt-2.5 pb-2 bg-[#FFF9F0] border-b border-[#F2D7B6] shrink-0">
+          <button data-ntab="quests" class="ntab-btn diary-index-tab active">
+            <span id="tab-ico-quests" class="hidden sm:flex items-center shrink-0"></span>
+            <span>퀘스트</span>
+            <span id="tab-dot-quests" class="hidden w-2 h-2 rounded-full bg-[#FF4D6D] shrink-0"></span>
+          </button>
+          <button data-ntab="tenants" class="ntab-btn diary-index-tab">
+            <span id="tab-ico-tenants" class="hidden sm:flex items-center shrink-0"></span>
+            <span>세대도감</span>
+            <span id="tab-dot-tenants" class="hidden w-2 h-2 rounded-full bg-[#FF4D6D] shrink-0 animate-ping"></span>
+          </button>
+          <button data-ntab="manager" class="ntab-btn diary-index-tab">
+            <span id="tab-ico-manager" class="hidden sm:flex items-center shrink-0"></span>
+            <span>관리인</span>
+          </button>
+          <button data-ntab="infra" class="ntab-btn diary-index-tab">
+            <span id="tab-ico-infra" class="hidden sm:flex items-center shrink-0"></span>
+            <span>건물장부</span>
+          </button>
         </div>
+
+        <!-- 이중 중복 없는 단일 통합 카드 리스트 영역 -->
+        <div id="notebook-unified-body" class="planner-unified-sheet flex-1 overflow-y-auto custom-scroll p-3 sm:p-4 space-y-2.5"></div>
       </div>
     </div>
   </div>
 
-  <!-- ==================== 7. 신규 부지 개발 도감 모달 (무줄글 칩 카드) ==================== -->
+  <!-- ==================== 7. 신규 부지 개발 모달 (밝은 크림 테마) ==================== -->
   <div id="lot-dev-modal" class="hidden fixed inset-0 z-50 pastel-modal-backdrop flex items-center justify-center p-3">
     <div class="cozy-planner-shell w-full max-w-xl max-h-[84vh]">
       <div class="cozy-planner-inner">
-        <div class="px-3.5 py-2.5 flex items-center justify-between border-b border-[#E6CCB2] shrink-0" style="background: linear-gradient(90deg, #E8FBF2 0%, #FFF7EB 100%);">
+        <div class="px-3.5 py-2.5 flex items-center justify-between border-b border-[#F2D7B6] shrink-0" style="background: linear-gradient(90deg, #F0FDF9 0%, #FFFDF7 100%);">
           <div class="flex items-center gap-2 flex-wrap">
             <span id="dev-ico-header" class="flex items-center"></span>
             <span class="diary-modal-title">신규 부지 착공</span>
@@ -204,11 +195,11 @@
     </div>
   </div>
 
-  <!-- ==================== 8. 세대 입주 계약 도감 모달 (무줄글 게이지·칩 카드) ==================== -->
+  <!-- ==================== 8. 세대 입주 계약 모달 (밝은 크림 테마) ==================== -->
   <div id="recruit-modal" class="hidden fixed inset-0 z-50 pastel-modal-backdrop flex items-center justify-center p-3">
     <div class="cozy-planner-shell w-full max-w-2xl max-h-[86vh]">
       <div class="cozy-planner-inner">
-        <div class="px-3.5 py-2.5 flex items-center justify-between border-b border-[#E6CCB2] shrink-0" style="background: linear-gradient(90deg, #EAF4FF 0%, #FFF1F4 100%);">
+        <div class="px-3.5 py-2.5 flex items-center justify-between border-b border-[#F2D7B6] shrink-0" style="background: linear-gradient(90deg, #FFF5F7 0%, #FFFDF7 100%);">
           <div class="flex items-center gap-2 flex-wrap">
             <span id="rec-ico-header" class="flex items-center"></span>
             <span class="diary-modal-title">입주 세대 선택</span>
@@ -228,7 +219,7 @@
   <div id="rename-building-modal" class="hidden fixed inset-0 z-[58] pastel-modal-backdrop flex items-center justify-center p-3">
     <div class="cozy-planner-shell w-full max-w-sm">
       <div class="cozy-planner-inner p-3.5 space-y-2.5">
-        <div class="flex items-center justify-between border-b border-[#E6CCB2] pb-2">
+        <div class="flex items-center justify-between border-b border-[#F2D7B6] pb-2">
           <div class="flex items-center gap-2">
             <span id="rename-ico-crown" class="flex items-center"></span>
             <span class="diary-modal-title">빌딩 현판 이름 변경</span>
@@ -253,14 +244,14 @@
 
   <!-- ==================== 10. 퇴거 도장 스탬프 연출 오버레이 ==================== -->
   <div id="eviction-stamp-overlay" class="hidden fixed inset-0 z-[60] pointer-events-none">
-    <div id="eviction-stamp-box" class="absolute left-1/2 top-1/2 diary-card !border-4 !border-[#E11D48] !px-5 !py-3 flex items-center gap-2.5 font-title text-lg sm:text-2xl text-[#BE123C]">
+    <div id="eviction-stamp-box" class="absolute left-1/2 top-1/2 diary-card !bg-[#FFFFFF] !border-4 !border-[#FF758F] !px-5 !py-3 flex items-center gap-2.5 font-title text-lg sm:text-2xl text-[#BE123C]">
       <span id="stamp-ico-slot" class="flex items-center"></span>
       <span>퇴거 집행 완료</span>
     </div>
   </div>
 
   <!-- 토스트 알림 컨테이너 -->
-  <div id="toast-container" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-1.5 pointer-events-none"></div>
+  <div id="toast-container" class="fixed top-20 sm:top-16 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-1.5 pointer-events-none"></div>
 
   <script src="./data.js"></script>
   <script type="module" src="./app.js"></script>

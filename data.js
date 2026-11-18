@@ -910,7 +910,7 @@ const QUEST_LIST = [
   {
     id: 'mq1',
     icon: 'sparkle_star',
-    title: '101 인테리어 Lv.1 시공',
+    title: '101호 인테리어 Lv.1 시공',
     reward: 160,
     focusLot: 'lot_main',
     focusSubRoom: '101',
@@ -923,7 +923,7 @@ const QUEST_LIST = [
   {
     id: 'mq2',
     icon: 'gold_key',
-    title: '101 첫 입주 계약',
+    title: '101호 첫 입주 계약 체결',
     reward: 180,
     focusLot: 'lot_main',
     focusSubRoom: '101',
@@ -946,7 +946,7 @@ const QUEST_LIST = [
   {
     id: 'mq4',
     icon: 'recycle_bin',
-    title: '공용시설 1종 시공',
+    title: '건물 공용시설 1종 시공',
     reward: 260,
     openTab: 'infra',
     progress: (st) => {
@@ -962,7 +962,7 @@ const QUEST_LIST = [
   {
     id: 'mq5',
     icon: 'elevator',
-    title: '201 개방 & 엘리베이터',
+    title: '201호 개방 & 엘리베이터 시공',
     reward: 380,
     focusLot: 'lot_main',
     focusSubRoom: '201',
