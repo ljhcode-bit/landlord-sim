@@ -192,26 +192,25 @@ textarea {
 
 .hud-gain-float {
   position: absolute;
-  left: 50%;
+  right: 0;
   top: 0;
-  transform: translate(-50%, 0);
   font-family: var(--font-title) !important;
-  font-size: 13px;
+  font-size: 12px;
   color: #15803D;
   background: #FFFDF7;
   border: 2px solid #38E54D;
-  padding: 2px 8px;
+  padding: 1.5px 7px;
   border-radius: 9999px;
   box-shadow: 0 3px 0 rgba(23, 158, 41, 0.3), 0 6px 12px rgba(58, 46, 43, 0.16);
   white-space: nowrap;
   pointer-events: none;
-  animation: hudGainRise 1.05s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: hudGainRise 0.95s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 @keyframes hudGainRise {
-  0% { opacity: 0; transform: translate(-50%, 6px) scale(0.7); }
-  25% { opacity: 1; transform: translate(-50%, 20px) scale(1.08); }
-  100% { opacity: 0; transform: translate(-50%, -18px) scale(0.95); }
+  0% { opacity: 0; transform: translateY(4px) scale(0.75); }
+  25% { opacity: 1; transform: translateY(-6px) scale(1.04); }
+  100% { opacity: 0; transform: translateY(-22px) scale(0.94); }
 }
 
 /* ==================== 3. 3D 젤리/쿠션 캡슐 버튼 & 스프링 마이크로 인터랙션 ==================== */
@@ -1404,4 +1403,94 @@ input[type='range'].golden-coin-range::-webkit-slider-thumb {
 .custom-scroll::-webkit-scrollbar-thumb {
   background: #D9B798;
   border-radius: 9999px;
+}
+
+/* ==================== 10. 만수르 머니건 버튼 · 3D 오프스크린 프리뷰 · 카메라 도착 후 슬라이드 독 ==================== */
+.mansour-rain-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6.5px 13px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #FFF7B0 0%, #FFD93D 48%, #F59E0B 100%) !important;
+  color: #3A2E2B !important;
+  font-family: var(--font-title) !important;
+  font-size: 12px !important;
+  border: 2px solid #FFFFFF;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.9),
+    0 5px 0 #B45309,
+    0 8px 18px rgba(245, 158, 11, 0.36);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.16s var(--spring-ease), box-shadow 0.16s var(--spring-ease), filter 0.14s ease;
+}
+
+.mansour-rain-pill:hover {
+  transform: translateY(-2px) scale(1.03);
+  filter: brightness(1.05);
+}
+
+.mansour-rain-pill:active {
+  transform: translateY(4px) scale(0.97) !important;
+  box-shadow: 0 1px 0 #B45309 !important;
+}
+
+@media (max-width: 639px) {
+  .mansour-rain-pill {
+    padding: 5.5px 9.5px;
+    font-size: 11px !important;
+    gap: 3.5px;
+  }
+}
+
+.catalog-3d-preview-img {
+  width: 100%;
+  height: 82px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+  border-radius: 13px;
+  background: radial-gradient(circle at 50% 42%, #FFFDF9 0%, #F5E6D3 100%);
+  filter: drop-shadow(0 3px 5px rgba(58, 46, 43, 0.14));
+}
+
+#garage-cards-grid .catalog-3d-preview-img {
+  height: 96px;
+}
+
+.dock-slide-up-enter {
+  animation: dockSlideUpFadeIn 0.36s var(--spring-ease) forwards;
+}
+
+@keyframes dockSlideUpFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(28px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.dock-tucked {
+  opacity: 0.12 !important;
+  transform: translateY(72%) !important;
+  pointer-events: none !important;
+  transition: transform 0.26s ease, opacity 0.22s ease !important;
+}
+
+.aura-mote-badge {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+  filter: drop-shadow(0 2px 4px rgba(58, 46, 43, 0.22));
+  animation: auraMoteBob 1.3s infinite alternate ease-in-out;
+}
+
+@keyframes auraMoteBob {
+  0% { transform: translate(-50%, -95%) scale(0.92); opacity: 0.88; }
+  100% { transform: translate(-50%, -125%) scale(1.1); opacity: 1; }
 }

@@ -52,9 +52,9 @@
   <div id="flying-coin-layer" class="fixed inset-0 z-40 pointer-events-none overflow-hidden"></div>
 
   <!-- ==================== 3. 글래스모피즘 플로팅 필(Floating Pill) 상단 HUD ==================== -->
-  <header class="fixed top-2.5 left-2.5 right-2.5 sm:right-auto sm:left-4 sm:top-3.5 z-30 flex flex-col gap-2 pointer-events-none sm:w-auto sm:max-w-[700px]">
+  <header class="fixed top-2.5 left-2.5 right-2.5 sm:right-auto sm:left-4 sm:top-3.5 z-30 flex flex-col gap-2 pointer-events-none sm:w-auto sm:max-w-[calc(100vw-348px)]">
     <!-- 1열: 3대 핵심 재화 아일랜드 필 배지 -->
-    <div class="hud-top-row pointer-events-auto sm:w-[464px]">
+    <div class="hud-top-row pointer-events-auto sm:w-[468px]">
       <div id="hud-badge-gold" class="hud-glass-pill relative">
         <span id="hud-ico-gold" class="flex items-center justify-center shrink-0"></span>
         <div class="leading-tight min-w-0 flex-1">
@@ -63,7 +63,7 @@
             <span id="hud-gold" class="font-num">1,250</span><span class="hud-unit">만</span>
           </div>
         </div>
-        <div id="hud-gold-pop-anchor" class="absolute left-1/2 -bottom-1 pointer-events-none"></div>
+        <div id="hud-gold-pop-anchor" class="absolute right-3 top-0.5 pointer-events-none"></div>
       </div>
 
       <div id="hud-badge-yield" class="hud-glass-pill">
@@ -74,31 +74,37 @@
         </div>
       </div>
 
-      <div id="hud-badge-happy" class="hud-glass-pill">
+      <button id="hud-badge-happy" type="button" title="행복도 마일스톤 진화 트래커 보기" class="hud-glass-pill cursor-pointer text-left hover:scale-[1.02] active:scale-[0.98] transition-transform">
         <span id="hud-ico-happy" class="flex items-center justify-center shrink-0"></span>
         <div class="leading-tight min-w-0 flex-1">
-          <div class="flex items-center justify-between gap-1">
-            <span class="hud-pill-label">행복도</span>
-            <span id="hud-happiness" class="hud-pill-num !text-[12.5px] sm:!text-[14px] text-[#E03E52]">100%</span>
+          <div class="flex items-center justify-between gap-0.5">
+            <span id="hud-happy-label" class="hud-pill-label !text-[9.5px] sm:!text-[10.5px] whitespace-nowrap">행복</span>
+            <span id="hud-happiness" class="hud-pill-num !text-[11px] sm:!text-[13.5px] text-[#E03E52] whitespace-nowrap shrink-0">42%</span>
           </div>
           <div class="hud-mini-gauge-track mt-1">
-            <div id="hud-happy-bar" class="hud-mini-gauge-fill" style="width: 100%;"></div>
+            <div id="hud-happy-bar" class="hud-mini-gauge-fill" style="width: 42%;"></div>
           </div>
         </div>
-      </div>
+      </button>
     </div>
 
-    <!-- 2열 A: 타운 전체 뷰 액션 캡슐 바 (모바일 390px 1행 정렬 대응) -->
-    <div id="hud-town-controls" class="flex items-center gap-1 sm:gap-2 flex-wrap">
+    <!-- 2열 A: 타운 전체 뷰 액션 캡슐 바 (모바일 390px 정렬 대응 + 만수르 돈 뿌리기 버튼 포함) -->
+    <div id="hud-town-controls" class="flex items-center gap-1 sm:gap-1.5 flex-wrap">
       <button id="btn-overview-cam" type="button" title="타운 전체 보기" class="pointer-events-auto tactile-pill-btn tone-cream">
         <span id="hud-ico-overview" class="flex items-center"></span>
         <span>타운뷰</span>
       </button>
 
-      <button id="btn-enter-drive" type="button" title="3인칭 거리 드라이브" class="pointer-events-auto drive-launch-pill">
+      <button id="btn-make-it-rain" type="button" title="만수르 황금 머니건 돈 뿌리기 (MAKE IT RAIN!)" class="pointer-events-auto mansour-rain-pill">
+        <span id="hud-ico-moneygun" class="flex items-center"></span>
+        <span class="sm:hidden">돈뿌리기</span>
+        <span class="hidden sm:inline">만수르 돈 뿌리기</span>
+      </button>
+
+      <button id="btn-enter-drive" type="button" title="3인칭 거리 & 해안 드라이브" class="pointer-events-auto drive-launch-pill">
         <span id="hud-ico-drive" class="flex items-center"></span>
         <span class="sm:hidden">드라이브</span>
-        <span class="hidden sm:inline">드라이브 모드</span>
+        <span class="hidden sm:inline">드라이브</span>
       </button>
 
       <button id="btn-open-garage" type="button" title="VIP 슈퍼카 차고" class="pointer-events-auto tactile-pill-btn tone-butter">
@@ -113,7 +119,7 @@
         <span class="hidden sm:inline">부지착공</span>
       </button>
 
-      <button id="btn-collect-all" type="button" class="hidden pointer-events-auto tactile-pill-btn tone-mint animate-bounce">
+      <button id="btn-collect-all" type="button" class="hidden pointer-events-auto tactile-pill-btn tone-mint">
         <span id="hud-ico-collect" class="flex items-center"></span>
         <span>일괄수금</span>
       </button>
@@ -161,7 +167,7 @@
           <span>1인칭 매장 직접 입장</span>
         </button>
       </div>
-      <div id="shop-switcher-chips" class="pointer-events-auto flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 pr-2"></div>
+      <div id="shop-switcher-chips" class="pointer-events-auto flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 pr-2 sm:max-w-[calc(100vw-348px)]"></div>
     </div>
 
     <!-- 2열 D: 슈퍼카 드라이브 모드 상단 바 (1인칭 운전석 토글 & 하차 입장 포함) -->
@@ -178,6 +184,14 @@
         <button id="btn-drive-step-out" type="button" class="pointer-events-auto tactile-pill-btn tone-mint">
           <span id="ico-drive-step-out" class="flex items-center"></span>
           <span>1인칭 상점 입장</span>
+        </button>
+        <button id="btn-drive-scenic-jump" type="button" class="pointer-events-auto tactile-pill-btn tone-sky">
+          <span id="ico-drive-scenic" class="flex items-center"></span>
+          <span id="label-drive-scenic">외곽 해안 드라이빙 존</span>
+        </button>
+        <button id="btn-drive-rain" type="button" class="pointer-events-auto mansour-rain-pill">
+          <span id="ico-drive-rain" class="flex items-center"></span>
+          <span>머니건 발사</span>
         </button>
       </div>
       <div class="flex items-center gap-1.5 flex-wrap">
@@ -198,6 +212,10 @@
         <button id="btn-fp-switch-dest" type="button" class="pointer-events-auto tactile-pill-btn tone-cream">
           <span id="ico-fp-dest" class="flex items-center"></span>
           <span>상점/호실 이동</span>
+        </button>
+        <button id="btn-fp-rain" type="button" class="pointer-events-auto mansour-rain-pill">
+          <span id="ico-fp-rain" class="flex items-center"></span>
+          <span>1인칭 머니건!</span>
         </button>
       </div>
       <div id="fp-held-chips-row" class="pointer-events-none flex items-center gap-1.5 flex-wrap"></div>
@@ -226,11 +244,11 @@
   </aside>
 
   <!-- ==================== 5. 단독 상가 클로즈업 직영 인수 · 매출 카드 ==================== -->
-  <aside id="shop-focus-panel" class="hidden fixed top-[134px] sm:top-3.5 left-2.5 right-2.5 sm:left-auto sm:right-4 z-30 sm:w-[304px] max-h-[calc(100vh-300px)] diary-inspector-shell flex flex-col overflow-hidden">
+  <aside id="shop-focus-panel" class="hidden fixed top-[134px] sm:top-3.5 left-2.5 right-2.5 sm:left-auto sm:right-4 z-30 sm:w-[318px] max-h-[calc(100vh-300px)] diary-inspector-shell flex flex-col overflow-hidden">
     <div class="px-3.5 py-2.5 flex items-center justify-between gap-2 border-b border-[#EED6BE] shrink-0" style="background: linear-gradient(180deg, #FFFDF7 0%, #F7EFE5 100%);">
-      <div class="flex items-center gap-2 min-w-0">
+      <div class="flex items-center gap-1.5 min-w-0">
         <span id="sf-icon-slot" class="flex items-center shrink-0"></span>
-        <span id="sf-title" class="diary-card-title truncate">바게트 하우스</span>
+        <span id="sf-title" class="font-title text-[14px] text-[#3A2E2B] whitespace-nowrap">바게트 하우스</span>
         <span id="sf-owner-badge" class="kw-chip tone-gold !py-0.5 !px-2 shrink-0">미인수</span>
       </div>
       <button id="btn-close-shop-focus" type="button" title="타운 거리로 나가기" class="btn-close-round" aria-label="닫기">
@@ -337,7 +355,7 @@
   </section>
 
   <!-- ==================== 7B. 상가 앞 드라이브 스루 & 차에서 내려 1인칭 입장 프롬프트 ==================== -->
-  <div id="drive-proximity-bar" class="hidden fixed top-[134px] sm:top-[100px] left-2.5 right-2.5 sm:left-auto sm:right-4 z-30 pointer-events-auto diary-card !p-2 flex items-center justify-between gap-1.5 sm:gap-2.5 sm:w-auto max-w-[96vw]">
+  <div id="drive-proximity-bar" class="hidden fixed top-[208px] sm:top-[196px] left-2.5 sm:left-4 right-auto z-30 pointer-events-auto diary-card !p-2 flex items-center justify-between gap-1.5 sm:gap-2.5 max-w-[94vw]">
     <div class="flex items-center gap-1.5 min-w-0">
       <span id="prox-shop-ico" class="flex items-center shrink-0"></span>
       <div class="min-w-0">
@@ -650,6 +668,64 @@
           <button type="button" id="fp-tab-rooms" class="fcat-tab-btn">세입자 호실 집들이 방문</button>
         </div>
         <div id="fp-visit-cards-grid" class="p-3.5 space-y-2.5 overflow-y-auto custom-scroll"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 17. 행복도 마일스톤 진화 트래커 모달 (50% / 75% / 90% / 100%) ==================== -->
+  <div id="happiness-milestone-modal" class="hidden fixed inset-0 z-[57] pastel-modal-backdrop flex items-center justify-center p-2.5 sm:p-4">
+    <div class="cozy-planner-shell w-full max-w-2xl max-h-[90vh]">
+      <div class="cozy-planner-inner">
+        <div class="px-4 py-3 flex items-center justify-between border-b border-[#EED6BE] shrink-0" style="background: linear-gradient(90deg, #FFFDF7 0%, #FFE8EE 100%);">
+          <div class="flex items-center gap-2.5 flex-wrap">
+            <span id="ms-modal-ico" class="flex items-center"></span>
+            <span class="diary-modal-title">갓물주 칭송 · 행복도 마일스톤 진화</span>
+            <span id="ms-modal-pct-chip" class="kw-chip tone-coral">현재 42%</span>
+            <span id="ms-modal-title-chip" class="hidden kw-chip tone-gold">전설의 성군 건물주</span>
+          </div>
+          <button id="btn-close-ms-modal" type="button" class="btn-close-round" aria-label="닫기">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M3.5 3.5L10.5 10.5M10.5 3.5L3.5 10.5" stroke="#3A2E2B" stroke-width="2.3" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+
+        <div class="p-3.5 sm:p-4 space-y-3 overflow-y-auto custom-scroll">
+          <!-- 실시간 행복도 프로그레스 & 만수르 머니건 즉시 발사 CTA -->
+          <div class="diary-card !bg-[#FFFBEB] !border-[#FFD93D] space-y-2.5">
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <div class="font-title text-[14px] text-[#3A2E2B]">
+                마을 행복도가 오를 때마다 영구적인 3D 랜드마크와 축제가 건설됩니다!
+              </div>
+              <button id="btn-ms-trigger-rain" type="button" class="jelly-action-btn pill btn-gold-lip !py-1.5 !px-3.5">
+                <span id="ico-ms-rain" class="flex items-center"></span>
+                <span>만수르 돈 뿌리기 (100만 · 행복도 +18%!)</span>
+              </button>
+            </div>
+            <div class="candy-gauge-track !h-3.5">
+              <div id="ms-modal-gauge-fill" class="candy-gauge-fill candy-coral" style="width: 42%;"></div>
+            </div>
+            <div class="grid grid-cols-4 text-[11px] font-title text-[#69544C] text-center">
+              <span>50% 현수막·꽃화분</span>
+              <span>75% 루프탑·가랜드</span>
+              <span>90% 행진·불꽃축제</span>
+              <span class="text-[#B45309]">100% 황금동상!</span>
+            </div>
+          </div>
+
+          <div id="ms-cards-list" class="space-y-2.5"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 18. 행복도 마일스톤 돌파 & 제막식 축하 배너 ==================== -->
+  <div id="milestone-ceremony-banner" class="hidden fixed inset-x-3 top-[174px] sm:top-[168px] z-[63] pointer-events-none flex justify-center">
+    <div class="golden-bell-slam diary-card !bg-[#FFFDF2] !border-4 !border-[#FFD93D] px-5 py-3.5 max-w-xl text-center space-y-1 shadow-2xl">
+      <div class="flex items-center justify-center gap-2 font-title text-[15px] sm:text-[18.5px] text-[#B45309] break-keep">
+        <span id="ms-banner-ico" class="flex items-center shrink-0"></span>
+        <span id="ms-banner-title">행복도 50% 돌파! 칭송 현수막 & 발코니 화분 개화!</span>
+      </div>
+      <div id="ms-banner-sub" class="font-body text-[12px] font-extrabold text-[#D6384C]">
+        마을 기본 임대 수익 영구 +15% 상승!
       </div>
     </div>
   </div>

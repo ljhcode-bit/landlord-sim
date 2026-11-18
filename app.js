@@ -10,7 +10,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-const SAVE_KEY = 'god_landlord_boutique_street_drive_2026_v8';
+const SAVE_KEY = 'god_landlord_boutique_street_drive_2026_v9';
 
 // --------------------- 전역 게임 상태 생성 및 스키마 보정 ---------------------
 function createDefaultFurnitureState(defaultDecor = 'dec_peach') {
@@ -104,7 +104,7 @@ function makeResidentialBuilding(lotId, devType, title, withStarterTenant = fals
         type: 'newlywed',
         familyName: '박서연 세대',
         maxBudget: 235,
-        happiness: 94
+        happiness: 42
       };
       rm.rentTimer = 4.5;
     }
@@ -185,6 +185,20 @@ function ensureRoomSchema(room) {
   syncRoomInteriorStats(room);
 }
 
+function createInitialFirstFloorShops() {
+  const map = {};
+  for (const tpl of (window.FIRST_FLOOR_SHOPS_TEMPLATE || [])) {
+    map[tpl.shopId] = {
+      shopId: tpl.shopId,
+      owned: true,
+      upgrades: {},
+      cycleTimer: 6.5,
+      totalServed: 12
+    };
+  }
+  return map;
+}
+
 function createInitialState() {
   const lots = JSON.parse(JSON.stringify(INITIAL_ISLAND_LOTS));
   const buildings = {
@@ -192,12 +206,16 @@ function createInitialState() {
   };
   const developments = {};
   const standaloneShops = createInitialStandaloneShops();
+  const firstFloorShops = createInitialFirstFloorShops();
 
   return {
-    gold: 1250,
+    gold: 1350,
     day: 1,
     gameMinutes: 9 * 60,
     feverTimer: 0,
+    feverPower: 2.5,
+    townHappinessBoost: 0,
+    unlockedMilestones: [],
     goldenKeys: 0,
     heldGifts: {
       left: null,
@@ -208,6 +226,7 @@ function createInitialState() {
     buildings,
     developments,
     standaloneShops,
+    firstFloorShops,
     garage: {
       ownedCars: ['car_scooter'],
       currentCar: 'car_scooter'
@@ -261,14 +280,29 @@ let camAzimuth = 0;
 
 const camTween = {
   active: false,
+  elapsed: 0,
+  duration: 0.6,
+  startPos: new THREE.Vector3(),
+  startLook: new THREE.Vector3(),
+  startZoom: 0.78,
   pos: new THREE.Vector3(),
   look: new THREE.Vector3(),
-  zoom: 0.76
+  zoom: 0.76,
+  onArrive: null
 };
 
-let currentShellOpacity = 1.0;
+// [핵심 개편 2] 2단계 포커스 시퀀스(① 카메라 정중앙 이동·클린 감상 0.4s -> ② 비가림 컨트롤 독 슬라이드업)
+const focusRevealState = {
+  pending: false,
+  holdTimer: 0,
+  revealed: false,
+  tuckTimer: 0
+};
+
+let currentShellOpacity = 0.22;
 let focusedRoomId = null;
 let focusedShopId = null;
+let focusedFirstFloorShopId = null;
 let activeFurnitureCategory = 'bed';
 let isCatalogCollapsed = false;
 let isRfBodyCollapsed = false;
@@ -284,14 +318,22 @@ let recruitRoomTarget = null;
 let recruitCandidates = [];
 let renameTargetLotId = null;
 
-// --------------------- [1단계 5] GTA 3인칭 슈퍼카 드라이브 상태 ---------------------
+// --------------------- [1단계 5 + 신규 확장 6] 도심 순환 + 외곽 해안·레드아치교 8자형 드라이브 코스 ---------------------
 const VIP_PARKING_POS = { x: 13.8, y: 0.24, z: -1.2, rotY: 0 };
 const RING_ROAD_WAYPOINTS = [
-  { x: 26.5, z: 7.0 },
-  { x: -30.5, z: 7.0 },
-  { x: -30.5, z: 28.6 },
-  { x: 30.5, z: 28.6 },
-  { x: 30.5, z: 7.0 }
+  { x: 26.5, z: 7.0, zone: 'town' },
+  { x: -30.5, z: 7.0, zone: 'town' },
+  { x: -30.5, z: 28.6, zone: 'town' },
+  { x: 18.0, z: 28.6, zone: 'junction_in' },     // 삼거리 교차로 -> SCENIC DRIVE ZONE 진입!
+  { x: 23.5, z: 36.8, zone: 'scenic' },          // 야자수 직선 가속 구간
+  { x: 22.0, z: 46.8, zone: 'scenic' },          // S자 해안 코너 진입
+  { x: 10.5, z: 50.2, zone: 'bridge' },          // 빨간 철제 아치형 다리 동측 진입
+  { x: -3.5, z: 50.2, zone: 'bridge' },          // 빨간 철제 아치형 다리 중앙 도하
+  { x: -16.8, z: 48.2, zone: 'overlook' },       // 해안 전망대 휴게소 & 푸드/커피트럭 앞 통과
+  { x: -23.5, z: 40.5, zone: 'scenic' },         // 서측 벚꽃 S자 복귀 코너
+  { x: -18.5, z: 28.6, zone: 'junction_out' },   // 도심 순환도로 삼거리 합류
+  { x: 30.5, z: 28.6, zone: 'town' },
+  { x: 30.5, z: 7.0, zone: 'town' }
 ];
 
 const driveState = {
@@ -416,6 +458,53 @@ let selectedRoomFrameGroup = null;
 const careBubbles = [];
 const rentBubbles = [];
 let careTimer = 8.0;
+
+// 신규 3D 시스템 레지스트리 (실사 에셋 · 오프스크린 3D 썸네일 · 머니건 · 마일스톤 · 외곽 드라이빙 존 · 시공 연출)
+const REAL_TEX = {
+  faces: [],
+  outfits: [],
+  snacks: {},
+  foods: {},
+  bills: {}
+};
+const catalog3DPreviewCache = new Map();
+let offscreenThumbScene = null;
+let offscreenThumbCam = null;
+const activeDropBounces = [];
+const activeTileAnimations = [];
+const scenicBoostCoins = [];
+const scenicWaveMeshes = [];
+const characterAuraRings = [];
+const auraMoteEls = {};
+const firstFloorShop3D = {};
+
+const makeItRainState = {
+  active: false,
+  timer: 0,
+  spawnAccum: 0,
+  avatarGroup: null,
+  gunL: null,
+  gunR: null,
+  fpGunL: null,
+  fpGunR: null,
+  bills: [],
+  crowdActors: []
+};
+
+const milestoneState = {
+  group: null,
+  swayingBanners: [],
+  rooftopActors: [],
+  paradeActors: [],
+  fireworkTimer: 0,
+  fireworks: [],
+  flashTimer: 0,
+  statueGroup: null,
+  statueCrowd: [],
+  ceremonyActive: false,
+  ceremonyTimer: 0,
+  ceremonyQueue: []
+};
 
 // DOM 오버레이 레지스트리
 const lotOverlayEls = {};
@@ -1614,6 +1703,224 @@ function initSharedResources() {
   MAT.cloudWhite = makeClayMat(0xFAF8F5, { emissive: 0xF3ECE4, emissiveIntensity: 0.18, roughness: 0.7 });
   MAT.coin = MAT.gold;
 
+  // ==================== 신규 고품격 물리 재질(MeshPhysicalMaterial) & 실사 PNG 에셋 로더 ====================
+  MAT.pureGold24k = new THREE.MeshPhysicalMaterial({
+    color: 0xFFE44D,
+    metalness: 0.34,
+    roughness: 0.16,
+    clearcoat: 1.0,
+    clearcoatRoughness: 0.06,
+    emissive: 0xF59E0B,
+    emissiveIntensity: 0.52
+  });
+  MAT.cutawayGlass = new THREE.MeshStandardMaterial({
+    color: 0xE0F2FE,
+    emissive: 0xBAE6FD,
+    emissiveIntensity: 0.12,
+    transparent: true,
+    opacity: 0.09,
+    roughness: 0.06,
+    metalness: 0.05,
+    depthWrite: false
+  });
+  MAT.chillerBlueLed = new THREE.MeshStandardMaterial({
+    color: 0x7DD3FC,
+    emissive: 0x0EA5E9,
+    emissiveIntensity: 1.15,
+    roughness: 0.18
+  });
+  MAT.roomBorderGlow = new THREE.MeshBasicMaterial({
+    color: 0xFFE58F,
+    transparent: true,
+    opacity: 0.86
+  });
+  MAT.carClearRed = new THREE.MeshPhysicalMaterial({
+    color: 0xEF233C,
+    metalness: 0.35,
+    roughness: 0.14,
+    clearcoat: 1.0,
+    clearcoatRoughness: 0.06,
+    emissive: 0x7F0010,
+    emissiveIntensity: 0.12
+  });
+  MAT.carClearMint = new THREE.MeshPhysicalMaterial({
+    color: 0x34D399,
+    metalness: 0.24,
+    roughness: 0.16,
+    clearcoat: 1.0,
+    clearcoatRoughness: 0.08
+  });
+  MAT.carClearBronze = new THREE.MeshPhysicalMaterial({
+    color: 0xB86B35,
+    metalness: 0.28,
+    roughness: 0.18,
+    clearcoat: 1.0,
+    clearcoatRoughness: 0.08,
+    emissive: 0x451A03,
+    emissiveIntensity: 0.14
+  });
+  MAT.carClearCream = new THREE.MeshPhysicalMaterial({
+    color: 0xFFFDF5,
+    metalness: 0.2,
+    roughness: 0.15,
+    clearcoat: 1.0,
+    clearcoatRoughness: 0.06
+  });
+  MAT.carbonFiber = new THREE.MeshPhysicalMaterial({
+    color: 0x283548,
+    metalness: 0.28,
+    roughness: 0.28,
+    clearcoat: 0.65
+  });
+  MAT.chromeAlloy = new THREE.MeshPhysicalMaterial({
+    color: 0xF8FAFC,
+    metalness: 0.42,
+    roughness: 0.14,
+    clearcoat: 0.9,
+    emissive: 0xCBD5E1,
+    emissiveIntensity: 0.18
+  });
+  MAT.bridgeSteelRed = new THREE.MeshPhysicalMaterial({
+    color: 0xDC2626,
+    metalness: 0.38,
+    roughness: 0.28,
+    clearcoat: 0.45
+  });
+
+  // 캔버스 현수막 · 해안 드라이빙 아치 · 애드벌룬 · 황금 동상 명판 텍스처 생성
+  const makeBannerCanvasTex = (bg1, bg2, borderHex, line1, line2, w = 512, h = 256) => {
+    const cv = document.createElement('canvas');
+    cv.width = w; cv.height = h;
+    const cx = cv.getContext('2d');
+    const grd = cx.createLinearGradient(0, 0, w, h);
+    grd.addColorStop(0, bg1);
+    grd.addColorStop(1, bg2);
+    cx.fillStyle = grd;
+    cx.fillRect(0, 0, w, h);
+    cx.strokeStyle = borderHex;
+    cx.lineWidth = 14;
+    cx.strokeRect(10, 10, w - 20, h - 20);
+    cx.textAlign = 'center';
+    cx.textBaseline = 'middle';
+    cx.fillStyle = '#3A2E2B';
+    cx.font = 'bold 40px Jua, Pretendard, sans-serif';
+    cx.fillText(line1, w * 0.5, h * 0.38);
+    cx.fillStyle = borderHex;
+    cx.font = 'bold 34px Jua, Pretendard, sans-serif';
+    cx.fillText(line2, w * 0.5, h * 0.7);
+    const t = new THREE.CanvasTexture(cv);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  };
+
+  TEX.praiseBanner1 = makeBannerCanvasTex('#FFFBEB', '#FDE68A', '#D97706', '우리 동네 최고의 갓물주님', '사랑해요! 영원히 함께해요!');
+  TEX.praiseBanner2 = makeBannerCanvasTex('#FFF1F2', '#FECDD3', '#E11D48', '월세 동결 천사 건물주님', '만세!! 평생 입주 확정!!');
+  TEX.scenicArchSign = makeBannerCanvasTex('#0F172A', '#1E3A8A', '#38BDF8', 'SCENIC DRIVE ZONE ➔', 'COASTAL PALM & RED ARCH BRIDGE');
+  TEX.balloonSign = makeBannerCanvasTex('#FFFDF7', '#FFD93D', '#FF6B6B', 'HAPPY MINIMI TOWN', 'GOD LANDLORD FESTIVAL');
+  TEX.statuePlaque = makeBannerCanvasTex('#291D12', '#452C16', '#FFD700', 'THE LEGENDARY LANDLORD', '전설의 성군 건물주 기념비');
+  TEX.foodTruckSign = makeBannerCanvasTex('#FFF1F2', '#FFE4E6', '#FB7185', 'COASTAL FOOD & TACO', 'SUNSET DRIVE-THRU');
+  TEX.coffeeTruckSign = makeBannerCanvasTex('#ECFDF5', '#D1FAE5', '#10B981', 'OCEAN BREEZE COFFEE', 'COLD BREW & WAFFLE');
+
+  // 실사 음식 · 스낵 · 아트토이 얼굴/의상 PNG 텍스처 로더
+  const texLoader = new THREE.TextureLoader();
+  let pendingRealTex = 0;
+  const loadCrispTex = (url) => {
+    pendingRealTex += 1;
+    const tx = texLoader.load(url, () => {
+      pendingRealTex = Math.max(0, pendingRealTex - 1);
+      if (pendingRealTex === 0) {
+        catalog3DPreviewCache.clear();
+        if (focusedRoomId) renderFurnitureCatalogSheet();
+        if (focusedShopId) renderShopUpgradeCatalog();
+        if (focusedFirstFloorShopId) renderFirstFloorShopUpgradeCatalog();
+      }
+    });
+    tx.colorSpace = THREE.SRGBColorSpace;
+    tx.anisotropy = 4;
+    return tx;
+  };
+
+  for (let i = 1; i <= 12; i++) {
+    REAL_TEX.faces.push(loadCrispTex(`./assets/characters/face_${String(i).padStart(2, '0')}.png`));
+  }
+  for (let i = 1; i <= 15; i++) {
+    REAL_TEX.outfits.push(loadCrispTex(`./assets/characters/outfit_${String(i).padStart(2, '0')}.png`));
+  }
+
+  REAL_TEX.foods.croissant = loadCrispTex('./assets/foods/croissant_real.png');
+  REAL_TEX.foods.baguette = loadCrispTex('./assets/foods/baguette_real.png');
+  REAL_TEX.foods.cake = loadCrispTex('./assets/foods/strawberry_cake_real.png');
+  REAL_TEX.foods.einspanner = loadCrispTex('./assets/foods/einspanner_real.png');
+  REAL_TEX.foods.fruits = loadCrispTex('./assets/foods/fruits_real.png');
+  REAL_TEX.foods.bento = loadCrispTex('./assets/foods/bento_real.png');
+
+  REAL_TEX.snacks.chips = loadCrispTex('./assets/snacks/snack_chips_real.png');
+  REAL_TEX.snacks.shrimp = loadCrispTex('./assets/snacks/snack_shrimp_real.png');
+  REAL_TEX.snacks.choco = loadCrispTex('./assets/snacks/snack_choco_real.png');
+  REAL_TEX.snacks.ramen = loadCrispTex('./assets/snacks/snack_ramen_real.png');
+  REAL_TEX.snacks.strawberry = loadCrispTex('./assets/snacks/snack_strawberry_real.png');
+  REAL_TEX.snacks.cheese = loadCrispTex('./assets/snacks/snack_cheese_real.png');
+  REAL_TEX.snacks.matcha = loadCrispTex('./assets/snacks/snack_matcha_real.png');
+  REAL_TEX.snacks.cola = loadCrispTex('./assets/snacks/snack_cola_real.png');
+  REAL_TEX.snacks.beer = loadCrispTex('./assets/snacks/snack_beer_real.png');
+  REAL_TEX.snacks.kimbap = loadCrispTex('./assets/snacks/snack_kimbap_real.png');
+
+  REAL_TEX.bills.krw50k = loadCrispTex('./assets/snacks/money_bill_50k.png');
+  REAL_TEX.bills.usd100 = loadCrispTex('./assets/snacks/money_bill_100usd.png');
+
+  // 실사 베이커리 & 과자봉지 유광 클리어코트 재질 사전 빌드
+  MAT.realCroissant = new THREE.MeshPhysicalMaterial({
+    map: REAL_TEX.foods.croissant,
+    roughness: 0.28,
+    clearcoat: 0.46,
+    clearcoatRoughness: 0.18
+  });
+  MAT.realBaguette = new THREE.MeshPhysicalMaterial({
+    map: REAL_TEX.foods.baguette,
+    roughness: 0.36,
+    clearcoat: 0.28
+  });
+  MAT.realCake = new THREE.MeshPhysicalMaterial({
+    map: REAL_TEX.foods.cake,
+    roughness: 0.26,
+    clearcoat: 0.42
+  });
+  MAT.realEinspanner = new THREE.MeshPhysicalMaterial({
+    map: REAL_TEX.foods.einspanner,
+    roughness: 0.18,
+    clearcoat: 0.65
+  });
+  MAT.realFruits = new THREE.MeshPhysicalMaterial({
+    map: REAL_TEX.foods.fruits,
+    roughness: 0.2,
+    clearcoat: 0.65,
+    clearcoatRoughness: 0.12
+  });
+  MAT.realBento = new THREE.MeshPhysicalMaterial({
+    map: REAL_TEX.foods.bento,
+    roughness: 0.3,
+    clearcoat: 0.35
+  });
+  MAT.bentoClearLid = new THREE.MeshPhysicalMaterial({
+    color: 0xFFFFFF,
+    transparent: true,
+    opacity: 0.22,
+    roughness: 0.05,
+    clearcoat: 1.0,
+    depthWrite: false
+  });
+
+  MAT.snackMats = {};
+  for (const [sk, stx] of Object.entries(REAL_TEX.snacks)) {
+    MAT.snackMats[sk] = new THREE.MeshPhysicalMaterial({
+      map: stx,
+      roughness: 0.24,
+      metalness: 0.12,
+      clearcoat: 0.68,
+      clearcoatRoughness: 0.14
+    });
+  }
+
   if (document.fonts && document.fonts.ready) {
     document.fonts.ready.then(() => {
       TEX.martSign = createShopSignboardTexture('mart');
@@ -2197,22 +2504,50 @@ function createGreenParasolTableSet3D(withExtraCake = false) {
   return grp;
 }
 
-// 빨간 사과 & 오렌지가 가득 담긴 나무 상자(Wooden Crate) 진열대
+// 물방울 맺힌 초고화질 실사 사과 & 오렌지 나무 상자(Wooden Crate) 진열대
 function createFruitWoodenCrate3D(fruitKind = 'apple') {
   const grp = new THREE.Group();
-  // 경사진 원목 스탠드 다리 + 나무 상자
-  const stand = createRoundedToyMesh(1.12, 0.48, 0.86, MAT.woodDark, 0, 0.24, 0, 0.04);
-  const crate = createRoundedToyMesh(1.18, 0.36, 0.92, MAT.woodLight, 0, 0.62, 0.04, 0.05);
+  const stand = createRoundedToyMesh(1.14, 0.48, 0.88, MAT.woodDark, 0, 0.24, 0, 0.04);
+  const crate = createRoundedToyMesh(1.22, 0.36, 0.94, MAT.woodLight, 0, 0.62, 0.04, 0.05);
   crate.rotation.x = 0.24;
-  grp.add(stand, crate);
+  // 상자 내부 실사 과일 바닥 베드
+  const bedPlane = new THREE.Mesh(new THREE.BoxGeometry(1.06, 0.08, 0.78), MAT.realFruits || MAT.appleRed);
+  bedPlane.position.set(0, 0.72, 0.05);
+  bedPlane.rotation.x = 0.24;
+  grp.add(stand, crate, bedPlane);
 
-  const fruitMat = fruitKind === 'orange' ? MAT.orangeFruit : MAT.appleRed;
+  const glossyApple = new THREE.MeshPhysicalMaterial({
+    color: 0xEF233C,
+    map: REAL_TEX.foods?.fruits || null,
+    roughness: 0.16,
+    clearcoat: 0.85,
+    clearcoatRoughness: 0.08
+  });
+  const glossyOrange = new THREE.MeshPhysicalMaterial({
+    color: 0xFB8500,
+    map: REAL_TEX.foods?.fruits || null,
+    roughness: 0.22,
+    clearcoat: 0.78,
+    clearcoatRoughness: 0.1
+  });
+
   for (let r = -1; r <= 1; r++) {
     for (let c = -2; c <= 2; c++) {
-      const f = new THREE.Mesh(GEO.sphere, (r + c) % 3 === 0 && fruitKind === 'mix' ? MAT.orangeFruit : fruitMat);
-      f.scale.setScalar(0.24);
-      f.position.set(c * 0.2, 0.78 - r * 0.05, r * 0.22 + 0.04);
+      const useOrange = fruitKind === 'orange' || (fruitKind === 'mix' && (r + c) % 2 === 0);
+      const f = new THREE.Mesh(GEO.sphere, useOrange ? glossyOrange : glossyApple);
+      f.scale.setScalar(0.245);
+      const fx = c * 0.2;
+      const fy = 0.8 - r * 0.055;
+      const fz = r * 0.22 + 0.04;
+      f.position.set(fx, fy, fz);
       grp.add(f);
+      // 이슬 물방울 하이라이트
+      if ((r + c) % 2 === 0) {
+        const drop = new THREE.Mesh(GEO.sphere, MAT.bentoClearLid || MAT.white);
+        drop.scale.setScalar(0.055);
+        drop.position.set(fx + 0.06, fy + 0.1, fz + 0.07);
+        grp.add(drop);
+      }
     }
   }
   return grp;
@@ -2391,9 +2726,15 @@ function buildCozyFloatingIsland() {
   const centralBlockSidewalk = createRoundedToyMesh(54.4, 0.24, 15.0, sidewalkHMat, 0, 0.12, 17.8, 0.12, false, true, false);
   islandRootGroup.add(centralBlockSidewalk);
 
-  // 남측 산책 프롬나드 인도
-  const southPromenade = createRoundedToyMesh(66.5, 0.22, 3.0, sidewalkHMat, 0, 0.11, 33.3, 0.08, false, true, false);
-  islandRootGroup.add(southPromenade);
+  // 남측 산책 프롬나드 인도 (삼거리 교차로 x = -18.5, x = +18.0 진출입 개구부 확보!)
+  islandRootGroup.add(createRoundedToyMesh(14.5, 0.22, 3.0, sidewalkHMat, -29.2, 0.11, 33.3, 0.08, false, true, false));
+  islandRootGroup.add(createRoundedToyMesh(29.2, 0.22, 3.0, sidewalkHMat, -0.2, 0.11, 33.3, 0.08, false, true, false));
+  islandRootGroup.add(createRoundedToyMesh(14.0, 0.22, 3.0, sidewalkHMat, 28.5, 0.11, 33.3, 0.08, false, true, false));
+
+  // =========================================================
+  // [신규 확장 6] 외곽 해안 & 레드 아치교 드라이빙 존 (Outer Scenic Coastal & Bridge Drive Zone)
+  // =========================================================
+  buildOuterScenicDrivingZone3D(roadHMat, roadVMat, roadCornerMat, cwMat);
 
   // 유럽풍 원형 코블스톤 중앙 광장 메달리온 (x = 0, z = 17.8)
   const plazaCobbleDisc = new THREE.Mesh(
@@ -2637,156 +2978,559 @@ function buildCozyFloatingIsland() {
 
   selectedRoomFrameGroup = createSelectedRoomFrame3D();
   scene.add(selectedRoomFrameGroup);
+
+  milestoneState.group = new THREE.Group();
+  scene.add(milestoneState.group);
 }
 
 // =========================================================
-// 6. 귀여운 치비 미니미(직원 · 입주민 · 건물주 오너) & 반려동물 & 4종 슈퍼카 3D
+// 5B. [신규 확장 6] 외곽 해안 & 빨간 철제 아치교 드라이빙 존 (Scenic Coastal & Bridge Drive Zone)
 // =========================================================
-function createChibiPerson3D(role = 'student', customShirtHex = null) {
+function createPalmTree3D(scale = 1.0) {
   const grp = new THREE.Group();
+  for (let s = 0; s < 6; s++) {
+    const seg = new THREE.Mesh(GEO.cyl, MAT.woodWarm);
+    seg.scale.set((0.36 - s * 0.03) * scale, 0.62 * scale, (0.36 - s * 0.03) * scale);
+    seg.position.set(Math.sin(s * 0.16) * 0.28 * scale, (0.31 + s * 0.56) * scale, 0);
+    seg.rotation.z = -s * 0.04;
+    grp.add(seg);
+  }
+  const topX = Math.sin(5 * 0.16) * 0.28 * scale;
+  const topY = 3.65 * scale;
+  for (let f = 0; f < 7; f++) {
+    const ang = (f / 7) * Math.PI * 2;
+    const frondPivot = new THREE.Group();
+    frondPivot.position.set(topX, topY, 0);
+    frondPivot.rotation.y = ang;
+    const leaf = createRoundedToyMesh(0.42 * scale, 0.08 * scale, 1.85 * scale, f % 2 === 0 ? MAT.parasolGreen : MAT.cloverGreen, 0, -0.14 * scale, 0.88 * scale, 0.04, false, false, false);
+    leaf.rotation.x = 0.42;
+    frondPivot.add(leaf);
+    grp.add(frondPivot);
+  }
+  for (let c = 0; c < 3; c++) {
+    const coco = new THREE.Mesh(GEO.sphere, MAT.woodDark);
+    coco.scale.setScalar(0.24 * scale);
+    coco.position.set(topX + Math.cos(c * 2.1) * 0.22, topY - 0.16, Math.sin(c * 2.1) * 0.22);
+    grp.add(coco);
+  }
+  return grp;
+}
+
+function createScenicTruck3D(isCoffee = false) {
+  const grp = new THREE.Group();
+  const bodyMat = isCoffee ? MAT.carClearMint : makeClayMat(0xFF758F, { roughness: 0.3 });
+  const roofMat = MAT.white;
+  grp.add(createRoundedToyMesh(3.4, 1.95, 1.85, bodyMat, 0, 1.24, 0, 0.14));
+  grp.add(createRoundedToyMesh(3.46, 0.24, 1.92, roofMat, 0, 2.28, 0, 0.08));
+  grp.add(createRoundedToyMesh(1.05, 1.35, 1.76, bodyMat, 2.05, 0.96, 0, 0.12));
+  grp.add(createRoundedToyMesh(0.12, 0.62, 1.52, MAT.partitionGlass, 2.56, 1.28, 0, 0.03, false, false, false));
+
+  // 오픈 서빙 윈도우 & 어닝 + 메뉴 사인보드
+  grp.add(createRoundedToyMesh(2.1, 0.92, 0.12, MAT.charcoal, -0.2, 1.48, -0.92, 0.03));
+  const awning = createScallopedAwning3D(2.3, isCoffee ? 'mint' : 'coral');
+  awning.rotation.y = Math.PI;
+  awning.position.set(-0.2, 1.98, -0.92);
+  grp.add(awning);
+
+  const signFace = new THREE.Mesh(
+    GEO.quad,
+    new THREE.MeshBasicMaterial({ map: isCoffee ? TEX.coffeeTruckSign : TEX.foodTruckSign })
+  );
+  signFace.scale.set(2.4, 0.62, 1);
+  signFace.rotation.y = Math.PI;
+  signFace.position.set(-0.15, 2.66, -0.1);
+  grp.add(createRoundedToyMesh(2.54, 0.72, 0.14, MAT.walnutTrim, -0.15, 2.66, -0.02, 0.05));
+  grp.add(signFace);
+
+  for (const wx of [-1.05, 1.65]) {
+    for (const wz of [-0.92, 0.92]) {
+      const wh = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.24, 16), MAT.charcoal);
+      wh.rotation.x = Math.PI / 2;
+      wh.position.set(wx, 0.38, wz);
+      grp.add(wh);
+    }
+  }
+  return grp;
+}
+
+function buildOuterScenicDrivingZone3D(roadHMat, roadVMat, roadCornerMat, cwMat) {
+  scenicBoostCoins.length = 0;
+  scenicWaveMeshes.length = 0;
+
+  // 1) 남측 푸른 해안가 수변 라군 & 넘실대는 흰 파도 거품 라인
+  const seaMat = new THREE.MeshPhysicalMaterial({
+    color: 0x0EA5E9,
+    map: TEX.water,
+    roughness: 0.12,
+    metalness: 0.08,
+    clearcoat: 0.9,
+    emissive: 0x0284C7,
+    emissiveIntensity: 0.22
+  });
+  const coastalBay = new THREE.Mesh(new THREE.CylinderGeometry(24, 24, 0.26, 48), seaMat);
+  coastalBay.scale.set(1.55, 1, 0.56);
+  coastalBay.position.set(2.0, -0.02, 51.5);
+  islandRootGroup.add(coastalBay);
+
+  const sandBeach = new THREE.Mesh(
+    new THREE.CylinderGeometry(26.5, 27.0, 0.18, 48),
+    makeClayMat(0xFDE68A, { roughness: 0.78 })
+  );
+  sandBeach.scale.set(1.55, 1, 0.58);
+  sandBeach.position.set(2.0, -0.06, 50.8);
+  islandRootGroup.add(sandBeach);
+
+  for (let w = 0; w < 8; w++) {
+    const wave = createRoundedToyMesh(3.4, 0.06, 0.42, MAT.white, -16 + w * 5.2, 0.14, 44.5 + (w % 2) * 1.4, 0.03, false, false, false);
+    islandRootGroup.add(wave);
+    scenicWaveMeshes.push({ mesh: wave, baseZ: wave.position.z, phase: w * 0.9 });
+  }
+
+  // 2) 삼거리 교차로 분기 도로 세그먼트 + S자 코너 + 해안 직선 코스 연결
+  const addRoadSeg = (x1, z1, x2, z2, width = 5.8) => {
+    const dx = x2 - x1;
+    const dz = z2 - z1;
+    const len = Math.hypot(dx, dz) + 2.2;
+    const seg = new THREE.Mesh(new THREE.BoxGeometry(width, 0.165, len), roadVMat);
+    seg.position.set((x1 + x2) * 0.5, 0.085, (z1 + z2) * 0.5);
+    seg.rotation.y = Math.atan2(dx, dz);
+    seg.receiveShadow = true;
+    islandRootGroup.add(seg);
+  };
+
+  addRoadSeg(18.0, 28.6, 23.5, 36.8, 5.8);
+  addRoadSeg(23.5, 36.8, 22.0, 46.8, 5.8);
+  addRoadSeg(22.0, 46.8, 12.2, 50.2, 5.8);
+  addRoadSeg(-5.5, 50.2, -16.8, 48.2, 5.8);
+  addRoadSeg(-16.8, 48.2, -23.5, 40.5, 5.8);
+  addRoadSeg(-23.5, 40.5, -18.5, 28.6, 5.8);
+
+  // 삼거리 교차로 아스팔트 패치 & 횡단보도
+  for (const jx of [18.0, -18.5]) {
+    const jPatch = new THREE.Mesh(new THREE.BoxGeometry(6.8, 0.168, 6.8), roadCornerMat);
+    jPatch.position.set(jx, 0.085, 28.6);
+    islandRootGroup.add(jPatch);
+    const cw = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 5.4), cwMat);
+    cw.rotation.x = -Math.PI / 2;
+    cw.rotation.z = Math.PI / 2;
+    cw.position.set(jx, 0.176, 31.8);
+    islandRootGroup.add(cw);
+  }
+
+  // 3) 갈림길 [SCENIC DRIVE ZONE ➔] 입체 게이트 아치 & 도로 표지판
+  const gateGrp = new THREE.Group();
+  gateGrp.position.set(19.6, 0.2, 32.2);
+  gateGrp.rotation.y = Math.atan2(5.5, 8.2);
+  gateGrp.add(createRoundedToyMesh(0.42, 4.8, 0.42, MAT.bridgeSteelRed, -3.4, 2.4, 0, 0.08));
+  gateGrp.add(createRoundedToyMesh(0.42, 4.8, 0.42, MAT.bridgeSteelRed, 3.4, 2.4, 0, 0.08));
+  gateGrp.add(createRoundedToyMesh(7.6, 1.18, 0.36, MAT.walnutTrim, 0, 4.65, 0, 0.1));
+  const gateFace = new THREE.Mesh(GEO.quad, new THREE.MeshBasicMaterial({ map: TEX.scenicArchSign }));
+  gateFace.scale.set(7.1, 0.96, 1);
+  gateFace.position.set(0, 4.65, 0.2);
+  const gateBack = gateFace.clone();
+  gateBack.rotation.y = Math.PI;
+  gateBack.position.z = -0.2;
+  gateGrp.add(gateFace, gateBack);
+  islandRootGroup.add(gateGrp);
+
+  // 4) 푸른 해안 위를 가로지르는 '빨간 철제 아치형 다리 (Red Steel Arch Bridge)'
+  const bridgeGrp = new THREE.Group();
+  bridgeGrp.position.set(3.4, 0.16, 50.2);
+  const bridgeLen = 19.2;
+  // 교량 상판 데크 & 석조 교각 2기
+  bridgeGrp.add(createRoundedToyMesh(bridgeLen, 0.36, 6.4, roadCornerMat, 0, 0.18, 0, 0.08));
+  bridgeGrp.add(createRoundedToyMesh(1.6, 1.4, 6.8, MAT.fountainStone, -7.2, -0.35, 0, 0.08));
+  bridgeGrp.add(createRoundedToyMesh(1.6, 1.4, 6.8, MAT.fountainStone, 7.2, -0.35, 0, 0.08));
+
+  // 좌·우 대형 빨간 강철 아치 트러스 + 수직 행어 케이블 + 상부 X-브레이싱
+  for (const bz of [-3.05, 3.05]) {
+    bridgeGrp.add(createRoundedToyMesh(bridgeLen, 0.42, 0.26, MAT.bridgeSteelRed, 0, 0.56, bz, 0.05));
+    const segs = 12;
+    for (let s = 0; s < segs; s++) {
+      const t0 = s / segs;
+      const t1 = (s + 1) / segs;
+      const x0 = THREE.MathUtils.lerp(-8.8, 8.8, t0);
+      const x1 = THREE.MathUtils.lerp(-8.8, 8.8, t1);
+      const y0 = 0.6 + Math.sin(t0 * Math.PI) * 5.2;
+      const y1 = 0.6 + Math.sin(t1 * Math.PI) * 5.2;
+      const cx = (x0 + x1) * 0.5;
+      const cy = (y0 + y1) * 0.5;
+      const slen = Math.hypot(x1 - x0, y1 - y0) + 0.18;
+      const rib = createRoundedToyMesh(slen, 0.34, 0.32, MAT.bridgeSteelRed, cx, cy, bz, 0.05, false, false, false);
+      rib.rotation.z = Math.atan2(y1 - y0, x1 - x0);
+      bridgeGrp.add(rib);
+
+      if (s > 0 && s < segs) {
+        const cableH = y0 - 0.55;
+        const cable = new THREE.Mesh(GEO.cyl, MAT.silver);
+        cable.scale.set(0.08, cableH, 0.08);
+        cable.position.set(x0, 0.55 + cableH * 0.5, bz);
+        bridgeGrp.add(cable);
+      }
+    }
+  }
+  for (const bx of [-4.4, 0, 4.4]) {
+    const hY = 0.6 + Math.sin(((bx + 8.8) / 17.6) * Math.PI) * 5.2;
+    bridgeGrp.add(createRoundedToyMesh(0.32, 0.26, 6.2, MAT.bridgeSteelRed, bx, hY - 0.1, 0, 0.04));
+    const lampOrb = new THREE.Mesh(GEO.sphere, MAT.neonYellow);
+    lampOrb.scale.setScalar(0.38);
+    lampOrb.position.set(bx, hY - 0.35, 0);
+    bridgeGrp.add(lampOrb);
+  }
+  islandRootGroup.add(bridgeGrp);
+
+  // 5) 전망대 휴게소 데크 & 벤치 & 푸드트럭/커피트럭 배치
+  const restDeck = createRoundedToyMesh(13.5, 0.24, 5.4, makeClayMat(0xFFFFFF, { map: TEX.floor2, roughness: 0.6 }), -16.8, 0.14, 53.2, 0.1);
+  islandRootGroup.add(restDeck);
+  const foodTruck = createScenicTruck3D(false);
+  foodTruck.position.set(-14.2, 0.26, 53.8);
+  islandRootGroup.add(foodTruck);
+  const coffeeTruck = createScenicTruck3D(true);
+  coffeeTruck.position.set(-19.4, 0.26, 53.6);
+  coffeeTruck.rotation.y = 0.18;
+  islandRootGroup.add(coffeeTruck);
+
+  const ovBench = createParkBench3D(Math.PI);
+  ovBench.position.set(-16.8, 0.26, 51.2);
+  islandRootGroup.add(ovBench);
+
+  // 6) 해안 야자수 & 벚꽃 가로수길 식재
+  const palmSpots = [
+    [27.2, 34.5, 1.05], [27.8, 41.5, 1.12], [26.2, 48.2, 1.0],
+    [15.8, 53.8, 0.98], [-9.2, 53.8, 1.04], [-22.8, 52.0, 1.08]
+  ];
+  for (const [px, pz, sc] of palmSpots) {
+    const pm = createPalmTree3D(sc);
+    pm.position.set(px, 0.16, pz);
+    islandRootGroup.add(pm);
+  }
+  const sakuraSpots = [
+    [-27.5, 44.5, 1.08], [-26.8, 37.8, 1.02], [-24.5, 32.8, 0.96], [14.2, 36.2, 0.95]
+  ];
+  for (const [sx, sz, sc] of sakuraSpots) {
+    const sk = createBoulevardTree3D(sc, true);
+    sk.position.set(sx, 0.16, sz);
+    islandRootGroup.add(sk);
+  }
+
+  // 7) 도로 위 황금 부스트 코인 라인 12개 배치 + 해안 다리/전망대 구경꾼 NPC (1인칭 드라이브 시 생생한 말풍선 출력!)
+  const coinSpots = [
+    [20.8, 33.0], [23.2, 38.5], [22.6, 44.2], [16.8, 48.8],
+    [10.2, 50.2], [5.6, 50.2], [1.0, 50.2], [-3.6, 50.2],
+    [-11.2, 49.2], [-16.8, 48.2], [-22.2, 43.2], [-20.8, 35.0]
+  ];
+  for (const [cx, cz] of coinSpots) {
+    const cMesh = new THREE.Mesh(GEO.coin, MAT.pureGold24k);
+    cMesh.scale.setScalar(1.45);
+    cMesh.position.set(cx, 0.88, cz);
+    islandRootGroup.add(cMesh);
+    scenicBoostCoins.push({ mesh: cMesh, x: cx, z: cz, cooldown: 0 });
+  }
+
+  const sightseerSpots = [
+    { x: 9.2, z: 47.4, role: 'streamer', quote: '우와!! 빨간 아치 대교 위를 달리는 갓물주님 슈퍼카 대박 멋져요!!' },
+    { x: -1.8, z: 47.4, role: 'newlywed', quote: '바다 바람 맞으며 드라이브하시는 모습 완전 영화 같아요~!!' },
+    { x: -14.2, z: 51.6, role: 'barista', quote: '오션뷰 커피트럭 앞까지 행차하셨네요!! 안전 운전하세요!!' },
+    { x: -19.2, z: 51.4, role: 'musician', quote: '해안 도로 배기음 소리 예술이다~ 갓물주님 최고!!' }
+  ];
+  sightseerSpots.forEach((sp, idx) => {
+    const npc = createChibiPerson3D(sp.role, idx + 3);
+    npc.position.set(sp.x, 0.26, sp.z);
+    npc.lookAt(sp.x, 0.26, 50.2);
+    islandRootGroup.add(npc);
+    streetInteractiveProps.push({ kind: 'scenicSightseer', id: `scenic_${idx}`, mesh: npc, x: sp.x, z: sp.z, quote: sp.quote });
+  });
+}
+
+// =========================================================
+// 6. 팝마트 · 동물의 숲 아트토이 2.5~3등신 치비 캐릭터 (12종 얼굴 PNG · 15종 의상 PNG · 12종 3D 헤어)
+// =========================================================
+let chibiVariantCounter = 0;
+
+function addVolumetricArtToyHair3D(parent, styleName, hairMat, role) {
+  // 기본 후두부 풍성한 헤어 볼륨 돔 (대머리 0% 원천 보장!)
+  const backCap = new THREE.Mesh(new THREE.SphereGeometry(0.415, 22, 18, 0, Math.PI * 2, 0, Math.PI * 0.64), hairMat);
+  backCap.position.set(0, 1.24, -0.03);
+  backCap.rotation.x = -0.22;
+  addToonHullOutline(backCap, 1.05);
+  parent.add(backCap);
+
+  // 앞머리(Bangs) 볼륨 레이어 (얼굴 눈썹 위쪽 y = 1.41, z = 0.28)
+  for (let b = -2; b <= 2; b++) {
+    const bang = new THREE.Mesh(GEO.sphere, hairMat);
+    bang.scale.set(0.2, 0.16, 0.16);
+    bang.position.set(b * 0.095, 1.41 - Math.abs(b) * 0.018, 0.29 - Math.abs(b) * 0.035);
+    parent.add(bang);
+  }
+  // 양옆 귀 옆 애교머리(Sidelocks)
+  for (const sx of [-0.36, 0.36]) {
+    const sideLock = new THREE.Mesh(GEO.sphere, hairMat);
+    sideLock.scale.set(0.16, 0.34, 0.22);
+    sideLock.position.set(sx, 1.18, 0.06);
+    parent.add(sideLock);
+  }
+
+  if (styleName === 'double_buns') {
+    for (const bx of [-0.32, 0.32]) {
+      const bun = new THREE.Mesh(GEO.sphere, hairMat);
+      bun.scale.setScalar(0.34);
+      bun.position.set(bx, 1.56, -0.04);
+      addToonHullOutline(bun, 1.06);
+      const scrunchie = new THREE.Mesh(GEO.torus, MAT.coral);
+      scrunchie.scale.setScalar(0.32);
+      scrunchie.rotation.x = Math.PI * 0.35;
+      scrunchie.position.set(bx * 0.85, 1.47, -0.03);
+      parent.add(bun, scrunchie);
+    }
+  } else if (styleName === 'braided_pigtails') {
+    for (const side of [-1, 1]) {
+      for (let k = 0; k < 4; k++) {
+        const knot = new THREE.Mesh(GEO.sphere, hairMat);
+        knot.scale.setScalar(0.21 - k * 0.02);
+        knot.position.set(side * (0.39 + k * 0.03), 1.16 - k * 0.13, -0.05);
+        parent.add(knot);
+      }
+      const tie = new THREE.Mesh(GEO.sphere, MAT.duckYellow);
+      tie.scale.setScalar(0.13);
+      tie.position.set(side * 0.38, 1.24, 0.02);
+      parent.add(tie);
+    }
+  } else if (styleName === 'bob_bangs') {
+    const bobBack = new THREE.Mesh(new THREE.CylinderGeometry(0.41, 0.45, 0.36, 20, 1, true, Math.PI * 0.35, Math.PI * 1.3), hairMat);
+    bobBack.rotation.y = Math.PI;
+    bobBack.position.set(0, 1.12, -0.02);
+    parent.add(bobBack);
+    const clip = createRoundedToyMesh(0.16, 0.06, 0.06, MAT.neonYellow, -0.26, 1.36, 0.28, 0.02);
+    clip.rotation.z = 0.25;
+    parent.add(clip);
+  } else if (styleName === 'wavy_perm') {
+    for (let a = 0; a < 7; a++) {
+      const ang = Math.PI * 0.62 + (a / 6) * Math.PI * 0.76;
+      const curl = new THREE.Mesh(GEO.sphere, hairMat);
+      curl.scale.set(0.28, 0.42, 0.28);
+      curl.position.set(Math.sin(ang) * 0.36, 1.02, Math.cos(ang) * 0.36);
+      parent.add(curl);
+    }
+  } else if (styleName === 'high_ponytail') {
+    const tie = new THREE.Mesh(GEO.torus, MAT.mint);
+    tie.scale.setScalar(0.28);
+    tie.position.set(0, 1.54, -0.24);
+    const tail = new THREE.Mesh(GEO.sphere, hairMat);
+    tail.scale.set(0.32, 0.52, 0.34);
+    tail.position.set(0, 1.44, -0.42);
+    tail.rotation.x = 0.45;
+    parent.add(tie, tail);
+  } else if (styleName === 'fluffy_curl') {
+    for (let c = 0; c < 8; c++) {
+      const ang = (c / 8) * Math.PI * 2;
+      const puff = new THREE.Mesh(GEO.sphere, hairMat);
+      puff.scale.setScalar(0.28);
+      puff.position.set(Math.cos(ang) * 0.28, 1.46 + (c % 2) * 0.06, Math.sin(ang) * 0.26 - 0.03);
+      parent.add(puff);
+    }
+  } else if (styleName === 'cat_headset') {
+    const band = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.045, 10, 24, Math.PI), MAT.pinkSoft);
+    band.position.set(0, 1.24, 0);
+    parent.add(band);
+    for (const sx of [-0.42, 0.42]) {
+      const cup = new THREE.Mesh(GEO.cyl, MAT.screenPink);
+      cup.scale.set(0.24, 0.1, 0.24);
+      cup.rotation.z = Math.PI / 2;
+      cup.position.set(sx, 1.2, 0.02);
+      const ear = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.24, 8), MAT.pinkSoft);
+      ear.position.set(sx * 0.58, 1.62, 0.02);
+      ear.rotation.z = sx < 0 ? 0.25 : -0.25;
+      parent.add(cup, ear);
+    }
+  } else {
+    // parted_perm 기본 가르마 볼륨펌
+    const waveL = new THREE.Mesh(GEO.sphere, hairMat);
+    waveL.scale.set(0.38, 0.24, 0.34);
+    waveL.position.set(-0.14, 1.48, 0.08);
+    const waveR = new THREE.Mesh(GEO.sphere, hairMat);
+    waveR.scale.set(0.36, 0.22, 0.34);
+    waveR.position.set(0.16, 1.46, 0.06);
+    parent.add(waveL, waveR);
+  }
+
+  // 직업군 전용 시그니처 모자 & 소품 (풍성한 머리카락 위에 착용!)
+  if (role === 'baker') {
+    const band = new THREE.Mesh(GEO.cyl, MAT.white);
+    band.scale.set(0.58, 0.22, 0.58);
+    band.position.y = 1.56;
+    const puff = new THREE.Mesh(GEO.sphere, MAT.white);
+    puff.scale.set(0.72, 0.48, 0.72);
+    puff.position.y = 1.8;
+    addToonHullOutline(puff, 1.05);
+    parent.add(band, puff);
+  } else if (role === 'barista') {
+    const beret = new THREE.Mesh(GEO.sphere, MAT.walnutTrim);
+    beret.scale.set(0.72, 0.25, 0.72);
+    beret.position.set(0.06, 1.56, -0.02);
+    beret.rotation.z = -0.15;
+    parent.add(beret);
+  } else if (role === 'florist') {
+    const brim = new THREE.Mesh(GEO.cyl, MAT.butter);
+    brim.scale.set(0.98, 0.06, 0.98);
+    brim.position.y = 1.52;
+    const crown = new THREE.Mesh(GEO.cyl, MAT.butter);
+    crown.scale.set(0.56, 0.22, 0.56);
+    crown.position.y = 1.63;
+    const ribbon = new THREE.Mesh(GEO.cyl, MAT.coral);
+    ribbon.scale.set(0.58, 0.06, 0.58);
+    ribbon.position.y = 1.55;
+    parent.add(brim, crown, ribbon);
+  } else if (role === 'mart_clerk' || role === 'wash_clerk' || role === 'manager') {
+    const capCol = role === 'mart_clerk' ? MAT.mint : role === 'wash_clerk' ? MAT.sky : MAT.roofRoyalNavy;
+    const capDome = new THREE.Mesh(new THREE.SphereGeometry(0.36, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.5), capCol);
+    capDome.position.set(0, 1.44, 0);
+    const visor = createRoundedToyMesh(0.48, 0.05, 0.28, capCol, 0, 1.45, 0.32, 0.02);
+    parent.add(capDome, visor);
+  } else if (role === 'landlord_driver' || role === 'landlord') {
+    const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.31, 0.25, 0.26, 7), MAT.pureGold24k);
+    crown.position.y = 1.64;
+    const shades = createRoundedToyMesh(0.54, 0.14, 0.09, MAT.carbonFiber, 0, 1.24, 0.39, 0.03);
+    const bridge = createRoundedToyMesh(0.58, 0.03, 0.04, MAT.pureGold24k, 0, 1.29, 0.41, 0.01);
+    parent.add(crown, shades, bridge);
+  }
+}
+
+function createChibiPerson3D(role = 'student', customShirtHex = null, variantOverride = null) {
+  const grp = new THREE.Group();
+  const vIdx = typeof variantOverride === 'number' ? variantOverride : (chibiVariantCounter++);
+  const presets = window.CHARACTER_STYLE_PRESETS || [];
+  const preset = presets[vIdx % Math.max(1, presets.length)] || { face: 1, outfit: 1, hair: 'bob_bangs', hairHex: 0x4A342E };
 
   const shadow = new THREE.Mesh(GEO.quad, MAT.shadow);
   shadow.rotation.x = -Math.PI / 2;
-  shadow.scale.set(0.86, 0.86, 1);
+  shadow.scale.set(0.94, 0.94, 1);
   shadow.position.y = 0.02;
   grp.add(shadow);
+
+  // 전체 타운 뷰 말풍선 대체용 부드러운 발광 파동 오라 링 (Foot Aura Glow)
+  const auraMat = new THREE.MeshBasicMaterial({
+    color: 0xFFD93D,
+    transparent: true,
+    opacity: 0.0,
+    side: THREE.DoubleSide,
+    depthWrite: false
+  });
+  const auraRing = new THREE.Mesh(new THREE.RingGeometry(0.46, 0.68, 28), auraMat);
+  auraRing.rotation.x = -Math.PI / 2;
+  auraRing.position.y = 0.045;
+  grp.add(auraRing);
+  characterAuraRings.push({ ring: auraRing, mat: auraMat, owner: grp });
 
   const bodyRig = new THREE.Group();
   grp.add(bodyRig);
 
-  const palette = {
-    student: 0x4EA8DE,
-    newlywed: 0xFF758F,
-    family4: 0x34D399,
-    elderly: 0xF6BD60,
-    streamer: 0xA855F7,
-    hikikomori: 0x5B21B6,
-    manager: 0x2563EB,
-    baker: 0xFFFDF9,
-    barista: 0x6F4528,
-    florist: 0xF28482,
-    landlord_driver: 0xE11D48
-  };
-  const shirtMat = makeClayMat(customShirtHex || palette[role] || 0x4EA8DE, { roughness: 0.46 });
-  const skinMat = makeClayMat(0xFFE2D1, { roughness: 0.5 });
-  const hairMat = makeClayMat(role === 'elderly' ? 0xE5E7EB : role === 'florist' ? 0x9A582C : 0x43342E, { roughness: 0.52 });
+  // 직업군별 전용 의상/얼굴 매핑
+  let outfitNum = preset.outfit;
+  let faceNum = preset.face;
+  let hairStyle = preset.hair;
+  let hairColor = preset.hairHex;
 
-  // 양발
-  const legL = new THREE.Mesh(GEO.cyl, MAT.charcoal);
-  legL.scale.set(0.16, 0.34, 0.16);
-  legL.position.set(-0.14, 0.17, 0);
-  const legR = legL.clone();
-  legR.position.set(0.14, 0.17, 0);
+  if (role === 'mart_clerk') { outfitNum = 9; hairStyle = 'parted_perm'; faceNum = 2; }
+  else if (role === 'baker') { outfitNum = 10; hairStyle = 'bob_bangs'; faceNum = 1; }
+  else if (role === 'barista') { outfitNum = 11; hairStyle = 'parted_perm'; faceNum = 4; }
+  else if (role === 'florist') { outfitNum = 12; hairStyle = 'wavy_perm'; faceNum = 8; hairColor = 0x8D5524; }
+  else if (role === 'manager') { outfitNum = 13; hairStyle = 'parted_perm'; faceNum = 6; }
+  else if (role === 'landlord_driver' || role === 'landlord') { outfitNum = 14; hairStyle = 'parted_perm'; faceNum = 12; hairColor = 0x2B1F1C; }
+  else if (role === 'wash_clerk') { outfitNum = 15; hairStyle = 'double_buns'; faceNum = 3; }
+  else if (role === 'elderly') { outfitNum = 7; hairStyle = 'fluffy_curl'; faceNum = 7; hairColor = 0xE5E7EB; }
+  else if (role === 'streamer') { outfitNum = 6; hairStyle = 'cat_headset'; faceNum = 5; hairColor = 0xC084FC; }
+
+  const outfitTex = REAL_TEX.outfits[(outfitNum - 1) % Math.max(1, REAL_TEX.outfits.length)] || null;
+  const faceTex = REAL_TEX.faces[(faceNum - 1) % Math.max(1, REAL_TEX.faces.length)] || null;
+
+  const outfitMat = outfitTex
+    ? new THREE.MeshStandardMaterial({ map: outfitTex, roughness: 0.46 })
+    : makeClayMat(customShirtHex || 0x4EA8DE, { roughness: 0.46 });
+  const sleeveMat = makeClayMat(customShirtHex || 0xFFF6EC, { roughness: 0.46 });
+  const skinMat = makeClayMat(0xFFE4D4, { roughness: 0.44 });
+  const faceMat = faceTex
+    ? new THREE.MeshStandardMaterial({ map: faceTex, roughness: 0.36 })
+    : skinMat;
+  const hairMat = makeClayMat(hairColor, { roughness: 0.48 });
+
+  // 귀여운 아트토이 다리 & 둥근 스니커즈 신발
+  const makeLegWithShoe = (lx) => {
+    const lg = new THREE.Group();
+    const pant = new THREE.Mesh(GEO.cyl, MAT.charcoal);
+    pant.scale.set(0.17, 0.32, 0.17);
+    pant.position.y = -0.14;
+    const shoe = createRoundedToyMesh(0.2, 0.12, 0.28, MAT.white, 0, -0.29, 0.04, 0.05);
+    lg.add(pant, shoe);
+    lg.position.set(lx, 0.35, 0);
+    return lg;
+  };
+  const legL = makeLegWithShoe(-0.15);
+  const legR = makeLegWithShoe(0.15);
   bodyRig.add(legL, legR);
 
-  // 통통한 몸통
-  const torso = new THREE.Mesh(getPuffyDomeGeo(0.36, 0.62), shirtMat);
-  torso.position.y = 0.58;
+  // 통통한 팝마트 비율 상체 몸통 (CylinderGeometry u=0.5 정면 매핑: rotation.y = Math.PI)
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.35, 0.56, 24), outfitMat);
+  torso.rotation.y = Math.PI;
+  torso.position.y = 0.62;
   torso.castShadow = true;
-  addToonHullOutline(torso, 1.07);
+  addToonHullOutline(torso, 1.06);
   bodyRig.add(torso);
 
-  // 직원 앞치마 디테일
-  if (role === 'baker' || role === 'barista' || role === 'florist') {
-    const apronMat = role === 'baker' ? MAT.coral : role === 'barista' ? MAT.parasolGreen : MAT.cream;
-    const apron = createRoundedToyMesh(0.46, 0.42, 0.12, apronMat, 0, 0.52, 0.28, 0.04);
-    bodyRig.add(apron);
-  }
-
-  // 양팔
-  const armL = new THREE.Mesh(GEO.cyl, shirtMat);
-  armL.scale.set(0.14, 0.38, 0.14);
-  armL.position.set(-0.38, 0.62, 0);
-  armL.rotation.z = 0.28;
-  const armR = armL.clone();
-  armR.position.set(0.38, 0.62, 0);
-  armR.rotation.z = -0.28;
+  // 양팔 + 동글동글 귀여운 손
+  const makeArm = (ax, rotZ) => {
+    const ag = new THREE.Group();
+    const slv = new THREE.Mesh(GEO.cyl, sleeveMat);
+    slv.scale.set(0.15, 0.34, 0.15);
+    slv.position.y = -0.12;
+    const hand = new THREE.Mesh(GEO.sphere, skinMat);
+    hand.scale.setScalar(0.15);
+    hand.position.y = -0.3;
+    ag.add(slv, hand);
+    ag.position.set(ax, 0.78, 0);
+    ag.rotation.z = rotZ;
+    return ag;
+  };
+  const armL = makeArm(-0.36, 0.28);
+  const armR = makeArm(0.36, -0.28);
   bodyRig.add(armL, armR);
 
-  // 머리 + 눈 + 볼터치
-  const head = new THREE.Mesh(GEO.sphere, skinMat);
-  head.scale.setScalar(0.68);
-  head.position.y = 1.16;
+  // 2.5등신 귀염뽀짝 아트토이 대형 헤드 (SphereGeometry u=0.5 정면 +Z 매핑: rotation.y = -Math.PI * 0.5)
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.39, 28, 22), faceMat);
+  head.rotation.y = -Math.PI * 0.5;
+  head.scale.set(1.04, 0.97, 1.0);
+  head.position.y = 1.24;
   head.castShadow = true;
-  addToonHullOutline(head, 1.06);
+  addToonHullOutline(head, 1.05);
   bodyRig.add(head);
 
-  const hairCap = new THREE.Mesh(getPuffyDomeGeo(0.36, 0.34), hairMat);
-  hairCap.position.set(0, 1.31, -0.03);
-  bodyRig.add(hairCap);
-
-  const eyeL = new THREE.Mesh(GEO.sphere, MAT.charcoal);
-  eyeL.scale.setScalar(0.085);
-  eyeL.position.set(-0.12, 1.17, 0.31);
-  const eyeR = eyeL.clone();
-  eyeR.position.set(0.12, 1.17, 0.31);
-  const cheekL = new THREE.Mesh(GEO.sphere, MAT.pinkSoft);
-  cheekL.scale.set(0.1, 0.06, 0.05);
-  cheekL.position.set(-0.2, 1.11, 0.3);
-  const cheekR = cheekL.clone();
-  cheekR.position.set(0.2, 1.11, 0.3);
-  bodyRig.add(eyeL, eyeR, cheekL, cheekR);
-
-  // 직업별 모자/헤드기어
-  if (role === 'baker') {
-    // 제빵사 하얀 조리모(Toque)
-    const band = new THREE.Mesh(GEO.cyl, MAT.white);
-    band.scale.set(0.56, 0.22, 0.56);
-    band.position.y = 1.48;
-    const puff = new THREE.Mesh(GEO.sphere, MAT.white);
-    puff.scale.set(0.68, 0.48, 0.68);
-    puff.position.y = 1.72;
-    addToonHullOutline(puff, 1.06);
-    bodyRig.add(band, puff);
-  } else if (role === 'barista') {
-    const beret = new THREE.Mesh(GEO.sphere, MAT.walnutTrim);
-    beret.scale.set(0.66, 0.24, 0.66);
-    beret.position.set(0.05, 1.48, 0);
-    bodyRig.add(beret);
-  } else if (role === 'florist') {
-    const brim = new THREE.Mesh(GEO.cyl, MAT.butter);
-    brim.scale.set(0.92, 0.06, 0.92);
-    brim.position.y = 1.44;
-    const crown = new THREE.Mesh(GEO.cyl, MAT.butter);
-    crown.scale.set(0.54, 0.22, 0.54);
-    crown.position.y = 1.54;
-    bodyRig.add(brim, crown);
-  } else if (role === 'manager') {
-    const cap = new THREE.Mesh(GEO.cyl, MAT.sky);
-    cap.scale.set(0.6, 0.2, 0.6);
-    cap.position.y = 1.46;
-    bodyRig.add(cap);
-  } else if (role === 'streamer') {
-    const earL = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.22, 8), MAT.pinkSoft);
-    earL.position.set(-0.2, 1.54, 0);
-    const earR = earL.clone();
-    earR.position.set(0.2, 1.54, 0);
-    bodyRig.add(earL, earR);
-  } else if (role === 'landlord_driver') {
-    // 건물주 황금 왕관 + 선글라스
-    const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.24, 0.24, 6), MAT.gold);
-    crown.position.y = 1.56;
-    const shades = createRoundedToyMesh(0.48, 0.12, 0.08, MAT.charcoal, 0, 1.19, 0.33, 0.03);
-    bodyRig.add(crown, shades);
+  // 양쪽 귀여운 아트토이 귀
+  for (const ex of [-0.39, 0.39]) {
+    const ear = new THREE.Mesh(GEO.sphere, skinMat);
+    ear.scale.set(0.11, 0.15, 0.09);
+    ear.position.set(ex, 1.22, 0);
+    bodyRig.add(ear);
   }
 
-  // 손에 드는 갈색 크래프트 종이봉투 + 노릇한 바게트 슬롯 (기본 숨김)
+  // 풍성한 3D 입체 헤어 & 직업 모자 장착 (대머리 0%!)
+  addVolumetricArtToyHair3D(bodyRig, hairStyle, hairMat, role);
+
+  // 손에 드는 갈색 크래프트 종이봉투 + 실사 바게트 슬롯
   const carryBag = new THREE.Group();
   const bagBox = createRoundedToyMesh(0.32, 0.42, 0.24, MAT.paperBag, 0, 0.2, 0, 0.04);
-  const baguette1 = new THREE.Mesh(GEO.cyl, MAT.butterOak);
-  baguette1.scale.set(0.11, 0.46, 0.11);
+  const baguette1 = new THREE.Mesh(GEO.cyl, MAT.realBaguette || MAT.butterOak);
+  baguette1.scale.set(0.12, 0.48, 0.12);
   baguette1.rotation.z = 0.22;
   baguette1.position.set(-0.05, 0.46, 0);
-  const baguette2 = new THREE.Mesh(GEO.cyl, MAT.gold);
-  baguette2.scale.set(0.1, 0.4, 0.1);
+  const baguette2 = new THREE.Mesh(GEO.cyl, MAT.realCroissant || MAT.gold);
+  baguette2.scale.set(0.12, 0.4, 0.12);
   baguette2.rotation.z = -0.18;
   baguette2.position.set(0.06, 0.43, 0.02);
   carryBag.add(bagBox, baguette1, baguette2);
-  carryBag.position.set(0.44, 0.38, 0.16);
+  carryBag.position.set(0.44, 0.42, 0.16);
   carryBag.visible = false;
   bodyRig.add(carryBag);
 
-  grp.userData = { bodyRig, legL, legR, armL, armR, carryBag };
+  grp.userData = { bodyRig, legL, legR, armL, armR, carryBag, auraMat, auraTimer: 0 };
   return grp;
 }
 
@@ -2795,37 +3539,56 @@ function createCutePet3D(kind = 'corgi') {
   const bodyMat = kind === 'cat' ? MAT.white : MAT.butterOak;
   const body = createRoundedToyMesh(0.38, 0.28, 0.56, bodyMat, 0, 0.22, 0, 0.09);
   const head = new THREE.Mesh(GEO.sphere, bodyMat);
-  head.scale.setScalar(0.36);
-  head.position.set(0, 0.38, 0.26);
+  head.scale.setScalar(0.38);
+  head.position.set(0, 0.39, 0.26);
   addToonHullOutline(head, 1.07);
-  const earL = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.16, 6), kind === 'cat' ? MAT.pinkSoft : MAT.woodWarm);
-  earL.position.set(-0.1, 0.55, 0.26);
+  const earL = new THREE.Mesh(new THREE.ConeGeometry(0.085, 0.17, 6), kind === 'cat' ? MAT.pinkSoft : MAT.woodWarm);
+  earL.position.set(-0.1, 0.56, 0.26);
   const earR = earL.clone();
-  earR.position.set(0.1, 0.55, 0.26);
-  grp.add(body, head, earL, earR);
+  earR.position.set(0.1, 0.56, 0.26);
+  const tail = new THREE.Mesh(GEO.sphere, MAT.white);
+  tail.scale.setScalar(0.16);
+  tail.position.set(0, 0.3, -0.3);
+  grp.add(body, head, earL, earR, tail);
   return grp;
 }
 
-// 4종 차량 3D 메쉬 생성 (스쿠터 · 빈티지 세단 · 페라리 레드 오픈 슈퍼카 · 골드 롱바디 리무진)
-function createVehicle3D(carId = 'car_scooter') {
+// =========================================================
+// 6B. 고디테일 다중 파츠(20~28+ 파츠) 4종 차량 3D 모델링 (유광 클리어코트 & 버킷시트 & 5스포크 휠)
+// =========================================================
+function createVehicle3D(carId = 'car_scooter', includeDriver = true) {
   const grp = new THREE.Group();
   const wheels = [];
 
-  const makeWheel = (wx, wy, wz, radius = 0.42, goldRim = false) => {
+  const makeAlloyWheel = (wx, wy, wz, radius = 0.42, goldRim = false, redCaliper = false) => {
     const wGrp = new THREE.Group();
-    const tire = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 0.26, 20), MAT.charcoal);
+    const tire = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 0.28, 24), MAT.carbonFiber);
     tire.rotation.z = Math.PI / 2;
     tire.castShadow = true;
-    const rim = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.58, radius * 0.58, 0.28, 14), goldRim ? MAT.gold : MAT.silver);
-    rim.rotation.z = Math.PI / 2;
-    wGrp.add(tire, rim);
+    const rimMat = goldRim ? MAT.pureGold24k : MAT.chromeAlloy;
+    const rimOuter = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.68, radius * 0.68, 0.29, 20), rimMat);
+    rimOuter.rotation.z = Math.PI / 2;
+    wGrp.add(tire, rimOuter);
+
+    // 5-스포크 입체 휠 스타 & 허브캡
+    for (let sp = 0; sp < 5; sp++) {
+      const ang = (sp / 5) * Math.PI * 2;
+      const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.3, radius * 0.62, 0.06), rimMat);
+      spoke.position.set(0, Math.cos(ang) * radius * 0.3, Math.sin(ang) * radius * 0.3);
+      spoke.rotation.x = -ang;
+      wGrp.add(spoke);
+    }
+    if (redCaliper) {
+      const cal = new THREE.Mesh(new THREE.BoxGeometry(0.29, radius * 0.35, radius * 0.24), MAT.carClearRed);
+      cal.position.set(0, radius * 0.25, -radius * 0.22);
+      wGrp.add(cal);
+    }
     wGrp.position.set(wx, wy, wz);
     grp.add(wGrp);
     wheels.push(wGrp);
     return wGrp;
   };
 
-  // 바닥 그림자
   const shadow = new THREE.Mesh(GEO.quad, MAT.shadow);
   shadow.rotation.x = -Math.PI / 2;
   shadow.position.y = 0.02;
@@ -2834,138 +3597,293 @@ function createVehicle3D(carId = 'car_scooter') {
   let driverRef = null;
   let roofRef = null;
 
-  // 차량 진행 방향은 로컬 +Z
   if (carId === 'car_scooter') {
-    shadow.scale.set(1.6, 2.6, 1);
-    makeWheel(0, 0.34, 0.78, 0.32, false);
-    makeWheel(0, 0.34, -0.76, 0.32, false);
+    shadow.scale.set(1.7, 2.8, 1);
+    makeAlloyWheel(0, 0.34, 0.82, 0.33, false, false);
+    makeAlloyWheel(0, 0.34, -0.78, 0.33, false, false);
 
-    // 민트 베스파 바디
-    grp.add(createRoundedToyMesh(0.72, 0.36, 1.55, MAT.mint, 0, 0.46, -0.05, 0.14));
-    const frontShield = createRoundedToyMesh(0.76, 0.92, 0.2, MAT.mint, 0, 0.84, 0.62, 0.1);
-    frontShield.rotation.x = -0.18;
-    grp.add(frontShield);
-    grp.add(createRoundedToyMesh(0.62, 0.08, 0.14, MAT.silver, 0, 1.32, 0.54, 0.03));
+    // 민트 유광 클리어코트 베스파 18+ 파츠 조립
+    grp.add(createRoundedToyMesh(0.74, 0.16, 1.48, MAT.carClearMint, 0, 0.38, -0.02, 0.07)); // 플로어보드
+    grp.add(createRoundedToyMesh(0.84, 0.48, 0.92, MAT.carClearMint, 0, 0.62, -0.52, 0.18)); // 리어 엔진 카울
+    grp.add(createRoundedToyMesh(0.58, 0.28, 0.48, MAT.carClearMint, 0, 0.56, 0.82, 0.12));  // 프론트 휀더
+    const legShield = createRoundedToyMesh(0.82, 0.98, 0.18, MAT.carClearMint, 0, 0.88, 0.6, 0.1);
+    legShield.rotation.x = -0.2;
+    grp.add(legShield);
+    grp.add(createRoundedToyMesh(0.32, 0.48, 0.14, MAT.chromeAlloy, 0, 0.82, 0.71, 0.04)); // 프론트 혼 그릴
+    // 크롬 핸들바 + 그립 + 원형 백미러 2개 + 계기판
+    grp.add(createRoundedToyMesh(0.76, 0.08, 0.12, MAT.chromeAlloy, 0, 1.36, 0.5, 0.03));
+    grp.add(createRoundedToyMesh(0.18, 0.09, 0.09, MAT.charcoal, -0.4, 1.36, 0.5, 0.02));
+    grp.add(createRoundedToyMesh(0.18, 0.09, 0.09, MAT.charcoal, 0.4, 1.36, 0.5, 0.02));
+    for (const mx of [-0.36, 0.36]) {
+      const stem = new THREE.Mesh(GEO.cyl, MAT.chromeAlloy);
+      stem.scale.set(0.04, 0.26, 0.04);
+      stem.position.set(mx, 1.5, 0.52);
+      const mir = new THREE.Mesh(GEO.cyl, MAT.chromeAlloy);
+      mir.scale.set(0.18, 0.04, 0.18);
+      mir.rotation.x = Math.PI / 2;
+      mir.position.set(mx * 1.12, 1.62, 0.52);
+      grp.add(stem, mir);
+    }
+    const headBezel = new THREE.Mesh(GEO.torus, MAT.chromeAlloy);
+    headBezel.scale.setScalar(0.36);
+    headBezel.position.set(0, 1.35, 0.63);
     const headLamp = new THREE.Mesh(GEO.sphere, MAT.neonYellow);
     headLamp.scale.setScalar(0.24);
-    headLamp.position.set(0, 1.32, 0.66);
-    grp.add(headLamp);
-    grp.add(createRoundedToyMesh(0.56, 0.2, 0.76, MAT.leatherCamel, 0, 0.72, -0.26, 0.08));
+    headLamp.position.set(0, 1.35, 0.64);
+    grp.add(headBezel, headLamp);
+    // 퀼팅 카멜 가죽 시트 + 리어 크롬 랙 & 가죽 탑박스 + 배기 머플러
+    grp.add(createRoundedToyMesh(0.58, 0.22, 0.82, MAT.leatherCamel, 0, 0.88, -0.34, 0.09));
+    grp.add(createRoundedToyMesh(0.52, 0.34, 0.42, MAT.leatherCamel, 0, 1.06, -0.98, 0.08));
+    grp.add(createRoundedToyMesh(0.54, 0.05, 0.44, MAT.pureGold24k, 0, 1.08, -0.98, 0.02));
+    const exhaust = new THREE.Mesh(GEO.cyl, MAT.chromeAlloy);
+    exhaust.scale.set(0.12, 0.55, 0.12);
+    exhaust.rotation.x = Math.PI / 2;
+    exhaust.position.set(0.36, 0.36, -0.75);
+    grp.add(exhaust);
 
-    const driver = createChibiPerson3D('landlord_driver');
-    driver.scale.setScalar(0.92);
-    driver.position.set(0, 0.54, -0.22);
-    grp.add(driver);
-    driverRef = driver;
-  } else if (carId === 'car_sedan') {
-    shadow.scale.set(2.5, 4.4, 1);
-    makeWheel(-0.98, 0.4, 1.18, 0.4, false);
-    makeWheel(0.98, 0.4, 1.18, 0.4, false);
-    makeWheel(-0.98, 0.4, -1.18, 0.4, false);
-    makeWheel(0.98, 0.4, -1.18, 0.4, false);
-
-    const bodyMat = makeClayMat(0x7C4728, { roughness: 0.32, metalness: 0.15 });
-    grp.add(createRoundedToyMesh(2.05, 0.68, 3.85, bodyMat, 0, 0.66, 0, 0.18));
-    roofRef = createRoundedToyMesh(1.78, 0.66, 2.05, MAT.cream, 0, 1.28, -0.15, 0.2);
-    roofRef.visible = !driveState.roofOpen;
-    grp.add(roofRef);
-    grp.add(createRoundedToyMesh(1.82, 0.46, 0.14, MAT.partitionGlass, 0, 1.12, 0.78, 0.05, false, false, false));
-    // 크롬 그릴 & 원형 헤드라이트
-    grp.add(createRoundedToyMesh(1.1, 0.36, 0.12, MAT.silver, 0, 0.64, 1.94, 0.04));
-    for (const lx of [-0.68, 0.68]) {
-      const hl = new THREE.Mesh(GEO.sphere, MAT.neonYellow);
-      hl.scale.setScalar(0.26);
-      hl.position.set(lx, 0.72, 1.94);
-      grp.add(hl);
+    if (includeDriver) {
+      const driver = createChibiPerson3D('landlord_driver');
+      driver.scale.setScalar(0.9);
+      driver.position.set(0, 0.62, -0.24);
+      grp.add(driver);
+      driverRef = driver;
     }
-    const sedanDriver = createChibiPerson3D('landlord_driver');
-    sedanDriver.scale.setScalar(0.84);
-    sedanDriver.position.set(-0.34, 0.56, -0.16);
-    grp.add(sedanDriver);
-    driverRef = sedanDriver;
-  } else if (carId === 'car_supercar') {
-    // 페라리 레드 오픈 컨버터블 슈퍼카
-    shadow.scale.set(2.8, 4.9, 1);
-    makeWheel(-1.12, 0.4, 1.32, 0.42, true);
-    makeWheel(1.12, 0.4, 1.32, 0.42, true);
-    makeWheel(-1.12, 0.42, -1.32, 0.44, true);
-    makeWheel(1.12, 0.42, -1.32, 0.44, true);
+  } else if (carId === 'car_sedan') {
+    shadow.scale.set(2.6, 4.6, 1);
+    makeAlloyWheel(-1.02, 0.41, 1.24, 0.41, false, false);
+    makeAlloyWheel(1.02, 0.41, 1.24, 0.41, false, false);
+    makeAlloyWheel(-1.02, 0.41, -1.24, 0.41, false, false);
+    makeAlloyWheel(1.02, 0.41, -1.24, 0.41, false, false);
 
-    // 낮고 와이드한 에어로 레드 차체
-    grp.add(createRoundedToyMesh(2.26, 0.56, 4.35, MAT.supercarRed, 0, 0.56, 0, 0.16));
-    // 전면 보닛 & 중앙 레이싱 골드 스트라이프
-    const hood = createRoundedToyMesh(2.08, 0.22, 1.55, MAT.supercarRed, 0, 0.84, 1.18, 0.1);
-    hood.rotation.x = 0.12;
-    grp.add(hood);
-    grp.add(createRoundedToyMesh(0.28, 0.06, 4.25, MAT.gold, 0, 0.86, 0, 0.02));
+    // 클래식 브론즈 유광 클리어코트 세단 24+ 파츠
+    grp.add(createRoundedToyMesh(2.08, 0.56, 4.1, MAT.carClearBronze, 0, 0.62, 0, 0.16)); // 메인 차체
+    grp.add(createRoundedToyMesh(1.82, 0.26, 1.42, MAT.carClearBronze, 0, 0.92, 1.18, 0.1)); // 조각 보닛
+    grp.add(createRoundedToyMesh(1.78, 0.22, 1.05, MAT.carClearBronze, 0, 0.9, -1.42, 0.09)); // 리어 트렁크
+    // 플레어 휀더 아치 4개 & 사이드 크롬 몰딩
+    for (const fx of [-1.02, 1.02]) {
+      grp.add(createRoundedToyMesh(0.28, 0.28, 0.98, MAT.carClearBronze, fx, 0.62, 1.24, 0.1));
+      grp.add(createRoundedToyMesh(0.28, 0.28, 0.98, MAT.carClearBronze, fx, 0.62, -1.24, 0.1));
+      grp.add(createRoundedToyMesh(0.08, 0.08, 3.65, MAT.chromeAlloy, fx * 1.02, 0.56, 0, 0.02));
+    }
+    // 크롬 프론트·리어 범퍼 & 세로 슬랫 클래식 라디에이터 그릴
+    grp.add(createRoundedToyMesh(2.16, 0.18, 0.22, MAT.chromeAlloy, 0, 0.44, 2.08, 0.06));
+    grp.add(createRoundedToyMesh(2.16, 0.18, 0.22, MAT.chromeAlloy, 0, 0.44, -2.08, 0.06));
+    grp.add(createRoundedToyMesh(0.96, 0.48, 0.12, MAT.chromeAlloy, 0, 0.72, 2.06, 0.05));
+    // 앞유리 프레임 & 버킷 시트 2개 & 핸들 & 개폐식 크림 루프
+    const ws = createRoundedToyMesh(1.78, 0.58, 0.1, MAT.partitionGlass, 0, 1.18, 0.52, 0.04, false, false, false);
+    ws.rotation.x = -0.35;
+    grp.add(ws);
+    for (const sx of [-0.44, 0.44]) {
+      grp.add(createRoundedToyMesh(0.62, 0.52, 0.24, MAT.leatherCamel, sx, 0.98, -0.35, 0.06));
+      grp.add(createRoundedToyMesh(0.62, 0.16, 0.56, MAT.leatherCamel, sx, 0.76, -0.15, 0.05));
+    }
+    const sWheel = new THREE.Mesh(GEO.torus, MAT.charcoal);
+    sWheel.scale.setScalar(0.42);
+    sWheel.rotation.x = -0.45;
+    sWheel.position.set(-0.44, 1.04, 0.22);
+    grp.add(sWheel);
 
-    // 경사진 스포츠 윈드실드 + 개폐 가능한 소프트탑 루프
-    const windshield = createRoundedToyMesh(1.92, 0.56, 0.12, MAT.partitionGlass, 0, 1.06, 0.48, 0.05, false, false, false);
-    windshield.rotation.x = -0.52;
-    grp.add(windshield);
-
-    roofRef = createRoundedToyMesh(1.88, 0.42, 1.65, MAT.charcoal, 0, 1.28, -0.28, 0.14);
+    roofRef = createRoundedToyMesh(1.78, 0.56, 1.85, MAT.carClearCream, 0, 1.34, -0.26, 0.16);
     roofRef.visible = !driveState.roofOpen;
     grp.add(roofRef);
 
-    // 오픈카 실내 카멜 가죽 시트 & 황금 왕관 건물주 오너 탑승!
-    grp.add(createRoundedToyMesh(1.62, 0.46, 0.32, MAT.leatherCamel, 0, 0.92, -0.56, 0.08));
-    const ownerDriver = createChibiPerson3D('landlord_driver');
-    ownerDriver.scale.setScalar(0.88);
-    ownerDriver.position.set(-0.36, 0.56, -0.22);
-    grp.add(ownerDriver);
-    driverRef = ownerDriver;
+    for (const lx of [-0.72, 0.72]) {
+      const hl = new THREE.Mesh(GEO.sphere, MAT.neonYellow);
+      hl.scale.setScalar(0.28);
+      hl.position.set(lx, 0.76, 2.06);
+      const tl = createRoundedToyMesh(0.36, 0.18, 0.1, MAT.neonCoral, lx, 0.74, -2.06, 0.04);
+      const mir = createRoundedToyMesh(0.18, 0.12, 0.14, MAT.chromeAlloy, lx * 1.48, 1.02, 0.44, 0.03);
+      grp.add(hl, tl, mir);
+    }
 
-    // 리어 에어로 윙 스포일러 & 듀얼 머플러 & 테일램프
-    grp.add(createRoundedToyMesh(0.14, 0.36, 0.22, MAT.charcoal, -0.78, 0.98, -1.92, 0.03));
-    grp.add(createRoundedToyMesh(0.14, 0.36, 0.22, MAT.charcoal, 0.78, 0.98, -1.92, 0.03));
-    grp.add(createRoundedToyMesh(2.28, 0.1, 0.44, MAT.supercarRed, 0, 1.18, -1.96, 0.04));
+    if (includeDriver) {
+      const sedanDriver = createChibiPerson3D('landlord_driver');
+      sedanDriver.scale.setScalar(0.84);
+      sedanDriver.position.set(-0.44, 0.58, -0.16);
+      grp.add(sedanDriver);
+      driverRef = sedanDriver;
+    }
+  } else if (carId === 'car_supercar') {
+    // 이탈리안 페라리 레드 유광 클리어코트 오픈 슈퍼카 (28+ 세부 파츠!)
+    shadow.scale.set(2.9, 5.1, 1);
+    makeAlloyWheel(-1.14, 0.41, 1.36, 0.42, true, true);
+    makeAlloyWheel(1.14, 0.41, 1.36, 0.42, true, true);
+    makeAlloyWheel(-1.14, 0.43, -1.36, 0.45, true, true);
+    makeAlloyWheel(1.14, 0.43, -1.36, 0.45, true, true);
 
-    for (const lx of [-0.78, 0.78]) {
-      const hl = createRoundedToyMesh(0.42, 0.14, 0.12, MAT.neonYellow, lx, 0.66, 2.18, 0.04);
-      const tl = createRoundedToyMesh(0.48, 0.14, 0.1, MAT.neonCoral, lx, 0.72, -2.18, 0.04);
+    // 카본 프론트 스플리터 & 사이드 스커트 & 리어 디퓨저
+    grp.add(createRoundedToyMesh(2.34, 0.1, 4.56, MAT.carbonFiber, 0, 0.28, 0, 0.04));
+    // 로우 와이드 레드 메인 바디 + 조각 보닛 + 좌우 에어로 휀더 + 측면 에어 인테이크
+    grp.add(createRoundedToyMesh(2.28, 0.48, 4.42, MAT.carClearRed, 0, 0.56, 0, 0.15));
+    const hood = createRoundedToyMesh(1.96, 0.22, 1.58, MAT.carClearRed, 0, 0.82, 1.24, 0.1);
+    hood.rotation.x = 0.14;
+    grp.add(hood);
+    grp.add(createRoundedToyMesh(0.86, 0.07, 0.48, MAT.carbonFiber, 0, 0.89, 1.35, 0.02)); // 보닛 에어벤트
+    grp.add(createRoundedToyMesh(0.24, 0.04, 4.35, MAT.pureGold24k, 0, 0.87, 0, 0.01));  // 골드 레이싱 스트라이프
+    grp.add(createRoundedToyMesh(1.38, 0.22, 0.14, MAT.carbonFiber, 0, 0.44, 2.22, 0.04)); // 프론트 메쉬 그릴
+
+    for (const sx of [-1.14, 1.14]) {
+      grp.add(createRoundedToyMesh(0.26, 0.34, 1.05, MAT.carClearRed, sx, 0.66, 1.32, 0.1));
+      grp.add(createRoundedToyMesh(0.28, 0.38, 1.15, MAT.carClearRed, sx, 0.7, -1.32, 0.1));
+      grp.add(createRoundedToyMesh(0.14, 0.26, 0.68, MAT.carbonFiber, sx * 0.98, 0.62, -0.48, 0.03)); // 측면 에어덕트
+      grp.add(createRoundedToyMesh(0.24, 0.12, 0.18, MAT.carClearRed, sx * 1.04, 0.98, 0.52, 0.04)); // 에어로 사이드미러
+    }
+
+    // 경사진 스포츠 윈드실드 + A필러 + 개폐식 소프트탑
+    const windshield = createRoundedToyMesh(1.92, 0.58, 0.1, MAT.partitionGlass, 0, 1.06, 0.56, 0.04, false, false, false);
+    windshield.rotation.x = -0.56;
+    grp.add(windshield);
+    for (const px of [-0.94, 0.94]) {
+      const pillar = createRoundedToyMesh(0.09, 0.62, 0.09, MAT.carbonFiber, px, 1.06, 0.56, 0.02);
+      pillar.rotation.x = -0.56;
+      grp.add(pillar);
+    }
+
+    roofRef = createRoundedToyMesh(1.88, 0.38, 1.62, MAT.carbonFiber, 0, 1.28, -0.25, 0.12);
+    roofRef.visible = !driveState.roofOpen;
+    grp.add(roofRef);
+
+    // 실내 스포츠 버킷 시트 2개 + 롤후프 2개 + 센터콘솔 + 레이싱 스티어링 휠
+    grp.add(createRoundedToyMesh(0.32, 0.28, 1.1, MAT.carbonFiber, 0, 0.72, -0.1, 0.05));
+    for (const bx of [-0.52, 0.52]) {
+      grp.add(createRoundedToyMesh(0.58, 0.58, 0.22, MAT.leatherCamel, bx, 0.95, -0.58, 0.07));
+      grp.add(createRoundedToyMesh(0.34, 0.24, 0.18, MAT.carClearRed, bx, 1.28, -0.6, 0.05));
+      grp.add(createRoundedToyMesh(0.58, 0.15, 0.56, MAT.leatherCamel, bx, 0.7, -0.26, 0.05));
+      const hoop = new THREE.Mesh(GEO.torus, MAT.chromeAlloy);
+      hoop.scale.setScalar(0.42);
+      hoop.position.set(bx, 1.26, -0.74);
+      grp.add(hoop);
+    }
+    const raceWheel = new THREE.Mesh(GEO.torus, MAT.carbonFiber);
+    raceWheel.scale.setScalar(0.38);
+    raceWheel.rotation.x = -0.35;
+    raceWheel.position.set(-0.52, 0.98, 0.18);
+    grp.add(raceWheel);
+
+    if (includeDriver) {
+      const ownerDriver = createChibiPerson3D('landlord_driver');
+      ownerDriver.scale.setScalar(0.86);
+      ownerDriver.position.set(-0.52, 0.56, -0.22);
+      grp.add(ownerDriver);
+      driverRef = ownerDriver;
+    }
+
+    // 리어 엔진 데크 루버 + 카본 GT 리어 윙 스포일러 + 쿼드 황금 머플러 + 날카로운 LED 램프
+    for (let lv = 0; lv < 3; lv++) {
+      grp.add(createRoundedToyMesh(1.15, 0.05, 0.18, MAT.carbonFiber, 0, 0.92, -1.15 - lv * 0.26, 0.02));
+    }
+    grp.add(createRoundedToyMesh(0.12, 0.42, 0.26, MAT.carbonFiber, -0.78, 1.04, -1.96, 0.03));
+    grp.add(createRoundedToyMesh(0.12, 0.42, 0.26, MAT.carbonFiber, 0.78, 1.04, -1.96, 0.03));
+    grp.add(createRoundedToyMesh(2.36, 0.1, 0.48, MAT.carClearRed, 0, 1.26, -2.02, 0.04));
+
+    for (const lx of [-0.8, 0.8]) {
+      const hl = createRoundedToyMesh(0.46, 0.13, 0.16, MAT.neonYellow, lx, 0.68, 2.2, 0.04);
+      hl.rotation.y = lx < 0 ? 0.2 : -0.2;
+      const tl = createRoundedToyMesh(0.52, 0.14, 0.1, MAT.neonCoral, lx, 0.76, -2.22, 0.04);
       grp.add(hl, tl);
     }
-    for (const ex of [-0.46, 0.46]) {
-      const pipe = new THREE.Mesh(GEO.cyl, MAT.gold);
-      pipe.scale.set(0.16, 0.24, 0.16);
+    for (const ex of [-0.62, -0.38, 0.38, 0.62]) {
+      const pipe = new THREE.Mesh(GEO.cyl, MAT.pureGold24k);
+      pipe.scale.set(0.14, 0.26, 0.14);
       pipe.rotation.x = Math.PI / 2;
-      pipe.position.set(ex, 0.38, -2.22);
+      pipe.position.set(ex, 0.38, -2.26);
       grp.add(pipe);
     }
   } else {
-    // 골드 크라운 롱바디 리무진 (car_limo)
-    shadow.scale.set(2.9, 6.4, 1);
-    makeWheel(-1.12, 0.42, 2.05, 0.42, true);
-    makeWheel(1.12, 0.42, 2.05, 0.42, true);
-    makeWheel(-1.12, 0.42, 0.0, 0.42, true);
-    makeWheel(1.12, 0.42, 0.0, 0.42, true);
-    makeWheel(-1.12, 0.42, -2.05, 0.42, true);
-    makeWheel(1.12, 0.42, -2.05, 0.42, true);
+    // 24K 골드 크라운 6륜 롱바디 리무진 (26+ 파츠)
+    shadow.scale.set(3.0, 6.5, 1);
+    for (const wz of [2.05, 0.0, -2.05]) {
+      makeAlloyWheel(-1.14, 0.43, wz, 0.43, true, false);
+      makeAlloyWheel(1.14, 0.43, wz, 0.43, true, false);
+    }
 
-    grp.add(createRoundedToyMesh(2.26, 0.68, 5.85, MAT.limoCream, 0, 0.68, 0, 0.16));
-    grp.add(createRoundedToyMesh(2.3, 0.12, 5.88, MAT.gold, 0, 0.56, 0, 0.04));
-    roofRef = createRoundedToyMesh(1.96, 0.68, 3.85, MAT.limoCream, 0, 1.3, -0.28, 0.18);
+    grp.add(createRoundedToyMesh(2.28, 0.68, 5.92, MAT.carClearCream, 0, 0.68, 0, 0.16));
+    grp.add(createRoundedToyMesh(2.34, 0.12, 5.96, MAT.pureGold24k, 0, 0.56, 0, 0.04)); // 24K 코치라인
+    grp.add(createRoundedToyMesh(1.92, 0.24, 1.35, MAT.carClearCream, 0, 0.98, 2.15, 0.08));
+    // 판테온 크롬&골드 프론트 그릴 + 보닛 24K 왕관 오너먼트
+    grp.add(createRoundedToyMesh(1.08, 0.58, 0.14, MAT.pureGold24k, 0, 0.76, 2.96, 0.04));
+    grp.add(createRoundedToyMesh(2.32, 0.2, 0.22, MAT.chromeAlloy, 0, 0.42, 2.98, 0.05));
+    grp.add(createRoundedToyMesh(2.32, 0.2, 0.22, MAT.chromeAlloy, 0, 0.42, -2.98, 0.05));
+    const hoodCrown = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.16, 0.26, 6), MAT.pureGold24k);
+    hoodCrown.position.set(0, 1.18, 2.68);
+    grp.add(hoodCrown);
+
+    const limoWs = createRoundedToyMesh(1.98, 0.56, 0.12, MAT.partitionGlass, 0, 1.18, 1.52, 0.04, false, false, false);
+    limoWs.rotation.x = -0.34;
+    grp.add(limoWs);
+
+    // 실내 VIP 라운지 소파 시트 & 운전석 버킷시트
+    grp.add(createRoundedToyMesh(1.72, 0.48, 0.52, MAT.leatherCamel, 0, 0.92, -1.65, 0.08));
+    grp.add(createRoundedToyMesh(0.58, 0.48, 1.55, MAT.leatherCamel, 0.62, 0.92, -0.45, 0.08));
+    grp.add(createRoundedToyMesh(0.58, 0.52, 0.24, MAT.leatherCamel, -0.48, 0.96, 0.85, 0.06));
+
+    roofRef = createRoundedToyMesh(1.98, 0.66, 3.85, MAT.carClearCream, 0, 1.34, -0.32, 0.16);
     roofRef.visible = !driveState.roofOpen;
     grp.add(roofRef);
-    grp.add(createRoundedToyMesh(1.96, 0.52, 0.14, MAT.partitionGlass, 0, 1.15, 1.62, 0.05, false, false, false));
-    // 보닛 위 황금 왕관 엠블럼
-    const hoodCrown = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.16, 0.24, 6), MAT.gold);
-    hoodCrown.position.set(0, 1.14, 2.55);
-    grp.add(hoodCrown);
-    const limoDriver = createChibiPerson3D('landlord_driver');
-    limoDriver.scale.setScalar(0.84);
-    limoDriver.position.set(-0.38, 0.58, 0.95);
-    grp.add(limoDriver);
-    driverRef = limoDriver;
-    for (const lx of [-0.76, 0.76]) {
-      grp.add(createRoundedToyMesh(0.42, 0.18, 0.12, MAT.neonYellow, lx, 0.72, 2.92, 0.04));
-      grp.add(createRoundedToyMesh(0.46, 0.16, 0.1, MAT.neonCoral, lx, 0.72, -2.92, 0.04));
+
+    if (includeDriver) {
+      const limoDriver = createChibiPerson3D('landlord_driver');
+      limoDriver.scale.setScalar(0.84);
+      limoDriver.position.set(-0.48, 0.58, 0.96);
+      grp.add(limoDriver);
+      driverRef = limoDriver;
+    }
+    for (const lx of [-0.78, 0.78]) {
+      grp.add(createRoundedToyMesh(0.42, 0.2, 0.12, MAT.neonYellow, lx, 0.76, 2.96, 0.04));
+      grp.add(createRoundedToyMesh(0.46, 0.18, 0.1, MAT.neonCoral, lx, 0.76, -2.96, 0.04));
     }
   }
 
   if (driverRef) driverRef.visible = !driveState.cockpitView;
   grp.userData = { wheels, driverRef, roofRef };
+  return grp;
+}
+
+// =========================================================
+// 6C. 초고해상도 실사 음식 · 과자 봉지 · 도시락 · 음료 캔 3D 에셋 생성기
+// =========================================================
+function createPhotorealSnackBag3D(snackKey = 'chips', scale = 1.0) {
+  const grp = new THREE.Group();
+  const mat = MAT.snackMats?.[snackKey] || MAT.gold;
+  // 가운데가 통통하게 부푼 알루미늄 과자 봉지 본체 + 상하단 압착 크림프 실링 엣지
+  const pouch = new THREE.Mesh(new THREE.BoxGeometry(0.28 * scale, 0.36 * scale, 0.11 * scale), mat);
+  pouch.position.y = 0.19 * scale;
+  const topSeal = new THREE.Mesh(new THREE.BoxGeometry(0.3 * scale, 0.035 * scale, 0.025 * scale), MAT.chromeAlloy);
+  topSeal.position.y = 0.38 * scale;
+  const botSeal = topSeal.clone();
+  botSeal.position.y = 0.015 * scale;
+  grp.add(pouch, topSeal, botSeal);
+  return grp;
+}
+
+function createPhotorealBeverageCan3D(canKey = 'cola', scale = 1.0) {
+  const grp = new THREE.Group();
+  const mat = MAT.snackMats?.[canKey] || MAT.carClearRed;
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.095 * scale, 0.095 * scale, 0.28 * scale, 18), mat);
+  body.position.y = 0.14 * scale;
+  const topRim = new THREE.Mesh(new THREE.CylinderGeometry(0.092 * scale, 0.096 * scale, 0.022 * scale, 18), MAT.chromeAlloy);
+  topRim.position.y = 0.285 * scale;
+  grp.add(body, topRim);
+  return grp;
+}
+
+function createPhotorealBentoBox3D(scale = 1.0) {
+  const grp = new THREE.Group();
+  grp.add(createRoundedToyMesh(0.52 * scale, 0.09 * scale, 0.4 * scale, MAT.carbonFiber, 0, 0.045 * scale, 0, 0.03));
+  const foodPlane = new THREE.Mesh(new THREE.BoxGeometry(0.46 * scale, 0.03 * scale, 0.34 * scale), MAT.realBento || MAT.gold);
+  foodPlane.position.y = 0.095 * scale;
+  const clearLid = new THREE.Mesh(new THREE.BoxGeometry(0.5 * scale, 0.055 * scale, 0.38 * scale), MAT.bentoClearLid);
+  clearLid.position.y = 0.125 * scale;
+  grp.add(foodPlane, clearLid);
+  return grp;
+}
+
+function createPhotorealKimbap3D(scale = 1.0) {
+  const grp = new THREE.Group();
+  const tri = new THREE.Mesh(new THREE.CylinderGeometry(0.14 * scale, 0.14 * scale, 0.08 * scale, 3), MAT.snackMats?.kimbap || MAT.charcoal);
+  tri.rotation.x = Math.PI / 2;
+  tri.position.y = 0.12 * scale;
+  grp.add(tri);
   return grp;
 }
 
@@ -3036,46 +3954,49 @@ function rebuildStandaloneShop3D(shopId) {
       ? makeClayMat(0xFFFFFF, { map: TEX.brickCream, roughness: 0.6 })
       : makeClayMat(0xFFFFFF, { map: TEX.brickMint, roughness: 0.6 });
 
-  // 뒷벽 + 좌·우측 벽 (클로즈업 포커스 시 좌우/지붕을 반투명·컷어웨이로 열어 내부 100% 관찰!)
-  const wallH = isFocused ? h * 0.72 : h;
-  grp.add(createRoundedToyMesh(w, wallH, 0.28, wallMat, 0, 0.22 + wallH * 0.5, -d * 0.5 + 0.14, 0.08));
-  grp.add(createRoundedToyMesh(0.28, wallH * (isFocused ? 0.55 : 1), d, wallMat, -w * 0.5 + 0.14, 0.22 + wallH * (isFocused ? 0.275 : 0.5), 0, 0.08));
-  grp.add(createRoundedToyMesh(0.28, wallH * (isFocused ? 0.55 : 1), d, wallMat, w * 0.5 - 0.14, 0.22 + wallH * (isFocused ? 0.275 : 0.5), 0, 0.08));
+  // 뒷벽 + 낮은 오픈형 좌·우측 벽 + 매장 안쪽 밝은 백색 포인트 조명 (기본 뷰부터 내부 100% 투시!)
+  const wallH = isFocused ? h * 0.65 : h * 0.92;
+  grp.add(createRoundedToyMesh(w, wallH, 0.26, wallMat, 0, 0.22 + wallH * 0.5, -d * 0.5 + 0.14, 0.08));
+  grp.add(createRoundedToyMesh(0.26, wallH * (isFocused ? 0.38 : 0.72), d, wallMat, -w * 0.5 + 0.14, 0.22 + wallH * (isFocused ? 0.19 : 0.36), 0, 0.08));
+  grp.add(createRoundedToyMesh(0.26, wallH * (isFocused ? 0.38 : 0.72), d, wallMat, w * 0.5 - 0.14, 0.22 + wallH * (isFocused ? 0.19 : 0.36), 0, 0.08));
 
-  // 전면 쇼윈도 필러 + 대형 투명 쇼윈도 유리 + 출입문 프레임
-  grp.add(createRoundedToyMesh(0.45, wallH, 0.32, MAT.walnutTrim, -w * 0.5 + 0.24, 0.22 + wallH * 0.5, d * 0.5 - 0.14, 0.06));
-  grp.add(createRoundedToyMesh(0.45, wallH, 0.32, MAT.walnutTrim, w * 0.5 - 0.24, 0.22 + wallH * 0.5, d * 0.5 - 0.14, 0.06));
-  grp.add(createRoundedToyMesh(0.32, wallH * 0.76, 0.3, MAT.walnutTrim, 1.55, 0.22 + wallH * 0.38, d * 0.5 - 0.14, 0.05));
+  const shopLight = new THREE.PointLight(0xFFFBF2, 1.55, 14);
+  shopLight.position.set(0, 3.2, 0.3);
+  grp.add(shopLight);
+
+  // 슬림 코너 프레임 + 초투명(opacity: 0.09) 통유리 오픈 파사드
+  grp.add(createRoundedToyMesh(0.32, wallH, 0.28, MAT.walnutTrim, -w * 0.5 + 0.18, 0.22 + wallH * 0.5, d * 0.5 - 0.12, 0.05));
+  grp.add(createRoundedToyMesh(0.32, wallH, 0.28, MAT.walnutTrim, w * 0.5 - 0.18, 0.22 + wallH * 0.5, d * 0.5 - 0.12, 0.05));
 
   if (!isFocused) {
-    // 대형 쇼윈도 투명 유리 (안쪽 케이크·에스프레소머신·꽃 선명 노출)
-    const showGlass = new THREE.Mesh(GEO.quad, MAT.clearWindowGlass);
-    showGlass.scale.set(w * 0.62, h * 0.66, 1);
-    showGlass.position.set(-w * 0.14, 0.55 + h * 0.33, d * 0.5 - 0.08);
+    const showGlass = new THREE.Mesh(GEO.quad, MAT.cutawayGlass);
+    showGlass.scale.set(w - 0.7, h * 0.74, 1);
+    showGlass.position.set(0, 0.42 + h * 0.37, d * 0.5 - 0.08);
     grp.add(showGlass);
 
-    // 줄무늬 어닝 & 영문+한글 상가 간판 & 지붕 파라펫
+    // 따뜻한 황금빛 쇼윈도 LED 테두리 발광 (Room/Shop Border Glow)
+    grp.add(createRoundedToyMesh(w - 0.5, 0.09, 0.1, MAT.roomBorderGlow, 0, h * 0.8, d * 0.5 - 0.02, 0.02, false, false, false));
+
     const awning = createScallopedAwning3D(w - 0.4, tpl.awningStyle);
-    awning.position.set(0, h * 0.68, d * 0.5 - 0.05);
+    awning.position.set(0, h * 0.82, d * 0.5 - 0.05);
     grp.add(awning);
 
     const signKind = tpl.kind === 'bakery' ? 'patisserie' : tpl.kind === 'roastery' ? 'roastery' : 'flores';
-    const signboard = createFramedSignboard3D(w * 0.76, 1.15, signKind);
-    signboard.position.set(0, h + 0.25, d * 0.5 + 0.06);
+    const signboard = createFramedSignboard3D(w * 0.76, 1.12, signKind);
+    signboard.position.set(0, h + 0.32, d * 0.5 + 0.06);
     grp.add(signboard);
 
     const roofMat = makeClayMat(tpl.roofColor, { roughness: 0.48 });
-    grp.add(createRoundedToyMesh(w + 0.42, 0.48, d + 0.42, roofMat, 0, h + 0.46, 0, 0.12));
+    grp.add(createRoundedToyMesh(w + 0.42, 0.42, d * 0.55, roofMat, 0, h + 0.44, -d * 0.2, 0.1));
 
-    // 옥상 마스코트 조형물 & 건물주 인수 시 황금 왕관 엠블럼!
     const mascot = create3DStoreMascot(tpl.kind);
     mascot.scale.setScalar(1.35);
-    mascot.position.set(-w * 0.34, h + 0.7, d * 0.22);
+    mascot.position.set(-w * 0.34, h + 0.68, -d * 0.12);
     grp.add(mascot);
 
     if (shopState?.owned) {
-      const ownerCrown = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.38, 0.44, 6), MAT.gold);
-      ownerCrown.position.set(w * 0.34, h + 0.94, d * 0.24);
+      const ownerCrown = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.38, 0.44, 6), MAT.pureGold24k);
+      ownerCrown.position.set(w * 0.34, h + 0.92, -d * 0.12);
       addToonHullOutline(ownerCrown, 1.07);
       grp.add(ownerCrown);
     }
@@ -3102,23 +4023,30 @@ function rebuildStandaloneShop3D(shopId) {
   grp.add(staffMesh);
 
   if (tpl.kind === 'bakery') {
-    // ① 쇼윈도 바로 안쪽 3단 케이크 진열대 (유리창 너머로 선명히 보임!)
-    const standX = -2.35;
-    const standZ = d * 0.5 - 0.92;
-    grp.add(createRoundedToyMesh(1.9, 0.72, 0.86, MAT.woodLight, standX, 0.62, standZ, 0.06));
-    grp.add(createRoundedToyMesh(1.86, 0.85, 0.82, MAT.partitionGlass, standX, 1.38, standZ, 0.05, false, false, false));
-    // 3단 케이크 타워
-    for (let tier = 0; tier < 3; tier++) {
-      const r = 0.42 - tier * 0.09;
-      const cake = new THREE.Mesh(GEO.cyl, tier % 2 === 0 ? MAT.pinkSoft : MAT.cream);
-      cake.scale.set(r * 2, 0.22, r * 2);
-      cake.position.set(standX - 0.38, 1.08 + tier * 0.24, standZ);
-      grp.add(cake);
-    }
-    // 바게트 & 크루아상 트레이
-    for (let bx = 0; bx < 3; bx++) {
-      const loaf = createRoundedToyMesh(0.24, 0.16, 0.52, MAT.butterOak, standX + 0.32 + bx * 0.26, 1.08, standZ, 0.06);
-      grp.add(loaf);
+    // ① 쇼윈도 안쪽 실사 딸기 생크림 홀케이크 & 버터 윤기(clearcoat) 크루아상·바게트 진열 쇼케이스!
+    const standX = -2.25;
+    const standZ = d * 0.5 - 1.05;
+    grp.add(createRoundedToyMesh(2.35, 0.78, 0.96, MAT.woodLight, standX, 0.64, standZ, 0.06));
+    grp.add(createRoundedToyMesh(2.3, 0.82, 0.9, MAT.cutawayGlass, standX, 1.4, standZ, 0.04, false, false, false));
+
+    const realCake1 = create3DGiftPropMesh('item_cake', false);
+    realCake1.scale.setScalar(1.15);
+    realCake1.position.set(standX - 0.58, 1.04, standZ);
+    grp.add(realCake1);
+
+    const realCroissantTray = create3DGiftPropMesh('item_croissant', false);
+    realCroissantTray.scale.setScalar(1.22);
+    realCroissantTray.position.set(standX + 0.48, 1.04, standZ + 0.05);
+    grp.add(realCroissantTray);
+
+    // 노릇노릇한 실사 프랑스 바게트 바구니
+    const bagBasket = createRoundedToyMesh(0.62, 0.46, 0.52, MAT.woodWarm, 2.25, 0.52, -0.35, 0.06);
+    grp.add(bagBasket);
+    for (let bi = -1; bi <= 1; bi++) {
+      const bagMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.08, 0.72, 16), MAT.realBaguette || MAT.butterOak);
+      bagMesh.position.set(2.25 + bi * 0.14, 0.88, -0.35);
+      bagMesh.rotation.z = bi * 0.18;
+      grp.add(bagMesh);
     }
 
     // ② 뒷벽 빨간 화구 제빵 오븐 (업그레이드 시 황금 2단 프리미엄 데크 오븐으로 확장!)
@@ -3211,8 +4139,14 @@ function rebuildStandaloneShop3D(shopId) {
     // 로스팅 드럼 설비
     grp.add(createRoundedToyMesh(1.45, 1.85, 0.95, hasOvenUpg ? MAT.gold : MAT.walnutTrim, -2.55, 1.18, -d * 0.5 + 0.85, 0.1));
 
-    // 실내 창가 바 테이블
+    // 실내 창가 바 테이블 + 실사 아인슈페너 & 라떼 진열
     grp.add(createRoundedToyMesh(2.2, 0.88, 0.65, MAT.woodWarm, -2.2, 0.7, d * 0.5 - 0.85, 0.05));
+    for (const cx of [-2.65, -1.85]) {
+      const cupProp = create3DGiftPropMesh('item_coffee', false);
+      cupProp.scale.setScalar(1.08);
+      cupProp.position.set(cx, 1.15, d * 0.5 - 0.85);
+      grp.add(cupProp);
+    }
     seatSlots.push({
       wx: tpl.x - 2.2,
       wy: 0.48,
@@ -3468,49 +4402,93 @@ function buildResidentialComplex3D(lot) {
 
   structGroup.add(createRoundedToyMesh(W + 1.2, 0.44, D + 1.2, MAT.podiumStone, 0, 0.22, 0, 0.14));
 
-  // ==================== 1층 주상복합 상가 포디움 (높이 4.6) ====================
+  // ==================== 1층 편의점(MINIMI MART) & 코인세탁소(BUBBLE LAUNDRY) 100% 투시 오픈 구조 ====================
   const brickMainMat = lot.devType === 'mixed_2'
     ? makeClayMat(0xFFFFFF, { map: TEX.brickMint, roughness: 0.58 })
     : makeClayMat(0xFFFFFF, { map: TEX.brickWarm, roughness: 0.58 });
 
-  // 1층 본체 블록
-  structGroup.add(createRoundedToyMesh(W, 4.38, D, MAT.cream, 0, 2.62, 0, 0.12));
+  // 불투명 1층 통짜 박스를 완전 제거하고, 뒷벽·양끝벽·로비 격벽만 세워 안쪽 끝까지 100% 투시!
+  const f1H = 4.28;
+  const f1CenterY = 0.44 + f1H * 0.5;
+  structGroup.add(createRoundedToyMesh(W + 0.18, f1H, 0.3, brickMainMat, 0, f1CenterY, -D * 0.5 + 0.12, 0.08));
+  structGroup.add(createRoundedToyMesh(0.32, f1H, D, brickMainMat, -W * 0.5 + 0.12, f1CenterY, 0, 0.08));
+  structGroup.add(createRoundedToyMesh(0.32, f1H, D, brickMainMat, W * 0.5 - 0.12, f1CenterY, 0, 0.08));
+  structGroup.add(createRoundedToyMesh(0.24, f1H, D - 0.3, MAT.cream, -2.15, f1CenterY, -0.05, 0.06));
+  structGroup.add(createRoundedToyMesh(0.24, f1H, D - 0.3, MAT.cream, 2.15, f1CenterY, -0.05, 0.06));
 
-  // 좌측 24H 편의점 쇼윈도 & 간판 & 어닝
-  const martAwning = createScallopedAwning3D(7.8, 'coral');
-  martAwning.position.set(-7.2, 3.65, D * 0.5 + 0.06);
+  // ---------------- 좌측 1층 매장: MINIMI MART (실사 과자 곤돌라 3열 · 블루LED 냉장고 · POS 알바생 · 컵라면 바) ----------------
+  const martGrp = new THREE.Group();
+  martGrp.position.set(-7.15, 0.45, 0);
+  root.add(martGrp);
+  build1FMinimiMartInterior3D(martGrp, lot.lotId);
+
+  const martAwning = createScallopedAwning3D(9.2, 'coral');
+  martAwning.position.set(-7.15, 3.86, D * 0.5 + 0.08);
   structGroup.add(martAwning);
-  const martSign = createFramedSignboard3D(6.6, 0.96, 'mart');
-  martSign.position.set(-7.2, 4.32, D * 0.5 + 0.14);
+  const martSign = createFramedSignboard3D(7.6, 0.92, 'mart');
+  martSign.position.set(-7.15, 4.38, D * 0.5 + 0.18);
   structGroup.add(martSign);
-  const martWindow = createRoundedToyMesh(6.8, 2.3, 0.16, MAT.glass, -7.2, 1.95, D * 0.5 + 0.02, 0.06, false, false, false);
-  structGroup.add(martWindow);
+  // 초투명 통유리(opacity: 0.09) + 영업중 LED 테두리 발광(Room Border Glow)
+  const martGlass = new THREE.Mesh(GEO.quad, MAT.cutawayGlass);
+  martGlass.scale.set(9.4, 3.35, 1);
+  martGlass.position.set(-7.15, 2.15, D * 0.5 + 0.02);
+  structGroup.add(martGlass);
+  structGroup.add(createRoundedToyMesh(9.5, 0.09, 0.1, MAT.roomBorderGlow, -7.15, 3.75, D * 0.5 + 0.05, 0.02, false, false, false));
 
-  // 중앙 아치형 메인 로비 출입문 & 황동 현판
-  structGroup.add(createRoundedToyMesh(3.4, 3.4, 0.36, MAT.walnutTrim, 0, 2.1, D * 0.5 + 0.05, 0.12));
-  structGroup.add(createRoundedToyMesh(2.5, 2.85, 0.24, MAT.glass, 0, 1.86, D * 0.5 + 0.12, 0.08, false, false, false));
+  const martHit = new THREE.Mesh(
+    new THREE.BoxGeometry(9.6, 4.2, D + 0.8),
+    new THREE.MeshBasicMaterial({ visible: false })
+  );
+  martHit.position.set(-7.15, 2.45, 0.1);
+  martHit.userData = { kind: 'firstFloorShop', shopId: 'shop_mart1f', lotId: lot.lotId };
+  root.add(martHit);
+  registerPick(martHit);
+
+  // ---------------- 중앙 아치형 메인 로비 출입문 & 황동 현판 ----------------
+  structGroup.add(createRoundedToyMesh(4.1, 0.12, D - 0.2, makeClayMat(0xFFFFFF, { map: TEX.floor3, roughness: 0.5 }), 0, 0.48, 0, 0.04));
+  structGroup.add(createRoundedToyMesh(0.45, 3.6, 0.36, MAT.walnutTrim, -1.8, 2.24, D * 0.5 + 0.04, 0.08));
+  structGroup.add(createRoundedToyMesh(0.45, 3.6, 0.36, MAT.walnutTrim, 1.8, 2.24, D * 0.5 + 0.04, 0.08));
+  structGroup.add(createRoundedToyMesh(4.1, 0.52, 0.38, MAT.walnutTrim, 0, 3.85, D * 0.5 + 0.04, 0.08));
+  structGroup.add(createRoundedToyMesh(2.9, 3.1, 0.12, MAT.cutawayGlass, 0, 2.02, D * 0.5 + 0.06, 0.04, false, false, false));
 
   const brassMat = new THREE.MeshBasicMaterial({ map: createBrassNameplateTexture(bState.title) });
   const brassPlate = new THREE.Mesh(GEO.quad, brassMat);
-  brassPlate.scale.set(3.2, 0.78, 1);
-  brassPlate.position.set(0, 4.18, D * 0.5 + 0.24);
+  brassPlate.scale.set(3.4, 0.78, 1);
+  brassPlate.position.set(0, 4.28, D * 0.5 + 0.26);
   structGroup.add(brassPlate);
 
-  // 우측 코인세탁소 쇼윈도 & 드럼 세탁기 회전 애니메이션
-  const washAwning = createScallopedAwning3D(7.8, 'sky');
-  washAwning.position.set(7.2, 3.65, D * 0.5 + 0.06);
+  // ---------------- 우측 1층 매장: BUBBLE LAUNDRY (회전 2단 드럼세탁기 6대 · 바퀴 카트 · 세제자판기 · 원목 폴딩테이블) ----------------
+  const washGrp = new THREE.Group();
+  washGrp.position.set(7.15, 0.45, 0);
+  root.add(washGrp);
+  build1FBubbleLaundryInterior3D(washGrp, lot.lotId);
+
+  const washAwning = createScallopedAwning3D(9.2, 'sky');
+  washAwning.position.set(7.15, 3.86, D * 0.5 + 0.08);
   structGroup.add(washAwning);
-  const washSign = createFramedSignboard3D(6.6, 0.96, 'wash');
-  washSign.position.set(7.2, 4.32, D * 0.5 + 0.14);
+  const washSign = createFramedSignboard3D(7.6, 0.92, 'wash');
+  washSign.position.set(7.15, 4.38, D * 0.5 + 0.18);
   structGroup.add(washSign);
-  for (let wi = -1; wi <= 1; wi++) {
-    const wx = 7.2 + wi * 1.85;
-    structGroup.add(createRoundedToyMesh(1.42, 1.75, 0.32, MAT.white, wx, 1.52, D * 0.5 + 0.04, 0.08));
-    const drum = new THREE.Mesh(GEO.torus, MAT.sky);
-    drum.scale.setScalar(0.82);
-    drum.position.set(wx, 1.48, D * 0.5 + 0.22);
-    structGroup.add(drum);
-    spinningWashers.push(drum);
+  const washGlass = new THREE.Mesh(GEO.quad, MAT.cutawayGlass);
+  washGlass.scale.set(9.4, 3.35, 1);
+  washGlass.position.set(7.15, 2.15, D * 0.5 + 0.02);
+  structGroup.add(washGlass);
+  structGroup.add(createRoundedToyMesh(9.5, 0.09, 0.1, MAT.roomBorderGlow, 7.15, 3.75, D * 0.5 + 0.05, 0.02, false, false, false));
+
+  const washHit = new THREE.Mesh(
+    new THREE.BoxGeometry(9.6, 4.2, D + 0.8),
+    new THREE.MeshBasicMaterial({ visible: false })
+  );
+  washHit.position.set(7.15, 2.45, 0.1);
+  washHit.userData = { kind: 'firstFloorShop', shopId: 'shop_wash1f', lotId: lot.lotId };
+  root.add(washHit);
+  registerPick(washHit);
+
+  if (lot.lotId === 'lot_main') {
+    firstFloorShop3D.shop_mart1f = { group: martGrp, lotId: lot.lotId, glassMesh: martGlass, awningMesh: martAwning, signMesh: martSign };
+    firstFloorShop3D.shop_wash1f = { group: washGrp, lotId: lot.lotId, glassMesh: washGlass, awningMesh: washAwning, signMesh: washSign };
+    ensureFirstFloorShopOverlayBadge('shop_mart1f');
+    ensureFirstFloorShopOverlayBadge('shop_wash1f');
   }
 
   // ==================== 2~4층 주거 외벽 (뒷벽 · 좌우 측벽 · 지붕 · 스카이 현판) ====================
@@ -3708,42 +4686,321 @@ function rebuildPublicInfraAndManager3D(lotId) {
   }
 }
 
-// --------------------- 16종 인테리어 가구 & 아치 가벽 & 복층 원목계단 3D ---------------------
+// --------------------- 1층 편의점(MINIMI MART) & 코인세탁소(BUBBLE LAUNDRY) 풀 3D 인테리어 빌더 ---------------------
+function createMartGondolaShelf3D(snackKeys = ['chips', 'shrimp', 'choco', 'ramen']) {
+  const grp = new THREE.Group();
+  grp.add(createRoundedToyMesh(2.05, 1.78, 0.12, MAT.white, 0, 0.9, 0, 0.04));
+  grp.add(createRoundedToyMesh(2.08, 0.1, 0.72, MAT.mint, 0, 1.78, 0, 0.03));
+
+  for (let tier = 0; tier < 3; tier++) {
+    const sy = 0.36 + tier * 0.48;
+    grp.add(createRoundedToyMesh(2.02, 0.06, 0.68, MAT.silver, 0, sy, 0, 0.02));
+    for (const sideZ of [-0.18, 0.18]) {
+      for (let c = -2; c <= 2; c++) {
+        const sk = snackKeys[(Math.abs(c) + tier + (sideZ > 0 ? 1 : 0)) % snackKeys.length];
+        if (tier === 0 && c % 2 === 0) {
+          const bento = createPhotorealBentoBox3D(0.68);
+          bento.position.set(c * 0.37, sy + 0.03, sideZ);
+          grp.add(bento);
+        } else if (sk === 'kimbap') {
+          const kb = createPhotorealKimbap3D(1.1);
+          kb.position.set(c * 0.36, sy + 0.03, sideZ);
+          grp.add(kb);
+        } else {
+          const bag = createPhotorealSnackBag3D(sk, 0.92);
+          bag.rotation.y = sideZ > 0 ? 0 : Math.PI;
+          bag.position.set(c * 0.36, sy + 0.03, sideZ);
+          grp.add(bag);
+        }
+      }
+    }
+  }
+  return grp;
+}
+
+function createMartBlueLedChiller3D() {
+  const grp = new THREE.Group();
+  grp.add(createRoundedToyMesh(1.75, 2.75, 0.78, MAT.silver, 0, 1.38, 0, 0.07));
+  grp.add(createRoundedToyMesh(1.78, 0.22, 0.82, MAT.sky, 0, 2.68, 0, 0.05));
+  // 파란색 LED 백라이트 내벽 (고휘도 아이스 블루 발광)
+  grp.add(createRoundedToyMesh(1.56, 2.34, 0.08, MAT.chillerBlueLed, 0, 1.38, -0.26, 0.03, false, false, false));
+  for (let sh = 0; sh < 4; sh++) {
+    const sy = 0.46 + sh * 0.55;
+    grp.add(createRoundedToyMesh(1.54, 0.05, 0.56, MAT.white, 0, sy, 0.02, 0.01));
+    for (let cx = -2; cx <= 2; cx++) {
+      const can = createPhotorealBeverageCan3D((sh + cx) % 2 === 0 ? 'cola' : 'beer', 1.12);
+      can.position.set(cx * 0.27, sy + 0.03, 0.12);
+      grp.add(can);
+    }
+  }
+  // 투명 강화유리 도어 2짝 + 크롬 손잡이
+  const glassDoor = new THREE.Mesh(new THREE.BoxGeometry(1.58, 2.36, 0.04), MAT.cutawayGlass);
+  glassDoor.position.set(0, 1.38, 0.38);
+  grp.add(glassDoor);
+  grp.add(createRoundedToyMesh(0.05, 0.65, 0.06, MAT.pureGold24k, -0.07, 1.38, 0.42, 0.01));
+  grp.add(createRoundedToyMesh(0.05, 0.65, 0.06, MAT.pureGold24k, 0.07, 1.38, 0.42, 0.01));
+  return grp;
+}
+
+function build1FMinimiMartInterior3D(martGrp, lotId) {
+  clearGroupChildren(martGrp);
+  const fSt = state.firstFloorShops?.shop_mart1f;
+  const hasExtraGondola = !!fSt?.upgrades?.upg_mart_gondola;
+  const hasExtraFridge = !!fSt?.upgrades?.upg_mart_fridge;
+  const hasExtraRamen = !!fSt?.upgrades?.upg_mart_ramenbar;
+
+  // 밝은 편의점 타일 바닥 + 백색 포인트 조명
+  martGrp.add(createRoundedToyMesh(9.5, 0.08, 7.6, MAT.white, 0, 0.04, 0, 0.04));
+  const ptLight = new THREE.PointLight(0xFFFFFF, 1.85, 16);
+  ptLight.position.set(0, 3.45, 0.4);
+  martGrp.add(ptLight);
+
+  // ① 뒷벽 블루 LED 음료·맥주 냉장 쇼케이스 (기본 3베이, 증설 시 4베이 풀벽면!)
+  const chillerXs = hasExtraFridge ? [-3.4, -1.45, 0.5, 2.45] : [-3.1, -1.1, 0.9];
+  for (const cx of chillerXs) {
+    const ch = createMartBlueLedChiller3D();
+    ch.position.set(cx, 0.08, -3.28);
+    martGrp.add(ch);
+  }
+
+  // ② 중앙 실사 과자·라면·도시락 곤돌라 진열 매대 3열!
+  const shelfRows = [
+    { x: -2.65, z: -0.35, keys: ['chips', 'shrimp', 'cheese', 'kimbap'] },
+    { x: -0.25, z: -0.35, keys: ['strawberry', 'choco', 'matcha', 'chips'] },
+    { x: 2.1,   z: -0.35, keys: ['ramen', 'shrimp', 'cola', 'kimbap'] }
+  ];
+  for (const sr of shelfRows) {
+    const sh = createMartGondolaShelf3D(sr.keys);
+    sh.scale.setScalar(hasExtraGondola ? 1.08 : 0.98);
+    sh.rotation.y = Math.PI * 0.5;
+    sh.position.set(sr.x, 0.08, sr.z);
+    martGrp.add(sh);
+  }
+
+  // ③ 입구 우측 POS 계산대 카운터 & 민트 조끼 유니폼 알바생!
+  martGrp.add(createRoundedToyMesh(2.25, 0.98, 0.86, MAT.mint, 3.35, 0.56, 1.35, 0.07));
+  martGrp.add(createRoundedToyMesh(2.35, 0.1, 0.94, MAT.white, 3.35, 1.08, 1.35, 0.03));
+  // 듀얼 스크린 POS기 + 바코드 스캐너 + 삼각김밥/도시락 진열
+  martGrp.add(createRoundedToyMesh(0.44, 0.36, 0.28, MAT.charcoal, 2.85, 1.28, 1.35, 0.04));
+  martGrp.add(createRoundedToyMesh(0.38, 0.24, 0.05, MAT.screenCyan, 2.85, 1.32, 1.5, 0.02));
+  const posBento = createPhotorealBentoBox3D(0.76);
+  posBento.position.set(3.75, 1.13, 1.35);
+  martGrp.add(posBento);
+
+  const clerk = createChibiPerson3D('mart_clerk');
+  clerk.position.set(3.45, 0.08, 0.42);
+  martGrp.add(clerk);
+
+  // ④ 전면 통유리 창가 쪽 컵라면 취식용 바 테이블 + 스툴 의자 3개 + 전자레인지 & 온수기!
+  const barW = hasExtraRamen ? 4.8 : 3.8;
+  martGrp.add(createRoundedToyMesh(barW, 0.1, 0.62, MAT.woodLight, -1.65, 0.96, 3.18, 0.04));
+  martGrp.add(createRoundedToyMesh(0.14, 0.9, 0.52, MAT.ironSteel, -1.65 - barW * 0.44, 0.5, 3.18, 0.03));
+  martGrp.add(createRoundedToyMesh(0.14, 0.9, 0.52, MAT.ironSteel, -1.65 + barW * 0.44, 0.5, 3.18, 0.03));
+  // 전자레인지 & 온수기 디스펜서
+  martGrp.add(createRoundedToyMesh(0.64, 0.4, 0.44, MAT.white, -3.55, 1.21, 3.15, 0.04));
+  martGrp.add(createRoundedToyMesh(0.4, 0.26, 0.05, MAT.screenCyan, -3.62, 1.21, 2.92, 0.02));
+  martGrp.add(createRoundedToyMesh(0.38, 0.54, 0.38, MAT.silver, -2.95, 1.28, 3.15, 0.04));
+
+  // 창가 스툴 의자 & 실사 컵라면 용기
+  for (let si = -1; si <= 1; si++) {
+    const sx = -1.35 + si * 0.92;
+    const stoolTop = new THREE.Mesh(GEO.cyl, MAT.coral);
+    stoolTop.scale.set(0.42, 0.08, 0.42);
+    stoolTop.position.set(sx, 0.64, 2.55);
+    const stoolLeg = new THREE.Mesh(GEO.cyl, MAT.ironSteel);
+    stoolLeg.scale.set(0.08, 0.6, 0.08);
+    stoolLeg.position.set(sx, 0.34, 2.55);
+    const ramenCup = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.11, 0.22, 16), MAT.snackMats?.ramen || MAT.coral);
+    ramenCup.position.set(sx, 1.12, 3.16);
+    martGrp.add(stoolTop, stoolLeg, ramenCup);
+  }
+}
+
+function createStackedDrumWasherPair3D() {
+  const grp = new THREE.Group();
+  // 하단 대용량 드럼세탁기 + 상단 대형 회전 건조기 (2단 스택!)
+  for (let tier = 0; tier < 2; tier++) {
+    const cy = 0.82 + tier * 1.56;
+    const cabMat = tier === 0 ? MAT.white : makeClayMat(0xF0F9FF, { roughness: 0.34 });
+    grp.add(createRoundedToyMesh(1.38, 1.48, 1.05, cabMat, 0, cy, 0, 0.09));
+    // 상단 컨트롤 패널 & LED 다이얼
+    grp.add(createRoundedToyMesh(1.28, 0.22, 0.08, MAT.sky, 0, cy + 0.56, 0.52, 0.03));
+    grp.add(createRoundedToyMesh(0.32, 0.12, 0.09, MAT.screenCyan, -0.32, cy + 0.56, 0.54, 0.02));
+
+    // 원형 크롬 도어 베젤 + 투명 유리창
+    const bezel = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.075, 14, 28), MAT.chromeAlloy);
+    bezel.position.set(0, cy - 0.08, 0.54);
+    const portholeGlass = new THREE.Mesh(new THREE.CircleGeometry(0.39, 24), MAT.cutawayGlass);
+    portholeGlass.position.set(0, cy - 0.08, 0.56);
+    grp.add(bezel, portholeGlass);
+
+    // 원형 유리창 안에서 실제로 빙글빙글 회전(rotation.z)하는 빨랫감 & 비눗방울 클러스터!
+    const spinPivot = new THREE.Group();
+    spinPivot.position.set(0, cy - 0.08, 0.44);
+    const clothCols = [MAT.coral, MAT.sky, MAT.duckYellow, MAT.mint, MAT.pinkSoft];
+    for (let k = 0; k < 5; k++) {
+      const ang = (k / 5) * Math.PI * 2;
+      const cloth = new THREE.Mesh(GEO.sphere, clothCols[k]);
+      cloth.scale.set(0.24, 0.17, 0.16);
+      cloth.position.set(Math.cos(ang) * 0.2, Math.sin(ang) * 0.2, 0);
+      cloth.rotation.z = ang;
+      spinPivot.add(cloth);
+    }
+    for (let b = 0; b < 4; b++) {
+      const ang = (b / 4) * Math.PI * 2 + 0.4;
+      const sud = new THREE.Mesh(GEO.sphere, MAT.white);
+      sud.scale.setScalar(0.11);
+      sud.position.set(Math.cos(ang) * 0.26, Math.sin(ang) * 0.26, 0.05);
+      spinPivot.add(sud);
+    }
+    grp.add(spinPivot);
+    spinningWashers.push(spinPivot);
+  }
+  return grp;
+}
+
+function build1FBubbleLaundryInterior3D(washGrp, lotId) {
+  clearGroupChildren(washGrp);
+  const fSt = state.firstFloorShops?.shop_wash1f;
+  const hasExtraDrum = !!fSt?.upgrades?.upg_wash_drum6;
+  const hasExtraVending = !!fSt?.upgrades?.upg_wash_vending;
+  const hasExtraLounge = !!fSt?.upgrades?.upg_wash_lounge;
+
+  // 따뜻한 우드&민트 바닥 + 밝은 스카이화이트 조명
+  washGrp.add(createRoundedToyMesh(9.5, 0.08, 7.6, makeClayMat(0xFFFFFF, { map: TEX.floor1, roughness: 0.52 }), 0, 0.04, 0, 0.04));
+  const ptLight = new THREE.PointLight(0xF0F9FF, 1.85, 16);
+  ptLight.position.set(0, 3.45, 0.4);
+  washGrp.add(ptLight);
+
+  // ① 뒷벽을 따라 일렬로 배치된 상하 2단 대형 회전 드럼세탁기 & 건조기 3열(= 6대! 증설 시 4열=8대!)
+  const stackXs = hasExtraDrum ? [-3.3, -1.45, 0.4, 2.25] : [-2.85, -0.95, 0.95];
+  for (const wx of stackXs) {
+    const pair = createStackedDrumWasherPair3D();
+    pair.position.set(wx, 0.08, -3.05);
+    washGrp.add(pair);
+  }
+
+  // ② 파란색 스마트 세제 자판기 & 빨간/골드 동전 교환기
+  const vendX = 3.65;
+  washGrp.add(createRoundedToyMesh(1.18, 2.25, 0.78, MAT.sky, vendX, 1.2, -2.55, 0.08));
+  washGrp.add(createRoundedToyMesh(0.88, 0.95, 0.06, MAT.screenCyan, vendX, 1.56, -2.14, 0.03));
+  washGrp.add(createRoundedToyMesh(0.72, 0.24, 0.08, MAT.charcoal, vendX, 0.62, -2.14, 0.02));
+
+  washGrp.add(createRoundedToyMesh(0.86, 1.75, 0.68, hasExtraVending ? MAT.pureGold24k : MAT.butter, vendX, 0.95, -0.95, 0.07));
+  washGrp.add(createRoundedToyMesh(0.56, 0.42, 0.06, MAT.coral, vendX, 1.28, -0.59, 0.02));
+
+  // ③ 매장 중앙 바퀴 달린 빨래 바구니 카트 (Wheeled Laundry Cart) 2대!
+  const cartPositions = hasExtraLounge ? [[-2.35, 0.55], [1.65, 0.65]] : [[-1.85, 0.55]];
+  for (const [cx, cz] of cartPositions) {
+    const cart = new THREE.Group();
+    cart.add(createRoundedToyMesh(0.96, 0.58, 0.68, MAT.chromeAlloy, 0, 0.56, 0, 0.06));
+    // 바구니 속 뽀송뽀송한 수건 더미
+    cart.add(createRoundedToyMesh(0.76, 0.28, 0.5, MAT.pinkSoft, 0, 0.82, 0, 0.07));
+    cart.add(createRoundedToyMesh(0.62, 0.2, 0.42, MAT.white, 0.04, 0.98, 0, 0.06));
+    for (const [wx, wz] of [[-0.36, -0.24], [0.36, -0.24], [-0.36, 0.24], [0.36, 0.24]]) {
+      const caster = new THREE.Mesh(GEO.sphere, MAT.charcoal);
+      caster.scale.setScalar(0.15);
+      caster.position.set(wx, 0.14, wz);
+      cart.add(caster);
+    }
+    cart.position.set(cx, 0.08, cz);
+    washGrp.add(cart);
+  }
+
+  // ④ 빨래 개는 원목 폴딩 테이블 + 개어 놓은 파스텔 빨래 더미
+  washGrp.add(createRoundedToyMesh(2.45, 0.12, 1.05, MAT.woodWarm, 0.15, 0.92, 0.72, 0.05));
+  for (const [lx, lz] of [[-0.96, 0.36], [1.26, 0.36], [-0.96, 1.08], [1.26, 1.08]]) {
+    washGrp.add(createRoundedToyMesh(0.12, 0.84, 0.12, MAT.woodDark, lx, 0.46, lz, 0.02));
+  }
+  // 접힌 옷 스택
+  washGrp.add(createRoundedToyMesh(0.52, 0.12, 0.42, MAT.mintSoft, -0.35, 1.04, 0.72, 0.03));
+  washGrp.add(createRoundedToyMesh(0.5, 0.12, 0.4, MAT.white, -0.35, 1.16, 0.72, 0.03));
+  washGrp.add(createRoundedToyMesh(0.52, 0.12, 0.42, MAT.butter, 0.45, 1.04, 0.72, 0.03));
+
+  // ⑤ 창가 쪽 손님용 원목 대기 벤치 & 매니저/손님 캐릭터!
+  const waitBench = createParkBench3D(Math.PI);
+  waitBench.position.set(-1.55, 0.08, 2.85);
+  washGrp.add(waitBench);
+
+  const washStaff = createChibiPerson3D('wash_clerk');
+  washStaff.position.set(2.15, 0.08, 1.95);
+  washGrp.add(washStaff);
+}
+
+// --------------------- 16종 고디테일 다중 파츠 인테리어 가구 & 방음 패드 타일 3D ---------------------
 function createCatalogBed3D(bedId) {
   const grp = new THREE.Group();
-  if (bedId === 'bed_iron') {
-    grp.add(createRoundedToyMesh(2.1, 0.42, 2.6, MAT.sky, 0, 0.32, 0, 0.08));
-    grp.add(createRoundedToyMesh(2.16, 0.95, 0.14, MAT.ironSteel, 0, 0.56, -1.26, 0.04));
-    grp.add(createRoundedToyMesh(1.92, 0.24, 2.35, MAT.white, 0, 0.58, 0.04, 0.08));
-    grp.add(createRoundedToyMesh(0.95, 0.18, 0.52, MAT.cream, 0, 0.75, -0.86, 0.06));
-  } else if (bedId === 'bed_queen') {
-    grp.add(createRoundedToyMesh(2.55, 0.46, 2.85, MAT.woodWarm, 0, 0.32, 0, 0.1));
-    grp.add(createRoundedToyMesh(2.62, 1.18, 0.18, MAT.woodDark, 0, 0.68, -1.36, 0.06));
-    grp.add(createRoundedToyMesh(2.36, 0.3, 2.58, MAT.mintSoft, 0, 0.62, 0.05, 0.1));
-    grp.add(createRoundedToyMesh(0.92, 0.2, 0.52, MAT.white, -0.56, 0.84, -0.92, 0.06));
-    grp.add(createRoundedToyMesh(0.92, 0.2, 0.52, MAT.white, 0.56, 0.84, -0.92, 0.06));
-  } else if (bedId === 'bed_canopy') {
-    grp.add(createRoundedToyMesh(2.6, 0.48, 2.85, MAT.white, 0, 0.34, 0, 0.1));
-    grp.add(createRoundedToyMesh(2.42, 0.32, 2.62, MAT.pinkSoft, 0, 0.66, 0.04, 0.1));
-    grp.add(createRoundedToyMesh(0.92, 0.22, 0.52, MAT.white, -0.55, 0.88, -0.92, 0.06));
-    grp.add(createRoundedToyMesh(0.92, 0.22, 0.52, MAT.white, 0.55, 0.88, -0.92, 0.06));
-    for (const [px, pz] of [[-1.22, -1.32], [1.22, -1.32], [-1.22, 1.32], [1.22, 1.32]]) {
-      grp.add(createRoundedToyMesh(0.12, 2.45, 0.12, MAT.gold, px, 1.32, pz, 0.03));
+  const addLegs = (w, d, mat) => {
+    for (const [lx, lz] of [[-w * 0.45, -d * 0.45], [w * 0.45, -d * 0.45], [-w * 0.45, d * 0.45], [w * 0.45, d * 0.45]]) {
+      grp.add(createRoundedToyMesh(0.14, 0.24, 0.14, mat, lx, 0.12, lz, 0.03));
     }
-    const laceTop = createRoundedToyMesh(2.68, 0.22, 2.9, MAT.canopyLace, 0, 2.52, 0, 0.08, false, false, false);
+  };
+
+  if (bedId === 'bed_iron') {
+    addLegs(2.05, 2.55, MAT.ironSteel);
+    grp.add(createRoundedToyMesh(2.12, 0.24, 2.62, MAT.ironSteel, 0, 0.28, 0, 0.06)); // 철제 프레임
+    // 철제 창살 헤드보드 & 풋보드
+    grp.add(createRoundedToyMesh(2.16, 1.08, 0.12, MAT.ironSteel, 0, 0.68, -1.28, 0.04));
+    grp.add(createRoundedToyMesh(2.16, 0.62, 0.1, MAT.ironSteel, 0, 0.46, 1.28, 0.04));
+    for (let s = -3; s <= 3; s++) {
+      grp.add(createRoundedToyMesh(0.05, 0.82, 0.05, MAT.silver, s * 0.26, 0.68, -1.28, 0.01));
+    }
+    // 2단 매트리스 + 접힌 스카이 이불 + 폭신한 베개 2개
+    grp.add(createRoundedToyMesh(1.98, 0.2, 2.44, MAT.cream, 0, 0.48, 0.02, 0.06));
+    grp.add(createRoundedToyMesh(1.94, 0.18, 2.38, MAT.white, 0, 0.64, 0.02, 0.07));
+    grp.add(createRoundedToyMesh(1.98, 0.22, 1.56, MAT.sky, 0, 0.68, 0.44, 0.08));
+    grp.add(createRoundedToyMesh(1.99, 0.09, 0.34, MAT.white, 0, 0.78, -0.26, 0.03)); // 접힌 시트 칼라
+    grp.add(createRoundedToyMesh(0.78, 0.18, 0.48, MAT.white, -0.46, 0.8, -0.88, 0.06));
+    grp.add(createRoundedToyMesh(0.78, 0.18, 0.48, MAT.white, 0.46, 0.8, -0.88, 0.06));
+  } else if (bedId === 'bed_queen') {
+    addLegs(2.5, 2.8, MAT.woodDark);
+    grp.add(createRoundedToyMesh(2.58, 0.28, 2.86, MAT.woodWarm, 0, 0.3, 0, 0.08));
+    grp.add(createRoundedToyMesh(2.64, 1.28, 0.18, MAT.woodDark, 0, 0.76, -1.36, 0.06)); // 원목 몰딩 헤드보드
+    grp.add(createRoundedToyMesh(2.24, 0.68, 0.08, MAT.leatherCamel, 0, 0.86, -1.26, 0.04)); // 쿠션 헤드패드
+    // 2단 호텔 매트리스 + 접힌 세이지민트 구스다운 이불 + 베개 2개 + 협탁 스탠드
+    grp.add(createRoundedToyMesh(2.42, 0.22, 2.66, MAT.cream, 0, 0.52, 0.04, 0.07));
+    grp.add(createRoundedToyMesh(2.38, 0.2, 2.6, MAT.white, 0, 0.7, 0.04, 0.08));
+    grp.add(createRoundedToyMesh(2.42, 0.24, 1.68, MAT.mintSoft, 0, 0.75, 0.48, 0.09));
+    grp.add(createRoundedToyMesh(2.44, 0.08, 0.38, MAT.mint, 0, 0.86, -0.28, 0.03));
+    grp.add(createRoundedToyMesh(0.9, 0.2, 0.52, MAT.white, -0.56, 0.88, -0.92, 0.07));
+    grp.add(createRoundedToyMesh(0.9, 0.2, 0.52, MAT.white, 0.56, 0.88, -0.92, 0.07));
+  } else if (bedId === 'bed_canopy') {
+    addLegs(2.55, 2.8, MAT.pureGold24k);
+    grp.add(createRoundedToyMesh(2.62, 0.32, 2.88, MAT.white, 0, 0.34, 0, 0.09));
+    grp.add(createRoundedToyMesh(2.64, 1.36, 0.18, MAT.pinkSoft, 0, 0.82, -1.36, 0.08));
+    grp.add(createRoundedToyMesh(2.44, 0.22, 2.68, MAT.cream, 0, 0.58, 0.04, 0.08));
+    grp.add(createRoundedToyMesh(2.4, 0.22, 2.62, MAT.white, 0, 0.76, 0.04, 0.08));
+    grp.add(createRoundedToyMesh(2.44, 0.25, 1.72, MAT.pinkSoft, 0, 0.82, 0.48, 0.09));
+    grp.add(createRoundedToyMesh(2.45, 0.09, 0.38, MAT.coral, 0, 0.93, -0.28, 0.03));
+    grp.add(createRoundedToyMesh(0.92, 0.22, 0.52, MAT.white, -0.56, 0.94, -0.92, 0.07));
+    grp.add(createRoundedToyMesh(0.92, 0.22, 0.52, MAT.white, 0.56, 0.94, -0.92, 0.07));
+    for (const [px, pz] of [[-1.24, -1.34], [1.24, -1.34], [-1.24, 1.34], [1.24, 1.34]]) {
+      grp.add(createRoundedToyMesh(0.12, 2.48, 0.12, MAT.pureGold24k, px, 1.36, pz, 0.03));
+      const finial = new THREE.Mesh(GEO.sphere, MAT.pureGold24k);
+      finial.scale.setScalar(0.2);
+      finial.position.set(px, 2.66, pz);
+      grp.add(finial);
+    }
+    const laceTop = createRoundedToyMesh(2.72, 0.22, 2.94, MAT.canopyLace, 0, 2.54, 0, 0.08, false, false, false);
     grp.add(laceTop);
   } else {
-    // bed_bunk 패밀리 원목 2층 침대
-    grp.add(createRoundedToyMesh(2.3, 0.34, 2.75, MAT.woodWarm, 0, 0.36, 0, 0.08));
-    grp.add(createRoundedToyMesh(2.1, 0.22, 2.55, MAT.butter, 0, 0.58, 0, 0.06));
-    grp.add(createRoundedToyMesh(2.3, 0.34, 2.75, MAT.woodWarm, 0, 1.78, 0, 0.08));
-    grp.add(createRoundedToyMesh(2.1, 0.22, 2.55, MAT.coral, 0, 2.0, 0, 0.06));
-    for (const [px, pz] of [[-1.08, -1.3], [1.08, -1.3], [-1.08, 1.3], [1.08, 1.3]]) {
-      grp.add(createRoundedToyMesh(0.14, 2.4, 0.14, MAT.woodDark, px, 1.25, pz, 0.03));
+    // bed_bunk 패밀리 원목 2층 침대 (1층+2층 2단 매트리스·이불·베개·안전난간·사다리 풀구성)
+    for (const [px, pz] of [[-1.12, -1.32], [1.12, -1.32], [-1.12, 1.32], [1.12, 1.32]]) {
+      grp.add(createRoundedToyMesh(0.15, 2.48, 0.15, MAT.woodDark, px, 1.26, pz, 0.03));
     }
-    // 사다리
-    for (let s = 0; s < 4; s++) {
-      grp.add(createRoundedToyMesh(0.56, 0.08, 0.08, MAT.woodLight, 0.65, 0.55 + s * 0.38, 1.38, 0.02));
+    for (const [by, quiltMat] of [[0.36, MAT.butter], [1.76, MAT.coral]]) {
+      grp.add(createRoundedToyMesh(2.32, 0.22, 2.76, MAT.woodWarm, 0, by, 0, 0.06));
+      grp.add(createRoundedToyMesh(2.14, 0.2, 2.58, MAT.white, 0, by + 0.18, 0, 0.06));
+      grp.add(createRoundedToyMesh(2.16, 0.18, 1.65, quiltMat, 0, by + 0.24, 0.42, 0.06));
+      grp.add(createRoundedToyMesh(0.76, 0.16, 0.46, MAT.white, -0.48, by + 0.33, -0.88, 0.05));
+      grp.add(createRoundedToyMesh(0.76, 0.16, 0.46, MAT.white, 0.48, by + 0.33, -0.88, 0.05));
+    }
+    // 2층 안전 가드레일 & 5단 원목 사다리
+    grp.add(createRoundedToyMesh(1.45, 0.32, 0.08, MAT.woodWarm, -0.35, 2.12, 1.34, 0.03));
+    grp.add(createRoundedToyMesh(0.09, 1.85, 0.09, MAT.woodDark, 0.42, 1.15, 1.4, 0.02));
+    grp.add(createRoundedToyMesh(0.09, 1.85, 0.09, MAT.woodDark, 0.96, 1.15, 1.4, 0.02));
+    for (let s = 0; s < 5; s++) {
+      grp.add(createRoundedToyMesh(0.56, 0.07, 0.08, MAT.woodLight, 0.69, 0.42 + s * 0.36, 1.4, 0.02));
     }
   }
   return grp;
@@ -3752,94 +5009,184 @@ function createCatalogBed3D(bedId) {
 function createCatalogSofa3D(sofaId) {
   const grp = new THREE.Group();
   if (sofaId === 'sofa_beanbag') {
-    const puff = new THREE.Mesh(getPuffyDomeGeo(0.86, 0.98), MAT.duckYellow);
-    puff.position.y = 0.48;
+    const rug = new THREE.Mesh(GEO.cyl, MAT.mintSoft);
+    rug.scale.set(1.9, 0.04, 1.9);
+    rug.position.y = 0.02;
+    const puff = new THREE.Mesh(getPuffyDomeGeo(0.88, 0.96), MAT.duckYellow);
+    puff.position.y = 0.46;
     addToonHullOutline(puff, 1.06);
-    grp.add(puff);
+    const cushion = createRoundedToyMesh(0.54, 0.36, 0.22, MAT.coral, 0.12, 0.68, 0.16, 0.08);
+    cushion.rotation.z = -0.25;
+    const footPouf = new THREE.Mesh(getPuffyDomeGeo(0.38, 0.34), MAT.cream);
+    footPouf.position.set(0.68, 0.18, 0.58);
+    grp.add(rug, puff, cushion, footPouf);
   } else if (sofaId === 'sofa_mint2') {
-    grp.add(createRoundedToyMesh(2.35, 0.44, 1.05, MAT.mint, 0, 0.34, 0, 0.12));
-    grp.add(createRoundedToyMesh(2.35, 0.68, 0.28, MAT.mint, 0, 0.76, -0.38, 0.1));
-    grp.add(createRoundedToyMesh(0.28, 0.58, 1.02, MAT.mintSoft, -1.12, 0.54, 0, 0.08));
-    grp.add(createRoundedToyMesh(0.28, 0.58, 1.02, MAT.mintSoft, 1.12, 0.54, 0, 0.08));
+    for (const [lx, lz] of [[-1.02, -0.38], [1.02, -0.38], [-1.02, 0.38], [1.02, 0.38]]) {
+      grp.add(createRoundedToyMesh(0.11, 0.22, 0.11, MAT.woodWarm, lx, 0.11, lz, 0.02));
+    }
+    grp.add(createRoundedToyMesh(2.38, 0.26, 1.06, MAT.mint, 0, 0.32, 0, 0.09));
+    // 좌·우 독립 시트 쿠션 2개 + 푹신한 등받이 쿠션 2개 + 롤 암레스트 + 포인트 쿠션
+    for (const cx of [-0.54, 0.54]) {
+      grp.add(createRoundedToyMesh(1.02, 0.2, 0.86, MAT.mintSoft, cx, 0.52, 0.05, 0.07));
+      grp.add(createRoundedToyMesh(1.02, 0.58, 0.26, MAT.mint, cx, 0.82, -0.36, 0.08));
+    }
+    grp.add(createRoundedToyMesh(0.28, 0.56, 1.04, MAT.mint, -1.14, 0.58, 0, 0.09));
+    grp.add(createRoundedToyMesh(0.28, 0.56, 1.04, MAT.mint, 1.14, 0.58, 0, 0.09));
+    grp.add(createRoundedToyMesh(0.42, 0.38, 0.16, MAT.butter, -0.78, 0.74, -0.14, 0.06));
+    grp.add(createRoundedToyMesh(0.42, 0.38, 0.16, MAT.coral, 0.78, 0.74, -0.14, 0.06));
   } else if (sofaId === 'sofa_rocker') {
-    for (const ox of [-0.88, 0.88]) {
+    for (const ox of [-0.92, 0.92]) {
       const ch = new THREE.Group();
-      ch.add(createRoundedToyMesh(0.95, 0.14, 0.95, MAT.woodWarm, 0, 0.48, 0, 0.05));
-      ch.add(createRoundedToyMesh(0.92, 0.85, 0.14, MAT.woodDark, 0, 0.92, -0.38, 0.05));
-      ch.add(createRoundedToyMesh(0.76, 0.16, 0.76, MAT.coral, 0, 0.6, 0.04, 0.06));
+      ch.add(createRoundedToyMesh(0.12, 0.12, 1.08, MAT.woodDark, -0.38, 0.08, 0, 0.04));
+      ch.add(createRoundedToyMesh(0.12, 0.12, 1.08, MAT.woodDark, 0.38, 0.08, 0, 0.04));
+      ch.add(createRoundedToyMesh(0.95, 0.14, 0.92, MAT.woodWarm, 0, 0.48, 0, 0.05));
+      ch.add(createRoundedToyMesh(0.92, 0.88, 0.14, MAT.woodDark, 0, 0.92, -0.38, 0.05));
+      ch.add(createRoundedToyMesh(0.78, 0.18, 0.76, MAT.coral, 0, 0.6, 0.04, 0.06));
       ch.position.x = ox;
       grp.add(ch);
     }
-    grp.add(createRoundedToyMesh(0.68, 0.58, 0.68, MAT.woodLight, 0, 0.3, 0.1, 0.08));
+    grp.add(createRoundedToyMesh(0.74, 0.58, 0.74, MAT.woodLight, 0, 0.3, 0.1, 0.08));
+    const cup = create3DGiftPropMesh('item_coffee', false);
+    cup.scale.setScalar(0.85);
+    cup.position.set(0, 0.6, 0.1);
+    grp.add(cup);
   } else {
-    // sofa_leather_l 고급 가죽 L자형 패밀리 소파
-    grp.add(createRoundedToyMesh(2.85, 0.46, 1.12, MAT.leatherCamel, -0.25, 0.35, 0, 0.12));
-    grp.add(createRoundedToyMesh(2.85, 0.72, 0.3, MAT.leatherCamel, -0.25, 0.8, -0.42, 0.1));
-    grp.add(createRoundedToyMesh(1.12, 0.46, 2.05, MAT.leatherCamel, 0.78, 0.35, 0.55, 0.12));
-    grp.add(createRoundedToyMesh(1.35, 0.38, 0.75, MAT.woodLight, -0.62, 0.22, 1.15, 0.06));
+    // sofa_leather_l 프리미엄 가죽 L자형 카우치 소파 + 원목 커피테이블
+    grp.add(createRoundedToyMesh(2.92, 0.34, 1.14, MAT.leatherCamel, -0.25, 0.3, 0, 0.1));
+    for (const cx of [-1.15, -0.25, 0.65]) {
+      grp.add(createRoundedToyMesh(0.86, 0.2, 0.92, MAT.leatherCamel, cx, 0.54, 0.05, 0.07));
+      grp.add(createRoundedToyMesh(0.86, 0.58, 0.28, MAT.leatherCamel, cx, 0.84, -0.4, 0.08));
+    }
+    grp.add(createRoundedToyMesh(1.08, 0.52, 2.1, MAT.leatherCamel, 0.76, 0.38, 0.58, 0.1));
+    grp.add(createRoundedToyMesh(0.46, 0.4, 0.18, MAT.cream, -1.18, 0.76, -0.15, 0.06));
+    grp.add(createRoundedToyMesh(1.42, 0.36, 0.78, MAT.woodLight, -0.68, 0.22, 1.18, 0.06));
   }
   return grp;
 }
 
-function createCatalogAppliance3D(appId, rw, rd, rh) {
+function createCatalogAppliance3D(appId, rw = 8.5, rd = 7.2, rh = 4.2) {
   const grp = new THREE.Group();
   if (appId === 'app_fan') {
+    const fx = rw * 0.26;
+    const fz = -rd * 0.26;
     const base = new THREE.Mesh(GEO.cyl, MAT.white);
-    base.scale.set(0.58, 0.1, 0.58);
-    base.position.set(rw * 0.26, 0.12, -rd * 0.26);
-    const pole = new THREE.Mesh(GEO.cyl, MAT.silver);
-    pole.scale.set(0.09, 1.18, 0.09);
-    pole.position.set(rw * 0.26, 0.7, -rd * 0.26);
+    base.scale.set(0.62, 0.12, 0.62);
+    base.position.set(fx, 0.12, fz);
+    const pole = new THREE.Mesh(GEO.cyl, MAT.chromeAlloy);
+    pole.scale.set(0.09, 1.2, 0.09);
+    pole.position.set(fx, 0.72, fz);
+    const motor = createRoundedToyMesh(0.28, 0.26, 0.32, MAT.white, fx, 1.34, fz - 0.06, 0.06);
     const cage = new THREE.Mesh(GEO.torus, MAT.sky);
-    cage.scale.setScalar(0.68);
-    cage.position.set(rw * 0.26, 1.32, -rd * 0.26 + 0.08);
-    const blade = createRoundedToyMesh(0.46, 0.1, 0.04, MAT.sky, rw * 0.26, 1.32, -rd * 0.26 + 0.1, 0.02);
-    spinningFans.push(blade);
-    grp.add(base, pole, cage, blade);
+    cage.scale.setScalar(0.72);
+    cage.position.set(fx, 1.34, fz + 0.12);
+    const bladeGrp = new THREE.Group();
+    bladeGrp.position.set(fx, 1.34, fz + 0.11);
+    for (let b = 0; b < 3; b++) {
+      const bl = createRoundedToyMesh(0.48, 0.11, 0.03, MAT.sky, 0, 0, 0, 0.02);
+      bl.rotation.z = (b / 3) * Math.PI * 2;
+      bladeGrp.add(bl);
+    }
+    spinningFans.push(bladeGrp);
+    grp.add(base, pole, motor, cage, bladeGrp);
   } else if (appId === 'app_ac') {
-    // 시네마 빔프로젝터 & 홈시어터 대형 스크린
-    const screenY = Math.min(2.65, rh - 1.2);
-    grp.add(createRoundedToyMesh(2.85, 1.55, 0.1, MAT.white, 0, screenY, -rd * 0.5 + 0.24, 0.05));
-    grp.add(createRoundedToyMesh(2.62, 1.32, 0.08, MAT.screenCyan, 0, screenY, -rd * 0.5 + 0.29, 0.03));
-    // 프로젝터 본체 & 삼각 스탠드
+    // 시네마 빔프로젝터 (원목 3각 삼각대 + 렌즈 경통 + 투명 볼류메트릭 빛줄기 + 상단 롤스크린!)
+    const screenY = Math.min(2.62, rh - 1.15);
+    const screenZ = -rd * 0.5 + 0.25;
+    grp.add(createRoundedToyMesh(3.05, 0.18, 0.2, MAT.charcoal, 0, screenY + 0.86, screenZ, 0.05)); // 롤스크린 하우징
+    grp.add(createRoundedToyMesh(2.9, 1.58, 0.08, MAT.white, 0, screenY, screenZ, 0.04));
+    grp.add(createRoundedToyMesh(2.68, 1.36, 0.06, MAT.screenCyan, 0, screenY, screenZ + 0.04, 0.03));
+
     const px = 0.0;
-    const pz = 0.95;
-    grp.add(createRoundedToyMesh(0.62, 0.26, 0.54, MAT.white, px, 1.08, pz, 0.06));
-    grp.add(createRoundedToyMesh(0.12, 0.92, 0.12, MAT.woodDark, px, 0.52, pz, 0.03));
-    const lens = new THREE.Mesh(GEO.cyl, MAT.charcoal);
-    lens.scale.set(0.18, 0.14, 0.18);
-    lens.rotation.x = Math.PI / 2;
-    lens.position.set(px, 1.08, pz - 0.3);
-    grp.add(lens);
+    const pz = 1.05;
+    // 원목 3각 삼각대 다리 3개
+    for (const [angX, angZ] of [[0, 0.24], [-0.22, -0.16], [0.22, -0.16]]) {
+      const leg = new THREE.Mesh(GEO.cyl, MAT.woodDark);
+      leg.scale.set(0.08, 1.12, 0.08);
+      leg.position.set(px + angX * 0.9, 0.54, pz + angZ * 0.9);
+      leg.rotation.z = -angX * 1.1;
+      leg.rotation.x = angZ * 1.1;
+      grp.add(leg);
+    }
+    grp.add(createRoundedToyMesh(0.68, 0.28, 0.58, MAT.white, px, 1.12, pz, 0.07));
+    const lensRing = new THREE.Mesh(GEO.cyl, MAT.pureGold24k);
+    lensRing.scale.set(0.24, 0.16, 0.24);
+    lensRing.rotation.x = Math.PI / 2;
+    lensRing.position.set(px, 1.12, pz - 0.32);
+    const lensGlass = new THREE.Mesh(GEO.sphere, MAT.screenCyan);
+    lensGlass.scale.setScalar(0.18);
+    lensGlass.position.set(px, 1.12, pz - 0.39);
+    grp.add(lensRing, lensGlass);
+
+    // 반투명 시네마 빛줄기 콘 (Volumetric Light Beam)
+    const beamDist = Math.max(1.2, pz - screenZ - 0.45);
+    const beamMat = new THREE.MeshBasicMaterial({
+      color: 0xBAE6FD,
+      transparent: true,
+      opacity: 0.16,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    });
+    const beamCone = new THREE.Mesh(new THREE.ConeGeometry(1.15, beamDist, 20, 1, true), beamMat);
+    beamCone.rotation.x = Math.PI * 0.5 + Math.atan2(screenY - 1.12, beamDist);
+    beamCone.position.set(px, (1.12 + screenY) * 0.5, (pz - 0.38 + screenZ) * 0.5);
+    grp.add(beamCone);
   } else if (appId === 'app_soundmat') {
-    // 프리미엄 방음 매트 + 빈티지 원목 LP 턴테이블 오디오
-    const matPad = createRoundedToyMesh(rw * 0.76, 0.09, rd * 0.66, MAT.mintSoft, 0, 0.12, 0.2, 0.08);
-    grp.add(matPad);
+    // 두툼한 격자형 방음 패드 매트 + 빈티지 원목 LP 턴테이블 & 북쉘프 스피커
+    const cols = 4;
+    const rows = 3;
+    const padW = (rw * 0.72) / cols;
+    const padD = (rd * 0.62) / rows;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const isAlt = (r + c) % 2 === 0;
+        grp.add(createRoundedToyMesh(
+          padW - 0.08,
+          0.11,
+          padD - 0.08,
+          isAlt ? MAT.mintSoft : MAT.cream,
+          (c - (cols - 1) * 0.5) * padW,
+          0.12,
+          0.22 + (r - (rows - 1) * 0.5) * padD,
+          0.04
+        ));
+      }
+    }
     const lx = rw * 0.28;
     const lz = -rd * 0.28;
-    grp.add(createRoundedToyMesh(1.35, 0.78, 0.72, MAT.woodWarm, lx, 0.5, lz, 0.07));
-    const vinyl = new THREE.Mesh(GEO.cyl, MAT.charcoal);
-    vinyl.scale.set(0.58, 0.06, 0.58);
-    vinyl.position.set(lx - 0.15, 0.92, lz);
+    grp.add(createRoundedToyMesh(1.65, 0.78, 0.76, MAT.woodWarm, lx, 0.5, lz, 0.07));
+    const platter = new THREE.Mesh(GEO.cyl, MAT.chromeAlloy);
+    platter.scale.set(0.64, 0.05, 0.64);
+    platter.position.set(lx - 0.18, 0.91, lz);
+    const vinyl = new THREE.Mesh(GEO.cyl, MAT.carbonFiber);
+    vinyl.scale.set(0.6, 0.06, 0.6);
+    vinyl.position.set(lx - 0.18, 0.93, lz);
     const label = new THREE.Mesh(GEO.cyl, MAT.coral);
     label.scale.set(0.22, 0.07, 0.22);
-    label.position.set(lx - 0.15, 0.93, lz);
-    const arm = createRoundedToyMesh(0.38, 0.05, 0.05, MAT.gold, lx + 0.18, 0.96, lz + 0.08, 0.02);
+    label.position.set(lx - 0.18, 0.94, lz);
+    const arm = createRoundedToyMesh(0.42, 0.045, 0.045, MAT.pureGold24k, lx + 0.16, 0.97, lz + 0.06, 0.02);
     arm.rotation.y = -0.45;
-    grp.add(vinyl, label, arm);
+    // 우측 북쉘프 스피커
+    grp.add(createRoundedToyMesh(0.42, 0.56, 0.38, MAT.walnutTrim, lx + 0.54, 1.16, lz, 0.04));
+    const cone = new THREE.Mesh(GEO.cyl, MAT.gold);
+    cone.scale.set(0.22, 0.06, 0.22);
+    cone.rotation.x = Math.PI / 2;
+    cone.position.set(lx + 0.54, 1.16, lz + 0.2);
+    grp.add(platter, vinyl, label, arm, cone);
   } else {
-    // app_rgb_desk RGB 트리플 모니터 게이밍 데스크
+    // app_rgb_desk RGB 트리플 모니터 + 본체 타워 + 키보드 게이밍 데스크
     const dx = rw * 0.24;
     const dz = -rd * 0.28;
-    grp.add(createRoundedToyMesh(2.35, 0.12, 0.96, MAT.charcoal, dx, 0.86, dz, 0.05));
-    grp.add(createRoundedToyMesh(0.14, 0.82, 0.86, MAT.ironSteel, dx - 1.02, 0.44, dz, 0.03));
-    grp.add(createRoundedToyMesh(0.14, 0.82, 0.86, MAT.ironSteel, dx + 1.02, 0.44, dz, 0.03));
-    // 트리플 모니터 (시안 · 퍼플 · 핑크 네온)
-    const m1 = createRoundedToyMesh(0.72, 0.48, 0.06, MAT.screenCyan, dx - 0.74, 1.24, dz - 0.12, 0.03);
-    m1.rotation.y = 0.26;
-    const m2 = createRoundedToyMesh(0.78, 0.5, 0.06, MAT.screenPurple, dx, 1.24, dz - 0.22, 0.03);
-    const m3 = createRoundedToyMesh(0.72, 0.48, 0.06, MAT.screenPink, dx + 0.74, 1.24, dz - 0.12, 0.03);
-    m3.rotation.y = -0.26;
+    grp.add(createRoundedToyMesh(2.42, 0.12, 0.98, MAT.carbonFiber, dx, 0.86, dz, 0.05));
+    grp.add(createRoundedToyMesh(2.44, 0.04, 1.0, MAT.screenPink, dx, 0.81, dz, 0.02));
+    grp.add(createRoundedToyMesh(0.14, 0.82, 0.86, MAT.ironSteel, dx - 1.04, 0.44, dz, 0.03));
+    grp.add(createRoundedToyMesh(0.14, 0.82, 0.86, MAT.ironSteel, dx + 1.04, 0.44, dz, 0.03));
+    const m1 = createRoundedToyMesh(0.74, 0.5, 0.06, MAT.screenCyan, dx - 0.75, 1.25, dz - 0.12, 0.03);
+    m1.rotation.y = 0.28;
+    const m2 = createRoundedToyMesh(0.8, 0.52, 0.06, MAT.screenPurple, dx, 1.25, dz - 0.22, 0.03);
+    const m3 = createRoundedToyMesh(0.74, 0.5, 0.06, MAT.screenPink, dx + 0.75, 1.25, dz - 0.12, 0.03);
+    m3.rotation.y = -0.28;
+    grp.add(createRoundedToyMesh(0.68, 0.04, 0.24, MAT.screenCyan, dx, 0.94, dz + 0.18, 0.02)); // RGB 키보드
+    grp.add(createRoundedToyMesh(0.36, 0.58, 0.52, MAT.carbonFiber, dx + 0.95, 1.2, dz + 0.05, 0.04)); // 게이밍 본체
     grp.add(m1, m2, m3);
   }
   return grp;
@@ -4004,6 +5351,57 @@ function rebuildRoom3D(lotId, room) {
     rGrp.add(loftRug, bedMesh, sofaMesh);
   }
 
+  // [시각 피드백 5] 세입자 입주 호실 전면 창틀 황금빛 LED 간접조명 프레임 (Room Border Glow)
+  if (room.household) {
+    const fz = rd * 0.5 - 0.04;
+    rGrp.add(createRoundedToyMesh(rw - 0.35, 0.08, 0.08, MAT.roomBorderGlow, 0, rh - 0.16, fz, 0.02, false, false, false));
+    rGrp.add(createRoundedToyMesh(rw - 0.35, 0.08, 0.08, MAT.roomBorderGlow, 0, 0.16, fz, 0.02, false, false, false));
+    rGrp.add(createRoundedToyMesh(0.08, rh - 0.3, 0.08, MAT.roomBorderGlow, -rw * 0.5 + 0.2, rh * 0.5, fz, 0.02, false, false, false));
+    rGrp.add(createRoundedToyMesh(0.08, rh - 0.3, 0.08, MAT.roomBorderGlow, rw * 0.5 - 0.2, rh * 0.5, fz, 0.02, false, false, false));
+  }
+
+  // [마일스톤 50%] 각 호실 창가 발코니 꽃화분 개화!
+  if ((state.unlockedMilestones || []).includes(50)) {
+    const flowerCols = [MAT.coral, MAT.duckYellow, MAT.pinkSoft, MAT.lavender, MAT.mint];
+    const boxCount = Math.max(1, room.colSpan || 1);
+    for (let bi = 0; bi < boxCount; bi++) {
+      const bx = (bi - (boxCount - 1) * 0.5) * 3.4;
+      const bz = rd * 0.5 + 0.24;
+      rGrp.add(createRoundedToyMesh(1.85, 0.32, 0.44, MAT.woodWarm, bx, 0.32, bz, 0.05));
+      for (let f = -2; f <= 2; f++) {
+        const leaf = new THREE.Mesh(GEO.sphere, MAT.cloverGreen);
+        leaf.scale.set(0.28, 0.2, 0.28);
+        leaf.position.set(bx + f * 0.32, 0.52, bz);
+        const bloom = new THREE.Mesh(GEO.sphere, flowerCols[(bi + f + 4) % flowerCols.length]);
+        bloom.scale.setScalar(0.2);
+        bloom.position.set(bx + f * 0.32, 0.66, bz + 0.03);
+        rGrp.add(leaf, bloom);
+      }
+    }
+  }
+
+  // [방음 시공 완료 상태] 바닥·벽면 두툼한 격자형 방음 패드 타일 표시
+  if (room.soundproofed && room.equippedFurniture.appliance !== 'app_soundmat') {
+    const cols = 4;
+    const rows = 2;
+    const pw = (rw * 0.68) / cols;
+    const pd = (rd * 0.44) / rows;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        rGrp.add(createRoundedToyMesh(
+          pw - 0.08,
+          0.08,
+          pd - 0.08,
+          (r + c) % 2 === 0 ? MAT.mintSoft : MAT.cream,
+          (c - (cols - 1) * 0.5) * pw,
+          0.145,
+          -0.25 + (r - 0.5) * pd,
+          0.03
+        ));
+      }
+    }
+  }
+
   // 세입자 집들이 선물 증정품 테이블 영구 진열 (케이크·커피·꽃다발 등)
   if (Array.isArray(room.giftedItems) && room.giftedItems.length > 0) {
     const giftTable = new THREE.Group();
@@ -4032,94 +5430,103 @@ function rebuildRoom3D(lotId, room) {
   }
 }
 
-// 1인칭 진열대 상품 & 손 파지(Held Hands) & 집들이 테이블 공용 3D 기프트 메쉬
+// 1인칭 진열대 상품 & 손 파지(Held Hands) & 집들이 테이블 공용 3D 실사 기프트 메쉬
 function create3DGiftPropMesh(itemId = 'item_cake', packagedBox = false) {
   const grp = new THREE.Group();
   if (itemId === 'item_cake') {
     if (packagedBox) {
-      // 핑크 파스텔 리본 케이크 상자
       grp.add(createRoundedToyMesh(0.46, 0.34, 0.46, MAT.cream, 0, 0.18, 0, 0.05));
       grp.add(createRoundedToyMesh(0.48, 0.08, 0.48, MAT.pinkSoft, 0, 0.36, 0, 0.03));
-      grp.add(createRoundedToyMesh(0.09, 0.38, 0.49, MAT.supercarRed, 0, 0.2, 0, 0.02));
-      grp.add(createRoundedToyMesh(0.49, 0.38, 0.09, MAT.supercarRed, 0, 0.2, 0, 0.02));
-      const bowL = new THREE.Mesh(GEO.sphere, MAT.supercarRed);
+      grp.add(createRoundedToyMesh(0.09, 0.38, 0.49, MAT.carClearRed, 0, 0.2, 0, 0.02));
+      grp.add(createRoundedToyMesh(0.49, 0.38, 0.09, MAT.carClearRed, 0, 0.2, 0, 0.02));
+      const bowL = new THREE.Mesh(GEO.sphere, MAT.carClearRed);
       bowL.scale.set(0.14, 0.09, 0.09);
       bowL.position.set(-0.08, 0.43, 0);
       const bowR = bowL.clone();
       bowR.position.set(0.08, 0.43, 0);
       grp.add(bowL, bowR);
     } else {
-      // 딸기 생크림 홀케이크
-      const plate = new THREE.Mesh(GEO.cyl, MAT.white);
-      plate.scale.set(0.76, 0.06, 0.76);
+      // 실사 딸기 생크림 홀케이크 (strawberry_cake_real.png + 생크림 & 윤기 나는 생딸기!)
+      const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.36, 0.06, 24), MAT.white);
       plate.position.y = 0.03;
-      const sponge = new THREE.Mesh(GEO.cyl, MAT.pinkSoft);
-      sponge.scale.set(0.62, 0.28, 0.62);
-      sponge.position.y = 0.19;
-      const icing = new THREE.Mesh(GEO.cyl, MAT.white);
-      icing.scale.set(0.64, 0.1, 0.64);
-      icing.position.y = 0.32;
-      grp.add(plate, sponge, icing);
-      for (let i = 0; i < 6; i++) {
-        const a = (i / 6) * Math.PI * 2;
-        const berry = new THREE.Mesh(GEO.sphere, MAT.supercarRed);
-        berry.scale.set(0.11, 0.14, 0.11);
-        berry.position.set(Math.cos(a) * 0.2, 0.41, Math.sin(a) * 0.2);
-        grp.add(berry);
+      const sponge = new THREE.Mesh(new THREE.CylinderGeometry(0.33, 0.33, 0.28, 28), MAT.realCake || MAT.pinkSoft);
+      sponge.position.y = 0.2;
+      const creamTop = new THREE.Mesh(new THREE.CylinderGeometry(0.335, 0.335, 0.06, 28), MAT.white);
+      creamTop.position.y = 0.35;
+      grp.add(plate, sponge, creamTop);
+      const glossyBerry = new THREE.MeshPhysicalMaterial({ color: 0xDC2626, roughness: 0.14, clearcoat: 0.9 });
+      for (let i = 0; i < 7; i++) {
+        const a = (i / 7) * Math.PI * 2;
+        const whip = new THREE.Mesh(GEO.sphere, MAT.white);
+        whip.scale.setScalar(0.1);
+        whip.position.set(Math.cos(a) * 0.22, 0.39, Math.sin(a) * 0.22);
+        const berry = new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.13, 12), glossyBerry);
+        berry.position.set(Math.cos(a) * 0.22, 0.46, Math.sin(a) * 0.22);
+        grp.add(whip, berry);
       }
     }
   } else if (itemId === 'item_croissant') {
     if (packagedBox) {
       grp.add(createRoundedToyMesh(0.36, 0.44, 0.26, MAT.paperBag, 0, 0.22, 0, 0.04));
-      const cr1 = createRoundedToyMesh(0.24, 0.14, 0.16, MAT.gold, -0.04, 0.46, 0, 0.05);
-      cr1.rotation.z = 0.2;
-      const cr2 = createRoundedToyMesh(0.22, 0.14, 0.15, MAT.butterOak, 0.06, 0.44, 0.04, 0.05);
-      cr2.rotation.z = -0.22;
+      const cr1 = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.055, 12, 18, Math.PI * 1.3), MAT.realCroissant || MAT.gold);
+      cr1.position.set(-0.04, 0.46, 0);
+      const cr2 = cr1.clone();
+      cr2.position.set(0.06, 0.44, 0.04);
       grp.add(cr1, cr2);
     } else {
-      const tray = createRoundedToyMesh(0.68, 0.06, 0.48, MAT.woodWarm, 0, 0.04, 0, 0.03);
-      grp.add(tray);
+      // 버터 윤기(clearcoat: 0.46)가 흐르는 실사 크루아상 트레이!
+      const tray = createRoundedToyMesh(0.74, 0.06, 0.52, MAT.woodWarm, 0, 0.03, 0, 0.03);
+      const parchment = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.015, 0.44), MAT.cream);
+      parchment.position.y = 0.065;
+      grp.add(tray, parchment);
       for (let i = -1; i <= 1; i++) {
-        const cr = createRoundedToyMesh(0.18, 0.14, 0.34, MAT.gold, i * 0.2, 0.14, 0, 0.06);
-        grp.add(cr);
+        const crGrp = new THREE.Group();
+        for (let seg = -2; seg <= 2; seg++) {
+          const r = (0.085 - Math.abs(seg) * 0.014);
+          const puff = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 14), MAT.realCroissant || MAT.gold);
+          puff.scale.set(1.25, 0.95, 1.35);
+          puff.position.set(Math.abs(seg) * 0.028, r * 0.85, seg * 0.072);
+          crGrp.add(puff);
+        }
+        crGrp.position.set(i * 0.21, 0.08, 0);
+        crGrp.rotation.y = 0.18;
+        grp.add(crGrp);
       }
     }
   } else if (itemId === 'item_coffee') {
-    // 시그니처 아인슈페너 크림 라떼컵
-    const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.12, 0.38, 16), MAT.white);
+    // 에스프레소·우유 마블링이 살아있는 실사 아인슈페너 (einspanner_real.png)!
+    const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.165, 0.125, 0.38, 22), MAT.realEinspanner || MAT.white);
+    cup.rotation.y = Math.PI;
     cup.position.y = 0.2;
-    const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.152, 0.138, 0.15, 16), MAT.leatherCamel);
-    sleeve.position.y = 0.19;
-    const creamDome = new THREE.Mesh(getPuffyDomeGeo(0.16, 0.18), MAT.cream);
-    creamDome.position.y = 0.42;
+    const creamDome = new THREE.Mesh(getPuffyDomeGeo(0.168, 0.17), MAT.white);
+    creamDome.position.y = 0.41;
+    const cocoa = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 0.02, 16), MAT.leatherCamel);
+    cocoa.position.y = 0.5;
     const straw = new THREE.Mesh(GEO.cyl, MAT.parasolGreen);
-    straw.scale.set(0.035, 0.24, 0.035);
-    straw.position.set(0.06, 0.48, 0);
+    straw.scale.set(0.032, 0.24, 0.032);
+    straw.position.set(0.06, 0.49, 0);
     straw.rotation.z = -0.22;
-    grp.add(cup, sleeve, creamDome, straw);
+    grp.add(cup, creamDome, cocoa, straw);
   } else if (itemId === 'item_bouquet') {
-    // 대형 장미 꽃다발
-    const cone = new THREE.Mesh(new THREE.ConeGeometry(0.26, 0.52, 14), MAT.pinkSoft);
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(0.26, 0.52, 16), MAT.pinkSoft);
     cone.rotation.x = Math.PI;
     cone.position.y = 0.26;
-    const ribbon = createRoundedToyMesh(0.22, 0.08, 0.22, MAT.gold, 0, 0.2, 0, 0.03);
+    const ribbon = createRoundedToyMesh(0.22, 0.08, 0.22, MAT.pureGold24k, 0, 0.2, 0, 0.03);
     grp.add(cone, ribbon);
-    const cols = [MAT.supercarRed, MAT.coral, MAT.pinkSoft, MAT.duckYellow, MAT.supercarRed];
-    for (let i = 0; i < 5; i++) {
-      const a = (i / 5) * Math.PI * 2;
-      const rose = new THREE.Mesh(GEO.sphere, cols[i]);
+    const cols = [MAT.carClearRed, MAT.coral, MAT.pinkSoft, MAT.duckYellow, MAT.carClearRed];
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2;
+      const rose = new THREE.Mesh(GEO.sphere, cols[i % cols.length]);
       rose.scale.setScalar(0.16);
-      rose.position.set(Math.cos(a) * 0.11, 0.54 + (i === 0 ? 0.05 : 0), Math.sin(a) * 0.11);
+      rose.position.set(Math.cos(a) * 0.12, 0.54 + (i === 0 ? 0.05 : 0), Math.sin(a) * 0.12);
       grp.add(rose);
     }
   } else {
-    // 편의점 프리미엄 도시락
-    grp.add(createRoundedToyMesh(0.54, 0.12, 0.4, MAT.charcoal, 0, 0.07, 0, 0.04));
-    grp.add(createRoundedToyMesh(0.22, 0.06, 0.32, MAT.white, -0.12, 0.14, 0, 0.02));
-    grp.add(createRoundedToyMesh(0.22, 0.06, 0.15, MAT.coral, 0.12, 0.14, -0.08, 0.02));
-    grp.add(createRoundedToyMesh(0.22, 0.06, 0.15, MAT.gold, 0.12, 0.14, 0.08, 0.02));
+    // 투명 뚜껑 너머로 흰쌀밥과 반찬이 선명히 보이는 실사 프리미엄 도시락!
+    const bento = createPhotorealBentoBox3D(1.1);
+    grp.add(bento);
     if (packagedBox) {
-      grp.add(createRoundedToyMesh(0.1, 0.16, 0.42, MAT.mint, 0, 0.1, 0, 0.02));
+      grp.add(createRoundedToyMesh(0.09, 0.16, 0.45, MAT.mint, 0, 0.09, 0, 0.02));
     }
   }
   return grp;
@@ -4274,9 +5681,10 @@ function updateXRayAndFocusHighlights(dt) {
   const targetRoomObj = inFpRoom ? findRoomById(fpState.roomId) : findRoomById(focusedRoomId);
   const inRoomFocus = (!!targetRoomObj && (inFpRoom || (!driveState.active && !fpState.active)));
   const inShopFocus = !!focusedShopId && !driveState.active && !fpState.active;
+  const in1FShopFocus = !!focusedFirstFloorShopId && !driveState.active && !fpState.active;
 
   // 스튜디오 배경 전환
-  scene.background = (inRoomFocus || inShopFocus || inFpShop) ? TEX.studioBackdrop : TEX.skyBackdrop;
+  scene.background = (inRoomFocus || inShopFocus || in1FShopFocus || inFpShop) ? TEX.studioBackdrop : TEX.skyBackdrop;
   if (studioStageDisc) {
     if (inRoomFocus && targetRoomObj) {
       const lot = state.lots.find((l) => l.lotId === targetRoomObj.lotId);
@@ -4286,6 +5694,11 @@ function updateXRayAndFocusHighlights(dt) {
       const stpl = STANDALONE_SHOPS_TEMPLATE.find((s) => s.shopId === focusedShopId);
       studioStageDisc.position.set(stpl?.x || 0, 0.08, stpl?.z || 0);
       studioStageDisc.visible = true;
+    } else if (in1FShopFocus) {
+      const ftpl = (window.FIRST_FLOOR_SHOPS_TEMPLATE || []).find((s) => s.shopId === focusedFirstFloorShopId);
+      const lot = state.lots.find((l) => l.lotId === (ftpl?.lotId || 'lot_main'));
+      studioStageDisc.position.set((lot?.x || 0) + (ftpl?.localX || 0), 0.06, (lot?.z || 0));
+      studioStageDisc.visible = true;
     } else {
       studioStageDisc.visible = false;
     }
@@ -4293,38 +5706,46 @@ function updateXRayAndFocusHighlights(dt) {
 
   // 스튜디오 보조광 강도 제어
   if (studioKeyLight) {
-    const targetInt = (inRoomFocus || inShopFocus || inFpShop) ? 1.2 : 0.0;
+    const targetInt = (inRoomFocus || inShopFocus || in1FShopFocus || inFpShop) ? 1.25 : 0.0;
     studioKeyLight.intensity = THREE.MathUtils.lerp(studioKeyLight.intensity, targetInt, Math.min(1, dt * 8));
     studioFillLight.intensity = THREE.MathUtils.lerp(studioFillLight.intensity, targetInt * 0.68, Math.min(1, dt * 8));
     studioRimLight.intensity = THREE.MathUtils.lerp(studioRimLight.intensity, targetInt * 0.52, Math.min(1, dt * 8));
   }
 
-  // 아일랜드/단독상가/차량/거리 입주민/구름 가시성 제어
-  if (islandRootGroup) islandRootGroup.visible = !inRoomFocus && !inFpShop;
-  if (driveState.carRootGroup) driveState.carRootGroup.visible = !inRoomFocus && !inShopFocus && !inFpShop;
+  // 아일랜드/단독상가/차량/거리 입주민/구름/마일스톤 가시성 제어
+  if (islandRootGroup) islandRootGroup.visible = !inRoomFocus && !in1FShopFocus && !inFpShop;
+  if (milestoneState.group) milestoneState.group.visible = !inRoomFocus && !inShopFocus && !in1FShopFocus && !inFpShop;
+  if (driveState.carRootGroup) driveState.carRootGroup.visible = !inRoomFocus && !inShopFocus && !in1FShopFocus && !inFpShop;
   if (driveState.vehicleMesh?.userData?.driverRef) {
     driveState.vehicleMesh.userData.driverRef.visible = !(driveState.active && driveState.cockpitView);
   }
   for (const cl of cloudActors) {
-    cl.mesh.visible = !inRoomFocus && !inShopFocus && !inFpShop;
+    cl.mesh.visible = !inRoomFocus && !inShopFocus && !in1FShopFocus && !inFpShop;
   }
   for (const w of streetOutingActors) {
-    w.mesh.visible = !inRoomFocus && !inFpShop && (!inShopFocus || w.targetShopId === focusedShopId);
+    w.mesh.visible = !inRoomFocus && !in1FShopFocus && !inFpShop && (!inShopFocus || w.targetShopId === focusedShopId);
   }
   for (const sid of Object.keys(standaloneShop3D)) {
-    standaloneShop3D[sid].group.visible = !inRoomFocus && !inFpShop && (!inShopFocus || sid === focusedShopId);
+    standaloneShop3D[sid].group.visible = !inRoomFocus && !in1FShopFocus && !inFpShop && (!inShopFocus || sid === focusedShopId);
   }
 
-  // 주거 빌딩 외벽 투시율(Shell Opacity) 계산
-  let targetShell = 1.0;
-  if (driveState.active) {
-    targetShell = 1.0;
-  } else if (inRoomFocus) {
+  // [요구사항 3: 투시 거리 대폭 완화] 기본 타운 뷰(zoom 0.78)에서도 인형의 집처럼 내부가 시원하게 투시!
+  let targetShell = 0.16;
+  if (inRoomFocus || in1FShopFocus) {
     targetShell = 0.0;
-  } else if (camera.zoom > 1.38) {
-    targetShell = THREE.MathUtils.clamp(1.0 - (camera.zoom - 1.38) / 0.55, 0.08, 1.0);
+  } else if (driveState.active) {
+    targetShell = 0.24;
+  } else if (camera.zoom > 0.92) {
+    targetShell = THREE.MathUtils.clamp(0.16 * (1.0 - (camera.zoom - 0.92) / 0.45), 0.0, 0.16);
   }
   currentShellOpacity = THREE.MathUtils.lerp(currentShellOpacity, targetShell, Math.min(1, dt * 9));
+
+  // 1층 편의점/세탁소 포커스 시 전면 통유리·어닝을 자동 커트어웨이하여 뒷벽 냉장고/2단 드럼세탁기 6대를 100% 오픈!
+  for (const [fId, fObj] of Object.entries(firstFloorShop3D)) {
+    const hideFront = !!(in1FShopFocus && focusedFirstFloorShopId === fId);
+    if (fObj?.glassMesh) fObj.glassMesh.visible = !hideFront;
+    if (fObj?.awningMesh) fObj.awningMesh.visible = !hideFront;
+  }
 
   for (const lid of Object.keys(lot3D)) {
     const entry = lot3D[lid];
@@ -4338,19 +5759,23 @@ function updateXRayAndFocusHighlights(dt) {
       entry.root.visible = false;
       continue;
     }
+    if (in1FShopFocus && lid !== 'lot_main') {
+      entry.root.visible = false;
+      continue;
+    }
     entry.root.visible = true;
 
     if (entry.isResidential) {
       if (entry.structGroup) entry.structGroup.visible = !inRoomFocus;
-      if (entry.infraGroup) entry.infraGroup.visible = !inRoomFocus;
-      if (entry.frontShellGroup) entry.frontShellGroup.visible = currentShellOpacity > 0.03 && !inRoomFocus;
+      if (entry.infraGroup) entry.infraGroup.visible = !inRoomFocus && !in1FShopFocus;
+      if (entry.frontShellGroup) entry.frontShellGroup.visible = currentShellOpacity > 0.02 && !inRoomFocus && !in1FShopFocus;
 
       for (const sm of entry.shellMats) {
         sm.mat.opacity = sm.baseOpacity * currentShellOpacity;
       }
 
       for (const rid of Object.keys(entry.roomsMap)) {
-        entry.roomsMap[rid].visible = !inRoomFocus || rid === targetRoomObj.id;
+        entry.roomsMap[rid].visible = in1FShopFocus ? false : (!inRoomFocus || rid === targetRoomObj.id);
       }
     }
   }
@@ -4364,21 +5789,25 @@ function updateXRayAndFocusHighlights(dt) {
       dom.xrayBadge.textContent = driveState.cockpitView ? '1인칭 운전석' : '3인칭 드라이브';
     } else if (inRoomFocus) {
       dom.xrayBadge.textContent = '단독 룸 뷰';
-    } else if (inShopFocus) {
-      dom.xrayBadge.textContent = '상가 내부 뷰';
+    } else if (inShopFocus || in1FShopFocus) {
+      dom.xrayBadge.textContent = '매장 투시 뷰';
     } else {
-      const pct = Math.round(currentShellOpacity * 100);
-      dom.xrayBadge.textContent = pct >= 95 ? '외관 100%' : `내부 투시 ${100 - pct}%`;
+      const pct = Math.round((1 - currentShellOpacity) * 100);
+      dom.xrayBadge.textContent = `인형의집 투시 ${pct}%`;
     }
   }
 }
 
 
 // =========================================================
-// 10. 수익/행복도 경제 엔진 (골든벨 2.5배 피버 & 집들이 선물 영구 +20% 반영)
+// 10. 수익/행복도 & 4단계 마일스톤 경제 엔진 (골든벨 2.5배 · 머니건 3배 · 100% 영구 2배 반영)
 // =========================================================
 function getFeverMultiplier() {
-  return (state.feverTimer || 0) > 0 ? 2.5 : 1.0;
+  return (state.feverTimer || 0) > 0 ? (state.feverPower || 2.5) : 1.0;
+}
+
+function getLegendaryTotalMultiplier() {
+  return (state.unlockedMilestones || []).includes(100) ? 2.0 : 1.0;
 }
 
 function calcGlobalSynergyPct() {
@@ -4390,6 +5819,9 @@ function calcGlobalSynergyPct() {
   }
   const carDef = getCarDef(state.garage?.currentCar || 'car_scooter');
   pct += carDef.rentBonusPct || 0;
+  const ms = state.unlockedMilestones || [];
+  if (ms.includes(50)) pct += 15;
+  if (ms.includes(90)) pct += 50;
   return pct;
 }
 
@@ -4410,7 +5842,6 @@ function calcRoomEffectiveRent(bState, room) {
   const tierDef = ROOM_INTERIOR_TIERS[room.interiorLv || 0] || ROOM_INTERIOR_TIERS[0];
   let base = (room.baseRent || 38) + furnAdd + (tierDef.rentAdd || 0);
 
-  // 평형 선호도 보너스
   if (room.household) {
     const meta = ROOM_TYPE_META[room.layoutType];
     if (meta && meta.preferredBy.includes(room.household.type)) {
@@ -4419,7 +5850,29 @@ function calcRoomEffectiveRent(bState, room) {
   }
   const giftMult = 1 + (room.giftBonusPct || 0) / 100;
   const mult = 1 + (calcGlobalSynergyPct() + calcBuildingInfraBonusPct(bState)) / 100;
-  return Math.round(base * mult * giftMult * getFeverMultiplier());
+  return Math.round(base * mult * giftMult * getFeverMultiplier() * getLegendaryTotalMultiplier());
+}
+
+function calcFirstFloorShopStats(shopId) {
+  const tpl = (window.FIRST_FLOOR_SHOPS_TEMPLATE || []).find((s) => s.shopId === shopId);
+  const st = state.firstFloorShops?.[shopId];
+  if (!tpl) return { visitRev: 16, cycleRev: 28, upgCount: 0 };
+  let visitRev = tpl.baseVisitRevenue;
+  let cycleRev = tpl.passiveCycleProfit;
+  let upgCount = 0;
+  for (const upg of tpl.upgradesCatalog) {
+    if (st?.upgrades?.[upg.id]) {
+      visitRev += upg.visitBonus;
+      cycleRev += upg.cycleBonus;
+      upgCount += 1;
+    }
+  }
+  const shopMult = ((state.unlockedMilestones || []).includes(75) ? 1.25 : 1.0) * getFeverMultiplier() * getLegendaryTotalMultiplier();
+  return {
+    visitRev: Math.round(visitRev * shopMult),
+    cycleRev: Math.round(cycleRev * shopMult),
+    upgCount
+  };
 }
 
 function calcStandaloneShopStats(shopId) {
@@ -4442,7 +5895,8 @@ function calcStandaloneShopStats(shopId) {
   if (carDef.rentBonusPct > 0) {
     cycleRev = Math.round(cycleRev * (1 + carDef.rentBonusPct / 100));
   }
-  const fMult = getFeverMultiplier();
+  const shopBoost = (state.unlockedMilestones || []).includes(75) ? 1.25 : 1.0;
+  const fMult = getFeverMultiplier() * shopBoost * getLegendaryTotalMultiplier();
   return {
     visitRev: Math.round(visitRev * fMult),
     cycleRev: Math.round(cycleRev * fMult),
@@ -4452,10 +5906,11 @@ function calcStandaloneShopStats(shopId) {
 
 function calcCycleNetIncome() {
   let sum = 0;
-  const fMult = getFeverMultiplier();
+  const fMult = getFeverMultiplier() * getLegendaryTotalMultiplier();
+  sum += calcFirstFloorShopStats('shop_mart1f').cycleRev;
+  sum += calcFirstFloorShopStats('shop_wash1f').cycleRev;
+
   for (const b of Object.values(state.buildings)) {
-    // 1층 편의점 + 코인세탁소 기본 상가 수익 (골든벨 피버 2.5배 적용)
-    sum += Math.round(((b.shopsLv.mart || 1) * 15 + (b.shopsLv.wash || 1) * 13) * fMult);
     for (const rm of b.rooms) {
       if (rm.unlocked && rm.household) {
         sum += calcRoomEffectiveRent(b, rm);
@@ -4483,16 +5938,23 @@ function calcAvgHappiness() {
   const carBonus = getCarDef(state.garage?.currentCar || 'car_scooter').happyBonus || 0;
   let total = 0;
   let cnt = 0;
+  let furnBonus = 0;
   for (const b of Object.values(state.buildings)) {
     for (const rm of b.rooms) {
       if (rm.unlocked && rm.household) {
-        total += Math.min(100, (rm.household.happiness || 85) + carBonus);
+        total += (rm.household.happiness || 42);
         cnt += 1;
       }
+      if (rm.unlocked) furnBonus += (rm.interiorLv || 0) * 3;
+    }
+    for (const installed of Object.values(b.infra || {})) {
+      if (installed) furnBonus += 4;
     }
   }
-  if (cnt === 0) return 100;
-  return Math.min(100, Math.max(15, Math.round(total / cnt)));
+  const ownedShopBonus = Object.values(state.standaloneShops || {}).filter((s) => s.owned).length * 4;
+  const baseAvg = cnt === 0 ? 40 : total / cnt;
+  const raw = Math.round(baseAvg + carBonus + furnBonus + ownedShopBonus + (state.townHappinessBoost || 0));
+  return Math.min(100, Math.max(15, raw));
 }
 
 function addGold(amount, screenX = null, screenY = null) {
@@ -4540,6 +6002,11 @@ function updateTopHUDTargets() {
   hudAnim.targetGold = state.gold;
   hudAnim.targetNet = calcCycleNetIncome();
   hudAnim.targetHappy = calcAvgHappiness();
+  const happyLabel = document.getElementById('hud-happy-label');
+  if (happyLabel) {
+    happyLabel.textContent = (state.unlockedMilestones || []).includes(100) ? '성군' : '행복';
+  }
+  checkAndTriggerHappinessMilestones(hudAnim.targetHappy);
   refreshQuestRedDot();
 }
 
@@ -4612,14 +6079,24 @@ function spawnJackpotText3D(wx, wy, wz, text, icoKey = 'coin_stack') {
   setTimeout(() => el.remove(), 1180);
 }
 
-function showSpeechBubble3D(key, wx, wy, wz, text, duration = 3.2) {
+function isSpeechBubbleAllowedInCurrentView(forceShow = false) {
+  if (forceShow) return true;
+  if (fpState.active) return true;
+  if (driveState.active && driveState.cockpitView) return true;
+  if (focusedRoomId || focusedShopId || focusedFirstFloorShopId) return true;
+  if (makeItRainState.active || milestoneState.ceremonyActive) return true;
+  if (!driveState.active && camera && camera.zoom >= 1.25) return true;
+  return false;
+}
+
+function showSpeechBubble3D(key, wx, wy, wz, text, duration = 3.2, forceShow = false) {
   if (!dom.speechLayer) return;
   let entry = speechEls[key];
   if (!entry) {
     const el = document.createElement('div');
     el.className = 'speech-cloud';
     dom.speechLayer.appendChild(el);
-    entry = { el, wx, wy, wz, timer: duration };
+    entry = { el, wx, wy, wz, timer: duration, forceShow: !!forceShow, moteEl: null };
     speechEls[key] = entry;
   }
   entry.el.textContent = text;
@@ -4627,6 +6104,29 @@ function showSpeechBubble3D(key, wx, wy, wz, text, duration = 3.2) {
   entry.wy = wy;
   entry.wz = wz;
   entry.timer = duration;
+  entry.forceShow = !!forceShow;
+
+  // 줌아웃 전체 타운 뷰용 캐릭터 발광 오라 & 심플 아이콘 파티클 모트 생성
+  if (!entry.moteEl) {
+    const mEl = document.createElement('div');
+    mEl.className = 'aura-mote-badge';
+    const icoPick = key.includes('cheer') || text.includes('사랑') || text.includes('최고')
+      ? 'sparkle_heart_gauge'
+      : text.includes('음악') || text.includes('물소리')
+        ? 'music_mote'
+        : 'sparkle_star';
+    mEl.innerHTML = createCustomSVGIcon(icoPick, 18);
+    dom.speechLayer.appendChild(mEl);
+    entry.moteEl = mEl;
+  }
+
+  for (const ar of characterAuraRings) {
+    const wp = new THREE.Vector3();
+    ar.owner.getWorldPosition(wp);
+    if (Math.hypot(wp.x - wx, wp.z - wz) < 2.2) {
+      ar.owner.userData.auraTimer = Math.max(ar.owner.userData.auraTimer || 0, duration);
+    }
+  }
 }
 
 function spawnFlyingCoinsUI(startX, startY, count = 4) {
@@ -4934,7 +6434,6 @@ function tickStreetOutingAndDiningAI(dt, elapsed) {
           );
         } else {
           if (ac.sourceRoom && ac.sourceRoom.household) {
-            ac.sourceRoom.household.happiness = Math.min(100, (ac.sourceRoom.household.happiness || 85) + 8);
             spawnPoofParticles3D(ac.mesh.position.x, 1.5, ac.mesh.position.z, 0xFF6B6B, 6);
           }
           if (speechEls[ac.id]) {
@@ -5071,13 +6570,38 @@ function startWalkerReturnHome(ac, tpl) {
 }
 
 // =========================================================
-// 12. 카메라 전환 (모바일 세로 390x844 풀 프레이밍 대응)
+// 12. [핵심 조작 개편 2] 2단계 포커스 시퀀스(① 카메라 정중앙 배치 & 0.4s 클린 감상 ➔ ② 비가림 컨트롤 독 슬라이드업)
 // =========================================================
+function closeAllModalsImmediate() {
+  dom.garageModal?.classList.add('hidden');
+  dom.notebookModal?.classList.add('hidden');
+  dom.lotDevModal?.classList.add('hidden');
+  dom.recruitModal?.classList.add('hidden');
+  dom.renameModal?.classList.add('hidden');
+  dom.fpVisitModal?.classList.add('hidden');
+  document.getElementById('happiness-milestone-modal')?.classList.add('hidden');
+}
+
+function triggerDockSlideUpAnimation(el) {
+  if (!el) return;
+  el.classList.remove('dock-slide-up-enter');
+  void el.offsetWidth;
+  el.classList.add('dock-slide-up-enter');
+}
+
+function tuckFocusDockTemporarily(durationSec = 1.28) {
+  focusRevealState.tuckTimer = Math.max(focusRevealState.tuckTimer, durationSec);
+  dom.furnitureCatalogSheet?.classList.add('dock-tucked');
+  dom.roomFocusPanel?.classList.add('dock-tucked');
+  dom.shopFocusPanel?.classList.add('dock-tucked');
+}
+
 function syncTopBarsByMode() {
   const inFp = fpState.active;
   const inDrive = driveState.active && !inFp;
   const inRoom = !!focusedRoomId && !inDrive && !inFp;
-  const inShop = !!focusedShopId && !inDrive && !inFp;
+  const inShop = (!!focusedShopId || !!focusedFirstFloorShopId) && !inDrive && !inFp;
+  const showFocusDock = focusRevealState.revealed && !focusRevealState.pending;
 
   dom.hudTownControls?.classList.toggle('hidden', inDrive || inRoom || inShop || inFp);
   dom.roomFocusTopbar?.classList.toggle('hidden', !inRoom);
@@ -5085,9 +6609,10 @@ function syncTopBarsByMode() {
   dom.driveFocusTopbar?.classList.toggle('hidden', !inDrive);
   dom.fpFocusTopbar?.classList.toggle('hidden', !inFp);
 
-  dom.roomFocusPanel?.classList.toggle('hidden', !inRoom);
-  dom.shopFocusPanel?.classList.toggle('hidden', !inShop);
-  dom.furnitureCatalogSheet?.classList.toggle('hidden', !(inRoom || inShop));
+  // Step 1(카메라 정중앙 이동 0.6s + 도착 직후 0.4s 클린 감상) 동안은 모든 패널/팝업을 숨김!
+  dom.roomFocusPanel?.classList.toggle('hidden', !(inRoom && showFocusDock));
+  dom.shopFocusPanel?.classList.toggle('hidden', !(inShop && showFocusDock));
+  dom.furnitureCatalogSheet?.classList.toggle('hidden', !((inRoom || inShop) && showFocusDock));
   dom.driveModeHud?.classList.toggle('hidden', !inDrive);
   dom.cockpitOverlay?.classList.toggle('hidden', !(inDrive && driveState.cockpitView));
   dom.driveProximityBar?.classList.toggle('hidden', !inDrive);
@@ -5096,6 +6621,19 @@ function syncTopBarsByMode() {
   dom.isolationVignette?.classList.toggle('hidden', !(inRoom || inShop));
 
   updateCollectAllButtonVisibility();
+}
+
+function startSmoothCameraTween(targetPos, targetLook, targetZoom, duration = 0.6, onArrive = null) {
+  camTween.startPos.copy(camera.position);
+  camTween.startLook.copy(controls.target);
+  camTween.startZoom = camera.zoom;
+  camTween.pos.copy(targetPos);
+  camTween.look.copy(targetLook);
+  camTween.zoom = targetZoom;
+  camTween.elapsed = 0;
+  camTween.duration = Math.max(0.15, duration);
+  camTween.onArrive = onArrive;
+  camTween.active = true;
 }
 
 function setOverviewCamera(animate = true) {
@@ -5110,6 +6648,10 @@ function setOverviewCamera(animate = true) {
   const prevShop = focusedShopId;
   focusedRoomId = null;
   focusedShopId = null;
+  focusedFirstFloorShopId = null;
+  focusRevealState.pending = false;
+  focusRevealState.revealed = false;
+  focusRevealState.holdTimer = 0;
   if (prevShop) rebuildStandaloneShop3D(prevShop);
 
   controls.enabled = true;
@@ -5124,10 +6666,7 @@ function setOverviewCamera(animate = true) {
   const targetZoom = isMobilePortrait ? 0.45 : 0.78;
 
   if (animate) {
-    camTween.pos.copy(targetPos);
-    camTween.look.copy(targetLook);
-    camTween.zoom = targetZoom;
-    camTween.active = true;
+    startSmoothCameraTween(targetPos, targetLook, targetZoom, 0.58, null);
   } else {
     camera.position.copy(targetPos);
     controls.target.copy(targetLook);
@@ -5144,6 +6683,31 @@ function ensureCatalogSheetExpanded() {
   if (dom.fcatToggleLabel) dom.fcatToggleLabel.textContent = '접기';
 }
 
+function beginTwoStepFocusSequence(targetPos, targetLook, targetZoom, renderDockCallback) {
+  closeAllModalsImmediate();
+  focusRevealState.pending = true;
+  focusRevealState.revealed = false;
+  focusRevealState.holdTimer = 0;
+  focusRevealState.tuckTimer = 0;
+  dom.furnitureCatalogSheet?.classList.remove('dock-tucked');
+  dom.roomFocusPanel?.classList.remove('dock-tucked');
+  dom.shopFocusPanel?.classList.remove('dock-tucked');
+  syncTopBarsByMode();
+
+  // Step 1: 0.6초 동안 해당 건물/매장/호실 정중앙으로 부드럽게 카메라 이동 -> 도착 후 0.4초 클린 감상 -> Step 2 독 슬라이드업!
+  startSmoothCameraTween(targetPos, targetLook, targetZoom, 0.6, () => {
+    focusRevealState.holdTimer = 0.4;
+    focusRevealState.onHoldDone = () => {
+      focusRevealState.pending = false;
+      focusRevealState.revealed = true;
+      if (typeof renderDockCallback === 'function') renderDockCallback();
+      syncTopBarsByMode();
+      triggerDockSlideUpAnimation(dom.furnitureCatalogSheet);
+      triggerDockSlideUpAnimation(focusedRoomId ? dom.roomFocusPanel : dom.shopFocusPanel);
+    };
+  });
+}
+
 function focusCameraOnRoom(roomId) {
   if (driveState.active) exitDriveMode();
   if (focusedShopId) {
@@ -5151,6 +6715,7 @@ function focusCameraOnRoom(roomId) {
     focusedShopId = null;
     rebuildStandaloneShop3D(oldShop);
   }
+  focusedFirstFloorShopId = null;
 
   const rm = findRoomById(roomId);
   if (!rm) return;
@@ -5159,31 +6724,31 @@ function focusCameraOnRoom(roomId) {
 
   focusedRoomId = rm.id;
   ensureCatalogSheetExpanded();
+  renderRoomSwitcherChips(rm.lotId);
 
   const wx = lot.x + rm.lx;
-  const wy = rm.ly + rm.rh * 0.44;
+  const wy = rm.ly + rm.rh * 0.46;
   const wz = lot.z + rm.lz;
 
   const aspect = window.innerWidth / Math.max(1, window.innerHeight);
   const frustumH = 38;
   const frustumW = frustumH * aspect;
-  const spanW = rm.rw * 1.28 + 2.6;
-  const spanH = rm.rh * 1.56 + 4.2;
-  const fitZoom = Math.min(frustumW / spanW, frustumH / spanH) * 0.86;
+  const spanW = rm.rw * 1.3 + 2.8;
+  const spanH = rm.rh * 1.62 + 4.4;
+  const fitZoom = THREE.MathUtils.clamp(Math.min(frustumW / spanW, frustumH / spanH) * 0.88, 1.48, 3.55);
 
-  camTween.look.set(wx, wy - 0.25, wz);
-  camTween.pos.set(wx + rm.rw * 0.52 + 12.5, wy + rm.rh * 0.85 + 9.2, wz + 22.5);
-  camTween.zoom = THREE.MathUtils.clamp(fitZoom, 1.45, 3.65);
-  camTween.active = true;
+  // 하단 가구 시트가 올라와도 방 정중앙이 절대 가려지지 않도록 타겟 Y를 살짝 아래로 오프셋하여 화면 중앙 상단에 방 배치!
+  const lookPt = new THREE.Vector3(wx, wy - 0.55, wz);
+  const camPt = new THREE.Vector3(wx + rm.rw * 0.44 + 11.5, wy + rm.rh * 0.78 + 8.5, wz + 23.0);
 
   controls.enablePan = false;
   controls.minPolarAngle = 0.42;
   controls.maxPolarAngle = Math.PI * 0.46;
 
-  syncTopBarsByMode();
-  renderRoomSwitcherChips(rm.lotId);
-  renderFocusedRoomInspector();
-  renderFurnitureCatalogSheet();
+  beginTwoStepFocusSequence(camPt, lookPt, fitZoom, () => {
+    renderFocusedRoomInspector();
+    renderFurnitureCatalogSheet();
+  });
 }
 
 function exitRoomFocusMode() {
@@ -5195,12 +6760,14 @@ function exitRoomFocusMode() {
 function focusCameraOnShop(shopId) {
   if (driveState.active) exitDriveMode();
   focusedRoomId = null;
+  focusedFirstFloorShopId = null;
   ensureCatalogSheetExpanded();
 
   const prevShop = focusedShopId;
   focusedShopId = shopId;
   if (prevShop && prevShop !== shopId) rebuildStandaloneShop3D(prevShop);
   rebuildStandaloneShop3D(shopId);
+  renderShopSwitcherChips();
 
   const tpl = STANDALONE_SHOPS_TEMPLATE.find((s) => s.shopId === shopId);
   if (!tpl) return;
@@ -5208,25 +6775,399 @@ function focusCameraOnShop(shopId) {
   const aspect = window.innerWidth / Math.max(1, window.innerHeight);
   const frustumH = 38;
   const frustumW = frustumH * aspect;
-  const fitZoom = Math.min(frustumW / 16.0, frustumH / 13.0) * 0.88;
+  const fitZoom = THREE.MathUtils.clamp(Math.min(frustumW / 15.5, frustumH / 12.8) * 0.9, 1.6, 2.95);
 
-  camTween.look.set(tpl.x, 1.85, tpl.z + 0.9);
-  camTween.pos.set(tpl.x + 13.5, 13.2, tpl.z + 20.5);
-  camTween.zoom = THREE.MathUtils.clamp(fitZoom, 1.55, 2.95);
-  camTween.active = true;
+  const lookPt = new THREE.Vector3(tpl.x, 1.45, tpl.z + 0.65);
+  const camPt = new THREE.Vector3(tpl.x + 11.5, 12.2, tpl.z + 21.5);
 
   controls.enablePan = false;
-  syncTopBarsByMode();
+  beginTwoStepFocusSequence(camPt, lookPt, fitZoom, () => {
+    renderFocusedShopPanel();
+    renderShopUpgradeCatalog();
+  });
+}
+
+function focusCameraOnFirstFloorShop(shopId) {
+  if (driveState.active) exitDriveMode();
+  focusedRoomId = null;
+  if (focusedShopId) {
+    const prev = focusedShopId;
+    focusedShopId = null;
+    rebuildStandaloneShop3D(prev);
+  }
+  focusedFirstFloorShopId = shopId;
+  ensureCatalogSheetExpanded();
   renderShopSwitcherChips();
-  renderFocusedShopPanel();
-  renderShopUpgradeCatalog();
+
+  const tpl = (window.FIRST_FLOOR_SHOPS_TEMPLATE || []).find((s) => s.shopId === shopId);
+  const lot = state.lots.find((l) => l.lotId === (tpl?.lotId || 'lot_main')) || { x: -4.2, z: -6.4 };
+  const wx = lot.x + (tpl?.localX || -7.15);
+  const wy = 2.05;
+  const wz = lot.z + 0.25;
+
+  const aspect = window.innerWidth / Math.max(1, window.innerHeight);
+  const frustumH = 38;
+  const frustumW = frustumH * aspect;
+  const fitZoom = THREE.MathUtils.clamp(Math.min(frustumW / 14.5, frustumH / 11.8) * 0.92, 1.72, 2.95);
+
+  // 우측 상단 매장 카드와 하단 설비 시트를 피해 화면 좌측~중앙 오픈 영역에 1층 매장 내부 전체(뒷벽 냉장고·2단 세탁기 6대 포함)가 한눈에 들어오도록 조준!
+  const lookPt = new THREE.Vector3(wx + 1.15, 1.52, wz - 0.65);
+  const camPt = new THREE.Vector3(wx + (shopId === 'shop_mart1f' ? 6.8 : -5.2), 6.25, wz + 23.8);
+
+  controls.enablePan = false;
+  beginTwoStepFocusSequence(camPt, lookPt, fitZoom, () => {
+    renderFocusedFirstFloorShopPanel();
+    renderFirstFloorShopUpgradeCatalog();
+  });
 }
 
 function exitShopFocusMode() {
   const prev = focusedShopId;
   focusedShopId = null;
+  focusedFirstFloorShopId = null;
   if (prev) rebuildStandaloneShop3D(prev);
   setOverviewCamera(true);
+}
+
+// =========================================================
+// 12B. [핵심 비주얼 8] Three.js 오프스크린 45도 쿼터뷰 3D 입체 렌더링 썸네일 생성기 (toDataURL)
+// =========================================================
+function buildPreviewSubject3D(itemId) {
+  if (itemId.startsWith('car_')) {
+    const v = createVehicle3D(itemId, false);
+    if (itemId === 'car_limo') v.scale.setScalar(0.68);
+    else if (itemId === 'car_scooter') v.scale.setScalar(1.38);
+    else v.scale.setScalar(0.88);
+    v.rotation.y = Math.PI * 0.3;
+    return v;
+  }
+  if (itemId.startsWith('bed_')) {
+    const b = createCatalogBed3D(itemId);
+    b.scale.setScalar(0.95);
+    b.rotation.y = Math.PI * 0.22;
+    return b;
+  }
+  if (itemId.startsWith('sofa_')) {
+    const s = createCatalogSofa3D(itemId);
+    s.scale.setScalar(1.05);
+    s.rotation.y = Math.PI * 0.2;
+    return s;
+  }
+  if (itemId.startsWith('app_')) {
+    const a = createCatalogAppliance3D(itemId, 5.2, 4.2, 3.8);
+    a.position.set(-0.6, 0, 0.3);
+    a.scale.setScalar(0.92);
+    a.rotation.y = Math.PI * 0.16;
+    return a;
+  }
+  if (itemId.startsWith('dec_')) {
+    const dDef = getFurnitureItemDef('decor', itemId);
+    const dg = new THREE.Group();
+    const fMat = makeClayMat(0xFFFFFF, { map: TEX[dDef?.floorKey || 'floor1'] });
+    const wMat = makeClayMat(0xFFFFFF, { map: TEX[dDef?.wallKey || 'wallPeach'] });
+    dg.add(createRoundedToyMesh(2.8, 0.16, 2.4, fMat, 0, 0.08, 0, 0.05));
+    dg.add(createRoundedToyMesh(2.8, 1.85, 0.18, wMat, 0, 1.0, -1.1, 0.05));
+    dg.add(createRoundedToyMesh(0.18, 1.85, 2.4, wMat, -1.3, 1.0, 0, 0.05));
+    const stairCol = dDef?.stairStyle === 'gold' ? MAT.pureGold24k : dDef?.stairStyle === 'coral' ? MAT.coral : MAT.woodWarm;
+    for (let s = 0; s < 4; s++) {
+      dg.add(createRoundedToyMesh(0.85, 0.16, 0.42, stairCol, 0.35, 0.24 + s * 0.32, 0.65 - s * 0.38, 0.03));
+    }
+    dg.rotation.y = Math.PI * 0.18;
+    return dg;
+  }
+  if (itemId === 'upg_oven') {
+    const og = new THREE.Group();
+    og.add(createRoundedToyMesh(2.2, 2.15, 1.0, MAT.pureGold24k, 0, 1.08, 0, 0.1));
+    og.add(createRoundedToyMesh(1.3, 0.44, 0.14, MAT.ovenFire, 0, 0.95, 0.5, 0.04));
+    og.add(createRoundedToyMesh(1.3, 0.42, 0.14, MAT.ovenFire, 0, 1.62, 0.5, 0.04));
+    og.rotation.y = Math.PI * 0.18;
+    return og;
+  }
+  if (itemId === 'upg_terrace') {
+    const tg = createGreenParasolTableSet3D(true);
+    tg.scale.setScalar(0.84);
+    return tg;
+  }
+  if (itemId === 'upg_crate') {
+    const cg = createFruitWoodenCrate3D('mix');
+    cg.scale.setScalar(1.65);
+    cg.rotation.y = Math.PI * 0.18;
+    return cg;
+  }
+  if (itemId === 'upg_mart_gondola') {
+    const mg = createMartGondolaShelf3D(['chips', 'shrimp', 'choco', 'strawberry']);
+    mg.scale.setScalar(1.15);
+    mg.rotation.y = Math.PI * 0.18;
+    return mg;
+  }
+  if (itemId === 'upg_mart_fridge') {
+    const fg = createMartBlueLedChiller3D();
+    fg.scale.setScalar(0.9);
+    fg.rotation.y = 0.22;
+    return fg;
+  }
+  if (itemId === 'upg_mart_ramenbar') {
+    const rg = new THREE.Group();
+    rg.add(createRoundedToyMesh(2.4, 0.12, 0.72, MAT.woodLight, 0, 0.95, 0, 0.04));
+    rg.add(createRoundedToyMesh(0.68, 0.44, 0.48, MAT.white, -0.62, 1.24, 0, 0.04));
+    rg.add(createRoundedToyMesh(0.42, 0.28, 0.05, MAT.screenCyan, -0.62, 1.24, 0.24, 0.02));
+    const b = createPhotorealBentoBox3D(1.15);
+    b.position.set(0.45, 1.02, 0);
+    rg.add(b);
+    rg.rotation.y = Math.PI * 0.18;
+    return rg;
+  }
+  if (itemId === 'upg_wash_drum6') {
+    const wg = createStackedDrumWasherPair3D();
+    wg.scale.setScalar(0.76);
+    wg.rotation.y = Math.PI * 0.18;
+    return wg;
+  }
+  if (itemId === 'upg_wash_vending') {
+    const vg = new THREE.Group();
+    vg.add(createRoundedToyMesh(1.18, 2.15, 0.78, MAT.sky, -0.58, 1.08, 0, 0.08));
+    vg.add(createRoundedToyMesh(0.88, 0.92, 0.06, MAT.screenCyan, -0.58, 1.42, 0.4, 0.03));
+    vg.add(createRoundedToyMesh(0.88, 1.72, 0.68, MAT.pureGold24k, 0.62, 0.86, 0, 0.07));
+    vg.rotation.y = Math.PI * 0.18;
+    return vg;
+  }
+  // upg_wash_lounge 기본 폴백
+  const lg = new THREE.Group();
+  lg.add(createRoundedToyMesh(1.1, 0.68, 0.78, MAT.chromeAlloy, -0.55, 0.52, 0, 0.06));
+  lg.add(createRoundedToyMesh(0.86, 0.34, 0.56, MAT.pinkSoft, -0.55, 0.86, 0, 0.07));
+  lg.add(createRoundedToyMesh(1.35, 0.12, 0.88, MAT.woodWarm, 0.68, 0.88, 0, 0.04));
+  lg.rotation.y = Math.PI * 0.18;
+  return lg;
+}
+
+function getOrRender3DCatalogPreview(itemId, width = 220, height = 128) {
+  if (!renderer) return createCatalogThumbnailSVG(itemId, width, height);
+  const cacheKey = `${itemId}_${width}x${height}`;
+  if (catalog3DPreviewCache.has(cacheKey)) {
+    return `<img src="${catalog3DPreviewCache.get(cacheKey)}" alt="${itemId}" class="catalog-3d-preview-img" />`;
+  }
+
+  try {
+    if (!offscreenThumbScene) {
+      offscreenThumbScene = new THREE.Scene();
+      const hemi = new THREE.HemisphereLight(0xFFFDF8, 0xEBD4BE, 1.35);
+      const key = new THREE.DirectionalLight(0xFFF7E6, 1.65);
+      key.position.set(6, 10, 8);
+      const rim = new THREE.DirectionalLight(0xBAE6FD, 0.85);
+      rim.position.set(-7, 6, -5);
+      offscreenThumbScene.add(hemi, key, rim);
+
+      const pedestal = new THREE.Mesh(
+        new THREE.CylinderGeometry(2.15, 2.28, 0.16, 36),
+        makeClayMat(0xF5E6D3, { roughness: 0.68 })
+      );
+      pedestal.position.y = -0.08;
+      pedestal.name = 'thumb_pedestal';
+      offscreenThumbScene.add(pedestal);
+
+      offscreenThumbCam = new THREE.OrthographicCamera(-2.6, 2.6, 1.65, -1.65, 0.1, 40);
+      // 45도 쿼터뷰(Isometric 3D Angle) 카메라 세팅!
+      offscreenThumbCam.position.set(6.8, 5.6, 6.8);
+      offscreenThumbCam.lookAt(0, 0.92, 0);
+    }
+
+    const oldSub = offscreenThumbScene.getObjectByName('thumb_subject');
+    if (oldSub) offscreenThumbScene.remove(oldSub);
+
+    const subject = buildPreviewSubject3D(itemId);
+    subject.name = 'thumb_subject';
+    offscreenThumbScene.add(subject);
+
+    const aspect = width / Math.max(1, height);
+    const frustumH = 3.25;
+    offscreenThumbCam.left = (-frustumH * aspect) / 2;
+    offscreenThumbCam.right = (frustumH * aspect) / 2;
+    offscreenThumbCam.top = frustumH / 2;
+    offscreenThumbCam.bottom = -frustumH / 2;
+    offscreenThumbCam.updateProjectionMatrix();
+
+    const rtW = width * 2;
+    const rtH = height * 2;
+    const prevTarget = renderer.getRenderTarget();
+    const prevClearAlpha = renderer.getClearAlpha();
+    const prevClearCol = new THREE.Color();
+    renderer.getClearColor(prevClearCol);
+
+    const rt = new THREE.WebGLRenderTarget(rtW, rtH, {
+      samples: 4,
+      type: THREE.UnsignedByteType
+    });
+    renderer.setRenderTarget(rt);
+    renderer.setClearColor(0xFFFDF8, 0);
+    renderer.clear();
+    renderer.render(offscreenThumbScene, offscreenThumbCam);
+
+    const pixels = new Uint8Array(rtW * rtH * 4);
+    renderer.readRenderTargetPixels(rt, 0, 0, rtW, rtH, pixels);
+
+    renderer.setRenderTarget(prevTarget);
+    renderer.setClearColor(prevClearCol, prevClearAlpha);
+    rt.dispose();
+
+    const cv = document.createElement('canvas');
+    cv.width = rtW;
+    cv.height = rtH;
+    const ctx = cv.getContext('2d');
+    const imgData = ctx.createImageData(rtW, rtH);
+    // WebGL Y-flip 보정 및 sRGB 밝기 보존
+    for (let y = 0; y < rtH; y++) {
+      const srcRow = (rtH - 1 - y) * rtW * 4;
+      const dstRow = y * rtW * 4;
+      imgData.data.set(pixels.subarray(srcRow, srcRow + rtW * 4), dstRow);
+    }
+    ctx.putImageData(imgData, 0, 0);
+
+    const dataUrl = cv.toDataURL('image/png');
+    catalog3DPreviewCache.set(cacheKey, dataUrl);
+    return `<img src="${dataUrl}" alt="${itemId}" class="catalog-3d-preview-img" />`;
+  } catch (err) {
+    return createCatalogThumbnailSVG(itemId, width, height);
+  }
+}
+
+// =========================================================
+// 12C. [시공 리얼 애니메이션 4] 낙하 바운스(Drop & Jelly Bounce) & 격자 방음 패드 타일 시공 연출 + 효과음
+// =========================================================
+function playHeavyDropThudSFX() {
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    if (!window._landlordAudioCtx) window._landlordAudioCtx = new AC();
+    const ctx = window._landlordAudioCtx;
+    if (ctx.state === 'suspended') ctx.resume();
+    const now = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(165, now);
+    osc.frequency.exponentialRampToValueAtTime(48, now + 0.22);
+    gain.gain.setValueAtTime(0.28, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.26);
+
+    // 반짝이는 젤리 스파클 차임
+    [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
+      const o2 = ctx.createOscillator();
+      const g2 = ctx.createGain();
+      o2.type = 'sine';
+      o2.frequency.value = freq;
+      const t0 = now + 0.14 + i * 0.055;
+      g2.gain.setValueAtTime(0.09, t0);
+      g2.gain.exponentialRampToValueAtTime(0.001, t0 + 0.18);
+      o2.connect(g2);
+      g2.connect(ctx.destination);
+      o2.start(t0);
+      o2.stop(t0 + 0.2);
+    });
+  } catch (e) {}
+}
+
+function playHammerBuildSFX() {
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    if (!window._landlordAudioCtx) window._landlordAudioCtx = new AC();
+    const ctx = window._landlordAudioCtx;
+    if (ctx.state === 'suspended') ctx.resume();
+    const now = ctx.currentTime;
+    for (let h = 0; h < 5; h++) {
+      const t0 = now + h * 0.13;
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(280 + (h % 2) * 70, t0);
+      osc.frequency.exponentialRampToValueAtTime(90, t0 + 0.08);
+      g.gain.setValueAtTime(0.14, t0);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.09);
+      osc.connect(g);
+      g.connect(ctx.destination);
+      osc.start(t0);
+      osc.stop(t0 + 0.1);
+    }
+  } catch (e) {}
+}
+
+function playDropBouncePlacement3D(targetObj, wx, wy, wz) {
+  if (!targetObj) return;
+  const baseY = targetObj.position.y;
+  const baseScale = targetObj.scale.clone();
+  targetObj.position.y = baseY + 4.8;
+  activeDropBounces.push({
+    obj: targetObj,
+    baseY,
+    baseScale,
+    elapsed: 0,
+    dropDur: 0.34,
+    bounceDur: 0.56,
+    landed: false,
+    wx,
+    wy,
+    wz
+  });
+}
+
+function playSoundproofTileLaying3D(room) {
+  const lot = state.lots.find((l) => l.lotId === room.lotId);
+  const rGrp = lot3D[room.lotId]?.roomsMap?.[room.id];
+  if (!rGrp || !lot) return;
+
+  tuckFocusDockTemporarily(1.45);
+  playHammerBuildSFX();
+
+  const tempTileGrp = new THREE.Group();
+  rGrp.add(tempTileGrp);
+
+  const cols = 4;
+  const rows = 3;
+  const pw = (room.rw * 0.72) / cols;
+  const pd = (room.rd * 0.56) / rows;
+  const wxBase = lot.x + room.lx;
+  const wzBase = lot.z + room.lz;
+
+  let delayIdx = 0;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const lx = (c - (cols - 1) * 0.5) * pw;
+      const lz = (r - (rows - 1) * 0.5) * pd;
+      const tile = createRoundedToyMesh(
+        pw - 0.08,
+        0.12,
+        pd - 0.08,
+        (r + c) % 2 === 0 ? MAT.mint : MAT.butter,
+        lx,
+        0.18,
+        lz,
+        0.04
+      );
+      tile.scale.setScalar(0.01);
+      tempTileGrp.add(tile);
+      activeTileAnimations.push({
+        mesh: tile,
+        delay: delayIdx * 0.065,
+        elapsed: 0,
+        wx: wxBase + lx,
+        wy: room.ly + 0.35,
+        wz: wzBase + lz,
+        poofed: false
+      });
+      delayIdx += 1;
+    }
+  }
+  spawnJackpotText3D(wxBase, room.ly + 2.2, wzBase, '뚝딱뚝딱! 방음 타일 시공!', 'soundproof_hammer');
+  setTimeout(() => {
+    if (tempTileGrp.parent) tempTileGrp.parent.remove(tempTileGrp);
+    rebuildRoom3D(room.lotId, room);
+    syncBuildingResidents3D(room.lotId);
+  }, 1350);
 }
 
 // =========================================================
@@ -5273,7 +7214,7 @@ function renderGarageCards() {
 
     return `
       <div class="fcat-item-card !p-2.5 ${isEquipped ? 'equipped-card' : ''}">
-        <div class="fcat-thumb-stage !py-1.5">${createCatalogThumbnailSVG(car.id, 210, 76)}</div>
+        <div class="fcat-thumb-stage !py-1">${getOrRender3DCatalogPreview(car.id, 224, 96)}</div>
         <div class="space-y-1 mt-0.5">
           <div class="flex items-center justify-between gap-1.5">
             <span class="font-title text-[14.5px] text-[#3A2E2B]">${car.name}</span>
@@ -5300,14 +7241,23 @@ function renderGarageCards() {
       if (!spendGold(car.cost)) return;
       if (!state.garage.ownedCars.includes(cid)) state.garage.ownedCars.push(cid);
       state.garage.currentCar = cid;
+      closeGarageModal();
       refreshPlayerCar3D();
+      if (!driveState.active) {
+        startSmoothCameraTween(
+          new THREE.Vector3(VIP_PARKING_POS.x + 12.5, 11.5, VIP_PARKING_POS.z + 18.5),
+          new THREE.Vector3(VIP_PARKING_POS.x, 1.0, VIP_PARKING_POS.z),
+          1.65,
+          0.55,
+          null
+        );
+      }
+      playDropBouncePlacement3D(driveState.vehicleMesh, driveState.carRootGroup.position.x, 1.1, driveState.carRootGroup.position.z);
       playSupercarHornSound(cid);
-      spawnPoofParticles3D(driveState.carRootGroup.position.x, driveState.carRootGroup.position.y + 1.0, driveState.carRootGroup.position.z, 0xFFD43B, 14);
-      spawnShockwaveRing3D(driveState.carRootGroup.position.x, 0.35, driveState.carRootGroup.position.z, 0xFF6B6B, 5.2);
+      showSpeechBubble3D('vip_car_delivery', driveState.carRootGroup.position.x, 2.5, driveState.carRootGroup.position.z, `와아!! 새 드림카 [${car.name}] 출고 완료!!`, 3.6, true);
       updateTopHUDTargets();
-      renderGarageCards();
       syncDriveTopBadges();
-      showToast(`[${car.name}] VIP 출고 완료!`, 'gold');
+      showToast(`[${car.name}] VIP 출고! 하늘에서 착지 출고 세리머니가 펼쳐집니다!`, 'gold');
       saveGameState();
     });
   });
@@ -5316,12 +7266,13 @@ function renderGarageCards() {
     btn.addEventListener('click', () => {
       const cid = btn.getAttribute('data-car-equip');
       state.garage.currentCar = cid;
+      closeGarageModal();
       refreshPlayerCar3D();
+      playDropBouncePlacement3D(driveState.vehicleMesh, driveState.carRootGroup.position.x, 1.1, driveState.carRootGroup.position.z);
       playSupercarHornSound(cid);
       updateTopHUDTargets();
-      renderGarageCards();
       syncDriveTopBadges();
-      showToast(`[${getCarDef(cid).name}] 차량으로 교체했습니다!`, 'mint');
+      showToast(`[${getCarDef(cid).name}] 배차 완료!`, 'mint');
       saveGameState();
     });
   });
@@ -5422,11 +7373,16 @@ function updateDriveShopProximityUI() {
   }
   driveState.nearestShopId = best.id;
 
+  // 상가 앞 근접 구간(13.5m 이내)일 때만 프롬프트 노출하여 외곽 해안 드라이빙 시야 확보!
+  if (dom.driveProximityBar) {
+    dom.driveProximityBar.classList.toggle('hidden', minDist > 13.5);
+  }
+
   const icoEl = document.getElementById('prox-shop-ico');
   const nameEl = document.getElementById('prox-shop-name');
   if (icoEl) icoEl.innerHTML = createCustomSVGIcon(best.icon, 22);
   if (nameEl) {
-    nameEl.textContent = minDist < 12.5 ? `${best.name} 앞 통과 중!` : `가까운 매장 · ${best.name}`;
+    nameEl.textContent = minDist < 9.5 ? `${best.name} 앞 통과 중!` : `인근 매장 · ${best.name}`;
   }
 }
 
@@ -5488,6 +7444,7 @@ function triggerDriveThruOrder(targetShopId = null) {
 function enterDriveMode(startInCockpit = false) {
   if (fpState.active) exitFirstPersonMode(false);
   if (focusedRoomId) focusedRoomId = null;
+  focusedFirstFloorShopId = null;
   if (focusedShopId) {
     const prevS = focusedShopId;
     focusedShopId = null;
@@ -5719,17 +7676,57 @@ function tickDriveMode(dt, elapsed) {
   let nx = driveState.x + fwdX * driveState.speed * dt;
   let nz = driveState.z + fwdZ * driveState.speed * dt;
 
-  // 섬 외곽 추락 방지 안전 가드레일 반경 클램프
-  const rFromCenter = Math.hypot(nx, nz - 8);
-  if (rFromCenter > 47.5) {
-    const scale = 47.5 / rFromCenter;
-    nx *= scale;
-    nz = 8 + (nz - 8) * scale;
-    driveState.speed *= 0.6;
-  }
+  // 섬 & 외곽 해안 드라이빙 존 추락 방지 안전 가드레일 (해안 다리 z = 50.2 까지 완벽 허용!)
+  nx = THREE.MathUtils.clamp(nx, -36.5, 36.5);
+  nz = THREE.MathUtils.clamp(nz, -8.5, 53.5);
 
   driveState.x = nx;
   driveState.z = nz;
+
+  // 1) 외곽 해안 드라이빙 존 황금 부스트 코인 획득 판정!
+  for (const sc of scenicBoostCoins) {
+    if (sc.cooldown > 0) {
+      sc.cooldown -= dt;
+      sc.mesh.visible = sc.cooldown <= 0;
+      continue;
+    }
+    sc.mesh.rotation.y += dt * 3.8;
+    if (Math.hypot(sc.x - driveState.x, sc.z - driveState.z) < 2.8) {
+      sc.cooldown = 14.0;
+      sc.mesh.visible = false;
+      driveState.speed = Math.min(maxSpd * 1.28, Math.max(driveState.speed, maxSpd * 0.95));
+      driveState.sessionLoot += 15;
+      addGold(15);
+      spawnPoofParticles3D(sc.x, 1.1, sc.z, 0xFFD93D, 8);
+      spawnJackpotText3D(sc.x, 1.8, sc.z, '해안 부스트 +15만!', 'magnet_coin');
+      syncDriveTopBadges();
+    }
+  }
+
+  // 2) 1인칭 슈퍼카 운전석(Cockpit) 시점 주행 시 도심 행인 & 외곽 해안 구경꾼들의 생생한 환호 말풍선 자동 출력!
+  if (driveState.cockpitView) {
+    for (const ac of streetOutingActors) {
+      const dist = Math.hypot(ac.mesh.position.x - driveState.x, ac.mesh.position.z - driveState.z);
+      if (dist < 17.5 && !speechEls[`ck_greet_${ac.id}`]) {
+        const msg = carDef.cheerQuotes[Math.floor(Math.random() * carDef.cheerQuotes.length)];
+        showSpeechBubble3D(`ck_greet_${ac.id}`, ac.mesh.position.x, ac.mesh.position.y + 1.95, ac.mesh.position.z, msg, 3.2, true);
+      }
+    }
+    for (const sp of streetInteractiveProps) {
+      if (sp.kind === 'scenicSightseer') {
+        const dist = Math.hypot(sp.x - driveState.x, sp.z - driveState.z);
+        if (dist < 24.0 && !speechEls[`ck_scenic_${sp.id}`]) {
+          showSpeechBubble3D(`ck_scenic_${sp.id}`, sp.x, 2.25, sp.z, sp.quote, 3.8, true);
+        }
+      }
+    }
+    const mirrorCap = document.getElementById('cockpit-mirror-caption');
+    if (mirrorCap) {
+      mirrorCap.textContent = driveState.z > 33.5
+        ? '외곽 해안 · 빨간 아치교 드라이빙 존 주행 중!'
+        : '분수대 부티크 거리 주행 중';
+    }
+  }
   driveState.carRootGroup.position.set(driveState.x, 0.22 + Math.sin(elapsed * 22) * 0.015, driveState.z);
   driveState.carRootGroup.rotation.y = driveState.heading;
 
@@ -5756,11 +7753,11 @@ function tickDriveMode(dt, elapsed) {
 
   // ==================== 1인칭 운전석(Cockpit) vs 3인칭 추격 카메라 분기 ====================
   if (driveState.cockpitView) {
-    const hoodFwd = carDef.id === 'car_limo' ? 1.55 : carDef.id === 'car_scooter' ? 0.35 : 0.68;
+    const hoodFwd = carDef.id === 'car_limo' ? 1.55 : carDef.id === 'car_scooter' ? 0.96 : 0.76;
     const eyeVib = Math.abs(driveState.speed) > 0.5 ? Math.sin(elapsed * 18) * 0.012 : 0;
     const eyePos = new THREE.Vector3(
       driveState.x + fwdX * hoodFwd,
-      1.62 + eyeVib,
+      (carDef.id === 'car_scooter' ? 1.68 : 1.62) + eyeVib,
       driveState.z + fwdZ * hoodFwd
     );
     const lookTarget = new THREE.Vector3(
@@ -5987,6 +7984,7 @@ function enterFirstPersonShop(shopId = 'shop_bakery', rememberDrive = null) {
     driveState.speed = 0;
   }
   if (focusedRoomId) focusedRoomId = null;
+  focusedFirstFloorShopId = null;
   if (focusedShopId) {
     const prevS = focusedShopId;
     focusedShopId = null;
@@ -6058,17 +8056,19 @@ function enterFirstPersonShop(shopId = 'shop_bakery', rememberDrive = null) {
     cr.position.set(-3.8, 0.02, -1.2);
     stg.add(cr);
   } else if (dest.id === 'shop_mart1f') {
-    for (let rx = -4.2; rx <= -2.4; rx += 1.8) {
-      stg.add(createRoundedToyMesh(1.55, 2.5, 0.75, MAT.sky, rx, 1.28, -D * 0.5 + 0.65, 0.08));
-      stg.add(createRoundedToyMesh(1.32, 1.9, 0.8, MAT.white, rx, 1.32, -D * 0.5 + 0.68, 0.05));
-    }
+    const chiller = createMartBlueLedChiller3D();
+    chiller.position.set(-3.4, 0.02, -D * 0.5 + 0.65);
+    stg.add(chiller);
+    const gond = createMartGondolaShelf3D(['chips', 'shrimp', 'choco', 'ramen']);
+    gond.position.set(-4.35, 0.02, -1.55);
+    gond.rotation.y = Math.PI * 0.5;
+    stg.add(gond);
   } else if (dest.id === 'shop_wash1f') {
-    for (let wx = -4.4; wx <= -2.2; wx += 1.1) {
-      stg.add(createRoundedToyMesh(0.98, 1.45, 0.75, MAT.white, wx, 0.75, -D * 0.5 + 0.65, 0.08));
-      const dr = new THREE.Mesh(GEO.torus, MAT.sky);
-      dr.scale.setScalar(0.58);
-      dr.position.set(wx, 0.82, -D * 0.5 + 1.05);
-      stg.add(dr);
+    for (let wx = -4.2; wx <= -2.1; wx += 1.05) {
+      const pair = createStackedDrumWasherPair3D();
+      pair.scale.setScalar(0.84);
+      pair.position.set(wx, 0.02, -D * 0.5 + 0.72);
+      stg.add(pair);
     }
   } else {
     for (let fx = -4.2; fx <= -2.4; fx += 0.9) {
@@ -6104,10 +8104,11 @@ function enterFirstPersonShop(shopId = 'shop_bakery', rememberDrive = null) {
     stg.add(hit);
     fpState.pickables.push(hit);
 
+    // 직원의 얼굴이나 실사 디저트 상단을 가리지 않도록 쇼케이스 카운터 앞쪽 엣지에 배지 정렬!
     createFpPinBadge(
       FP_STAGE_ORIGIN.x + ix,
-      FP_STAGE_ORIGIN.y + iy + 0.62,
-      FP_STAGE_ORIGIN.z + iz,
+      FP_STAGE_ORIGIN.y + iy - 0.18,
+      FP_STAGE_ORIGIN.z + iz + 0.56,
       `${createCustomSVGIcon(item.icon, 13)}<span>${item.shortName}</span><span class="text-[#B45309]">${item.cost}만</span>`,
       () => buyFpShowcaseItem(item.id, prop)
     );
@@ -6258,7 +8259,8 @@ function ringShopGoldenBell() {
       if (rm.household) rm.household.happiness = 100;
     }
   }
-  state.feverTimer = 60.0;
+  state.feverTimer = Math.max(state.feverTimer || 0, 60.0);
+  state.feverPower = Math.max(state.feverPower || 2.5, 2.5);
 
   // 양손이 비어 있다면 골든벨 서비스 선물 세트 자동 증정!
   if (!state.heldGifts.left) state.heldGifts.left = 'item_coffee';
@@ -6659,7 +8661,7 @@ function renderFpVisitModalCards() {
             type: tKey,
             familyName: `${FAMILY_LAST_NAMES[Math.floor(Math.random() * FAMILY_LAST_NAMES.length)]}${GIVEN_NAMES[Math.floor(Math.random() * GIVEN_NAMES.length)]} 세대`,
             maxBudget: hDef.maxRent,
-            happiness: 96
+            happiness: 45
           };
           rm.rentTimer = 5.0;
         }
@@ -6867,10 +8869,24 @@ function renderFocusedRoomInspector() {
           ${createCustomSVGIcon('contract_scroll', 18)}
           <span>입주 세대 심사 & 계약하기</span>
         </button>
+        ${!rm.soundproofed ? `
+          <button type="button" id="btn-rf-sound-vacant" class="jelly-action-btn btn-sky-lip w-full py-2 !text-[12px]">
+            ${createCustomSVGIcon('soundproof_hammer', 16)}
+            <span>방음 바닥재 시공 (${GAME_BALANCE.soundproofCost}만)</span>
+          </button>
+        ` : `
+          <div class="kw-chip tone-mint w-full justify-center py-1.5">
+            ${createCustomSVGIcon('soundproof_hammer', 14)}
+            <span>방음 바닥재 시공 완료</span>
+          </div>
+        `}
       </div>
     `;
     dom.rfBody.querySelector('#btn-rf-recruit')?.addEventListener('click', () => {
       openRecruitModal(rm);
+    });
+    dom.rfBody.querySelector('#btn-rf-sound-vacant')?.addEventListener('click', () => {
+      installSoundproofAction(rm);
     });
     return;
   }
@@ -6974,7 +8990,7 @@ function renderFurnitureCatalogSheet() {
 
     return `
       <div class="fcat-item-card ${isEquipped ? 'equipped' : ''}">
-        <div class="fcat-thumb-stage">${createCatalogThumbnailSVG(item.id, 152, 74)}</div>
+        <div class="fcat-thumb-stage">${getOrRender3DCatalogPreview(item.id, 180, 92)}</div>
         <div class="space-y-1">
           <div class="font-title text-[13px] text-[#3A2E2B] leading-snug">${item.name}</div>
           <span class="kw-chip tone-${item.tone} !text-[10.5px] !py-0.5 !px-2">${item.chip}</span>
@@ -7011,27 +9027,45 @@ function handleBuyOrEquipFurniture(rm, category, itemId, isBuy) {
   syncRoomInteriorStats(rm);
 
   if (rm.household && isBuy) {
-    rm.household.happiness = Math.min(100, (rm.household.happiness || 85) + (def.happyAdd || 10));
+    rm.household.happiness = Math.min(100, (rm.household.happiness || 45) + (def.happyAdd || 12));
+  } else if (isBuy) {
+    state.townHappinessBoost = Math.min(65, (state.townHappinessBoost || 0) + 5);
   }
-
-  rebuildRoom3D(rm.lotId, rm);
-  syncBuildingResidents3D(rm.lotId);
 
   const lot = state.lots.find((l) => l.lotId === rm.lotId);
   const wx = (lot?.x || 0) + rm.lx;
   const wy = rm.ly + 1.4;
   const wz = (lot?.z || 0) + rm.lz;
-  spawnPoofParticles3D(wx, wy, wz, 0xFF6B6B, 12);
-  spawnShockwaveRing3D(wx, rm.ly + 0.25, wz, 0x38E54D, 3.8);
 
-  if (rm.household && def.reaction) {
-    showSpeechBubble3D(`rm_${rm.id}`, wx, wy + 1.4, wz, def.reaction, 3.2);
+  if (def.grantsSoundproof) {
+    playSoundproofTileLaying3D(rm);
+  } else {
+    tuckFocusDockTemporarily(1.22);
+    rebuildRoom3D(rm.lotId, rm);
+    syncBuildingResidents3D(rm.lotId);
+    const rGrp = lot3D[rm.lotId]?.roomsMap?.[rm.id];
+    if (rGrp && category !== 'decor') {
+      const targetChild = rGrp.children[rGrp.children.length - 1] || rGrp;
+      playDropBouncePlacement3D(targetChild, wx, rm.ly + 0.5, wz);
+    }
+  }
+
+  // 세입자가 새 가구 앞으로 다가와 감탄하며 리액션!
+  const resList = residentActors[rm.id];
+  if (resList && resList.length > 0) {
+    resList[0].tx = 0.0;
+    resList[0].tz = 0.45;
+    resList[0].waitTimer = 0;
+    triggerSquashStretch(resList[0].mesh, 1.3);
+  }
+  if (def.reaction) {
+    showSpeechBubble3D(`rm_${rm.id}`, wx, wy + 1.45, wz, def.reaction, 3.6, true);
   }
 
   updateTopHUDTargets();
   renderFocusedRoomInspector();
   renderFurnitureCatalogSheet();
-  showToast(`[${rm.name}호] ${def.name} 배치 완료!`, 'mint');
+  showToast(`[${rm.name}호] ${def.name} 3D 시공 & 착지 연출 완료!`, 'mint');
   saveGameState();
 }
 
@@ -7069,9 +9103,21 @@ function installSoundproofAction(rm) {
   if (!spendGold(GAME_BALANCE.soundproofCost)) return;
   rm.soundproofed = true;
   rm.activeConflict = null;
+  if (rm.household) {
+    rm.household.happiness = Math.min(100, (rm.household.happiness || 50) + 14);
+  }
   state.stats.crisisResolved = (state.stats.crisisResolved || 0) + 1;
+
+  const lot = state.lots.find((l) => l.lotId === rm.lotId);
+  const wx = (lot?.x || 0) + rm.lx;
+  const wz = (lot?.z || 0) + rm.lz;
+  spawnPoofParticles3D(wx, rm.ly + 0.8, wz, 0xF8FAFC, 16);
+  playSoundproofTileLaying3D(rm);
+  showSpeechBubble3D(`sp_${rm.id}`, wx, rm.ly + 2.5, wz, '우와! 두툼한 격자 방음 패드가 깔려서 이제 층간소음 걱정 제로예요!!', 3.6, true);
+
+  updateTopHUDTargets();
   renderFocusedRoomInspector();
-  showToast(`${rm.name}호 층간 방음 시공 완료!`, 'mint');
+  showToast(`${rm.name}호 격자 방음 패드 타일 시공 완료!`, 'mint');
   saveGameState();
 }
 
@@ -7096,10 +9142,21 @@ function evictRoomTenantAction(rm) {
   saveGameState();
 }
 
-// --------------------- 단독 상가(빵집·로스터리·플라워샵) 인스펙터 & 3종 설비 쇼케이스 카탈로그 ---------------------
+// --------------------- 1층 상가(편의점·세탁소) + 단독 상가(빵집·로스터리·플라워샵) 통합 인스펙터 & 3D 설비 카탈로그 ---------------------
 function renderShopSwitcherChips() {
   if (!dom.shopSwitcherChips) return;
-  dom.shopSwitcherChips.innerHTML = STANDALONE_SHOPS_TEMPLATE.map((tpl) => {
+  const f1Chips = (window.FIRST_FLOOR_SHOPS_TEMPLATE || []).map((ft) => {
+    const isAct = ft.shopId === focusedFirstFloorShopId;
+    return `
+      <button type="button" data-switch-1fshop="${ft.shopId}" class="room-switch-chip ${isAct ? 'active' : ''}">
+        ${createCustomSVGIcon(ft.svgIcon, 16)}
+        <span>${ft.name}</span>
+        ${createCustomSVGIcon('crown_badge', 13)}
+      </button>
+    `;
+  }).join('');
+
+  const standaloneChips = STANDALONE_SHOPS_TEMPLATE.map((tpl) => {
     const st = state.standaloneShops?.[tpl.shopId];
     const isAct = tpl.shopId === focusedShopId;
     return `
@@ -7111,9 +9168,140 @@ function renderShopSwitcherChips() {
     `;
   }).join('');
 
+  dom.shopSwitcherChips.innerHTML = f1Chips + standaloneChips;
+
+  dom.shopSwitcherChips.querySelectorAll('[data-switch-1fshop]').forEach((btn) => {
+    btn.addEventListener('click', () => focusCameraOnFirstFloorShop(btn.getAttribute('data-switch-1fshop')));
+  });
   dom.shopSwitcherChips.querySelectorAll('[data-switch-shop]').forEach((btn) => {
     btn.addEventListener('click', () => focusCameraOnShop(btn.getAttribute('data-switch-shop')));
   });
+}
+
+function renderFocusedFirstFloorShopPanel() {
+  if (!focusedFirstFloorShopId || !dom.sfBody) return;
+  const tpl = (window.FIRST_FLOOR_SHOPS_TEMPLATE || []).find((s) => s.shopId === focusedFirstFloorShopId);
+  const st = state.firstFloorShops?.[focusedFirstFloorShopId];
+  if (!tpl) return;
+
+  const { visitRev, cycleRev, upgCount } = calcFirstFloorShopStats(focusedFirstFloorShopId);
+  const upgPct = Math.round((upgCount / 3) * 100);
+
+  const iconSlot = document.getElementById('sf-icon-slot');
+  if (iconSlot) iconSlot.innerHTML = createCustomSVGIcon(tpl.svgIcon, 22);
+  if (dom.sfTitle) dom.sfTitle.textContent = tpl.name;
+  if (dom.sfOwnerBadge) {
+    dom.sfOwnerBadge.className = 'kw-chip tone-mint !py-0.5 !px-2.5 shrink-0';
+    dom.sfOwnerBadge.innerHTML = `${createCustomSVGIcon('crown_badge', 13)}<span>빌딩1층 직영</span>`;
+  }
+
+  dom.sfBody.innerHTML = `
+    <div class="diary-subcard space-y-2.5">
+      <div class="flex items-center gap-2.5">
+        ${createHouseholdAvatarSVG(tpl.kind === 'mart1f' ? 'student' : 'newlywed', 48)}
+        <div class="min-w-0 flex-1">
+          <div class="font-title text-[14px] text-[#3A2E2B]">${tpl.staffName}</div>
+          <div class="font-body text-[11px] font-semibold text-[#69544C] break-keep">${tpl.engTitle} · ${tpl.subCopy}</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-1.5 text-center">
+        <div class="bg-[#FFF9DB] border border-[#FACC15] rounded-2xl py-1.5 px-1">
+          <div class="font-body text-[10px] font-bold text-[#8C5800]">건당단가</div>
+          <div class="font-title text-[13px] text-[#3A2E2B]">+${visitRev}만</div>
+        </div>
+        <div class="bg-[#E8FCEC] border border-[#6EE780] rounded-2xl py-1.5 px-1">
+          <div class="font-body text-[10px] font-bold text-[#137A22]">주기순익</div>
+          <div class="font-title text-[13px] text-[#137A22]">+${cycleRev}만</div>
+        </div>
+        <div class="bg-[#EAF7FF] border border-[#7CCEFF] rounded-2xl py-1.5 px-1">
+          <div class="font-body text-[10px] font-bold text-[#0969A6]">누적이용</div>
+          <div class="font-title text-[13px] text-[#3A2E2B]">${st?.totalServed || 12}명</div>
+        </div>
+      </div>
+
+      <div class="space-y-1">
+        <div class="flex items-center justify-between text-[11px] font-title text-[#5C4942]">
+          <span>1층 매장 3D 집기 업그레이드</span>
+          <span>${upgCount} / 3단계</span>
+        </div>
+        <div class="candy-gauge-track">
+          <div class="candy-gauge-fill candy-mint" style="width:${upgPct}%"></div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderFirstFloorShopUpgradeCatalog() {
+  if (!focusedFirstFloorShopId || !dom.fcatItemsGrid) return;
+  const tpl = (window.FIRST_FLOOR_SHOPS_TEMPLATE || []).find((s) => s.shopId === focusedFirstFloorShopId);
+  const st = state.firstFloorShops?.[focusedFirstFloorShopId];
+  if (!tpl) return;
+
+  const { visitRev, cycleRev } = calcFirstFloorShopStats(focusedFirstFloorShopId);
+  const headerIco = document.getElementById('fcat-header-ico');
+  if (headerIco) headerIco.innerHTML = createCustomSVGIcon(tpl.svgIcon, 20);
+  if (dom.fcatSheetTitle) dom.fcatSheetTitle.textContent = '1층 직영매장 3D 설비 카탈로그';
+  if (dom.fcatRoomBadge) dom.fcatRoomBadge.textContent = tpl.name;
+  if (dom.fcatBonusBadge) dom.fcatBonusBadge.textContent = `방문 +${visitRev}만 · 주기 +${cycleRev}만`;
+
+  dom.fcatTabsRow?.classList.add('hidden');
+  dom.fcatItemsGrid.classList.add('cols-3');
+
+  dom.fcatItemsGrid.innerHTML = tpl.upgradesCatalog.map((upg) => {
+    const installed = !!st?.upgrades?.[upg.id];
+    const btnHtml = installed
+      ? `<button type="button" disabled class="kw-chip tone-mint w-full justify-center py-1.5">${createCustomSVGIcon('sparkle_star', 14)}<span>3D 시공 완료</span></button>`
+      : `<button type="button" data-1f-upg="${upg.id}" class="jelly-action-btn btn-gold-lip w-full py-1.5 !text-[12px]">${createCustomSVGIcon('coin_stack', 15)}<span>${upg.cost}만 증설</span></button>`;
+
+    return `
+      <div class="fcat-item-card ${installed ? 'equipped' : ''}">
+        <div class="fcat-thumb-stage">${getOrRender3DCatalogPreview(upg.id, 188, 92)}</div>
+        <div class="space-y-1">
+          <div class="font-title text-[13px] text-[#3A2E2B] leading-snug">${upg.name}</div>
+          <span class="kw-chip tone-${upg.tone} !text-[10.5px] !py-0.5 !px-2">${upg.chip}</span>
+        </div>
+        ${btnHtml}
+      </div>
+    `;
+  }).join('');
+
+  dom.fcatItemsGrid.querySelectorAll('[data-1f-upg]').forEach((btn) => {
+    btn.addEventListener('click', () => buyFirstFloorShopUpgradeAction(focusedFirstFloorShopId, btn.getAttribute('data-1f-upg')));
+  });
+}
+
+function buyFirstFloorShopUpgradeAction(shopId, upgId) {
+  const tpl = (window.FIRST_FLOOR_SHOPS_TEMPLATE || []).find((s) => s.shopId === shopId);
+  if (!tpl) return;
+  if (!state.firstFloorShops) state.firstFloorShops = createInitialFirstFloorShops();
+  const st = state.firstFloorShops[shopId];
+  const upg = tpl.upgradesCatalog.find((u) => u.id === upgId);
+  if (!st || !upg || st.upgrades[upgId]) return;
+  if (!spendGold(upg.cost)) return;
+
+  st.upgrades[upgId] = true;
+  state.townHappinessBoost = Math.min(65, (state.townHappinessBoost || 0) + 6);
+  tuckFocusDockTemporarily(1.28);
+
+  const fObj = firstFloorShop3D[shopId];
+  const lot = state.lots.find((l) => l.lotId === 'lot_main') || { x: -4.2, z: -6.4 };
+  const wx = lot.x + tpl.localX;
+  const wz = lot.z + 0.5;
+
+  if (fObj?.group) {
+    if (shopId === 'shop_mart1f') build1FMinimiMartInterior3D(fObj.group, 'lot_main');
+    else build1FBubbleLaundryInterior3D(fObj.group, 'lot_main');
+    playDropBouncePlacement3D(fObj.group, wx, 0.5, wz);
+  }
+  showSpeechBubble3D(`staff_1f_${shopId}`, wx, 2.75, wz, upg.reaction, 3.8, true);
+
+  updateTopHUDTargets();
+  renderFocusedFirstFloorShopPanel();
+  renderFirstFloorShopUpgradeCatalog();
+  showToast(`[${tpl.name}] ${upg.name} 3D 증설 완료!`, 'mint');
+  saveGameState();
 }
 
 function renderFocusedShopPanel() {
@@ -7233,7 +9421,7 @@ function renderShopUpgradeCatalog() {
 
     return `
       <div class="fcat-item-card ${installed ? 'equipped' : ''}">
-        <div class="fcat-thumb-stage">${createCatalogThumbnailSVG(upg.id, 180, 74)}</div>
+        <div class="fcat-thumb-stage">${getOrRender3DCatalogPreview(upg.id, 188, 92)}</div>
         <div class="space-y-1">
           <div class="font-title text-[13px] text-[#3A2E2B] leading-snug">${upg.name}</div>
           <span class="kw-chip tone-${upg.tone} !text-[10.5px] !py-0.5 !px-2">${upg.chip}</span>
@@ -7279,15 +9467,19 @@ function buyShopUpgradeAction(shopId, upgId) {
   if (!spendGold(upg.cost)) return;
 
   st.upgrades[upgId] = true;
+  state.townHappinessBoost = Math.min(65, (state.townHappinessBoost || 0) + 6);
+  tuckFocusDockTemporarily(1.25);
   rebuildStandaloneShop3D(shopId);
-  spawnPoofParticles3D(tpl.x, 2.2, tpl.z + 1.2, 0x38E54D, 14);
-  spawnShockwaveRing3D(tpl.x, 0.35, tpl.z + 1.0, 0xFFD93D, 4.8);
-  showSpeechBubble3D(`staff_${shopId}`, tpl.x, 2.6, tpl.z, upg.reaction, 3.4);
+  const sGrp = standaloneShop3D[shopId]?.group;
+  if (sGrp) {
+    playDropBouncePlacement3D(sGrp, tpl.x, 0.35, tpl.z);
+  }
+  showSpeechBubble3D(`staff_${shopId}`, tpl.x, 2.6, tpl.z, upg.reaction, 3.6, true);
 
   updateTopHUDTargets();
   renderFocusedShopPanel();
   renderShopUpgradeCatalog();
-  showToast(`[${tpl.name}] ${upg.name} 3D 시공 완료!`, 'mint');
+  showToast(`[${tpl.name}] ${upg.name} 3D 시공 & 착지 완료!`, 'mint');
   saveGameState();
 }
 
@@ -7643,7 +9835,7 @@ function renderRecruitCards() {
         type: cand.type,
         familyName: cand.familyName,
         maxBudget: cand.maxBudget,
-        happiness: 95
+        happiness: 45
       };
       recruitRoomTarget.rentTimer = 4.0;
       dom.recruitModal?.classList.add('hidden');
@@ -7750,10 +9942,1041 @@ function openRenameModal(lotId) {
 }
 
 // =========================================================
+// 15B. [핵심 개편 6 · 10 · 11] 외곽 해안 점프 · 만수르 머니건(MAKE IT RAIN!) · 4단계 행복도 마일스톤 & 황금 동상
+// =========================================================
+function ensureFirstFloorShopOverlayBadge(shopId) {
+  if (!dom.shopsLayer) return;
+  const tpl = (window.FIRST_FLOOR_SHOPS_TEMPLATE || []).find((s) => s.shopId === shopId);
+  if (!tpl) return;
+
+  let el = shopOverlayEls[shopId];
+  if (!el) {
+    el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'shop-float-badge owned-shop pointer-events-auto';
+    el.addEventListener('click', () => focusCameraOnFirstFloorShop(shopId));
+    dom.shopsLayer.appendChild(el);
+    shopOverlayEls[shopId] = el;
+  }
+  const stats = calcFirstFloorShopStats(shopId);
+  el.innerHTML = `${createCustomSVGIcon(tpl.svgIcon, 16)}<span>${tpl.name}</span><span class="text-[#15803D]">+${stats.cycleRev}만</span>`;
+}
+
+function jumpToScenicDriveZone() {
+  if (!driveState.active) {
+    enterDriveMode();
+  }
+  // 빨간 철제 아치형 다리(Red Steel Arch Bridge) 동측 해안 진입로에서 여유 있게 도하 시작!
+  driveState.x = 21.8;
+  driveState.z = 47.2;
+  driveState.y = 0.24;
+  driveState.heading = -Math.PI * 0.42;
+  driveState.waypointIdx = 6;
+  driveState.autoCruise = true;
+  driveState.speed = 6.8;
+  if (driveState.carRootGroup) {
+    driveState.carRootGroup.position.set(driveState.x, driveState.y, driveState.z);
+    driveState.carRootGroup.rotation.y = driveState.heading;
+  }
+  const fwdX = Math.sin(driveState.heading);
+  const fwdZ = Math.cos(driveState.heading);
+  driveState.camCurrentPos.set(driveState.x - fwdX * 6.2, 2.55, driveState.z - fwdZ * 6.2);
+  driveState.camCurrentLook.set(driveState.x + fwdX * 8.5, 1.65, driveState.z + fwdZ * 8.5);
+  playSupercarHornSound(state.garage?.currentCar || 'car_super');
+  syncDriveTopBadges();
+  updateDriveShopProximityUI();
+  showToast('해안 레드아치교 & 푸드트럭 코스 진입!', 'sky');
+}
+
+function create3DMoneyGunMesh() {
+  const gun = new THREE.Group();
+  // 슈프림 스타일 24K 순금 머니건 본체 + 장전된 오만원권/100달러 지폐 뭉치 + 크라운 엠블럼
+  gun.add(createRoundedToyMesh(0.24, 0.28, 0.72, MAT.pureGold24k, 0, 0.16, -0.08, 0.04));
+  gun.add(createRoundedToyMesh(0.16, 0.34, 0.2, MAT.pureGold24k, 0, -0.1, 0.14, 0.04));
+  gun.add(createRoundedToyMesh(0.08, 0.14, 0.16, MAT.walnutTrim, 0, -0.02, 0.0, 0.02));
+  // 총구 배출 슬릿
+  gun.add(createRoundedToyMesh(0.2, 0.05, 0.06, MAT.castIron, 0, 0.18, -0.45, 0.01));
+  // 상단 오픈 챔버 속 지폐 다발
+  const stackMat = new THREE.MeshStandardMaterial({
+    map: REAL_TEX.bills.krw50k || null,
+    color: 0xFFFDF5,
+    roughness: 0.42
+  });
+  gun.add(createRoundedToyMesh(0.19, 0.12, 0.42, stackMat, 0, 0.31, -0.1, 0.02));
+  // 측면 크라운 골드 디테일
+  const gem = new THREE.Mesh(GEO.sphere, MAT.carClearRed);
+  gem.scale.setScalar(0.08);
+  gem.position.set(0.13, 0.18, -0.08);
+  const gem2 = gem.clone();
+  gem2.position.x = -0.13;
+  gun.add(gem, gem2);
+  return gun;
+}
+
+function playMoneyGunFlutterSFX() {
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    if (!window._landlordAudioCtx) window._landlordAudioCtx = new AC();
+    const ctx = window._landlordAudioCtx;
+    if (ctx.state === 'suspended') ctx.resume();
+    const now = ctx.currentTime;
+
+    // 촤르르륵!! 고속 지폐 발사 퍼커션 사운드
+    for (let i = 0; i < 14; i++) {
+      const t0 = now + i * 0.055;
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(620 + (i % 4) * 140, t0);
+      osc.frequency.exponentialRampToValueAtTime(210, t0 + 0.042);
+      g.gain.setValueAtTime(0.09, t0);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.048);
+      osc.connect(g);
+      g.connect(ctx.destination);
+      osc.start(t0);
+      osc.stop(t0 + 0.05);
+    }
+
+    // 황금 팡파르 코드
+    [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((freq, idx) => {
+      const o2 = ctx.createOscillator();
+      const g2 = ctx.createGain();
+      o2.type = 'sine';
+      o2.frequency.value = freq;
+      const st = now + 0.08 + idx * 0.07;
+      g2.gain.setValueAtTime(0.11, st);
+      g2.gain.exponentialRampToValueAtTime(0.001, st + 0.42);
+      o2.connect(g2);
+      g2.connect(ctx.destination);
+      o2.start(st);
+      o2.stop(st + 0.45);
+    });
+  } catch (e) {}
+}
+
+function spawnSingleFlutterBill3D(originX, originY, originZ, dirX, dirZ, spread = 1.0) {
+  const isCoin = Math.random() < 0.24;
+  let mesh;
+  if (isCoin) {
+    mesh = new THREE.Mesh(GEO.coin, MAT.pureGold24k);
+    mesh.scale.setScalar(0.95 + Math.random() * 0.35);
+  } else {
+    const useUsd = Math.random() < 0.42;
+    const billTex = useUsd ? REAL_TEX.bills.usd100 : REAL_TEX.bills.krw50k;
+    const bMat = new THREE.MeshStandardMaterial({
+      map: billTex || null,
+      color: billTex ? 0xFFFFFF : (useUsd ? 0xBBF7D0 : 0xFDE68A),
+      roughness: 0.42,
+      metalness: 0.06,
+      side: THREE.DoubleSide
+    });
+    mesh = new THREE.Mesh(new THREE.PlaneGeometry(0.68, 0.32), bMat);
+  }
+
+  mesh.position.set(
+    originX + (Math.random() - 0.5) * 0.45,
+    originY + (Math.random() - 0.5) * 0.25,
+    originZ + (Math.random() - 0.5) * 0.45
+  );
+  mesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+  scene.add(mesh);
+
+  const speed = (6.8 + Math.random() * 6.5) * spread;
+  const jitterAng = (Math.random() - 0.5) * 1.25;
+  const cosA = Math.cos(jitterAng);
+  const sinA = Math.sin(jitterAng);
+  const vx = (dirX * cosA - dirZ * sinA) * speed;
+  const vz = (dirX * sinA + dirZ * cosA) * speed;
+
+  const floorY = fpState.active
+    ? (fpState.mode === 'shop' ? FP_STAGE_ORIGIN.y + 0.05 : (fpState.bounds.eyeY - 1.56))
+    : 0.31;
+
+  makeItRainState.bills.push({
+    mesh,
+    isCoin,
+    vx,
+    vy: 3.4 + Math.random() * 4.2,
+    vz,
+    floorY,
+    swayPhase: Math.random() * Math.PI * 2,
+    spinX: (Math.random() - 0.5) * 9.0,
+    spinY: (Math.random() - 0.5) * 11.0,
+    spinZ: (Math.random() - 0.5) * 8.0,
+    landed: false,
+    life: 6.8 + Math.random() * 2.2
+  });
+}
+
+function triggerMansourMakeItRain() {
+  const rainCost = 100;
+  if (state.gold >= rainCost) {
+    spendGold(rainCost);
+  } else {
+    showToast('보유자산이 부족하지만 건물주 특별 한도로 머니건을 발사합니다!', 'gold');
+  }
+
+  playMoneyGunFlutterSFX();
+
+  // 클릭당 정확히 +16~17%씩 상승하여 50% ➔ 75% ➔ 90% ➔ 100% 4단계 마일스톤을 한 단계씩 생생하게 경험! (이중 합산 버그 제거)
+  const curAvg = calcAvgHappiness();
+  const stepAdd = curAvg < 60 ? 17 : 16;
+  state.townHappinessBoost = Math.min(72, (state.townHappinessBoost || 0) + stepAdd);
+  state.feverTimer = 90.0;
+  state.feverPower = 3.0;
+
+  // 모달이 열려 있다면 닫아서 3D 머니샤워 & 마일스톤 진화 장면을 즉시 감상하게 배려!
+  document.getElementById('happiness-milestone-modal')?.classList.add('hidden');
+
+  makeItRainState.active = true;
+  makeItRainState.timer = 6.2;
+  makeItRainState.spawnAccum = 0;
+
+  let centerX = 0.0;
+  let centerY = 0.28;
+  let centerZ = 11.8;
+
+  if (fpState.active) {
+    // 1인칭 모드: 양손에 24K 황금 머니건 장착 + 눈앞에서 지폐 폭포 분사!
+    if (fpState.leftHandSlot && fpState.rightHandSlot) {
+      if (makeItRainState.fpGunL?.parent) makeItRainState.fpGunL.parent.remove(makeItRainState.fpGunL);
+      if (makeItRainState.fpGunR?.parent) makeItRainState.fpGunR.parent.remove(makeItRainState.fpGunR);
+      const gL = create3DMoneyGunMesh();
+      const gR = create3DMoneyGunMesh();
+      gL.scale.setScalar(0.95);
+      gR.scale.setScalar(0.95);
+      fpState.leftHandSlot.add(gL);
+      fpState.rightHandSlot.add(gR);
+      makeItRainState.fpGunL = gL;
+      makeItRainState.fpGunR = gR;
+    }
+    fpState.cheerTimer = Math.max(fpState.cheerTimer || 0, 6.2);
+    fpCamera.getWorldDirection(camDirVec);
+    centerX = fpCamera.position.x + camDirVec.x * 1.1;
+    centerY = fpCamera.position.y - 0.15;
+    centerZ = fpCamera.position.z + camDirVec.z * 1.1;
+    for (let i = 0; i < 48; i++) {
+      spawnSingleFlutterBill3D(centerX, centerY, centerZ, camDirVec.x, camDirVec.z, 0.82);
+    }
+    if (fpState.mode === 'shop') {
+      fpState.npcActors.forEach((ac, idx) => {
+        const wp = new THREE.Vector3();
+        ac.mesh.getWorldPosition(wp);
+        showSpeechBubble3D(
+          `rain_fp_${idx}`,
+          wp.x,
+          wp.y + 2.15,
+          wp.z,
+          idx === 0 ? '꺄아아악!! 갓물주님이 황금 머니건으로 오만원권을 뿌리신다!!' : '만수르 강림!! 평생 단골 할게요!!',
+          5.2,
+          true
+        );
+      });
+    } else if (fpState.roomId) {
+      const rm = findRoomById(fpState.roomId);
+      const lot = state.lots.find((l) => l.lotId === rm?.lotId);
+      if (rm && lot) {
+        showSpeechBubble3D(
+          `rain_fproom_${rm.id}`,
+          lot.x + rm.lx,
+          rm.ly + 2.05,
+          lot.z + rm.lz - 1.0,
+          '세상에!! 집들이 오셔서 황금 머니건으로 용돈 벼락을 쏘시다니!! 감동이에요!!',
+          5.2,
+          true
+        );
+      }
+    }
+  } else if (driveState.active) {
+    // 드라이브 모드: 오픈카/슈퍼카 양옆으로 지폐와 금화를 분수처럼 살포!
+    centerX = driveState.x;
+    centerY = driveState.y + 1.45;
+    centerZ = driveState.z;
+    const fwdX = Math.sin(driveState.heading);
+    const fwdZ = Math.cos(driveState.heading);
+    for (let i = 0; i < 55; i++) {
+      spawnSingleFlutterBill3D(centerX, centerY, centerZ, fwdX, fwdZ, 1.15);
+    }
+    spawnShockwaveRing3D(centerX, 0.32, centerZ, 0xFFD700, 7.5);
+    showSpeechBubble3D('drive_mansour', centerX, 2.8, centerZ, '촤르르륵!! 슈퍼카 머니건 퍼레이드!! 다들 받아 가세요~!!', 4.6, true);
+  } else {
+    // 타운 뷰 / 단독 뷰: 광장 앞 거리에 왕관 쓴 갓물주 아바타 등장 + 양손 황금 머니건 난사 + 주민 군중 자석 집결!
+    if (focusedRoomId) exitRoomFocusMode();
+    if (focusedShopId || focusedFirstFloorShopId) exitShopFocusMode();
+
+    if (!makeItRainState.avatarGroup) {
+      const av = createChibiPerson3D('landlord_avatar');
+      av.scale.setScalar(1.22);
+      const gunL = create3DMoneyGunMesh();
+      gunL.position.set(-0.56, 1.02, 0.34);
+      gunL.rotation.x = -0.24;
+      const gunR = create3DMoneyGunMesh();
+      gunR.position.set(0.56, 1.02, 0.34);
+      gunR.rotation.x = -0.24;
+      av.add(gunL, gunR);
+      scene.add(av);
+      makeItRainState.avatarGroup = av;
+      makeItRainState.gunL = gunL;
+      makeItRainState.gunR = gunR;
+    }
+    makeItRainState.avatarGroup.visible = true;
+    makeItRainState.avatarGroup.position.set(centerX, centerY, centerZ);
+
+    for (let i = 0; i < 64; i++) {
+      const ang = (i / 64) * Math.PI * 2;
+      spawnSingleFlutterBill3D(centerX, centerY + 1.4, centerZ, Math.cos(ang), Math.sin(ang), 1.05);
+    }
+    spawnShockwaveRing3D(centerX, 0.34, centerZ, 0xFFD700, 9.2);
+
+    // Crowd Magnet AI: 주변 주민 10명이 환호하며 갓물주 주변 반원 대형으로 전력 질주!
+    while (makeItRainState.crowdActors.length < 10) {
+      const idx = makeItRainState.crowdActors.length;
+      const roles = ['newlywed', 'streamer', 'developer', 'musician', 'chef', 'florist', 'student', 'elderly', 'barista', 'petlover'];
+      const cm = createChibiPerson3D(roles[idx % roles.length], idx + 2);
+      scene.add(cm);
+      makeItRainState.crowdActors.push({
+        mesh: cm,
+        idx,
+        phase: idx * 0.7
+      });
+    }
+    const cheers = [
+      '와아아!! 만수르 갓물주님이 오만원권 돈다발을 뿌리신다!!',
+      '하늘에서 돈비가 내려요!! 평생 이 동네 살게요!!',
+      '황금 머니건 클라스 미쳤다!! 갓물주님 만세~!!',
+      '백달러랑 신사임당이 눈꽃처럼 쏟아져요!! 사랑해요!!',
+      '역시 우리 건물주님은 전설의 성군이십니다!!'
+    ];
+    makeItRainState.crowdActors.forEach((cr, idx) => {
+      cr.mesh.visible = true;
+      const startAng = Math.PI * 0.12 + (idx / 9) * Math.PI * 0.88 + (idx % 2 === 0 ? -0.25 : 0.25);
+      const startDist = 9.5 + (idx % 3) * 2.8;
+      const targetDist = 3.4 + (idx % 2) * 1.15;
+      cr.mesh.position.set(centerX + Math.cos(startAng) * startDist, 0.26, centerZ + Math.sin(startAng) * startDist);
+      cr.targetX = centerX + Math.cos(startAng) * targetDist;
+      cr.targetZ = centerZ + Math.sin(startAng) * targetDist;
+    });
+    // 기존 주변 일상 말풍선을 정리하여 머니건 환호 말풍선끼리 겹치지 않게 보장!
+    for (const oldKey of Object.keys(speechEls)) {
+      if (!oldKey.startsWith('mansour_')) {
+        speechEls[oldKey].el.remove();
+        if (speechEls[oldKey].moteEl) speechEls[oldKey].moteEl.remove();
+        delete speechEls[oldKey];
+      }
+    }
+    showSpeechBubble3D(
+      'mansour_crowd_left',
+      centerX - 7.4,
+      2.05,
+      centerZ + 5.2,
+      cheers[Math.floor(Math.random() * 2)],
+      5.2,
+      true
+    );
+    showSpeechBubble3D(
+      'mansour_crowd_right',
+      centerX + 7.4,
+      2.05,
+      centerZ + 5.2,
+      cheers[2 + Math.floor(Math.random() * 3)],
+      5.2,
+      true
+    );
+  }
+
+  // 먼저 행복도 & 마일스톤 판정 실행 (신규 마일스톤 돌파 시 마일스톤 전용 시네마틱 카메라가 우선 적용되고, 아닐 경우 머니샤워 광장 클로즈업!)
+  const prevMilestonesLen = (state.unlockedMilestones || []).length;
+  updateTopHUDTargets();
+  const unlockedNewMilestone = (state.unlockedMilestones || []).length > prevMilestonesLen;
+
+  if (!fpState.active && !driveState.active && !unlockedNewMilestone) {
+    startSmoothCameraTween(
+      new THREE.Vector3(centerX + 14.5, 13.5, centerZ + 22.0),
+      new THREE.Vector3(centerX, 1.8, centerZ + 0.8),
+      1.52,
+      0.55,
+      null
+    );
+  }
+
+  showToast('MAKE IT RAIN! 행복도 대폭 상승 + 90초간 전 수익 3.0배 만수르 피버 발동!', 'gold');
+  saveGameState();
+}
+
+function tickMakeItRain(dt, elapsed) {
+  if (makeItRainState.active) {
+    makeItRainState.timer -= dt;
+    makeItRainState.spawnAccum += dt;
+
+    // 발사 지속 시간 동안 연속 지폐·금화 추가 분사!
+    if (makeItRainState.timer > 1.4 && makeItRainState.spawnAccum >= 0.085) {
+      makeItRainState.spawnAccum = 0;
+      if (fpState.active) {
+        fpCamera.getWorldDirection(camDirVec);
+        for (let k = 0; k < 4; k++) {
+          spawnSingleFlutterBill3D(
+            fpCamera.position.x + camDirVec.x * 0.95,
+            fpCamera.position.y - 0.14,
+            fpCamera.position.z + camDirVec.z * 0.95,
+            camDirVec.x,
+            camDirVec.z,
+            0.8
+          );
+        }
+      } else if (driveState.active) {
+        const fx = Math.sin(driveState.heading);
+        const fz = Math.cos(driveState.heading);
+        for (let k = 0; k < 5; k++) {
+          spawnSingleFlutterBill3D(driveState.x, driveState.y + 1.4, driveState.z, fx, fz, 1.1);
+        }
+      } else if (makeItRainState.avatarGroup) {
+        const sweep = Math.sin(elapsed * 5.2) * 1.35;
+        makeItRainState.avatarGroup.rotation.y = sweep;
+        makeItRainState.avatarGroup.position.y = 0.28 + Math.abs(Math.sin(elapsed * 8.5)) * 0.22;
+        const dxL = Math.sin(sweep - 0.45);
+        const dzL = Math.cos(sweep - 0.45);
+        const dxR = Math.sin(sweep + 0.45);
+        const dzR = Math.cos(sweep + 0.45);
+        const ax = makeItRainState.avatarGroup.position.x;
+        const az = makeItRainState.avatarGroup.position.z;
+        for (let k = 0; k < 3; k++) {
+          spawnSingleFlutterBill3D(ax - 0.5, 1.75, az + 0.3, dxL, dzL, 0.95);
+          spawnSingleFlutterBill3D(ax + 0.5, 1.75, az + 0.3, dxR, dzR, 0.95);
+        }
+      }
+    }
+
+    // 군중 자석 AI 이동 및 폴짝폴짝 점프 환호
+    for (const cr of makeItRainState.crowdActors) {
+      if (!cr.mesh.visible) continue;
+      cr.mesh.position.x = THREE.MathUtils.lerp(cr.mesh.position.x, cr.targetX, Math.min(1, dt * 3.8));
+      cr.mesh.position.z = THREE.MathUtils.lerp(cr.mesh.position.z, cr.targetZ, Math.min(1, dt * 3.8));
+      cr.mesh.position.y = 0.26 + Math.abs(Math.sin(elapsed * 9.5 + cr.phase)) * 0.46;
+      if (makeItRainState.avatarGroup) {
+        cr.mesh.lookAt(
+          makeItRainState.avatarGroup.position.x,
+          cr.mesh.position.y,
+          makeItRainState.avatarGroup.position.z
+        );
+      }
+      const ud = cr.mesh.userData;
+      if (ud?.armLPivot && ud?.armRPivot) {
+        ud.armLPivot.rotation.z = 2.45 + Math.sin(elapsed * 12 + cr.phase) * 0.35;
+        ud.armRPivot.rotation.z = -2.45 - Math.cos(elapsed * 12 + cr.phase) * 0.35;
+      }
+    }
+
+    if (makeItRainState.timer <= 0) {
+      makeItRainState.active = false;
+      if (makeItRainState.avatarGroup) makeItRainState.avatarGroup.visible = false;
+      for (const cr of makeItRainState.crowdActors) cr.mesh.visible = false;
+      if (makeItRainState.fpGunL?.parent) makeItRainState.fpGunL.parent.remove(makeItRainState.fpGunL);
+      if (makeItRainState.fpGunR?.parent) makeItRainState.fpGunR.parent.remove(makeItRainState.fpGunR);
+      makeItRainState.fpGunL = null;
+      makeItRainState.fpGunR = null;
+      syncHeldHands3DAndChips();
+    }
+  }
+
+  // 공기 저항 & 낙엽처럼 하늘하늘 나부끼며 바닥에 수북이 쌓이는 3D 지폐 물리 업데이트
+  for (let i = makeItRainState.bills.length - 1; i >= 0; i--) {
+    const b = makeItRainState.bills[i];
+    b.life -= dt;
+    if (b.life <= 0) {
+      scene.remove(b.mesh);
+      makeItRainState.bills.splice(i, 1);
+      continue;
+    }
+    if (!b.landed) {
+      b.vx *= (1 - Math.min(0.9, dt * 2.1));
+      b.vz *= (1 - Math.min(0.9, dt * 2.1));
+      b.vy -= (b.isCoin ? 11.5 : 5.4) * dt;
+      if (!b.isCoin) {
+        b.vy = Math.max(b.vy, -2.35);
+      }
+      const flutterX = b.isCoin ? 0 : Math.sin(elapsed * 6.5 + b.swayPhase) * 1.65;
+      const flutterZ = b.isCoin ? 0 : Math.cos(elapsed * 5.8 + b.swayPhase) * 1.45;
+      b.mesh.position.x += (b.vx + flutterX) * dt;
+      b.mesh.position.y += b.vy * dt;
+      b.mesh.position.z += (b.vz + flutterZ) * dt;
+      b.mesh.rotation.x += b.spinX * dt;
+      b.mesh.rotation.y += b.spinY * dt;
+      b.mesh.rotation.z += b.spinZ * dt;
+
+      if (b.mesh.position.y <= b.floorY) {
+        b.mesh.position.y = b.floorY + (i % 5) * 0.008;
+        b.mesh.rotation.set(-Math.PI * 0.5, 0, b.swayPhase);
+        b.landed = true;
+      }
+    }
+  }
+}
+
+// --------------------- 4단계 행복도 마일스톤(50% ➔ 75% ➔ 90% ➔ 100%) 3D 영구 진화 & 황금 동상 ---------------------
+let milestoneBannerTimeout = null;
+
+function checkAndTriggerHappinessMilestones(currentHappyPct) {
+  if (!scene) return;
+  if (!Array.isArray(state.unlockedMilestones)) state.unlockedMilestones = [];
+  const newlyUnlocked = [];
+  for (const ms of (window.HAPPINESS_MILESTONES || [])) {
+    if (currentHappyPct >= ms.threshold && !state.unlockedMilestones.includes(ms.threshold)) {
+      state.unlockedMilestones.push(ms.threshold);
+      newlyUnlocked.push(ms);
+    }
+  }
+  if (newlyUnlocked.length === 0) return;
+
+  state.unlockedMilestones.sort((a, b) => a - b);
+  rebuildHappinessMilestones3D();
+
+  // 50% 달성 시 전 호실 창가 발코니 꽃화분 즉시 개화 반영!
+  if (newlyUnlocked.some((m) => m.threshold === 50) && state.buildings?.lot_main) {
+    for (const rm of state.buildings.lot_main.rooms) {
+      rebuildRoom3D('lot_main', rm);
+    }
+    syncBuildingResidents3D('lot_main');
+  }
+
+  // 가장 높은 달성 단계 기준으로 제막식 배너 & 카메라 클로즈업 연출!
+  const topMs = newlyUnlocked[newlyUnlocked.length - 1];
+  const banner = document.getElementById('milestone-ceremony-banner');
+  const bTitle = document.getElementById('ms-banner-title');
+  const bSub = document.getElementById('ms-banner-sub');
+  const bIco = document.getElementById('ms-banner-ico');
+  if (banner && bTitle && bSub) {
+    if (bIco) bIco.innerHTML = createCustomSVGIcon(topMs.icon || 'statue_gold', 26);
+    bTitle.textContent = `[행복도 ${topMs.threshold}% 달성] ${topMs.title}!`;
+    bSub.textContent = `${topMs.rewardDesc} · 마을에 영구 랜드마크가 건설되었습니다!`;
+    banner.classList.remove('hidden');
+    if (milestoneBannerTimeout) clearTimeout(milestoneBannerTimeout);
+    milestoneBannerTimeout = setTimeout(() => banner.classList.add('hidden'), 5200);
+  }
+
+  milestoneState.ceremonyActive = true;
+  milestoneState.ceremonyTimer = 4.5;
+  playFireworkPopSFX();
+
+  if (!fpState.active && !driveState.active && !focusedRoomId && !focusedShopId && !focusedFirstFloorShopId) {
+    startSmoothCameraTween(
+      new THREE.Vector3(topMs.camPos.x, topMs.camPos.y, topMs.camPos.z),
+      new THREE.Vector3(topMs.camLook.x, topMs.camLook.y, topMs.camLook.z),
+      topMs.camZoom || 1.45,
+      0.7,
+      null
+    );
+  }
+  hudAnim.targetNet = calcCycleNetIncome();
+  saveGameState();
+}
+
+function create24KGoldenLandlordStatue3D() {
+  const grp = new THREE.Group();
+
+  // 3단 화이트 마블 & 24K 골드 몰딩 좌대
+  grp.add(createRoundedToyMesh(4.4, 0.42, 4.4, MAT.white, 0, 0.21, 0, 0.1));
+  grp.add(createRoundedToyMesh(3.6, 0.56, 3.6, MAT.fountainStone, 0, 0.68, 0, 0.1));
+  grp.add(createRoundedToyMesh(2.9, 1.35, 2.9, MAT.white, 0, 1.62, 0, 0.12));
+  grp.add(createRoundedToyMesh(3.15, 0.18, 3.15, MAT.pureGold24k, 0, 2.34, 0, 0.06));
+
+  // 전면 [THE LEGENDARY LANDLORD] 황금 현판
+  const plaqueMat = new THREE.MeshStandardMaterial({
+    map: TEX.statuePlaque,
+    roughness: 0.28,
+    metalness: 0.45
+  });
+  const plaque = new THREE.Mesh(GEO.quad, plaqueMat);
+  plaque.scale.set(2.45, 0.92, 1);
+  plaque.position.set(0, 1.62, 1.48);
+  grp.add(plaque);
+
+  // 3방향 황금 스포트라이트
+  for (let s = 0; s < 3; s++) {
+    const ang = (s / 3) * Math.PI * 2 + Math.PI * 0.5;
+    const lx = Math.cos(ang) * 1.85;
+    const lz = Math.sin(ang) * 1.85;
+    grp.add(createRoundedToyMesh(0.32, 0.24, 0.32, MAT.castIron, lx, 0.52, lz, 0.05));
+    const bulb = new THREE.Mesh(GEO.sphere, MAT.neonYellow);
+    bulb.scale.setScalar(0.24);
+    bulb.position.set(lx, 0.68, lz);
+    grp.add(bulb);
+  }
+  const statueLight = new THREE.PointLight(0xFFD700, 2.4, 15);
+  statueLight.position.set(0, 5.8, 2.2);
+  grp.add(statueLight);
+
+  // 초대형 24K 순금 건물주 조각상 본체 (머리부터 발끝·왕관·머니건까지 100% 눈부신 순금!)
+  const hero = createChibiPerson3D('landlord_avatar', 0);
+  hero.scale.setScalar(2.48);
+  hero.position.set(0, 2.42, 0);
+
+  const raisedGun = create3DMoneyGunMesh();
+  raisedGun.position.set(0.56, 1.28, 0.25);
+  raisedGun.rotation.set(-0.68, 0.15, -0.25);
+  hero.add(raisedGun);
+
+  // 왼손에는 황금 마스터키 홀딩
+  const keyStaff = new THREE.Group();
+  keyStaff.position.set(-0.56, 1.05, 0.25);
+  keyStaff.add(createRoundedToyMesh(0.1, 0.85, 0.1, MAT.pureGold24k, 0, 0.35, 0, 0.03));
+  const keyRing = new THREE.Mesh(GEO.torus, MAT.pureGold24k);
+  keyRing.scale.setScalar(0.52);
+  keyRing.position.set(0, 0.88, 0);
+  keyStaff.add(keyRing);
+  hero.add(keyStaff);
+
+  hero.traverse((child) => {
+    if (child.isMesh && child.material !== MAT.toonHull && child.geometry !== GEO.ring) {
+      child.material = MAT.pureGold24k;
+    }
+  });
+  if (hero.userData?.armRPivot) {
+    hero.userData.armRPivot.rotation.z = -2.35;
+  }
+  grp.add(hero);
+
+  // 동상 클릭 시 보너스 코인 샤워가 터지는 넉넉한 히트박스!
+  const hit = new THREE.Mesh(
+    new THREE.BoxGeometry(4.6, 7.6, 4.6),
+    new THREE.MeshBasicMaterial({ visible: false })
+  );
+  hit.position.set(0, 3.8, 0);
+  hit.userData = { kind: 'goldenStatue' };
+  grp.add(hit);
+  pickableMeshes.push(hit);
+
+  return grp;
+}
+
+function clickGoldenLandlordStatue() {
+  if (!milestoneState.statueGroup) return;
+  const sx = milestoneState.statueGroup.position.x;
+  const sz = milestoneState.statueGroup.position.z;
+  playMoneyGunFlutterSFX();
+  triggerSquashStretch(milestoneState.statueGroup, 0.85);
+  spawnShockwaveRing3D(sx, 0.42, sz, 0xFFD700, 10.5);
+  spawnPoofParticles3D(sx, 5.2, sz, 0xFFD700, 22);
+  for (let i = 0; i < 32; i++) {
+    const a = (i / 32) * Math.PI * 2;
+    spawnSingleFlutterBill3D(sx, 4.8, sz, Math.cos(a), Math.sin(a), 0.9);
+  }
+  const pt = projectWorldToScreen(sx, 4.5, sz);
+  addGold(250, pt.x, pt.y);
+  spawnJackpotText3D(sx, 6.4, sz, '전설의 성군 동상 축복 +250만!', 'statue_gold');
+  showSpeechBubble3D(
+    'golden_statue_blessing',
+    sx,
+    7.2,
+    sz,
+    '번쩍~!! 전설의 성군 건물주 동상이 황금 축복 코인(+250만)을 내렸습니다!!',
+    4.2,
+    true
+  );
+  saveGameState();
+}
+
+function rebuildHappinessMilestones3D() {
+  if (!scene) return;
+  if (milestoneState.group) {
+    // 기존 동상 히트박스 제거
+    for (let i = pickableMeshes.length - 1; i >= 0; i--) {
+      if (pickableMeshes[i]?.userData?.kind === 'goldenStatue') {
+        pickableMeshes.splice(i, 1);
+      }
+    }
+    scene.remove(milestoneState.group);
+  }
+
+  const grp = new THREE.Group();
+  scene.add(grp);
+  milestoneState.group = grp;
+  milestoneState.swayingBanners = [];
+  milestoneState.rooftopActors = [];
+  milestoneState.paradeActors = [];
+  milestoneState.statueCrowd = [];
+  milestoneState.statueGroup = null;
+  milestoneState.hotAirBalloon = null;
+
+  const unlocked = state.unlockedMilestones || [];
+  if (unlocked.length === 0) return;
+
+  const mainLot = state.lots.find((l) => l.lotId === 'lot_main') || { x: -4.2, z: -6.4 };
+
+  // ==================== [1단계: 행복도 50%] 칭송 현수막 & 가로등 배너 ====================
+  if (unlocked.includes(50)) {
+    const bMat1 = new THREE.MeshStandardMaterial({ map: TEX.praiseBanner1, roughness: 0.45, side: THREE.DoubleSide });
+    const bMat2 = new THREE.MeshStandardMaterial({ map: TEX.praiseBanner2, roughness: 0.45, side: THREE.DoubleSide });
+
+    // 메인 빌딩 좌·우 외벽 대형 현수막
+    const sideConfigs = [
+      { x: mainLot.x - 16.35, y: 13.5, z: mainLot.z + 2.4, rotY: -Math.PI * 0.32, mat: bMat1 },
+      { x: mainLot.x + 16.35, y: 13.5, z: mainLot.z + 2.4, rotY: Math.PI * 0.32, mat: bMat2 },
+      { x: -16.5, y: 4.85, z: 11.2, rotY: 0.12, mat: bMat1, scale: 0.68 },
+      { x: 14.5, y: 4.85, z: 11.2, rotY: -0.12, mat: bMat2, scale: 0.68 }
+    ];
+    sideConfigs.forEach((cfg, idx) => {
+      const piv = new THREE.Group();
+      const sc = cfg.scale || 1.0;
+      piv.position.set(cfg.x, cfg.y, cfg.z);
+      piv.rotation.y = cfg.rotY;
+      piv.add(createRoundedToyMesh(4.6 * sc, 0.14 * sc, 0.14 * sc, MAT.pureGold24k, 0, 0, 0, 0.03));
+      const cloth = new THREE.Mesh(GEO.quad, cfg.mat);
+      cloth.scale.set(4.4 * sc, 2.2 * sc, 1);
+      cloth.position.set(0, -1.15 * sc, 0);
+      piv.add(cloth);
+      grp.add(piv);
+      milestoneState.swayingBanners.push({ pivot: piv, baseRotY: cfg.rotY, phase: idx * 1.1 });
+    });
+  }
+
+  // ==================== [2단계: 행복도 75%] 스트링 라이트 가랜드 · 애드벌룬 · 옥상 루프탑 파티 가든 ====================
+  if (unlocked.includes(75)) {
+    // 1) 거리 허공 알전구 스트링 라이트 & 삼각 가랜드 플래그
+    const flagMats = [MAT.coral, MAT.butter, MAT.mint, MAT.sky, MAT.pinkSoft];
+    for (const gz of [4.8, 12.2]) {
+      for (let i = 0; i <= 16; i++) {
+        const t = i / 16;
+        const gx = THREE.MathUtils.lerp(-22.0, 22.0, t);
+        const sag = Math.sin(t * Math.PI) * 1.35;
+        const gy = 6.8 - sag;
+        const bulb = new THREE.Mesh(GEO.sphere, MAT.neonYellow);
+        bulb.scale.setScalar(0.22);
+        bulb.position.set(gx, gy, gz);
+        grp.add(bulb);
+
+        if (i < 16) {
+          const tri = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.56, 3), flagMats[i % flagMats.length]);
+          tri.rotation.x = Math.PI;
+          tri.position.set(gx + 1.35, gy - 0.28, gz);
+          grp.add(tri);
+        }
+      }
+    }
+
+    // 2) 하늘에 둥실 떠 있는 "HAPPY MINIMI TOWN" 열기구 애드벌룬
+    const balloon = new THREE.Group();
+    balloon.position.set(17.5, 25.5, -6.5);
+    const envGeo = new THREE.SphereGeometry(2.85, 24, 20);
+    const envMat = makeClayMat(0xFF6B8B, { roughness: 0.38 });
+    const envMesh = new THREE.Mesh(envGeo, envMat);
+    envMesh.scale.set(1.0, 1.22, 1.0);
+    balloon.add(envMesh);
+    const bandSign = new THREE.Mesh(GEO.quad, new THREE.MeshBasicMaterial({ map: TEX.balloonSign }));
+    bandSign.scale.set(4.2, 1.45, 1);
+    bandSign.position.set(0, 0.1, 2.86);
+    balloon.add(bandSign);
+    balloon.add(createRoundedToyMesh(1.35, 0.95, 1.35, MAT.woodWarm, 0, -4.4, 0, 0.08));
+    balloon.add(createRoundedToyMesh(0.08, 1.4, 0.08, MAT.pureGold24k, -0.5, -3.5, 0.5, 0.02));
+    balloon.add(createRoundedToyMesh(0.08, 1.4, 0.08, MAT.pureGold24k, 0.5, -3.5, 0.5, 0.02));
+    grp.add(balloon);
+    milestoneState.hotAirBalloon = balloon;
+
+    // 3) 메인 빌딩 옥상 '루프탑 파티 가든(인조잔디 · 자쿠지 풀 · BBQ 그릴 · 파라솔 테이블 · 파티 주민)'
+    const roofY = 22.92;
+    const rg = new THREE.Group();
+    rg.position.set(mainLot.x, roofY, mainLot.z);
+    // 에메랄드 인조잔디 데크
+    rg.add(createRoundedToyMesh(28.5, 0.18, 7.6, MAT.cloverGreen, 0, 0.09, -0.3, 0.08));
+    // 옥상 안전 유리 난간
+    rg.add(createRoundedToyMesh(28.8, 0.95, 0.12, MAT.partitionGlass, 0, 0.55, 3.6, 0.03, false, false, false));
+    // 스파클링 루프탑 자쿠지 미니 풀장
+    rg.add(createRoundedToyMesh(6.2, 0.72, 3.8, MAT.white, -8.5, 0.38, -0.4, 0.12));
+    const poolWater = createRoundedToyMesh(5.5, 0.58, 3.1, MAT.screenCyan, -8.5, 0.48, -0.4, 0.08);
+    rg.add(poolWater);
+    // 레드 브릭 & 차콜 바비큐 그릴
+    rg.add(createRoundedToyMesh(2.2, 1.15, 1.2, MAT.roofBrickCoral, 8.8, 0.58, -1.2, 0.08));
+    rg.add(createRoundedToyMesh(1.8, 0.22, 0.95, MAT.castIron, 8.8, 1.2, -1.2, 0.04));
+    rg.add(createRoundedToyMesh(1.4, 0.12, 0.65, MAT.ovenFire, 8.8, 1.32, -1.2, 0.03));
+    // 루프탑 파라솔 칵테일 테이블 2세트
+    for (const tx of [-1.8, 3.6]) {
+      const pSet = createGreenParasolTableSet3D(true);
+      pSet.position.set(tx, 0.16, -0.35);
+      rg.add(pSet);
+    }
+    // 옥상에서 신나게 춤추며 파티하는 입주민 4명
+    const partyRoles = ['streamer', 'musician', 'newlywed', 'developer'];
+    [-8.5, -3.2, 2.2, 7.4].forEach((px, idx) => {
+      const pActor = createChibiPerson3D(partyRoles[idx], idx + 4);
+      pActor.position.set(px, idx === 0 ? 0.52 : 0.18, idx === 0 ? -0.4 : 0.65);
+      rg.add(pActor);
+      milestoneState.rooftopActors.push({ mesh: pActor, baseY: pActor.position.y, phase: idx * 1.3 });
+    });
+    grp.add(rg);
+  }
+
+  // ==================== [3단계: 행복도 90%] VIP 레드카펫 & 거리 퍼레이드 행진 & 3D 불꽃놀이 ====================
+  if (unlocked.includes(90)) {
+    // 1) 메인 빌딩 정문 VIP 레드카펫 & 황금 벨벳 차단봉(Stanchions)
+    const entX = mainLot.x;
+    const entZ = mainLot.z + 5.6;
+    grp.add(createRoundedToyMesh(4.2, 0.08, 5.2, MAT.supercarRed, entX, 0.3, entZ, 0.04));
+    grp.add(createRoundedToyMesh(4.45, 0.05, 5.4, MAT.pureGold24k, entX, 0.27, entZ, 0.04));
+    for (const szOff of [-1.8, 0.0, 1.8]) {
+      for (const sxSide of [-2.15, 2.15]) {
+        const px = entX + sxSide;
+        const pz = entZ + szOff;
+        grp.add(createRoundedToyMesh(0.14, 1.12, 0.14, MAT.pureGold24k, px, 0.82, pz, 0.04));
+        const topBall = new THREE.Mesh(GEO.sphere, MAT.pureGold24k);
+        topBall.scale.setScalar(0.24);
+        topBall.position.set(px, 1.44, pz);
+        grp.add(topBall);
+        if (szOff < 1.8) {
+          grp.add(createRoundedToyMesh(0.09, 0.09, 1.8, MAT.supercarRed, px, 1.16, pz + 0.9, 0.03));
+        }
+      }
+    }
+
+    // 2) 고깔모자 & 컬러 풍선을 든 5인 거리 찬양 퍼레이드 행진단!
+    const balloonMats = [MAT.coral, MAT.neonYellow, MAT.mint, MAT.sky, MAT.pinkSoft];
+    for (let p = 0; p < 5; p++) {
+      const marcher = createChibiPerson3D(['musician', 'streamer', 'florist', 'student', 'newlywed'][p], p + 1);
+      // 머리 위 파티 고깔모자 + 손에 든 컬러 풍선
+      const coneHat = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.52, 14), balloonMats[p]);
+      coneHat.position.set(0, 2.38, 0);
+      marcher.add(coneHat);
+
+      const bString = createRoundedToyMesh(0.03, 1.25, 0.03, MAT.white, 0.52, 1.85, 0.15, 0.01);
+      const bSphere = new THREE.Mesh(GEO.sphere, balloonMats[(p + 2) % 5]);
+      bSphere.scale.set(0.58, 0.68, 0.58);
+      bSphere.position.set(0.52, 2.55, 0.15);
+      marcher.add(bString, bSphere);
+
+      grp.add(marcher);
+      milestoneState.paradeActors.push({
+        mesh: marcher,
+        offset: p * 3.1
+      });
+    }
+  }
+
+  // ==================== [4단계: 행복도 100% MAX] 광장 중앙 초대형 24K 순금 건물주 동상 & 카메라 플래시 인파 ====================
+  if (unlocked.includes(100)) {
+    const stX = 0.0;
+    const stZ = 21.8; // 중앙 분수대 바로 앞 남측 로얄 플라자 포컬 포인트!
+    const statue = create24KGoldenLandlordStatue3D();
+    statue.position.set(stX, 0.26, stZ);
+    grp.add(statue);
+    milestoneState.statueGroup = statue;
+
+    // 동상 주변에 모여 박수치고 인증샷 플래시(번쩍!)를 터뜨리는 6명의 주민들
+    for (let c = 0; c < 6; c++) {
+      const ang = -Math.PI * 0.15 + (c / 5) * Math.PI * 1.3;
+      const dist = 3.35 + (c % 2) * 0.55;
+      const cx = stX + Math.cos(ang) * dist;
+      const cz = stZ + Math.sin(ang) * dist;
+      const fan = createChibiPerson3D(['newlywed', 'chef', 'developer', 'streamer', 'barista', 'petlover'][c], c + 6);
+      fan.position.set(cx, 0.26, cz);
+      fan.lookAt(stX, 0.26, stZ);
+      grp.add(fan);
+      milestoneState.statueCrowd.push({ mesh: fan, wx: cx, wz: cz, phase: c * 1.05 });
+    }
+  }
+}
+
+function playFireworkPopSFX() {
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    if (!window._landlordAudioCtx) window._landlordAudioCtx = new AC();
+    const ctx = window._landlordAudioCtx;
+    if (ctx.state === 'suspended') ctx.resume();
+    const now = ctx.currentTime;
+
+    // 피유우웅~ 상승 휘슬 + 펑! 스파클
+    const whistle = ctx.createOscillator();
+    const wg = ctx.createGain();
+    whistle.type = 'sine';
+    whistle.frequency.setValueAtTime(360, now);
+    whistle.frequency.exponentialRampToValueAtTime(1180, now + 0.34);
+    wg.gain.setValueAtTime(0.06, now);
+    wg.gain.exponentialRampToValueAtTime(0.001, now + 0.36);
+    whistle.connect(wg);
+    wg.connect(ctx.destination);
+    whistle.start(now);
+    whistle.stop(now + 0.38);
+
+    const pop = ctx.createOscillator();
+    const pg = ctx.createGain();
+    pop.type = 'triangle';
+    pop.frequency.setValueAtTime(210, now + 0.36);
+    pop.frequency.exponentialRampToValueAtTime(52, now + 0.58);
+    pg.gain.setValueAtTime(0.16, now + 0.36);
+    pg.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+    pop.connect(pg);
+    pg.connect(ctx.destination);
+    pop.start(now + 0.36);
+    pop.stop(now + 0.62);
+  } catch (e) {}
+}
+
+function spawn3DFireworkRocket() {
+  const colors = [0xFFD93D, 0xFF6B8B, 0x38E54D, 0x38BDF8, 0xC084FC];
+  const hex = colors[Math.floor(Math.random() * colors.length)];
+  const rx = -18 + Math.random() * 36;
+  const rz = -12 + Math.random() * 24;
+  const rocket = new THREE.Mesh(GEO.sphere, makeClayMat(hex, { emissive: hex, emissiveIntensity: 1.2 }));
+  rocket.scale.setScalar(0.36);
+  rocket.position.set(rx, 4.0, rz);
+  scene.add(rocket);
+  milestoneState.fireworks.push({
+    mesh: rocket,
+    hex,
+    vy: 24 + Math.random() * 6,
+    targetY: 24 + Math.random() * 8
+  });
+}
+
+function tickMilestones3D(dt, elapsed) {
+  if (milestoneState.ceremonyActive) {
+    milestoneState.ceremonyTimer -= dt;
+    if (milestoneState.ceremonyTimer <= 0) {
+      milestoneState.ceremonyActive = false;
+    }
+  }
+
+  // 50% 현수막 살랑살랑 흔들림
+  for (const sb of milestoneState.swayingBanners) {
+    sb.pivot.rotation.z = Math.sin(elapsed * 2.4 + sb.phase) * 0.06;
+    sb.pivot.rotation.y = sb.baseRotY + Math.cos(elapsed * 1.8 + sb.phase) * 0.05;
+  }
+
+  // 75% 열기구 둥실둥실 & 루프탑 파티 주민 댄스
+  if (milestoneState.hotAirBalloon) {
+    milestoneState.hotAirBalloon.position.y = 25.5 + Math.sin(elapsed * 1.2) * 1.15;
+    milestoneState.hotAirBalloon.rotation.y = Math.sin(elapsed * 0.5) * 0.24;
+  }
+  for (const ra of milestoneState.rooftopActors) {
+    ra.mesh.position.y = ra.baseY + Math.abs(Math.sin(elapsed * 6.5 + ra.phase)) * 0.28;
+    ra.mesh.rotation.y = Math.sin(elapsed * 2.2 + ra.phase) * 0.65;
+  }
+
+  // 90% 거리 퍼레이드 행진 & 하늘 3D 불꽃놀이 발사!
+  const unlocked = state.unlockedMilestones || [];
+  if (unlocked.includes(90)) {
+    milestoneState.paradeActors.forEach((pa, idx) => {
+      const span = 44.0;
+      const prog = ((elapsed * 3.2 + pa.offset) % span) / span;
+      const px = THREE.MathUtils.lerp(-22.0, 22.0, prog);
+      const pz = 9.4 + Math.sin(prog * Math.PI * 4) * 0.55;
+      pa.mesh.position.set(px, 0.26 + Math.abs(Math.sin(elapsed * 8.0 + idx)) * 0.22, pz);
+      pa.mesh.rotation.y = Math.PI * 0.5;
+    });
+
+    milestoneState.fireworkTimer -= dt;
+    if (milestoneState.fireworkTimer <= 0) {
+      milestoneState.fireworkTimer = 1.65 + Math.random() * 1.2;
+      if (!fpState.active && !focusedRoomId && !focusedShopId && !focusedFirstFloorShopId) {
+        spawn3DFireworkRocket();
+      }
+    }
+  }
+
+  for (let i = milestoneState.fireworks.length - 1; i >= 0; i--) {
+    const fw = milestoneState.fireworks[i];
+    fw.mesh.position.y += fw.vy * dt;
+    if (fw.mesh.position.y >= fw.targetY) {
+      const bx = fw.mesh.position.x;
+      const by = fw.mesh.position.y;
+      const bz = fw.mesh.position.z;
+      scene.remove(fw.mesh);
+      milestoneState.fireworks.splice(i, 1);
+      spawnPoofParticles3D(bx, by, bz, fw.hex, 20);
+      spawnPoofParticles3D(bx, by, bz, 0xFFFDF7, 8);
+    }
+  }
+
+  // 100% 황금 동상 후광 파티클 & 주민 인증샷 카메라 플래시(번쩍!)
+  if (unlocked.includes(100) && milestoneState.statueGroup) {
+    milestoneState.flashTimer -= dt;
+    for (const fan of milestoneState.statueCrowd) {
+      fan.mesh.position.y = 0.26 + Math.abs(Math.sin(elapsed * 6.8 + fan.phase)) * 0.22;
+    }
+    if (milestoneState.flashTimer <= 0) {
+      milestoneState.flashTimer = 0.95 + Math.random() * 0.85;
+      const pick = milestoneState.statueCrowd[Math.floor(Math.random() * milestoneState.statueCrowd.length)];
+      if (pick && !fpState.active && !focusedRoomId) {
+        spawnShockwaveRing3D(pick.wx, 1.55, pick.wz, 0xFFFFFF, 2.2);
+        spawnPoofParticles3D(
+          milestoneState.statueGroup.position.x + (Math.random() - 0.5) * 1.8,
+          4.8 + Math.random() * 1.6,
+          milestoneState.statueGroup.position.z + (Math.random() - 0.5) * 1.8,
+          0xFFD700,
+          4
+        );
+      }
+    }
+  }
+}
+
+function openHappinessMilestoneModal() {
+  renderHappinessMilestoneModal();
+  document.getElementById('happiness-milestone-modal')?.classList.remove('hidden');
+}
+
+function renderHappinessMilestoneModal() {
+  const pct = calcAvgHappiness();
+  const unlocked = state.unlockedMilestones || [];
+  const pctChip = document.getElementById('ms-modal-pct-chip');
+  const titleChip = document.getElementById('ms-modal-title-chip');
+  const gaugeFill = document.getElementById('ms-modal-gauge-fill');
+  const listEl = document.getElementById('ms-cards-list');
+
+  if (pctChip) pctChip.textContent = `현재 행복도 ${pct}%`;
+  if (titleChip) titleChip.classList.toggle('hidden', !unlocked.includes(100));
+  if (gaugeFill) gaugeFill.style.width = `${pct}%`;
+  if (!listEl) return;
+
+  listEl.innerHTML = (window.HAPPINESS_MILESTONES || []).map((ms) => {
+    const done = unlocked.includes(ms.threshold);
+    return `
+      <div class="diary-card flex items-center justify-between gap-3 ${done ? '!border-[#38E54D] !bg-[#F4FDF7]' : ''}">
+        <div class="flex items-start gap-3 min-w-0">
+          <div class="w-11 h-11 rounded-2xl bg-[#FFFDF7] border-2 border-[#E8CCB0] flex items-center justify-center shrink-0">
+            ${createCustomSVGIcon(ms.icon || 'statue_gold', 26)}
+          </div>
+          <div class="min-w-0 space-y-0.5">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="font-title text-[14.5px] text-[#3A2E2B]">${ms.title}</span>
+              <span class="kw-chip tone-${done ? 'mint' : ms.tone}">${done ? '진화 완료!' : `행복도 ${ms.threshold}%`}</span>
+            </div>
+            <div class="font-title text-[12px] text-[#D6384C]">${ms.rewardDesc}</div>
+            <div class="font-body text-[11.5px] font-semibold text-[#5C4942]">${ms.detailDesc}</div>
+          </div>
+        </div>
+        ${done
+          ? `<button type="button" data-ms-view="${ms.threshold}" class="tactile-pill-btn tone-gold shrink-0"><span>3D 감상</span></button>`
+          : `<span class="kw-chip tone-cream shrink-0">${Math.max(0, ms.threshold - pct)}% 남음</span>`
+        }
+      </div>
+    `;
+  }).join('');
+
+  listEl.querySelectorAll('[data-ms-view]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const th = Number(btn.getAttribute('data-ms-view'));
+      const ms = (window.HAPPINESS_MILESTONES || []).find((m) => m.threshold === th);
+      document.getElementById('happiness-milestone-modal')?.classList.add('hidden');
+      if (ms) {
+        if (focusedRoomId) exitRoomFocusMode();
+        if (focusedShopId || focusedFirstFloorShopId) exitShopFocusMode();
+        startSmoothCameraTween(
+          new THREE.Vector3(ms.camPos.x, ms.camPos.y, ms.camPos.z),
+          new THREE.Vector3(ms.camLook.x, ms.camLook.y, ms.camLook.z),
+          ms.camZoom || 1.45,
+          0.6,
+          null
+        );
+      }
+    });
+  });
+}
+
+// =========================================================
 // 16. 시뮬레이션 루프 · 롤링 넘버 HUD · 3D 오버레이 무겹침 투영
 // =========================================================
 function tickSimulationEconomyAndCrises(dt) {
-  // 60초 갓물주 골든벨 피버 타임 카운트다운 및 상단 HUD 동기화
+  // 골든벨(2.5배) & 만수르 머니건(3.0배) 피버 타임 카운트다운 및 상단 HUD 동기화
   if ((state.feverTimer || 0) > 0) {
     const prevActive = state.feverTimer > 0;
     state.feverTimer = Math.max(0, state.feverTimer - dt);
@@ -7761,11 +10984,15 @@ function tickSimulationEconomyAndCrises(dt) {
       dom.hudFeverPill.classList.toggle('hidden', state.feverTimer <= 0);
     }
     if (dom.hudFeverText && state.feverTimer > 0) {
-      dom.hudFeverText.textContent = `갓물주 골든벨 피버 2.5배! ${Math.ceil(state.feverTimer)}초`;
+      const pwr = state.feverPower || 2.5;
+      dom.hudFeverText.textContent = pwr >= 3.0
+        ? `만수르 머니샤워 피버 3.0배! ${Math.ceil(state.feverTimer)}초`
+        : `갓물주 골든벨 피버 ${pwr}배! ${Math.ceil(state.feverTimer)}초`;
     }
     if (prevActive && state.feverTimer <= 0) {
+      state.feverPower = 2.5;
       updateTopHUDTargets();
-      showToast('골든벨 피버 타임이 종료되었습니다!', 'sky');
+      showToast('피버 타임이 종료되었습니다!', 'sky');
     }
   } else if (dom.hudFeverPill && !dom.hudFeverPill.classList.contains('hidden')) {
     dom.hudFeverPill.classList.add('hidden');
@@ -7789,7 +11016,9 @@ function tickSimulationEconomyAndCrises(dt) {
     b.shopCycleTimer = (b.shopCycleTimer || 9.0) - dt;
     if (b.shopCycleTimer <= 0) {
       b.shopCycleTimer = 11.0;
-      const shopProfit = Math.round(((b.shopsLv.mart || 1) * 15 + (b.shopsLv.wash || 1) * 13) * getFeverMultiplier());
+      const shopProfit = b.lotId === 'lot_main'
+        ? (calcFirstFloorShopStats('shop_mart1f').cycleRev + calcFirstFloorShopStats('shop_wash1f').cycleRev)
+        : Math.round(((b.shopsLv.mart || 1) * 15 + (b.shopsLv.wash || 1) * 13) * getFeverMultiplier() * getLegendaryTotalMultiplier());
       if (b.manager.hired) {
         addGold(shopProfit);
       } else {
@@ -7863,6 +11092,82 @@ function tickAnimationsAndEffects(dt, elapsed) {
     d.mesh.rotation.y = Math.sin(elapsed * 1.4 + d.phase) * 0.35;
   }
 
+  // 외곽 해안 드라이빙 존 파도 물결 애니메이션
+  for (const sw of scenicWaveMeshes) {
+    sw.mesh.position.z = sw.baseZ + Math.sin(elapsed * 1.8 + sw.phase) * 0.55;
+    sw.mesh.scale.x = 1.0 + Math.cos(elapsed * 2.1 + sw.phase) * 0.08;
+  }
+
+  // 줌아웃 타운 뷰 캐릭터 발밑 오라 파동 링 업데이트
+  const allowFullBubbles = isSpeechBubbleAllowedInCurrentView(false);
+  for (const ar of characterAuraRings) {
+    if (!ar.owner?.parent) continue;
+    ar.owner.userData.auraTimer = Math.max(0, (ar.owner.userData.auraTimer || 0) - dt);
+    const showAura = !allowFullBubbles && ar.owner.userData.auraTimer > 0;
+    ar.mat.opacity = showAura ? (0.42 + Math.sin(elapsed * 6.0) * 0.24) : 0.0;
+    if (showAura) {
+      ar.ring.scale.setScalar(0.95 + Math.sin(elapsed * 5.0) * 0.14);
+    }
+  }
+
+  // [실시간 3D 배치 연출 1] 하늘 드롭인 + 착지 쿵! + 젤리 탄성 Squash & Stretch + 별빛 파티클
+  for (let i = activeDropBounces.length - 1; i >= 0; i--) {
+    const db = activeDropBounces[i];
+    if (!db.obj) {
+      activeDropBounces.splice(i, 1);
+      continue;
+    }
+    db.elapsed += dt;
+    if (db.elapsed <= db.dropDur) {
+      const t = db.elapsed / db.dropDur;
+      const easeIn = t * t;
+      db.obj.position.y = THREE.MathUtils.lerp(db.baseY + 4.8, db.baseY, easeIn);
+      db.obj.scale.set(
+        db.baseScale.x * (1 - t * 0.08),
+        db.baseScale.y * (1 + t * 0.14),
+        db.baseScale.z * (1 - t * 0.08)
+      );
+    } else {
+      if (!db.landed) {
+        db.landed = true;
+        db.obj.position.y = db.baseY;
+        playHeavyDropThudSFX();
+        spawnPoofParticles3D(db.wx, db.wy + 0.35, db.wz, 0xFFD93D, 12);
+        spawnShockwaveRing3D(db.wx, db.wy + 0.08, db.wz, 0x38E54D, 3.4);
+      }
+      const bt = Math.min(1, (db.elapsed - db.dropDur) / db.bounceDur);
+      const jelly = Math.sin(bt * Math.PI * 3.0) * (1 - bt) * 0.26;
+      db.obj.scale.set(
+        db.baseScale.x * (1 + jelly),
+        db.baseScale.y * (1 - jelly * 1.15),
+        db.baseScale.z * (1 + jelly)
+      );
+      if (bt >= 1) {
+        db.obj.position.y = db.baseY;
+        db.obj.scale.copy(db.baseScale);
+        activeDropBounces.splice(i, 1);
+      }
+    }
+  }
+
+  // [실시간 3D 시공 연출 2] 방음 바닥재 격자 타일 촤르륵 깔림 + 뽀얀 먼지 구름 Poof
+  for (let i = activeTileAnimations.length - 1; i >= 0; i--) {
+    const ta = activeTileAnimations[i];
+    ta.elapsed += dt;
+    if (ta.elapsed < ta.delay) continue;
+    const t = Math.min(1, (ta.elapsed - ta.delay) / 0.28);
+    if (!ta.poofed) {
+      ta.poofed = true;
+      spawnPoofParticles3D(ta.wx, ta.wy, ta.wz, 0xFFFDF7, 4);
+    }
+    const pop = t < 0.7 ? (t / 0.7) * 1.18 : 1.18 - ((t - 0.7) / 0.3) * 0.18;
+    ta.mesh.scale.setScalar(Math.max(0.01, pop));
+    if (t >= 1) {
+      ta.mesh.scale.setScalar(1);
+      activeTileAnimations.splice(i, 1);
+    }
+  }
+
   for (let i = activeSquashes.length - 1; i >= 0; i--) {
     const sq = activeSquashes[i];
     sq.elapsed += dt;
@@ -7913,19 +11218,46 @@ function tickAnimationsAndEffects(dt, elapsed) {
     }
   }
 
+  // [2단계 포커스 시퀀스] ① 0.6초 3차 이징 카메라 정중앙 트윈 ➔ 0.4초 무가림 클린 감상 홀드 ➔ ② 비가림 컨트롤 독 슬라이드업!
   if (!driveState.active && camTween.active) {
-    const alpha = Math.min(1, dt * 7.2);
-    camera.position.lerp(camTween.pos, alpha);
-    controls.target.lerp(camTween.look, alpha);
-    camera.zoom = THREE.MathUtils.lerp(camera.zoom, camTween.zoom, alpha);
+    camTween.elapsed += dt;
+    const rawT = Math.min(1, camTween.elapsed / Math.max(0.12, camTween.duration || 0.6));
+    const easeOutCubic = 1 - Math.pow(1 - rawT, 3);
+    camera.position.lerpVectors(camTween.startPos, camTween.pos, easeOutCubic);
+    controls.target.lerpVectors(camTween.startLook, camTween.look, easeOutCubic);
+    camera.zoom = THREE.MathUtils.lerp(camTween.startZoom, camTween.zoom, easeOutCubic);
     camera.updateProjectionMatrix();
-    if (
-      camera.position.distanceTo(camTween.pos) < 0.08 &&
-      Math.abs(camera.zoom - camTween.zoom) < 0.01
-    ) {
+
+    if (rawT >= 1) {
       camTween.active = false;
+      if (typeof camTween.onArrive === 'function') {
+        const cb = camTween.onArrive;
+        camTween.onArrive = null;
+        cb();
+      }
     }
   }
+
+  if (focusRevealState.pending && !camTween.active) {
+    focusRevealState.holdTimer -= dt;
+    if (focusRevealState.holdTimer <= 0) {
+      const fn = focusRevealState.onHoldDone;
+      focusRevealState.onHoldDone = null;
+      if (typeof fn === 'function') fn();
+    }
+  }
+
+  if (focusRevealState.tuckTimer > 0) {
+    focusRevealState.tuckTimer -= dt;
+    if (focusRevealState.tuckTimer <= 0) {
+      dom.furnitureCatalogSheet?.classList.remove('dock-tucked');
+      dom.roomFocusPanel?.classList.remove('dock-tucked');
+      dom.shopFocusPanel?.classList.remove('dock-tucked');
+    }
+  }
+
+  tickMakeItRain(dt, elapsed);
+  tickMilestones3D(dt, elapsed);
 
   // 상단 HUD 롤링 넘버 & 행복도 미니 게이지 실시간 동기화
   hudAnim.shownGold = THREE.MathUtils.lerp(hudAnim.shownGold, hudAnim.targetGold, Math.min(1, dt * 11));
@@ -8008,7 +11340,7 @@ function isInBottomRightFabZone(x, y) {
 }
 
 function updateAllProjectedOverlays(dt) {
-  const hideTownBadges = !!focusedRoomId || !!focusedShopId || fpState.active;
+  const hideTownBadges = !!focusedRoomId || !!focusedShopId || !!focusedFirstFloorShopId || fpState.active;
   const vw = window.innerWidth;
   const vh = window.innerHeight;
 
@@ -8032,7 +11364,7 @@ function updateAllProjectedOverlays(dt) {
     }
   }
 
-  // 1) 단독 상가 플로팅 배지 투영 (뷰포트 좌우 클리핑 원천 방지 클램프)
+  // 1A) 단독 상가 플로팅 배지 투영
   for (const tpl of STANDALONE_SHOPS_TEMPLATE) {
     const el = shopOverlayEls[tpl.shopId];
     if (!el) continue;
@@ -8046,10 +11378,46 @@ function updateAllProjectedOverlays(dt) {
     } else {
       const halfW = Math.max(88, (el.offsetWidth || 176) * 0.5 + 8);
       const clampedX = THREE.MathUtils.clamp(pt.x, halfW, Math.max(halfW, vw - halfW));
+      let safeY = pt.y;
+      for (const sh of visibleShopBoxes) {
+        if (Math.abs(clampedX - sh.x) < 158 && Math.abs(safeY - sh.y) < 34) {
+          safeY = sh.y + 36;
+        }
+      }
       el.style.display = 'inline-flex';
       el.style.left = `${clampedX}px`;
-      el.style.top = `${pt.y}px`;
-      visibleShopBoxes.push({ x: clampedX, y: pt.y });
+      el.style.top = `${safeY}px`;
+      visibleShopBoxes.push({ x: clampedX, y: safeY });
+    }
+  }
+
+  // 1B) 메인 빌딩 1층 편의점(MINIMI MART) · 코인세탁소(BUBBLE LAUNDRY) 클릭 배지 투영 (모바일 390px 단독상가 배지와 2D 무겹침 이격 보장!)
+  const mainLot = state.lots.find((l) => l.lotId === 'lot_main');
+  if (mainLot) {
+    for (const fTpl of (window.FIRST_FLOOR_SHOPS_TEMPLATE || [])) {
+      const el = shopOverlayEls[fTpl.shopId];
+      if (!el) continue;
+      if (hideTownBadges || driveState.active) {
+        el.style.display = 'none';
+        continue;
+      }
+      const pt = projectWorldToScreen(mainLot.x + fTpl.localX, 4.55, mainLot.z + 4.35);
+      if (!pt.visible || isInTopHudSafeZone(pt.x, pt.y) || isInBottomRightFabZone(pt.x, pt.y) || pt.x < 18 || pt.x > vw - 18 || pt.y < 58 || pt.y > vh - 50) {
+        el.style.display = 'none';
+      } else {
+        const halfW = Math.max(88, (el.offsetWidth || 176) * 0.5 + 8);
+        const clampedX = THREE.MathUtils.clamp(pt.x, halfW, Math.max(halfW, vw - halfW));
+        let safeY = pt.y;
+        for (const sh of visibleShopBoxes) {
+          if (Math.abs(clampedX - sh.x) < 168 && Math.abs(safeY - sh.y) < 36) {
+            safeY = sh.y - 38;
+          }
+        }
+        el.style.display = 'inline-flex';
+        el.style.left = `${clampedX}px`;
+        el.style.top = `${safeY}px`;
+        visibleShopBoxes.push({ x: clampedX, y: safeY });
+      }
     }
   }
 
@@ -8073,9 +11441,10 @@ function updateAllProjectedOverlays(dt) {
     }
   }
 
-  // 3) 월세 & 상가 매출 코인 버블 투영 (상가 지붕 배지와 2D 충돌 시 자동 하단 이격)
+  // 3) 월세 & 상가 매출 코인 버블 투영 (상가 배지 및 다른 코인 버블과 2D 충돌 원천 차단!)
+  const visibleRentBoxes = [];
   for (const rb of rentBubbles) {
-    if (focusedRoomId || fpState.active) {
+    if (focusedRoomId || focusedFirstFloorShopId || fpState.active) {
       rb.el.style.display = 'none';
       continue;
     }
@@ -8086,35 +11455,57 @@ function updateAllProjectedOverlays(dt) {
       const halfW = Math.max(52, (rb.el.offsetWidth || 96) * 0.5 + 8);
       const clampedX = THREE.MathUtils.clamp(pt.x, halfW, Math.max(halfW, vw - halfW));
       let safeY = pt.y;
-      for (const sh of visibleShopBoxes) {
-        if (Math.abs(clampedX - sh.x) < 108 && Math.abs(safeY - sh.y) < 36) {
-          safeY = sh.y + 38;
+      for (let iter = 0; iter < 4; iter++) {
+        for (const sh of visibleShopBoxes) {
+          if (Math.abs(clampedX - sh.x) < 146 && Math.abs(safeY - sh.y) < 36) {
+            safeY = sh.y - 38;
+          }
+        }
+        for (const prevRb of visibleRentBoxes) {
+          if (Math.abs(clampedX - prevRb.x) < 108 && Math.abs(safeY - prevRb.y) < 34) {
+            safeY = prevRb.y - 36;
+          }
         }
       }
+      safeY = Math.max(155, safeY);
       rb.el.style.display = 'inline-flex';
       rb.el.style.left = `${clampedX}px`;
       rb.el.style.top = `${safeY}px`;
+      visibleRentBoxes.push({ x: clampedX, y: safeY });
     }
   }
 
-  // 4) 3D 만화 꼬리 말풍선 투영 (좌우 가장자리 잘림 원천 차단)
+  // 4) [시점별 스마트 말풍선 분기] 1인칭·클로즈업·머니샤워·마일스톤에서는 생생한 텍스트 말풍선 100% 표시, 줌아웃 타운뷰에서는 심플 아이콘 모트로 전환!
   for (const key of Object.keys(speechEls)) {
     const sp = speechEls[key];
     sp.timer -= dt;
     if (sp.timer <= 0) {
       sp.el.remove();
+      if (sp.moteEl) sp.moteEl.remove();
       delete speechEls[key];
       continue;
     }
     const pt = projectWorldToScreen(sp.wx, sp.wy, sp.wz);
-    if (!pt.visible || isInTopHudSafeZone(pt.x, pt.y) || pt.x < 32 || pt.x > vw - 32 || pt.y < 52 || pt.y > vh - 52) {
+    const inBounds = pt.visible && !isInTopHudSafeZone(pt.x, pt.y) && pt.x >= 32 && pt.x <= vw - 32 && pt.y >= 52 && pt.y <= vh - 52;
+    const showFullBubble = isSpeechBubbleAllowedInCurrentView(sp.forceShow);
+
+    if (!inBounds) {
       sp.el.style.display = 'none';
-    } else {
+      if (sp.moteEl) sp.moteEl.style.display = 'none';
+    } else if (showFullBubble) {
+      if (sp.moteEl) sp.moteEl.style.display = 'none';
       const halfW = Math.max(115, (sp.el.offsetWidth || 220) * 0.5 + 10);
       const clampedX = THREE.MathUtils.clamp(pt.x, halfW, Math.max(halfW, vw - halfW));
       sp.el.style.display = 'inline-flex';
       sp.el.style.left = `${clampedX}px`;
       sp.el.style.top = `${pt.y}px`;
+    } else {
+      sp.el.style.display = 'none';
+      if (sp.moteEl) {
+        sp.moteEl.style.display = 'inline-flex';
+        sp.moteEl.style.left = `${pt.x}px`;
+        sp.moteEl.style.top = `${pt.y}px`;
+      }
     }
   }
 }
@@ -8146,6 +11537,10 @@ function loadGameState() {
         ...fresh.standaloneShops,
         ...(parsed.standaloneShops || {})
       },
+      firstFloorShops: {
+        ...fresh.firstFloorShops,
+        ...(parsed.firstFloorShops || {})
+      },
       garage: {
         ownedCars: Array.isArray(parsed.garage?.ownedCars) && parsed.garage.ownedCars.length > 0
           ? parsed.garage.ownedCars
@@ -8157,6 +11552,9 @@ function loadGameState() {
         right: parsed.heldGifts?.right || null
       },
       feverTimer: Number(parsed.feverTimer) > 0 ? Number(parsed.feverTimer) : 0,
+      feverPower: Number(parsed.feverPower) > 0 ? Number(parsed.feverPower) : 2.5,
+      townHappinessBoost: Number(parsed.townHappinessBoost) || 0,
+      unlockedMilestones: Array.isArray(parsed.unlockedMilestones) ? parsed.unlockedMilestones : [],
       goldenKeys: Number(parsed.goldenKeys) || 0,
       stats: { ...fresh.stats, ...(parsed.stats || {}) }
     };
@@ -8182,7 +11580,7 @@ function resetGameState() {
 function initThreeScene() {
   scene = new THREE.Scene();
   scene.background = TEX.skyBackdrop;
-  scene.fog = new THREE.FogExp2(0xE8F9FD, 0.0022);
+  scene.fog = new THREE.FogExp2(0xE8F9FD, 0.0019);
 
   const aspect = window.innerWidth / Math.max(1, window.innerHeight);
   const frustum = 38;
@@ -8195,7 +11593,7 @@ function initThreeScene() {
     260
   );
 
-  driveCamera = new THREE.PerspectiveCamera(58, aspect, 0.3, 320);
+  driveCamera = new THREE.PerspectiveCamera(58, aspect, 0.3, 340);
   fpCamera = new THREE.PerspectiveCamera(72, aspect, 0.12, 220);
   scene.add(fpCamera);
   initFirstPersonHands3D();
@@ -8226,12 +11624,12 @@ function initThreeScene() {
   dirLight.position.set(36, 54, 38);
   dirLight.castShadow = true;
   dirLight.shadow.mapSize.set(2048, 2048);
-  dirLight.shadow.camera.left = -52;
-  dirLight.shadow.camera.right = 52;
-  dirLight.shadow.camera.top = 52;
-  dirLight.shadow.camera.bottom = -52;
+  dirLight.shadow.camera.left = -56;
+  dirLight.shadow.camera.right = 56;
+  dirLight.shadow.camera.top = 56;
+  dirLight.shadow.camera.bottom = -56;
   dirLight.shadow.camera.near = 4;
-  dirLight.shadow.camera.far = 145;
+  dirLight.shadow.camera.far = 160;
   dirLight.shadow.bias = -0.0005;
   scene.add(dirLight);
 
@@ -8265,7 +11663,7 @@ function initThreeScene() {
 
     renderer.setSize(window.innerWidth, window.innerHeight);
 
-    if (!focusedRoomId && !focusedShopId && !driveState.active && !fpState.active) {
+    if (!focusedRoomId && !focusedShopId && !focusedFirstFloorShopId && !driveState.active && !fpState.active) {
       setOverviewCamera(false);
     }
   });
@@ -8292,6 +11690,7 @@ function cacheDOMElements() {
 
   dom.hudTownControls = document.getElementById('hud-town-controls');
   dom.btnOverviewCam = document.getElementById('btn-overview-cam');
+  dom.btnMakeItRain = document.getElementById('btn-make-it-rain');
   dom.btnEnterDrive = document.getElementById('btn-enter-drive');
   dom.btnOpenGarage = document.getElementById('btn-open-garage');
   dom.btnQuickExpand = document.getElementById('btn-quick-expand');
@@ -8409,6 +11808,7 @@ function cacheDOMElements() {
   setSvg('hud-ico-happy', 'sparkle_heart_gauge', 28);
 
   setSvg('hud-ico-overview', 'target_aim', 17);
+  setSvg('hud-ico-moneygun', 'money_gun', 19);
   setSvg('hud-ico-drive', 'steering_supercar', 19);
   setSvg('hud-ico-garage', 'garage_key', 17);
   setSvg('hud-ico-expand', 'blueprint_hammer', 17);
@@ -8427,6 +11827,9 @@ function cacheDOMElements() {
   setSvg('ico-drive-cruise', 'cruise_loop', 18);
   setSvg('ico-drive-horn', 'horn_ico', 18);
   setSvg('ico-drive-garage', 'garage_key', 17);
+  setSvg('ico-drive-scenic', 'palm_road', 17);
+  setSvg('ico-drive-rain', 'money_gun', 18);
+  setSvg('ico-fp-rain', 'money_gun', 18);
 
   setSvg('fab-svg-slot', 'leather_diary_pen', 31);
   setSvg('garage-ico-header', 'steering_supercar', 26);
@@ -8457,6 +11860,9 @@ function cacheDOMElements() {
   setSvg('ico-fp-other-room', 'studio_unit', 17);
   setSvg('banner-ico-bell', 'golden_bell', 24);
   setSvg('fp-modal-ico', 'walk_enter_door', 24);
+  setSvg('ms-modal-ico', 'statue_gold', 26);
+  setSvg('ico-ms-rain', 'money_gun', 18);
+  setSvg('ms-banner-ico', 'statue_gold', 26);
 
   const wheelSlot = document.getElementById('cockpit-wheel-rotator');
   if (wheelSlot && typeof createCockpitSteeringWheelSVG === 'function') {
@@ -8528,7 +11934,11 @@ function bindAllUIEvents() {
     if (hits.length === 0) return;
 
     const ud = hits[0].object.userData;
-    if (ud.kind === 'room' && ud.roomId) {
+    if (ud.kind === 'goldenStatue') {
+      clickGoldenLandlordStatue();
+    } else if (ud.kind === 'firstFloorShop' && ud.shopId) {
+      focusCameraOnFirstFloorShop(ud.shopId);
+    } else if (ud.kind === 'room' && ud.roomId) {
       focusCameraOnRoom(ud.roomId);
     } else if (ud.kind === 'standaloneShop' && ud.shopId) {
       focusCameraOnShop(ud.shopId);
@@ -8539,7 +11949,18 @@ function bindAllUIEvents() {
     }
   });
 
+  document.getElementById('hud-badge-happy')?.addEventListener('click', () => openHappinessMilestoneModal());
+  document.getElementById('btn-close-ms-modal')?.addEventListener('click', () => {
+    document.getElementById('happiness-milestone-modal')?.classList.add('hidden');
+  });
+  document.getElementById('btn-ms-trigger-rain')?.addEventListener('click', () => triggerMansourMakeItRain());
+
   dom.btnOverviewCam?.addEventListener('click', () => setOverviewCamera(true));
+  dom.btnMakeItRain?.addEventListener('click', () => triggerMansourMakeItRain());
+  document.getElementById('btn-drive-rain')?.addEventListener('click', () => triggerMansourMakeItRain());
+  document.getElementById('btn-fp-rain')?.addEventListener('click', () => triggerMansourMakeItRain());
+  document.getElementById('btn-drive-scenic-jump')?.addEventListener('click', () => jumpToScenicDriveZone());
+
   dom.btnEnterDrive?.addEventListener('click', () => enterDriveMode());
   dom.btnOpenGarage?.addEventListener('click', () => openGarageModal());
   dom.btnQuickExpand?.addEventListener('click', () => {
@@ -8557,7 +11978,8 @@ function bindAllUIEvents() {
   dom.btnExitShopView?.addEventListener('click', () => exitShopFocusMode());
   dom.btnCloseShopFocus?.addEventListener('click', () => exitShopFocusMode());
   dom.btnShopEnterFp?.addEventListener('click', () => {
-    if (focusedShopId) enterFirstPersonShop(focusedShopId, false);
+    const targetShop = focusedShopId || focusedFirstFloorShopId;
+    if (targetShop) enterFirstPersonShop(targetShop, false);
   });
 
   dom.btnExitDriveMode?.addEventListener('click', () => exitDriveMode());
@@ -8665,10 +12087,13 @@ function bindAllUIEvents() {
   window.addEventListener('keydown', (e) => {
     if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
     if (e.key === 'Escape') {
-      if (fpState.active) exitFirstPersonMode();
+      const msModal = document.getElementById('happiness-milestone-modal');
+      if (msModal && !msModal.classList.contains('hidden')) {
+        msModal.classList.add('hidden');
+      } else if (fpState.active) exitFirstPersonMode();
       else if (driveState.active) exitDriveMode();
       else if (focusedRoomId) exitRoomFocusMode();
-      else if (focusedShopId) exitShopFocusMode();
+      else if (focusedShopId || focusedFirstFloorShopId) exitShopFocusMode();
       return;
     }
 
@@ -8759,9 +12184,11 @@ window.addEventListener('DOMContentLoaded', () => {
   buildCozyFloatingIsland();
   buildAllStandaloneShops3D();
   buildAllLots3D();
+  rebuildHappinessMilestones3D();
   seedInitialStreetVisitors();
 
   hudAnim.shownGold = state.gold;
+  hudAnim.shownHappy = calcAvgHappiness();
   updateTopHUDTargets();
   setOverviewCamera(false);
   bindAllUIEvents();

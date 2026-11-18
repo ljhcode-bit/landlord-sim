@@ -608,6 +608,63 @@ function createCustomSVGIcon(name, size = 24) {
         </g>`;
       break;
 
+    case 'money_gun':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <rect x="4" y="10.5" width="16.5" height="8" rx="2.6" fill="url(#${uid}_gold)" stroke="#3A2E2B" stroke-width="1.6"/>
+          <path d="M7.5 18.5L5.8 26.2H11.2L12.6 18.5Z" fill="url(#${uid}_gold)" stroke="#3A2E2B" stroke-width="1.5" stroke-linejoin="round"/>
+          <rect x="7" y="6.8" width="9.5" height="4" rx="1.3" fill="url(#${uid}_mint)" stroke="#3A2E2B" stroke-width="1.3"/>
+          <rect x="21.2" y="7.5" width="7.8" height="4.8" rx="1.2" transform="rotate(-14 25 10)" fill="url(#${uid}_mint)" stroke="#3A2E2B" stroke-width="1.3"/>
+          <rect x="22.4" y="14.2" width="7.4" height="4.6" rx="1.2" transform="rotate(14 26 16)" fill="url(#${uid}_mint)" stroke="#3A2E2B" stroke-width="1.3"/>
+        </g>`;
+      break;
+
+    case 'statue_gold':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <path d="M11.5 7.5L13 4.2L16 6.2L19 4.2L20.5 7.5Z" fill="url(#${uid}_gold)" stroke="#3A2E2B" stroke-width="1.2"/>
+          <circle cx="16" cy="10.8" r="3.6" fill="url(#${uid}_gold)" stroke="#3A2E2B" stroke-width="1.5"/>
+          <path d="M11 15H21L19.6 22.5H12.4L11 15Z" fill="url(#${uid}_gold)" stroke="#3A2E2B" stroke-width="1.5" stroke-linejoin="round"/>
+          <rect x="8.2" y="22.5" width="15.6" height="4.8" rx="1.8" fill="url(#${uid}_cream)" stroke="#3A2E2B" stroke-width="1.5"/>
+        </g>`;
+      break;
+
+    case 'firework_ico':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <circle cx="16" cy="16" r="3.2" fill="url(#${uid}_gold)" stroke="#3A2E2B" stroke-width="1.3"/>
+          <path d="M16 4V9M16 23V28M4 16H9M23 16H28M7.5 7.5L11.2 11.2M20.8 20.8L24.5 24.5M24.5 7.5L20.8 11.2M11.2 20.8L7.5 24.5" stroke="url(#${uid}_coral)" stroke-width="2.6" stroke-linecap="round"/>
+        </g>`;
+      break;
+
+    case 'palm_road':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <path d="M6 26.5L12.5 16.5H19.5L26 26.5Z" fill="#475569" stroke="#3A2E2B" stroke-width="1.5" stroke-linejoin="round"/>
+          <line x1="16" y1="18" x2="16" y2="25" stroke="#FFD93D" stroke-width="2" stroke-dasharray="2.4 2"/>
+          <path d="M9.5 16.5Q10.5 10.5 13.5 8.5" fill="none" stroke="url(#${uid}_wood)" stroke-width="2.4" stroke-linecap="round"/>
+          <path d="M13.5 8.5C9.5 7 7 9 6.5 11.5M13.5 8.5C12.5 4.8 15.5 4.2 17.8 6M13.5 8.5C16.8 7.5 18.8 9.8 18.2 12" fill="none" stroke="url(#${uid}_mint)" stroke-width="2.2" stroke-linecap="round"/>
+        </g>`;
+      break;
+
+    case 'banner_flag':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <line x1="7.5" y1="4.5" x2="7.5" y2="27.5" stroke="#3A2E2B" stroke-width="2.8" stroke-linecap="round"/>
+          <path d="M8.5 6.5H25.5L22.5 12L25.5 17.5H8.5Z" fill="url(#${uid}_coral)" stroke="#3A2E2B" stroke-width="1.5" stroke-linejoin="round"/>
+          <circle cx="15.5" cy="12" r="2.3" fill="url(#${uid}_gold)"/>
+        </g>`;
+      break;
+
+    case 'music_mote':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <path d="M12 22V8.5L23 6.2V19.5" fill="none" stroke="url(#${uid}_sky)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="9.8" cy="22.5" r="3.4" fill="url(#${uid}_sky)" stroke="#3A2E2B" stroke-width="1.3"/>
+          <circle cx="20.8" cy="20" r="3.4" fill="url(#${uid}_mint)" stroke="#3A2E2B" stroke-width="1.3"/>
+        </g>`;
+      break;
+
     default:
       body = `
         <g filter="url(#${uid}_sh)">
@@ -2017,6 +2074,190 @@ function createCockpitRearviewSVG() {
     </svg>`;
 }
 
+const FIRST_FLOOR_SHOPS_TEMPLATE = [
+  {
+    shopId: 'shop_mart1f',
+    floorShopKey: 'mart',
+    kind: 'mart1f',
+    name: '1층 미니미 마트 24',
+    engTitle: 'MINIMI MART 24H',
+    subCopy: '실사 과자·도시락·블루LED 음료 냉장고 & 컵라면 바',
+    svgIcon: 'mart_ico',
+    lotId: 'lot_main',
+    localX: -7.1,
+    localY: 2.25,
+    localZ: 0.2,
+    w: 9.8,
+    d: 7.8,
+    h: 4.3,
+    owned: true,
+    buyCost: 0,
+    baseVisitRevenue: 16,
+    passiveCycleProfit: 28,
+    staffRole: 'mart_clerk',
+    staffName: '알바생 민수',
+    upgradesCatalog: [
+      {
+        id: 'upg_mart_gondola',
+        name: '실사 스낵·라면 곤돌라 3열 풀진열',
+        cost: 85,
+        visitBonus: 6,
+        cycleBonus: 16,
+        chip: '실사 과자매대 · 주기 +16만',
+        tone: 'gold',
+        reaction: '곤돌라 3열에 허니버터칩·새우깡·컵라면·도시락이 꽉 찼어요!'
+      },
+      {
+        id: 'upg_mart_fridge',
+        name: '블루LED 투명 유리문 음료·맥주 쇼케이스',
+        cost: 110,
+        visitBonus: 7,
+        cycleBonus: 20,
+        chip: '블루LED 냉장고 · 주기 +20만',
+        tone: 'sky',
+        reaction: '파란 LED 냉장고에 시원한 콜라와 골든라거 맥주캔이 가득해요!'
+      },
+      {
+        id: 'upg_mart_ramenbar',
+        name: '창가 컵라면 취식 바 & 전자레인지 존',
+        cost: 95,
+        visitBonus: 5,
+        cycleBonus: 18,
+        chip: '취식 바테이블 · 주기 +18만',
+        tone: 'mint',
+        reaction: '창가 바 테이블에서 전자레인지 돌린 도시락과 라면을 먹는 손님이 북적여요!'
+      }
+    ]
+  },
+  {
+    shopId: 'shop_wash1f',
+    floorShopKey: 'wash',
+    kind: 'wash1f',
+    name: '1층 버블 코인세탁소',
+    engTitle: 'BUBBLE LAUNDRY 24H',
+    subCopy: '2단 대형 회전 드럼세탁기 6대 · 세제자판기 · 폴딩라운지',
+    svgIcon: 'wash_ico',
+    lotId: 'lot_main',
+    localX: 7.1,
+    localY: 2.25,
+    localZ: 0.2,
+    w: 9.8,
+    d: 7.8,
+    h: 4.3,
+    owned: true,
+    buyCost: 0,
+    baseVisitRevenue: 15,
+    passiveCycleProfit: 26,
+    staffRole: 'wash_clerk',
+    staffName: '라운지 매니저 소망',
+    upgradesCatalog: [
+      {
+        id: 'upg_wash_drum6',
+        name: '상하 2단 대형 회전 드럼세탁·건조기 증설',
+        cost: 115,
+        visitBonus: 7,
+        cycleBonus: 22,
+        chip: '2단 드럼 6대+ · 주기 +22만',
+        tone: 'sky',
+        reaction: '원형 유리창 안에서 빨랫감과 비눗방울이 빙글빙글 돌아가는 모습이 장관이에요!'
+      },
+      {
+        id: 'upg_wash_vending',
+        name: '스마트 세제 자판기 & 동전 교환기 타워',
+        cost: 85,
+        visitBonus: 5,
+        cycleBonus: 16,
+        chip: '세제·동전기 · 주기 +16만',
+        tone: 'mint',
+        reaction: '파란 세제 자판기와 동전 교환기 덕분에 부가 매출이 쏠쏠해요!'
+      },
+      {
+        id: 'upg_wash_lounge',
+        name: '원목 빨래 폴딩 테이블 & 바퀴 바구니 카트',
+        cost: 90,
+        visitBonus: 5,
+        cycleBonus: 17,
+        chip: '카트&폴딩존 · 주기 +17만',
+        tone: 'gold',
+        reaction: '바퀴 달린 빨래 카트와 원목 폴딩 테이블이 생겨 입주민 만족도 최고예요!'
+      }
+    ]
+  }
+];
+
+const HAPPINESS_MILESTONES = [
+  {
+    threshold: 50,
+    id: 'ms_50',
+    title: '칭송 현수막 & 발코니 꽃화분 개화',
+    badge: '50% 달성',
+    icon: 'banner_flag',
+    tone: 'coral',
+    rewardDesc: '마을 기본 임대 수익 영구 +15%',
+    detailDesc: '빌딩 외벽과 가로등에 주민 자발적 찬양 현수막이 걸리고 전 호실 창가 발코니에 꽃화분이 만개합니다.',
+    camLook: { x: -4.2, y: 10.5, z: -2.0 },
+    camPos: { x: 18.0, y: 20.0, z: 26.0 },
+    camZoom: 1.32
+  },
+  {
+    threshold: 75,
+    id: 'ms_75',
+    title: '거리 가랜드 조명 & 옥상 루프탑 파티 가든',
+    badge: '75% 달성',
+    icon: 'berry_farm',
+    tone: 'mint',
+    rewardDesc: '상가 방문객 속도 및 소비액 영구 +25%',
+    detailDesc: '거리 허공에 알전구 스트링 라이트·삼각 가랜드와 열기구가 뜨고, 빌딩 옥상에 인조잔디·자쿠지·BBQ 파티 가든이 개장합니다.',
+    camLook: { x: -4.2, y: 21.5, z: -4.5 },
+    camPos: { x: 22.0, y: 34.0, z: 24.0 },
+    camZoom: 1.24
+  },
+  {
+    threshold: 90,
+    id: 'ms_90',
+    title: '찬양 거리 퍼레이드 & 3D 불꽃놀이 축제',
+    badge: '90% 달성',
+    icon: 'firework_ico',
+    tone: 'sky',
+    rewardDesc: '전 호실 시너지 보너스 +50% & VIP 레드카펫',
+    detailDesc: '빌딩 정문에 VIP 레드카펫과 황금 차단봉이 깔리고, 고깔모자 풍선 퍼레이드 행진과 하늘의 3D 불꽃놀이가 펼쳐집니다.',
+    camLook: { x: -2.0, y: 9.0, z: 6.5 },
+    camPos: { x: 26.0, y: 24.0, z: 34.0 },
+    camZoom: 1.08
+  },
+  {
+    threshold: 100,
+    id: 'ms_100',
+    title: '광장 중앙 초대형 24K 황금 건물주 동상 건립',
+    badge: '100% MAX 전설',
+    icon: 'statue_gold',
+    tone: 'gold',
+    rewardDesc: '영구 전 수익 2배 & [전설의 성군 건물주] 칭호',
+    detailDesc: '중앙 광장에 왕관과 머니건을 치켜든 초대형 24K 순금 건물주 동상이 제막되며, 클릭할 때마다 축하 보너스 코인이 쏟아집니다!',
+    camLook: { x: 0.0, y: 3.4, z: 17.8 },
+    camPos: { x: 16.5, y: 14.5, z: 34.5 },
+    camZoom: 1.68
+  }
+];
+
+const CHARACTER_STYLE_PRESETS = [
+  { face: 1,  outfit: 1,  hair: 'bob_bangs',        hairHex: 0x4A342E },
+  { face: 2,  outfit: 2,  hair: 'double_buns',      hairHex: 0x6D4534 },
+  { face: 3,  outfit: 3,  hair: 'braided_pigtails', hairHex: 0x8D5524 },
+  { face: 4,  outfit: 4,  hair: 'parted_perm',      hairHex: 0x2F292B },
+  { face: 5,  outfit: 5,  hair: 'high_ponytail',    hairHex: 0xB86B35 },
+  { face: 6,  outfit: 6,  hair: 'cat_headset',      hairHex: 0xC084FC },
+  { face: 7,  outfit: 7,  hair: 'fluffy_curl',      hairHex: 0xD6D3D1 },
+  { face: 8,  outfit: 8,  hair: 'wavy_perm',        hairHex: 0x5C3A2E },
+  { face: 9,  outfit: 1,  hair: 'parted_perm',      hairHex: 0x3B2F2F },
+  { face: 10, outfit: 2,  hair: 'double_buns',      hairHex: 0xA16207 },
+  { face: 11, outfit: 3,  hair: 'bob_bangs',        hairHex: 0x3E2723 },
+  { face: 12, outfit: 5,  hair: 'wavy_perm',        hairHex: 0x7C2D12 }
+];
+
+window.FIRST_FLOOR_SHOPS_TEMPLATE = FIRST_FLOOR_SHOPS_TEMPLATE;
+window.HAPPINESS_MILESTONES = HAPPINESS_MILESTONES;
+window.CHARACTER_STYLE_PRESETS = CHARACTER_STYLE_PRESETS;
 window.createCustomSVGIcon = createCustomSVGIcon;
 window.createCatalogThumbnailSVG = createCatalogThumbnailSVG;
 window.createFurnitureArtworkSVG = createFurnitureArtworkSVG;
