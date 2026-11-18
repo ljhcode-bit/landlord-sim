@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="theme-color" content="#fef3c7" />
+  <meta name="theme-color" content="#fde68a" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <title>갓물주 라이프 3D: 미니미 타운 & 하우스</title>
+  <link rel="manifest" href="./manifest.json" />
+  <title>갓물주 라이프 3D: 미니미 타운</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Jua&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
@@ -23,205 +24,216 @@
 </head>
 <body class="select-none overflow-hidden">
 
-  <!-- ==================== 1. WebGL 3D 렌더링 컨테이너 ==================== -->
+  <!-- ==================== 1. WebGL 3D 렌더링 뷰포트 ==================== -->
   <div id="webgl-container"></div>
 
-  <!-- ==================== 2. 3D 좌표 투영(Projection) 오버레이 레이어 ==================== -->
+  <!-- ==================== 2. 3D 투영(Project) 오버레이 레이어 ==================== -->
   <div id="overlay-3d-layer">
-    <div id="town-lots-layer"></div>
-    <div id="room-badges-layer"></div>
-    <div id="shop-badges-layer"></div>
-    <div id="speech-bubbles-layer"></div>
-    <div id="care-bubbles-layer"></div>
-    <div id="jackpot-popups-layer"></div>
+    <div id="lots-overlay-layer"></div>
+    <div id="rooms-overlay-layer"></div>
+    <div id="crisis-pins-layer"></div>
+    <div id="speech-overlay-layer"></div>
+    <div id="care-overlay-layer"></div>
+    <div id="jackpot-overlay-layer"></div>
   </div>
 
-  <!-- ==================== 3. 상단 3D 젤리 캐주얼 메인 HUD ==================== -->
-  <header class="fixed top-0 left-0 right-0 z-40 pointer-events-none px-2.5 pt-2.5 sm:px-4 sm:pt-3">
-    <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2">
-      <!-- 좌측: 현재 뷰 모드 & 건물/타운 현황 -->
-      <div class="pointer-events-auto jelly-hud-card px-3 py-1.5 sm:px-4 sm:py-2 flex items-center gap-2.5">
-        <svg width="34" height="34" viewBox="0 0 40 40" class="shrink-0">
-          <ellipse cx="20" cy="36" rx="15" ry="3.5" fill="rgba(120,53,15,0.22)"/>
-          <polygon points="20,5 36,15 20,24 4,15" fill="#f97316" stroke="#78350f" stroke-width="2.2" stroke-linejoin="round"/>
-          <polygon points="4,15 20,24 20,36 4,27" fill="#fde68a" stroke="#78350f" stroke-width="2.2" stroke-linejoin="round"/>
-          <polygon points="36,15 20,24 20,36 36,27" fill="#fcd34d" stroke="#78350f" stroke-width="2.2" stroke-linejoin="round"/>
+  <!-- ==================== 3. 미니멀 상단 좌측 자산/수익 캡슐 HUD (화면 90%+ 개방!) ==================== -->
+  <header class="fixed top-2.5 left-2.5 sm:top-3.5 sm:left-4 z-30 flex items-center gap-2 pointer-events-none">
+    <div class="pointer-events-auto jelly-capsule px-3.5 py-1.5 flex items-center gap-3">
+      <!-- 자체 제작 3D 골드 코인 인라인 SVG -->
+      <div class="flex items-center gap-1.5 pr-2.5 border-r-2 border-amber-300">
+        <svg width="26" height="26" viewBox="0 0 32 32" class="shrink-0">
+          <circle cx="16" cy="17.5" r="13" fill="#b45309"/>
+          <circle cx="16" cy="15" r="13" fill="#fde047" stroke="#78350f" stroke-width="2.4"/>
+          <circle cx="16" cy="15" r="9" fill="#fbbf24"/>
+          <text x="16" y="19.5" text-anchor="middle" font-family="Jua" font-size="13" fill="#78350f">₩</text>
         </svg>
         <div>
-          <div class="flex items-center gap-1.5">
-            <span class="font-jua text-sm sm:text-base text-amber-950 leading-tight">갓물주 라이프 3D</span>
-            <span id="hud-mode-pill" class="font-jua text-[11px] bg-sky-100 text-sky-900 border border-sky-400 px-2 py-0.2 rounded-full">🏙️ 마을 뷰</span>
-          </div>
-          <div class="flex items-center gap-1.5 text-[11px] mt-0.5">
-            <span id="hud-time-badge" class="font-jua text-amber-900 bg-amber-200/80 px-2 rounded-full">☀️ 1일차 · 오전 09:00</span>
-            <span id="hud-town-summary" class="font-jua text-emerald-800 bg-emerald-100 px-2 rounded-full border border-emerald-400">보유 건물 1/7</span>
-          </div>
+          <div class="text-[9px] font-bold text-amber-800/80 leading-none">보유 자산</div>
+          <div id="hud-gold-wrap" class="font-jua text-sm sm:text-lg text-amber-950 leading-tight"><span id="hud-gold">420</span>만원</div>
         </div>
-
-        <!-- 건물 내부 뷰일 때 즉시 타운으로 나가는 [🏙️ 마을 전체 보기] 버튼 -->
-        <button id="btn-back-to-town" class="hidden jelly-btn-sky font-jua text-xs sm:text-sm px-3 py-1.5 rounded-xl ml-1 flex items-center gap-1">
-          <span>🏙️</span><span>마을 전체 보기</span>
-        </button>
       </div>
 
-      <!-- 우측: 보유 자산 & 타운 합산 수익 & 일괄 수금 & 초기화 -->
-      <div class="pointer-events-auto jelly-hud-card px-3 py-1.5 sm:px-4 sm:py-2 flex items-center gap-2.5">
-        <div class="flex items-center gap-2 pr-2.5 border-r-2 border-amber-300">
-          <svg width="28" height="28" viewBox="0 0 32 32" class="shrink-0">
-            <circle cx="16" cy="17.5" r="13" fill="#b45309"/>
-            <circle cx="16" cy="15" r="13" fill="#fde047" stroke="#78350f" stroke-width="2.4"/>
-            <circle cx="16" cy="15" r="9.5" fill="#fbbf24" stroke="#d97706" stroke-width="1.5"/>
-            <text x="16" y="19.5" text-anchor="middle" font-family="Jua" font-size="13" fill="#78350f">₩</text>
-          </svg>
-          <div>
-            <div class="text-[10px] font-bold text-amber-800/80 leading-none">보유 자산</div>
-            <div id="hud-gold-wrap" class="font-jua text-base sm:text-xl text-amber-950 leading-tight"><span id="hud-gold">350</span>만원</div>
-          </div>
-        </div>
-
-        <div class="min-w-[102px] sm:min-w-[126px]">
-          <div class="text-[10px] font-bold text-emerald-800 leading-none">타운 총 임대수익</div>
-          <div class="font-jua text-sm sm:text-base text-emerald-700 leading-tight mt-0.5">+<span id="hud-rent-total">0</span>만원</div>
-          <div id="hud-synergy-hint" class="text-[10px] font-jua text-amber-700 leading-none mt-0.5">🏪상권 순환 가동중</div>
-        </div>
-
-        <button id="btn-collect-all" class="hidden jelly-btn-amber font-jua text-xs px-3 py-2 rounded-xl animate-bounce">
-          🧲 일괄수금!
-        </button>
-
-        <button id="btn-reset-save" title="데이터 초기화" class="jelly-btn-white w-9 h-9 rounded-xl flex items-center justify-center font-jua text-sm">
-          🔄
-        </button>
+      <!-- 순수익 (관리인 월급 차감 반영) -->
+      <div class="pr-2.5 border-r-2 border-amber-300">
+        <div class="text-[9px] font-bold text-emerald-800 leading-none">주기 순수익</div>
+        <div id="hud-net-income" class="font-jua text-xs sm:text-sm text-emerald-700 leading-tight">+0만</div>
       </div>
+
+      <!-- 시간 & 투시 상태 -->
+      <div class="hidden sm:flex items-center gap-1.5 text-xs font-jua text-amber-900">
+        <span id="hud-time-text">☀️ 1일차 09:00</span>
+        <span id="hud-xray-badge" class="text-[10px] bg-sky-100 text-sky-800 border border-sky-300 px-2 py-0.5 rounded-full">외관 100%</span>
+      </div>
+
+      <!-- 원터치 마을 전체 시점 복귀 버튼 -->
+      <button id="btn-overview-cam" title="아일랜드 전체 보기" class="jelly-btn-sky px-2.5 py-1 text-xs font-jua flex items-center gap-1">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z"/>
+        </svg>
+        <span>전체뷰</span>
+      </button>
+
+      <!-- 지붕 일괄수금 버튼 (대기 수익 있을 때만 표시) -->
+      <button id="btn-collect-all" class="hidden jelly-btn-amber px-2.5 py-1 text-xs font-jua animate-bounce">
+        🧲 수금!
+      </button>
     </div>
   </header>
 
-  <!-- ==================== 4. 좌측 상단 플로팅: [📋 갓물주 & 타운 확장 미션] ==================== -->
-  <aside class="fixed top-[74px] sm:top-[84px] left-2.5 sm:left-4 z-30 flex flex-col gap-2 max-w-[266px] sm:max-w-[306px] pointer-events-none">
-    <button id="quest-floating-btn" class="pointer-events-auto jelly-hud-card text-left p-3 transition">
-      <div class="flex items-center justify-between gap-1.5">
-        <span id="quest-step-tag" class="font-jua text-[11px] px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-950 border border-amber-500">📋 타운 미션 1/10</span>
-        <span id="quest-reward-tag" class="font-jua text-[11px] text-emerald-900 bg-emerald-200 px-2.5 py-0.5 rounded-full border border-emerald-500">🎁 +150만</span>
+  <!-- 세로 화면일 때 우측 상단 귀여운 가로 회전 권장 배지 -->
+  <div id="portrait-hint" class="fixed top-2.5 right-2.5 z-30 items-center gap-1.5 bg-amber-950/85 text-amber-100 px-3 py-1.5 rounded-full border border-amber-400 font-jua text-[11px] shadow-lg">
+    <span>📱↻</span>
+    <span>가로 모드로 돌리면 타운이 한눈에 보여요!</span>
+  </div>
+
+  <!-- ==================== 4. 호실 클로즈업 전용 우측 컴팩트 액션 패널 ==================== -->
+  <aside id="room-focus-panel" class="hidden fixed top-16 right-3 sm:right-4 z-30 w-[305px] sm:w-[335px] max-h-[calc(100vh-148px)] jelly-card flex flex-col overflow-hidden">
+    <div class="bg-gradient-to-r from-[#92400e] to-[#b45309] text-white px-3.5 py-2.5 flex items-center justify-between border-b-2 border-[#572408] shrink-0">
+      <div class="flex items-center gap-1.5 min-w-0">
+        <span id="rf-title" class="font-jua text-base text-amber-200 truncate">101호</span>
+        <span id="rf-tier-badge" class="font-jua text-[10px] bg-white/20 px-2 py-0.5 rounded-full shrink-0">Lv.0</span>
       </div>
-      <div id="quest-title" class="font-jua text-sm sm:text-base text-amber-950 mt-1.5 leading-snug"></div>
-      <div id="quest-desc" class="text-xs text-stone-700 mt-0.5 leading-relaxed"></div>
-      <div id="quest-action-hint" class="mt-1.5 text-[11px] font-jua text-amber-700"></div>
-    </button>
+      <button id="btn-close-room-focus" class="jelly-btn-white w-7 h-7 rounded-full font-jua text-xs flex items-center justify-center">✕</button>
+    </div>
+    <div id="rf-body" class="p-3 overflow-y-auto custom-scroll space-y-2.5 text-xs"></div>
   </aside>
 
-  <!-- ==================== 5. 우측 플로팅: 2단계 뷰 전환 & 3D 카메라 컨트롤 ==================== -->
-  <div class="fixed right-2.5 sm:right-4 top-1/2 -translate-y-1/2 z-30 flex flex-col items-center gap-2 pointer-events-auto">
-    <button id="btn-toggle-view" class="jelly-btn-sky w-13 h-14 sm:w-15 sm:h-16 px-2 rounded-2xl flex flex-col items-center justify-center">
-      <span id="toggle-view-icon" class="text-lg leading-none">🏠</span>
-      <span id="toggle-view-label" class="font-jua text-[10px] mt-1 leading-tight text-center">1호점<br/>내부관리</span>
-    </button>
-
-    <button id="btn-zoom-in" class="jelly-btn-white w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex flex-col items-center justify-center">
-      <span class="font-jua text-xl leading-none">+</span>
-      <span class="font-jua text-[10px] mt-0.5">확대</span>
-    </button>
-
-    <div id="zoom-scale-label" class="px-2 py-0.5 rounded-full bg-amber-950 text-amber-200 font-jua text-[11px] border-2 border-amber-300 shadow">
-      100%
+  <!-- ==================== 5. 우측 하단 미니 카메라 줌 캡슐 & 통합 플로팅 버튼(FAB) ==================== -->
+  <div class="fixed bottom-3 right-3 sm:bottom-4 sm:right-4 z-30 flex items-end gap-2.5 pointer-events-none">
+    <!-- 컴팩트 줌/회전 보조 버튼 -->
+    <div class="pointer-events-auto jelly-capsule px-2 py-1 flex items-center gap-1">
+      <button id="btn-zoom-in" class="w-8 h-8 rounded-full hover:bg-amber-200/70 font-jua text-base text-amber-950">+</button>
+      <button id="btn-zoom-out" class="w-8 h-8 rounded-full hover:bg-amber-200/70 font-jua text-base text-amber-950">−</button>
+      <button id="btn-cam-rotate" class="w-8 h-8 rounded-full hover:bg-amber-200/70 font-jua text-sm text-amber-950">↻</button>
+      <button id="btn-reset-save" title="데이터 초기화" class="w-8 h-8 rounded-full hover:bg-rose-100 font-jua text-xs text-amber-900">🔄</button>
     </div>
 
-    <button id="btn-zoom-out" class="jelly-btn-white w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex flex-col items-center justify-center">
-      <span class="font-jua text-xl leading-none">−</span>
-      <span class="font-jua text-[10px] mt-0.5">축소</span>
-    </button>
-
-    <button id="btn-cam-rotate" class="jelly-btn-white w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex flex-col items-center justify-center">
-      <span class="font-jua text-base leading-none">↻</span>
-      <span class="font-jua text-[10px] mt-0.5">시점회전</span>
-    </button>
-
-    <div id="autosave-indicator" class="mt-0.5 px-2 py-0.5 rounded-full bg-white/90 text-emerald-800 border border-emerald-400 text-[10px] font-jua shadow-sm transition-opacity">
-      💾 저장됨
-    </div>
-  </div>
-
-  <!-- 하단 좌측 뷰 안내 캡슐 -->
-  <div class="fixed left-3 bottom-3 z-20 pointer-events-none hidden sm:block">
-    <div id="bottom-help-pill" class="bg-amber-950/80 backdrop-blur text-amber-100 font-jua text-xs px-3.5 py-1.5 rounded-full border border-amber-400/50 shadow">
-      🏙️ 마을 뷰: 건물 터치 시 내부 인테리어 진입 · 빈 땅 터치 시 신축 · 지붕 코인 스와이프 수금!
-    </div>
-  </div>
-
-  <!-- ==================== 6. 하단 슬라이드업: [🏠 내부 호실 & 상가 리노베이션 패널] ==================== -->
-  <section id="bottom-panel" class="fixed left-0 right-0 bottom-0 z-40 translate-y-full transition-transform duration-300 ease-out pointer-events-none px-2 sm:px-4 pb-2 sm:pb-3">
-    <div class="pointer-events-auto max-w-5xl mx-auto bg-[#fffdf9] rounded-t-3xl sm:rounded-3xl border-[4px] border-[#78350f] shadow-[0_-10px_40px_rgba(67,20,7,0.36)] overflow-hidden max-h-[52vh] sm:max-h-[48vh] flex flex-col">
-      <div class="bg-gradient-to-r from-[#92400e] via-[#b45309] to-[#92400e] text-white px-4 py-2.5 flex items-center justify-between gap-2 shrink-0 border-b-4 border-[#572408]">
-        <div class="flex items-center gap-2 flex-wrap">
-          <span id="panel-room-title" class="font-jua text-lg sm:text-xl text-amber-200">🏠 101호</span>
-          <span id="panel-grade-badge" class="font-jua text-xs px-2.5 py-0.5 rounded-full border"></span>
-          <span id="panel-rent-badge" class="font-jua text-xs sm:text-sm bg-amber-950/60 text-emerald-300 border border-emerald-400/60 px-2.5 py-0.5 rounded-full"></span>
-        </div>
-        <button id="btn-close-panel" class="jelly-btn-white w-8 h-8 rounded-xl font-jua text-sm flex items-center justify-center">✕</button>
+    <!-- 메인 통합 젤리 플로팅 버튼 [📋 타운 수첩] + 긴급 Red Dot -->
+    <button id="fab-notebook" class="pointer-events-auto relative jelly-btn-amber px-4 py-3 sm:px-5 sm:py-3.5 flex items-center gap-2 shadow-2xl">
+      <!-- 자체 제작 수첩 인라인 SVG -->
+      <svg width="24" height="24" viewBox="0 0 28 28" class="shrink-0">
+        <rect x="5" y="3" width="19" height="22" rx="4" fill="#fffbeb" stroke="#78350f" stroke-width="2.4"/>
+        <line x1="3" y1="8" x2="7" y2="8" stroke="#78350f" stroke-width="2.4" stroke-linecap="round"/>
+        <line x1="3" y1="14" x2="7" y2="14" stroke="#78350f" stroke-width="2.4" stroke-linecap="round"/>
+        <line x1="3" y1="20" x2="7" y2="20" stroke="#78350f" stroke-width="2.4" stroke-linecap="round"/>
+        <rect x="9" y="8" width="11" height="3" rx="1.5" fill="#f59e0b"/>
+        <rect x="9" y="13" width="9" height="2.5" rx="1.2" fill="#34d399"/>
+        <rect x="9" y="18" width="11" height="2.5" rx="1.2" fill="#60a5fa"/>
+      </svg>
+      <div class="text-left">
+        <div class="font-jua text-sm sm:text-base leading-none text-amber-950">타운 수첩</div>
+        <div id="fab-sub-status" class="text-[10px] font-bold text-amber-900/80 leading-none mt-0.5">퀘스트·세입자·관리인</div>
       </div>
-      <div id="panel-body" class="p-3 sm:p-4 overflow-y-auto custom-scroll space-y-3 bg-[#fffaf2]"></div>
-    </div>
-  </section>
 
-  <!-- ==================== 7. 모달 1: [🏗️ 빈 땅(필지) 매입 & 새 건물 신축 선택 모달] ==================== -->
-  <div id="lot-build-modal" class="hidden fixed inset-0 z-50 bg-amber-950/60 backdrop-blur-sm flex items-center justify-center p-3">
-    <div class="bg-[#fffaf2] w-full max-w-3xl rounded-3xl border-[4px] border-[#78350f] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-      <div class="bg-gradient-to-r from-amber-600 via-orange-500 to-amber-600 text-white px-5 py-3.5 flex items-center justify-between shrink-0 border-b-4 border-amber-900">
+      <!-- 긴급 알림 Red Dot -->
+      <span id="fab-red-dot" class="hidden urgent-red-dot absolute -top-2 -right-1.5 min-w-[24px] h-[24px] px-1.5 rounded-full bg-rose-600 text-white border-2 border-white font-jua text-xs flex items-center justify-center shadow-lg">
+        1
+      </span>
+    </button>
+  </div>
+
+  <!-- ==================== 6. 화면 분할(Split-View) 멀티탭 관리 모달 ==================== -->
+  <div id="notebook-modal" class="hidden fixed inset-0 z-50 bg-amber-950/45 backdrop-blur-sm flex items-center justify-center p-2.5 sm:p-5">
+    <div class="glass-split-modal w-full max-w-5xl h-[88vh] max-h-[620px] flex flex-col overflow-hidden">
+      <!-- 상단 타이틀 바 -->
+      <div class="bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-400 px-5 py-3 flex items-center justify-between border-b-[3px] border-[#78350f] shrink-0">
+        <div class="flex items-center gap-2.5">
+          <svg width="26" height="26" viewBox="0 0 28 28">
+            <rect x="4" y="3" width="20" height="22" rx="5" fill="#fffbeb" stroke="#78350f" stroke-width="2.4"/>
+            <path d="M9 11h10M9 16h7" stroke="#d97706" stroke-width="2.4" stroke-linecap="round"/>
+          </svg>
+          <span class="font-jua text-lg sm:text-xl text-amber-950">갓물주 통합 경영 수첩</span>
+          <span id="modal-alert-summary" class="font-jua text-xs bg-white/80 text-rose-700 px-2.5 py-0.5 rounded-full border border-rose-300 hidden"></span>
+        </div>
+        <button id="btn-close-notebook" class="jelly-btn-white w-9 h-9 rounded-full font-jua text-base flex items-center justify-center">✕</button>
+      </div>
+
+      <!-- 2단 화면 분할 본문 (좌측: 4대 탭 & 항목 리스트 / 우측: 상세 정보 & 액션) -->
+      <div class="flex-1 flex flex-col sm:flex-row min-h-0 overflow-hidden">
+        <!-- 좌측 패널: 카테고리 탭 + 리스트 -->
+        <div class="w-full sm:w-[320px] border-b-2 sm:border-b-0 sm:border-r-[3px] border-amber-900/20 bg-amber-50/65 flex flex-col min-h-0 shrink-0">
+          <!-- 4개 멀티탭 버튼 -->
+          <div class="grid grid-cols-4 sm:grid-cols-2 gap-1.5 p-2.5 border-b border-amber-900/15 shrink-0">
+            <button data-ntab="quests" class="ntab-btn jelly-btn-amber py-2 px-2 text-xs font-jua flex items-center justify-center gap-1">
+              <!-- 과녁 아이콘 SVG -->
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg>
+              <span>퀘스트</span>
+            </button>
+            <button data-ntab="tenants" class="ntab-btn jelly-btn-white py-2 px-2 text-xs font-jua flex items-center justify-center gap-1 relative">
+              <!-- 세대 아이콘 SVG -->
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="9" cy="8" r="3.5"/><path d="M3 19c0-3 2.8-5 6-5s6 2 6 5"/><circle cx="17" cy="9" r="2.5"/></svg>
+              <span>세대·분쟁</span>
+              <span id="tab-dot-tenants" class="hidden w-2.5 h-2.5 rounded-full bg-rose-600 absolute top-1 right-1"></span>
+            </button>
+            <button data-ntab="manager" class="ntab-btn jelly-btn-white py-2 px-2 text-xs font-jua flex items-center justify-center gap-1">
+              <!-- 관리인 넥타이 아이콘 SVG -->
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 3l3 4-3 14-3-14 3-4z"/></svg>
+              <span>관리인</span>
+            </button>
+            <button data-ntab="infra" class="ntab-btn jelly-btn-white py-2 px-2 text-xs font-jua flex items-center justify-center gap-1">
+              <!-- 빌딩 장부 아이콘 SVG -->
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>
+              <span>시설·장부</span>
+            </button>
+          </div>
+
+          <!-- 좌측 항목 리스트 -->
+          <div id="split-left-list" class="flex-1 overflow-y-auto custom-scroll p-2.5 space-y-1.5 max-h-[160px] sm:max-h-none"></div>
+        </div>
+
+        <!-- 우측 패널: 선택된 항목의 상세 상태 & 조작 슬라이더/액션 버튼 -->
+        <div id="split-right-detail" class="flex-1 overflow-y-auto custom-scroll p-4 sm:p-5 bg-white/60"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 7. 빈 부지 개발 모달 (태양광 / 도시농장 / 벚꽃공원 / 카페 / 2호관) ==================== -->
+  <div id="lot-dev-modal" class="hidden fixed inset-0 z-50 bg-amber-950/55 backdrop-blur-sm flex items-center justify-center p-3">
+    <div class="glass-split-modal w-full max-w-3xl max-h-[88vh] flex flex-col overflow-hidden">
+      <div class="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-5 py-3 flex items-center justify-between border-b-[3px] border-emerald-900 shrink-0">
         <div>
           <div class="font-jua text-lg sm:text-xl flex items-center gap-2">
-            <span>🏗️ 타운 빈 땅 매입 & 3D 건물 신축</span>
-            <span id="lot-modal-name" class="text-xs bg-white/25 px-2.5 py-0.5 rounded-full">서쪽 햇살 2번지</span>
+            <span>🌱 플로팅 아일랜드 부지 개발</span>
+            <span id="dev-lot-badge" class="text-xs bg-white/25 px-2.5 py-0.5 rounded-full"></span>
           </div>
-          <p id="lot-modal-sub" class="text-xs text-amber-100 mt-0.5">토지 매입비 + 건축비를 투자해 나만의 부동산 타운을 확장하세요!</p>
+          <p class="text-xs text-emerald-50 mt-0.5">태양광 발전소, 딸기 도시 농장, 힐링 공원, 신규 주상복합 중 원하는 시설을 건설하세요!</p>
         </div>
-        <button id="btn-close-lot-modal" class="jelly-btn-white w-9 h-9 rounded-xl font-jua text-base">✕</button>
+        <button id="btn-close-dev-modal" class="jelly-btn-white w-9 h-9 rounded-full font-jua text-base">✕</button>
       </div>
-
-      <div id="lot-build-cards" class="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-y-auto custom-scroll"></div>
+      <div id="dev-cards-grid" class="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-y-auto custom-scroll"></div>
     </div>
   </div>
 
-  <!-- ==================== 8. 모달 2: [📱 세입자 구하기 (부동산 앱)] ==================== -->
+  <!-- ==================== 8. 5종 세대 입주 모집 모달 ==================== -->
   <div id="recruit-modal" class="hidden fixed inset-0 z-50 bg-amber-950/55 backdrop-blur-sm flex items-center justify-center p-3">
-    <div class="bg-[#fffaf2] w-full max-w-3xl rounded-3xl border-[4px] border-[#78350f] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-      <div class="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-5 py-3.5 flex items-center justify-between shrink-0 border-b-4 border-emerald-800">
+    <div class="glass-split-modal w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+      <div class="bg-gradient-to-r from-sky-500 to-indigo-500 text-white px-5 py-3 flex items-center justify-between border-b-[3px] border-indigo-900 shrink-0">
         <div>
           <div class="font-jua text-lg sm:text-xl flex items-center gap-2">
-            <span>📱 미니미 타운 부동산 · 입주 지원자</span>
-            <span id="recruit-room-badge" class="text-xs bg-white/25 px-2.5 py-0.5 rounded-full"></span>
+            <span>📱 세대별 맞춤형 입주 지원자 선택</span>
+            <span id="rec-room-title" class="text-xs bg-white/25 px-2.5 py-0.5 rounded-full"></span>
           </div>
-          <p id="recruit-room-info" class="text-xs text-emerald-50 mt-0.5"></p>
+          <p class="text-xs text-sky-100 mt-0.5">층간소음(4인가족/대학생)과 악취 위험(히키코모리), 엘리베이터 유무(노부부) 상성을 고려해 계약하세요!</p>
         </div>
-        <button id="btn-close-recruit" class="jelly-btn-white w-9 h-9 rounded-xl font-jua text-base">✕</button>
+        <button id="btn-close-recruit" class="jelly-btn-white w-9 h-9 rounded-full font-jua text-base">✕</button>
       </div>
-
-      <div id="recruit-cards-grid" class="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 overflow-y-auto custom-scroll"></div>
-
-      <div class="px-4 py-3 bg-amber-100/70 border-t-2 border-amber-300 flex items-center justify-between gap-2 shrink-0">
-        <span class="text-xs text-amber-950 font-medium">💡 인접 공원/상권 시너지가 높을수록 월세 수익이 대폭 상승합니다!</span>
-        <button id="btn-refresh-applicants" class="jelly-btn-amber font-jua text-xs sm:text-sm px-3.5 py-2 rounded-xl shrink-0">
-          🔄 새 지원자 찾기 (10만원)
-        </button>
+      <div id="rec-cards-grid" class="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 overflow-y-auto custom-scroll"></div>
+      <div class="px-4 py-2.5 bg-amber-100/80 border-t border-amber-300 flex items-center justify-between shrink-0">
+        <span class="text-xs text-amber-950 font-medium">💡 히키코모리는 고액 월세를 꼬박꼬박 내지만 방치하면 쓰레기방 악취 민원이 발생합니다!</span>
+        <button id="btn-refresh-rec" class="jelly-btn-amber font-jua text-xs px-3.5 py-1.5">🔄 다른 세대 모집 (10만)</button>
       </div>
     </div>
   </div>
 
-  <!-- ==================== 9. 모달 3: [🏦 부재중 자동 타운 수익 정산] ==================== -->
-  <div id="offline-modal" class="hidden fixed inset-0 z-50 bg-amber-950/60 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="jelly-hud-card w-full max-w-sm p-5 text-center">
-      <div class="text-4xl mb-2">🏦🏙️</div>
-      <h2 class="font-jua text-xl text-amber-950">부재중 3D 타운 임대 수익 도착!</h2>
-      <p id="offline-time-text" class="text-xs text-amber-900/80 mt-1"></p>
-      <div class="my-4 bg-white border-2 border-amber-400 rounded-2xl py-3 px-4 shadow-inner">
-        <div class="text-xs text-amber-800 font-bold">누적 타운 수익</div>
-        <div class="font-jua text-2xl text-amber-600 mt-0.5">+<span id="offline-gold-amount">0</span>만원</div>
-      </div>
-      <button id="btn-claim-offline" class="jelly-btn-amber w-full font-jua text-base py-2.5 rounded-2xl">
-        💰 기분 좋게 수령하기!
-      </button>
+  <!-- ==================== 9. 단호한 강제 퇴거 도장 ("쾅! 퇴거 명령") 연출 오버레이 ==================== -->
+  <div id="eviction-stamp-overlay" class="hidden fixed inset-0 z-[60] pointer-events-none">
+    <div id="eviction-stamp-box" class="absolute left-1/2 top-1/2 border-[6px] border-rose-600 bg-rose-50/95 text-rose-700 px-8 py-4 rounded-2xl shadow-2xl font-jua text-3xl sm:text-5xl tracking-wider">
+      🚨 쾅! 강제 퇴거 명령
     </div>
   </div>
 
-  <div id="toast-container" class="fixed top-[76px] left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-1.5 pointer-events-none"></div>
+  <div id="toast-container" class="fixed top-14 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-1.5 pointer-events-none"></div>
 
   <script src="./data.js"></script>
   <script type="module" src="./app.js"></script>

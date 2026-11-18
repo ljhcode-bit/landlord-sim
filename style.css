@@ -1,6 +1,7 @@
 /* =========================================================
-   【갓물주 라이프 3D: 미니미 타운 & 하우스】 스타일시트 (style.css)
-   Dual-Scale 타운 지붕 배지, 스와이프 수금, 내부 호실 배지, 3D 젤리 캐주얼 UI
+   【갓물주 라이프 3D: 미니미 타운】 스타일시트 (style.css)
+   가로 모드 클린 HUD, 우측 하단 통합 FAB, 2단 분할 글래스모피즘 팝업,
+   3D 젤리 파스텔 UI, 퇴거 도장("쾅! 퇴거 명령"), 줌 연동 말풍선/위기 배지
    ========================================================= */
 
 :root {
@@ -21,7 +22,7 @@ html, body {
   height: 100%;
   overflow: hidden;
   font-family: var(--font-body);
-  background: radial-gradient(circle at 50% 28%, #dff6ff 0%, #fff7e6 52%, #ebd5b8 100%);
+  background: linear-gradient(180deg, #b8e8ff 0%, #e4f6ff 46%, #fff8eb 100%);
   user-select: none;
   -webkit-user-select: none;
   touch-action: none;
@@ -30,7 +31,17 @@ html, body {
 .font-jua { font-family: var(--font-title); }
 .font-gaegu { font-family: var(--font-hand); }
 
-/* ================= WebGL 캔버스 & 3D 투영 레이어 ================= */
+/* 세로 모드일 때만 우측 상단에 부드럽게 나타나는 가로 회전 권장 배지 */
+#portrait-hint {
+  display: none;
+}
+@media (orientation: portrait) {
+  #portrait-hint {
+    display: flex;
+  }
+}
+
+/* ================= WebGL 3D 컨테이너 & 투영 오버레이 ================= */
 #webgl-container {
   position: fixed;
   inset: 0;
@@ -54,332 +65,315 @@ html, body {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 15;
+  z-index: 12;
   overflow: hidden;
 }
 
-/* ================= 3D 젤리 & 토이 블록 캐주얼 UI ================= */
-.jelly-hud-card {
-  background: linear-gradient(180deg, rgba(255, 253, 249, 0.96) 0%, rgba(254, 243, 199, 0.96) 100%);
-  backdrop-filter: blur(8px);
+/* ================= 귀염뽀짝 파스텔 젤리 3D Bevel UI ================= */
+.jelly-capsule {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(254, 245, 218, 0.95) 100%);
+  backdrop-filter: blur(10px);
   border: 3px solid #78350f;
-  border-radius: 22px;
+  border-radius: 999px;
   box-shadow:
     inset 0 3px 0 rgba(255, 255, 255, 0.92),
     0 5px 0 #78350f,
-    0 10px 22px rgba(120, 53, 15, 0.24);
+    0 10px 24px rgba(120, 53, 15, 0.22);
+}
+
+.jelly-card {
+  background: linear-gradient(180deg, rgba(255, 254, 250, 0.96) 0%, rgba(255, 247, 230, 0.96) 100%);
+  backdrop-filter: blur(14px);
+  border: 3px solid #78350f;
+  border-radius: 24px;
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.92),
+    0 6px 0 #78350f,
+    0 16px 36px rgba(87, 36, 8, 0.28);
+}
+
+.glass-split-modal {
+  background: linear-gradient(145deg, rgba(255, 253, 248, 0.92) 0%, rgba(254, 243, 219, 0.9) 100%);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 3.5px solid #78350f;
+  border-radius: 28px;
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.9),
+    0 8px 0 #78350f,
+    0 24px 56px rgba(67, 20, 7, 0.38);
 }
 
 .jelly-btn-amber {
   background: linear-gradient(180deg, #fde047 0%, #fbbf24 55%, #f59e0b 100%);
   color: #451a03;
-  border: 3px solid #78350f;
-  box-shadow:
-    inset 0 3px 0 rgba(255, 255, 255, 0.82),
-    0 5px 0 #78350f,
-    0 8px 14px rgba(120, 53, 15, 0.24);
+  border: 2.5px solid #78350f;
+  border-radius: 20px;
+  box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.8), 0 4px 0 #78350f, 0 6px 12px rgba(120, 53, 15, 0.2);
   transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.15s ease;
 }
 .jelly-btn-amber:hover { filter: brightness(1.05); }
-.jelly-btn-amber:active {
-  transform: translateY(3px);
-  box-shadow: 0 2px 0 #78350f;
-}
+.jelly-btn-amber:active { transform: translateY(3px); box-shadow: 0 1px 0 #78350f; }
 
 .jelly-btn-mint {
-  background: linear-gradient(180deg, #6ee7b7 0%, #34d399 55%, #10b981 100%);
+  background: linear-gradient(180deg, #86efac 0%, #34d399 55%, #10b981 100%);
   color: #064e3b;
-  border: 3px solid #065f46;
-  box-shadow:
-    inset 0 3px 0 rgba(255, 255, 255, 0.72),
-    0 5px 0 #065f46,
-    0 8px 14px rgba(6, 95, 70, 0.22);
-  transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.15s ease;
+  border: 2.5px solid #065f46;
+  border-radius: 20px;
+  box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.72), 0 4px 0 #065f46, 0 6px 12px rgba(6, 95, 70, 0.2);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
 .jelly-btn-mint:hover { filter: brightness(1.05); }
-.jelly-btn-mint:active {
-  transform: translateY(3px);
-  box-shadow: 0 2px 0 #065f46;
-}
+.jelly-btn-mint:active { transform: translateY(3px); box-shadow: 0 1px 0 #065f46; }
 
 .jelly-btn-sky {
-  background: linear-gradient(180deg, #7dd3fc 0%, #38bdf8 55%, #0284c7 100%);
+  background: linear-gradient(180deg, #93c5fd 0%, #38bdf8 55%, #0284c7 100%);
   color: #ffffff;
-  border: 3px solid #075985;
-  box-shadow:
-    inset 0 3px 0 rgba(255, 255, 255, 0.65),
-    0 5px 0 #075985,
-    0 8px 16px rgba(7, 89, 133, 0.28);
-  transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.15s ease;
+  border: 2.5px solid #075985;
+  border-radius: 20px;
+  box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.65), 0 4px 0 #075985;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
-.jelly-btn-sky:hover { filter: brightness(1.06); }
-.jelly-btn-sky:active {
-  transform: translateY(3px);
-  box-shadow: 0 2px 0 #075985;
+.jelly-btn-sky:hover { filter: brightness(1.05); }
+.jelly-btn-sky:active { transform: translateY(3px); box-shadow: 0 1px 0 #075985; }
+
+.jelly-btn-rose {
+  background: linear-gradient(180deg, #fda4af 0%, #fb7185 55%, #e11d48 100%);
+  color: #ffffff;
+  border: 2.5px solid #881337;
+  border-radius: 20px;
+  box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.55), 0 4px 0 #881337;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
+.jelly-btn-rose:hover { filter: brightness(1.05); }
+.jelly-btn-rose:active { transform: translateY(3px); box-shadow: 0 1px 0 #881337; }
 
 .jelly-btn-white {
   background: linear-gradient(180deg, #ffffff 0%, #fffbeb 100%);
   color: #573619;
-  border: 3px solid #78350f;
-  box-shadow:
-    inset 0 3px 0 rgba(255, 255, 255, 0.95),
-    0 5px 0 #78350f,
-    0 8px 14px rgba(120, 53, 15, 0.18);
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
-}
-.jelly-btn-white:active {
-  transform: translateY(3px);
-  box-shadow: 0 2px 0 #78350f;
-}
-
-.jelly-btn-rose {
-  background: linear-gradient(180deg, #fda4af 0%, #fb7185 55%, #f43f5e 100%);
-  color: #fff1f2;
-  border: 3px solid #881337;
-  box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.55), 0 4px 0 #881337;
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
-}
-.jelly-btn-rose:active {
-  transform: translateY(3px);
-  box-shadow: 0 1px 0 #881337;
-}
-
-.set-pill-pastel {
-  background: linear-gradient(90deg, #fce7f3, #fef3c7);
-  color: #9d174d;
-  border: 2px solid #f472b6;
-}
-.set-pill-wood {
-  background: linear-gradient(90deg, #dcfce7, #fef3c7);
-  color: #166534;
-  border: 2px solid #34d399;
-}
-.set-pill-royal {
-  background: linear-gradient(90deg, #fef08a, #fde68a, #fbcfe8);
-  color: #78350f;
-  border: 2px solid #eab308;
-}
-
-/* ================= [마을 뷰] 건물 지붕 플로팅 배지 & 빈 땅 입간판 배지 ================= */
-.town-roof-badge {
-  position: absolute;
-  left: 0;
-  top: 0;
-  pointer-events: auto;
-  cursor: pointer;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(254, 243, 199, 0.96) 100%);
-  border: 3px solid #78350f;
-  border-radius: 18px;
-  padding: 5px 11px 6px;
-  min-width: 158px;
-  box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.9),
-    0 5px 0 #78350f,
-    0 10px 20px rgba(67, 20, 7, 0.28);
-  white-space: nowrap;
-  will-change: transform;
-  z-index: 20;
-}
-
-.town-roof-badge:hover {
-  border-color: #f59e0b;
-}
-
-.town-roof-badge.has-coins {
-  border-color: #d97706;
-  background: linear-gradient(180deg, #fef9c3 0%, #fde047 100%);
-  box-shadow:
-    0 0 0 4px rgba(250, 204, 21, 0.55),
-    0 5px 0 #92400e,
-    0 12px 24px rgba(217, 119, 6, 0.45);
-}
-
-.empty-lot-badge {
-  position: absolute;
-  left: 0;
-  top: 0;
-  pointer-events: auto;
-  cursor: pointer;
-  background: linear-gradient(180deg, #fffbeb 0%, #fed7aa 100%);
-  border: 2.5px solid #9a3412;
-  border-radius: 16px;
-  padding: 5px 11px;
-  font-family: var(--font-title);
-  font-size: 12px;
-  color: #572408;
-  box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.85),
-    0 4px 0 #9a3412,
-    0 8px 16px rgba(67, 20, 7, 0.22);
-  white-space: nowrap;
-  will-change: transform;
-  z-index: 18;
-}
-
-.empty-lot-badge.affordable {
-  background: linear-gradient(180deg, #ecfdf5 0%, #a7f3d0 100%);
-  border-color: #065f46;
-  color: #064e3b;
-  box-shadow:
-    0 0 0 4px rgba(52, 211, 153, 0.45),
-    0 4px 0 #065f46,
-    0 8px 18px rgba(6, 95, 70, 0.28);
-}
-
-/* ================= [내부 뷰] 호실별 & 상가별 플로팅 타이머 배지 ================= */
-.floating-room-badge {
-  position: absolute;
-  left: 0;
-  top: 0;
-  pointer-events: auto;
-  cursor: pointer;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(254, 249, 195, 0.96) 100%);
   border: 2.5px solid #78350f;
-  border-radius: 15px;
-  padding: 4px 9px 5px;
-  box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.9),
-    0 4px 0 #78350f,
-    0 8px 16px rgba(67, 20, 7, 0.25);
-  white-space: nowrap;
-  will-change: transform;
-  z-index: 21;
+  border-radius: 20px;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.95), 0 4px 0 #78350f;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
-.floating-room-badge.selected {
-  border-color: #f59e0b;
-  box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.78), 0 4px 0 #92400e;
-  z-index: 24;
+.jelly-btn-white:active { transform: translateY(3px); box-shadow: 0 1px 0 #78350f; }
+
+/* 우측 하단 통합 FAB 긴급 Red Dot 통통 튀는 배지 */
+.urgent-red-dot {
+  animation: bounceUrgent 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) infinite alternate;
 }
-.floating-room-badge.locked {
-  background: linear-gradient(180deg, rgba(87, 54, 25, 0.92) 0%, rgba(67, 20, 7, 0.92) 100%);
-  color: #fef3c7;
-  border-color: #fde68a;
+@keyframes bounceUrgent {
+  0% { transform: translateY(0) scale(1); }
+  100% { transform: translateY(-6px) scale(1.14); }
 }
 
-.gauge-bar-track {
+/* 커스텀 슬라이더 */
+input[type='range'].jelly-slider {
+  -webkit-appearance: none;
+  appearance: none;
   width: 100%;
-  height: 5px;
-  background: #e7e5e4;
+  height: 10px;
   border-radius: 999px;
-  overflow: hidden;
-  margin-top: 3px;
-  border: 1px solid #d6d3d1;
+  background: #fde68a;
+  border: 2px solid #92400e;
+  outline: none;
 }
-.gauge-bar-fill {
-  height: 100%;
-  width: 0%;
-  background: linear-gradient(90deg, #10b981 0%, #fbbf24 65%, #f59e0b 100%);
-  border-radius: 999px;
+input[type='range'].jelly-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #10b981;
+  border: 2.5px solid #064e3b;
+  cursor: pointer;
+  box-shadow: 0 2px 0 #064e3b;
 }
 
-.floating-shop-badge {
+/* ================= 3D 플로팅 오버레이 요소 (줌 레벨 연동 투명도 제어) ================= */
+.world-tag {
   position: absolute;
   left: 0;
   top: 0;
+  white-space: nowrap;
+  will-change: transform, opacity;
+  transition: opacity 0.25s ease;
+}
+
+.lot-pill {
   pointer-events: auto;
   cursor: pointer;
-  background: linear-gradient(180deg, #fffbeb 0%, #fde68a 100%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(254, 243, 199, 0.95) 100%);
   border: 2.5px solid #78350f;
-  border-radius: 999px;
+  border-radius: 20px;
   padding: 4px 11px;
   font-family: var(--font-title);
   font-size: 12px;
   color: #451a03;
-  box-shadow: 0 4px 0 #78350f, 0 6px 14px rgba(67, 20, 7, 0.24);
-  white-space: nowrap;
-  will-change: transform;
-  z-index: 21;
+  box-shadow: 0 4px 0 #78350f, 0 8px 16px rgba(67, 20, 7, 0.22);
+}
+.lot-pill.has-coins {
+  background: linear-gradient(180deg, #fef9c3 0%, #fde047 100%);
+  border-color: #b45309;
+  box-shadow: 0 0 0 4px rgba(250, 204, 21, 0.55), 0 4px 0 #92400e;
+}
+.lot-pill.empty-site {
+  background: linear-gradient(180deg, #ecfdf5 0%, #bbf7d0 100%);
+  border-color: #065f46;
+  color: #064e3b;
 }
 
-/* ================= 입주민 말풍선 & 돌발 케어 & 잭팟 텍스트 ================= */
-.floating-speech-bubble {
-  position: absolute;
-  left: 0;
-  top: 0;
+.room-mini-pill {
+  pointer-events: auto;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.94);
+  border: 2px solid #78350f;
+  border-radius: 14px;
+  padding: 3px 8px 4px;
+  font-family: var(--font-title);
+  font-size: 11px;
+  box-shadow: 0 3px 0 #78350f;
+}
+.room-mini-pill.selected {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.8), 0 3px 0 #92400e;
+  z-index: 25;
+}
+.room-mini-pill.crisis {
+  background: #ffe4e6;
+  border-color: #e11d48;
+  color: #881337;
+  animation: pulseCrisis 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes pulseCrisis {
+  0% { transform: translate3d(var(--tx, 0px), var(--ty, 0px), 0) translate(-50%, -100%) scale(1); }
+  100% { transform: translate3d(var(--tx, 0px), var(--ty, 0px), 0) translate(-50%, -100%) scale(1.08); }
+}
+
+/* 원거리에서도 보이는 긴급 위기 아이콘 핀 (🚨, ⚡, 🤢) */
+.crisis-icon-pin {
+  pointer-events: auto;
+  cursor: pointer;
+  background: #fff1f2;
+  border: 2.5px solid #e11d48;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-family: var(--font-title);
+  font-size: 12px;
+  color: #9f1239;
+  box-shadow: 0 4px 0 #9f1239, 0 6px 14px rgba(225, 29, 72, 0.38);
+}
+
+/* 근거리(Zoom In) 전용 현실 일상/불만 말풍선 */
+.zoom-speech-bubble {
   pointer-events: none;
   background: linear-gradient(180deg, #ffffff 0%, #fffbeb 100%);
   color: #451a03;
   border: 2px solid #78350f;
-  border-radius: 15px;
-  padding: 3px 10px;
+  border-radius: 16px;
+  padding: 4px 11px;
   font-family: var(--font-hand);
   font-weight: 700;
-  font-size: 13.5px;
-  white-space: nowrap;
-  box-shadow: 0 3px 0 rgba(120, 53, 15, 0.22);
-  z-index: 26;
-  will-change: transform;
+  font-size: 14px;
+  max-width: 260px;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.25;
+  box-shadow: 0 3px 0 rgba(120, 53, 15, 0.25), 0 6px 14px rgba(67, 20, 7, 0.16);
+  z-index: 28;
+}
+.zoom-speech-bubble.complaint {
+  background: #fff1f2;
+  border-color: #e11d48;
+  color: #881337;
 }
 
-.floating-care-bubble {
-  position: absolute;
-  left: 0;
-  top: 0;
+/* 관리인 머리 위 "💡 출동!" 태그 */
+.manager-dispatch-tag {
+  pointer-events: none;
+  background: #fef08a;
+  border: 2px solid #92400e;
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-family: var(--font-title);
+  font-size: 11px;
+  color: #451a03;
+  box-shadow: 0 3px 0 #92400e;
+}
+
+/* 돌발 케어 터치 버블 */
+.care-action-bubble {
   pointer-events: auto;
   cursor: pointer;
   background: linear-gradient(180deg, #ffffff 0%, #fde047 100%);
-  border: 3px solid #b45309;
+  border: 2.5px solid #b45309;
   border-radius: 999px;
-  padding: 6px 13px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
+  padding: 5px 12px;
   font-family: var(--font-title);
-  font-size: 12.5px;
+  font-size: 12px;
   color: #451a03;
-  white-space: nowrap;
-  box-shadow:
-    inset 0 3px 0 rgba(255, 255, 255, 0.92),
-    0 5px 0 #b45309,
-    0 10px 20px rgba(180, 83, 9, 0.36);
-  z-index: 30;
-  will-change: transform;
+  box-shadow: 0 4px 0 #b45309, 0 8px 16px rgba(180, 83, 9, 0.34);
+  z-index: 26;
 }
 
-.floating-jackpot-text {
+/* "+72만 원!" 솟구치는 텍스트 */
+.jackpot-float {
   position: absolute;
   pointer-events: none;
   font-family: var(--font-title);
-  font-size: 18px;
+  font-size: 17px;
   color: #451a03;
   background: linear-gradient(180deg, #fef08a 0%, #fbbf24 100%);
-  border: 3px solid #78350f;
-  padding: 4px 13px;
+  border: 2.5px solid #78350f;
+  padding: 3px 12px;
   border-radius: 999px;
-  box-shadow: 0 4px 0 #78350f, 0 10px 20px rgba(217, 119, 6, 0.45);
+  box-shadow: 0 4px 0 #78350f;
   white-space: nowrap;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  z-index: 35;
-  animation: jackpotRise 1.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  z-index: 38;
+  animation: floatUpJackpot 1.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes floatUpJackpot {
+  0%   { transform: translate(-50%, 8px) scale(0.4); opacity: 0; }
+  20%  { transform: translate(-50%, -18px) scale(1.18); opacity: 1; }
+  80%  { transform: translate(-50%, -48px) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -66px) scale(0.9); opacity: 0; }
 }
 
-@keyframes jackpotRise {
-  0%   { transform: translate(-50%, 10px) scale(0.35); opacity: 0; }
-  18%  { transform: translate(-50%, -22px) scale(1.2); opacity: 1; }
-  35%  { transform: translate(-50%, -14px) scale(0.96); opacity: 1; }
-  80%  { transform: translate(-50%, -52px) scale(1); opacity: 1; }
-  100% { transform: translate(-50%, -72px) scale(0.9); opacity: 0; }
+/* ================= 단호한 강제 퇴거 도장 ("쾅! 퇴거 명령") 연출 ================= */
+.eviction-stamp-slam {
+  animation: stampSlam 1.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes stampSlam {
+  0%   { transform: translate(-50%, -50%) scale(3.2) rotate(-24deg); opacity: 0; }
+  22%  { transform: translate(-50%, -50%) scale(0.92) rotate(-11deg); opacity: 1; }
+  32%  { transform: translate(-50%, -50%) scale(1.06) rotate(-13deg); opacity: 1; }
+  78%  { transform: translate(-50%, -50%) scale(1) rotate(-12deg); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(0.95) rotate(-12deg); opacity: 0; }
+}
+
+.mini-bar-track {
+  width: 100%;
+  height: 4px;
+  background: #e7e5e4;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 2px;
+}
+.mini-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #fbbf24);
+  border-radius: 999px;
 }
 
 .gold-pop-anim {
-  animation: hudGoldPop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: goldPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-@keyframes hudGoldPop {
+@keyframes goldPop {
   0% { transform: scale(1); }
-  50% { transform: scale(1.2); color: #d97706; }
+  50% { transform: scale(1.18); color: #d97706; }
   100% { transform: scale(1); }
 }
 
 .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
 .custom-scroll::-webkit-scrollbar-thumb { background: #d6b899; border-radius: 999px; }
-
-.quest-ready-glow {
-  animation: questPulse 1.1s ease-in-out infinite alternate;
-}
-@keyframes questPulse {
-  0% { transform: scale(1); filter: brightness(1); }
-  100% { transform: scale(1.035); filter: brightness(1.06); }
-}
