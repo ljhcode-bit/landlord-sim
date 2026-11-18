@@ -295,59 +295,78 @@ function createHouseholdAvatarSVG(type, size = 56) {
   if (type === 'hikikomori') {
     charArt = `
       <path d="M12 56C12 40 20 34 32 34C44 34 52 40 52 56Z" fill="#581C87"/>
-      <circle cx="32" cy="30" r="16" fill="#6B21A8"/>
-      <ellipse cx="32" cy="33" rx="11.5" ry="10" fill="#F3E8FF"/>
-      <ellipse cx="27.5" cy="34" rx="2.6" ry="1.2" fill="#A855F7" opacity="0.5"/>
-      <ellipse cx="36.5" cy="34" rx="2.6" ry="1.2" fill="#A855F7" opacity="0.5"/>
-      <circle cx="27.5" cy="32" r="2.1" fill="#1E1B4B"/>
-      <circle cx="36.5" cy="32" r="2.1" fill="#1E1B4B"/>
-      <circle cx="28.2" cy="31.3" r="0.8" fill="#FFFFFF"/>
-      <circle cx="37.2" cy="31.3" r="0.8" fill="#FFFFFF"/>
-      <path d="M29 38Q32 36.5 35 38" stroke="#4C1D95" stroke-width="1.6" stroke-linecap="round"/>`;
+      <circle cx="32" cy="31" r="15.5" fill="#6B21A8"/>
+      <line x1="32" y1="15.5" x2="32" y2="10.5" stroke="#22C55E" stroke-width="2" stroke-linecap="round"/>
+      <ellipse cx="29" cy="10" rx="3.5" ry="2" fill="#4ADE80" transform="rotate(-25 29 10)"/>
+      <ellipse cx="35" cy="10" rx="3.5" ry="2" fill="#4ADE80" transform="rotate(25 35 10)"/>
+      <ellipse cx="32" cy="34" rx="11.5" ry="10" fill="#F3E8FF"/>
+      <ellipse cx="27.5" cy="35" rx="2.6" ry="1.2" fill="#A855F7" opacity="0.5"/>
+      <ellipse cx="36.5" cy="35" rx="2.6" ry="1.2" fill="#A855F7" opacity="0.5"/>
+      <circle cx="27.5" cy="33" r="2.1" fill="#1E1B4B"/>
+      <circle cx="36.5" cy="33" r="2.1" fill="#1E1B4B"/>
+      <circle cx="28.2" cy="32.3" r="0.8" fill="#FFFFFF"/>
+      <circle cx="37.2" cy="32.3" r="0.8" fill="#FFFFFF"/>
+      <path d="M29 39Q32 37.5 35 39" stroke="#4C1D95" stroke-width="1.6" stroke-linecap="round"/>`;
   } else if (type === 'newlywed') {
     charArt = `
-      <circle cx="23" cy="31" r="10.5" fill="#FFE4D6"/>
-      <path d="M12 29C12 19 34 19 34 29C29 24 17 24 12 29Z" fill="#3B2314"/>
-      <circle cx="41" cy="32" r="10" fill="#FFE4D6"/>
-      <circle cx="45" cy="21" r="4.5" fill="#7C3F1D"/>
-      <path d="M31 30C31 21 51 21 51 30C46 25 36 25 31 30Z" fill="#7C3F1D"/>
-      <circle cx="20" cy="32" r="1.7" fill="#1E293B"/><circle cx="26" cy="32" r="1.7" fill="#1E293B"/>
-      <circle cx="38" cy="33" r="1.7" fill="#1E293B"/><circle cx="44" cy="33" r="1.7" fill="#1E293B"/>
-      <ellipse cx="36" cy="35.5" rx="2.2" ry="1.2" fill="#FF8FA3"/><ellipse cx="46" cy="35.5" rx="2.2" ry="1.2" fill="#FF8FA3"/>
-      <path d="M32 14C32 11.5 35 11.5 35 14C35 11.5 38 11.5 38 14C38 17 35 19.5 35 19.5C35 19.5 32 17 32 14Z" fill="#FF6B8B"/>`;
+      <circle cx="23" cy="32" r="10.5" fill="#FFE4D6"/>
+      <path d="M12 30C12 20 34 20 34 30C29 25 17 25 12 30Z" fill="#3B2314"/>
+      <circle cx="41" cy="33" r="10" fill="#FFE4D6"/>
+      <path d="M31 31C31 22 51 22 51 31C46 26 36 26 31 31Z" fill="#7C3F1D"/>
+      <!-- 귀여운 왕리본 -->
+      <ellipse cx="38" cy="19" rx="5.2" ry="3.2" fill="#FF6B8B" transform="rotate(-18 38 19)"/>
+      <ellipse cx="47" cy="19" rx="5.2" ry="3.2" fill="#FF6B8B" transform="rotate(18 47 19)"/>
+      <circle cx="42.5" cy="19.5" r="2.2" fill="#FFFDF9"/>
+      <circle cx="20" cy="33" r="1.7" fill="#1E293B"/><circle cx="26" cy="33" r="1.7" fill="#1E293B"/>
+      <circle cx="38" cy="34" r="1.7" fill="#1E293B"/><circle cx="44" cy="34" r="1.7" fill="#1E293B"/>
+      <ellipse cx="36" cy="36.5" rx="2.2" ry="1.2" fill="#FF8FA3"/><ellipse cx="46" cy="36.5" rx="2.2" ry="1.2" fill="#FF8FA3"/>
+      <path d="M29 14C29 11.5 32 11.5 32 14C32 11.5 35 11.5 35 14C35 17 32 19.5 32 19.5C32 19.5 29 17 29 14Z" fill="#FF6B8B"/>`;
   } else if (type === 'family4') {
     charArt = `
       <circle cx="22" cy="27" r="9.5" fill="#FFE4D6"/>
       <path d="M12.5 25C13 16 31 16 31.5 25Z" fill="#292524"/>
       <circle cx="42" cy="27" r="9.5" fill="#FFE4D6"/>
       <path d="M32.5 25C33 16 51 16 51.5 25Z" fill="#92400E"/>
-      <circle cx="25" cy="43" r="7.5" fill="#FFE4D6"/>
-      <circle cx="39" cy="43" r="7.5" fill="#FFE4D6"/>
-      <circle cx="23" cy="43" r="1.4" fill="#1E293B"/><circle cx="27" cy="43" r="1.4" fill="#1E293B"/>
-      <circle cx="37" cy="43" r="1.4" fill="#1E293B"/><circle cx="41" cy="43" r="1.4" fill="#1E293B"/>`;
+      <circle cx="25" cy="44" r="7.5" fill="#FFE4D6"/>
+      <circle cx="39" cy="44" r="7.5" fill="#FFE4D6"/>
+      <!-- 어린이 프로펠러 모자 -->
+      <path d="M18 41C18.5 35 31.5 35 32 41Z" fill="#38BDF8"/>
+      <line x1="21" y1="35" x2="29" y2="35" stroke="#FF6B8B" stroke-width="2.2" stroke-linecap="round"/>
+      <circle cx="25" cy="35" r="1.5" fill="#FACC15"/>
+      <circle cx="23" cy="44.5" r="1.4" fill="#1E293B"/><circle cx="27" cy="44.5" r="1.4" fill="#1E293B"/>
+      <circle cx="37" cy="44.5" r="1.4" fill="#1E293B"/><circle cx="41" cy="44.5" r="1.4" fill="#1E293B"/>`;
   } else if (type === 'elderly') {
     charArt = `
-      <circle cx="23" cy="32" r="10.5" fill="#FFE4D6"/>
-      <path d="M12.5 30C13 20 33 20 33.5 30Z" fill="#E5E7EB"/>
-      <circle cx="41" cy="32" r="10" fill="#FFE4D6"/>
-      <circle cx="41" cy="20" r="4.5" fill="#F3F4F6"/>
-      <path d="M31 30C31.5 21 50.5 21 51 30Z" fill="#F3F4F6"/>
-      <circle cx="20" cy="32.5" r="2.8" fill="none" stroke="#78350F" stroke-width="1.3"/>
-      <circle cx="26" cy="32.5" r="2.8" fill="none" stroke="#78350F" stroke-width="1.3"/>
-      <path d="M38 32.5Q39.5 31 41 32.5M42.5 32.5Q44 31 45.5 32.5" stroke="#451A03" stroke-width="1.5" stroke-linecap="round"/>`;
+      <circle cx="23" cy="34" r="10" fill="#FFE4D6"/>
+      <!-- 귀여운 밀짚모자 -->
+      <ellipse cx="23" cy="24" rx="13.5" ry="3.5" fill="#FCD34D" stroke="#D97706" stroke-width="1.2"/>
+      <path d="M15 24C15.5 17 30.5 17 31 24Z" fill="#FDE68A" stroke="#D97706" stroke-width="1.2"/>
+      <rect x="15.5" y="21.8" width="15" height="2" rx="1" fill="#FF6B8B"/>
+      <circle cx="42" cy="34" r="10" fill="#FFE4D6"/>
+      <circle cx="42" cy="22" r="4.5" fill="#F3F4F6"/>
+      <path d="M32 32C32.5 23 51.5 23 52 32Z" fill="#F3F4F6"/>
+      <circle cx="20" cy="34.5" r="2.6" fill="none" stroke="#78350F" stroke-width="1.3"/>
+      <circle cx="26" cy="34.5" r="2.6" fill="none" stroke="#78350F" stroke-width="1.3"/>
+      <path d="M39 34.5Q40.5 33 42 34.5M43.5 34.5Q45 33 46.5 34.5" stroke="#451A03" stroke-width="1.5" stroke-linecap="round"/>`;
   } else {
     charArt = `
       <path d="M16 58C16 44 23 39 32 39C41 39 48 44 48 58Z" fill="#60A5FA"/>
-      <path d="M18 30C18 18 46 18 46 30" fill="none" stroke="#FF6B8B" stroke-width="4" stroke-linecap="round"/>
-      <rect x="14" y="26" width="5" height="10" rx="2.5" fill="#FF6B8B"/>
-      <rect x="45" y="26" width="5" height="10" rx="2.5" fill="#FF6B8B"/>
-      <circle cx="32" cy="31" r="12.5" fill="#FFE4D6"/>
-      <path d="M19.5 29C20 17 44 17 44.5 29C39 23 25 23 19.5 29Z" fill="#292524"/>
-      <circle cx="27.5" cy="32" r="2.2" fill="#1E293B"/><circle cx="36.5" cy="32" r="2.2" fill="#1E293B"/>
-      <circle cx="28.3" cy="31.1" r="0.9" fill="#FFFFFF"/><circle cx="37.3" cy="31.1" r="0.9" fill="#FFFFFF"/>
-      <ellipse cx="24" cy="35" rx="2.6" ry="1.4" fill="#FF8FA3" opacity="0.7"/>
-      <ellipse cx="40" cy="35" rx="2.6" ry="1.4" fill="#FF8FA3" opacity="0.7"/>
-      <path d="M29.5 36.5Q32 39 34.5 36.5" fill="none" stroke="#7C2D12" stroke-width="1.6" stroke-linecap="round"/>`;
+      <!-- 고양이 귀 헤드셋 & 새싹 -->
+      <path d="M18 31C18 19 46 19 46 31" fill="none" stroke="#FF6B8B" stroke-width="4" stroke-linecap="round"/>
+      <path d="M21 21L24 14L28 19Z" fill="#FF6B8B"/>
+      <path d="M43 21L40 14L36 19Z" fill="#FF6B8B"/>
+      <line x1="32" y1="18" x2="32" y2="12" stroke="#22C55E" stroke-width="2" stroke-linecap="round"/>
+      <ellipse cx="29.5" cy="11.5" rx="3.2" ry="1.8" fill="#4ADE80" transform="rotate(-22 29.5 11.5)"/>
+      <ellipse cx="34.5" cy="11.5" rx="3.2" ry="1.8" fill="#4ADE80" transform="rotate(22 34.5 11.5)"/>
+      <rect x="14" y="27" width="5" height="10" rx="2.5" fill="#FF6B8B"/>
+      <rect x="45" y="27" width="5" height="10" rx="2.5" fill="#FF6B8B"/>
+      <circle cx="32" cy="32" r="12" fill="#FFE4D6"/>
+      <path d="M20 30C20.5 18 43.5 18 44 30C39 24 25 24 20 30Z" fill="#292524"/>
+      <circle cx="27.5" cy="33" r="2.2" fill="#1E293B"/><circle cx="36.5" cy="33" r="2.2" fill="#1E293B"/>
+      <circle cx="28.3" cy="32.1" r="0.9" fill="#FFFFFF"/><circle cx="37.3" cy="32.1" r="0.9" fill="#FFFFFF"/>
+      <ellipse cx="24" cy="36" rx="2.6" ry="1.4" fill="#FF8FA3" opacity="0.7"/>
+      <ellipse cx="40" cy="36" rx="2.6" ry="1.4" fill="#FF8FA3" opacity="0.7"/>
+      <path d="M29.5 37.5Q32 40 34.5 37.5" fill="none" stroke="#7C2D12" stroke-width="1.6" stroke-linecap="round"/>`;
   }
 
   return `
