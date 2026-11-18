@@ -27,7 +27,7 @@
 </head>
 <body class="select-none overflow-hidden">
 
-  <!-- ==================== 1. WebGL 3D 장난감 미니어처 뷰포트 ==================== -->
+  <!-- ==================== 1. WebGL 3D 부티크 디오라마 뷰포트 ==================== -->
   <div id="webgl-container"></div>
 
   <!-- ==================== 2. 3D 투영(Project) 오버레이 레이어 ==================== -->
@@ -48,7 +48,7 @@
       <div class="leading-tight">
         <div class="text-[10.5px] font-display text-[#7A685F] leading-none">보유 자산</div>
         <div id="hud-gold-wrap" class="font-title text-sm sm:text-lg text-[#43342E] leading-tight mt-0.5 sticker-tilt">
-          <span id="hud-gold" class="font-num">460</span><span class="text-xs ml-0.5">만원</span>
+          <span id="hud-gold" class="font-num">460</span><span class="text-xs ml-0.5">만</span>
         </div>
       </div>
     </div>
@@ -57,8 +57,8 @@
     <div id="hud-badge-yield" class="pointer-events-auto hud-clay-badge px-3.5 py-1.5 flex items-center gap-2">
       <span id="hud-ico-yield" class="flex items-center justify-center"></span>
       <div class="leading-tight">
-        <div class="text-[10.5px] font-display text-[#7A685F] leading-none">주기 순수익</div>
-        <div id="hud-net-income" class="font-num text-xs sm:text-base text-[#059669] leading-tight mt-0.5">+0만</div>
+        <div class="text-[10.5px] font-display text-[#7A685F] leading-none">주기 순익</div>
+        <div id="hud-net-income" class="font-num text-xs sm:text-base text-[#059669] leading-tight mt-0.5">+28만</div>
       </div>
     </div>
 
@@ -66,7 +66,7 @@
     <div id="hud-badge-happy" class="pointer-events-auto hud-clay-badge px-3.5 py-1.5 flex items-center gap-2">
       <span id="hud-ico-happy" class="flex items-center justify-center"></span>
       <div class="leading-tight">
-        <div class="text-[10.5px] font-display text-[#7A685F] leading-none">타운 행복도</div>
+        <div class="text-[10.5px] font-display text-[#7A685F] leading-none">타운 행복</div>
         <div id="hud-happiness" class="font-num text-xs sm:text-base text-[#E11D48] leading-tight mt-0.5">100%</div>
       </div>
     </div>
@@ -74,11 +74,11 @@
     <!-- 캡슐 4: 시간 & 내부 투시 상태 -->
     <div class="pointer-events-auto hidden md:flex hud-clay-badge px-3 py-1.5 items-center gap-2">
       <span id="hud-time-text" class="font-display text-xs text-[#43342E]">1일차 09:00</span>
-      <span id="hud-xray-badge" class="font-display text-[11px] px-2 py-0.5 rounded-full bg-[#E0F2FE] text-[#0369A1] border border-[#BAE6FD]">외관 100%</span>
+      <span id="hud-xray-badge" class="font-display text-[11px] px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] border border-[#FCD34D]">외관 100%</span>
     </div>
 
-    <!-- 원터치 전체 미니어처 마을 시점 복귀 -->
-    <button id="btn-overview-cam" title="미니어처 타운 전체 보기" class="pointer-events-auto jelly-action-btn pill btn-sky-lip px-3.5 py-1.5">
+    <!-- 원터치 전체 마을 시점 복귀 -->
+    <button id="btn-overview-cam" title="타운 전체 보기" class="pointer-events-auto jelly-action-btn pill btn-sky-lip px-3.5 py-1.5">
       <span id="hud-ico-overview" class="flex items-center"></span>
       <span>전체뷰</span>
     </button>
@@ -86,31 +86,31 @@
     <!-- 지붕 대기 수익 일괄 수금 버튼 -->
     <button id="btn-collect-all" class="hidden pointer-events-auto jelly-action-btn pill btn-gold-lip px-3.5 py-1.5 animate-bounce">
       <span id="hud-ico-collect" class="flex items-center"></span>
-      <span>일괄수금!</span>
+      <span>일괄수금</span>
     </button>
   </header>
 
-  <!-- 세로 화면일 때 가로 회전 권장 배지 -->
+  <!-- 세로 화면 회전 배지 -->
   <div id="portrait-hint" class="fixed top-3 right-3 z-30 hud-clay-badge px-3 py-1.5 items-center gap-1.5 text-xs font-display text-[#43342E]">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#E11D48" stroke-width="2.4" stroke-linecap="round">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E11D48" stroke-width="2.4" stroke-linecap="round">
       <rect x="4" y="6" width="16" height="12" rx="3" />
       <path d="M19 3l2 2-2 2" />
     </svg>
-    <span>가로로 돌리면 미니어처 타운이 한눈에 보여요!</span>
+    <span>가로 모드 권장</span>
   </div>
 
-  <!-- ==================== 4. 호실 클로즈업 전용 우측 다이어리 인스펙터 ==================== -->
-  <aside id="room-focus-panel" class="hidden fixed top-16 right-3 sm:right-4 z-30 w-[300px] sm:w-[328px] max-h-[calc(100vh-148px)] diary-inspector-shell flex flex-col overflow-hidden">
-    <div class="px-3.5 py-2.5 flex items-center justify-between border-b border-[#E6CCB2] shrink-0" style="background: linear-gradient(180deg, #FFF5EC 0%, #FCEBD9 100%);">
+  <!-- ==================== 4. 호실 클로즈업 전용 무(無)줄글 부티크 인스펙터 ==================== -->
+  <aside id="room-focus-panel" class="hidden fixed top-16 right-3 sm:right-4 z-30 w-[288px] sm:w-[310px] max-h-[calc(100vh-148px)] diary-inspector-shell flex flex-col overflow-hidden">
+    <div class="px-3 py-2 flex items-center justify-between border-b border-[#E6CCB2] shrink-0" style="background: linear-gradient(180deg, #FFF5EC 0%, #FCEBD9 100%);">
       <div class="flex items-center gap-1.5 min-w-0">
-        <span id="rf-ico-house" class="flex items-center shrink-0"></span>
-        <span id="rf-title" class="diary-card-title truncate">101호</span>
+        <span id="rf-room-num" class="hotel-num-tag shrink-0">101</span>
+        <span id="rf-title" class="diary-card-title truncate">해피 미니미 타운 1차</span>
         <button id="rf-btn-rename" title="빌딩 이름 변경" class="ribbon-edit-chip shrink-0"></button>
         <span id="rf-tier-badge" class="diary-pill-badge shrink-0">Lv.0</span>
       </div>
       <button id="btn-close-room-focus" class="btn-close-round">✕</button>
     </div>
-    <div id="rf-body" class="p-3 overflow-y-auto custom-scroll space-y-2.5"></div>
+    <div id="rf-body" class="p-2.5 overflow-y-auto custom-scroll space-y-2"></div>
   </aside>
 
   <!-- ==================== 5. 우측 하단 미니 카메라 컨트롤 & 66x66px 원형 리플 FAB ==================== -->
@@ -122,7 +122,7 @@
       <button id="btn-reset-save" title="데이터 초기화" class="px-2 h-7 rounded-full hover:bg-[#FFE4E9] font-display text-[11px] text-[#7A685F] transition-colors">초기화</button>
     </div>
 
-    <button id="fab-notebook" aria-label="타운 경영 수첩 열기" class="pointer-events-auto fab-artwork-circle">
+    <button id="fab-notebook" aria-label="타운 도감 수첩 열기" class="pointer-events-auto fab-artwork-circle">
       <span id="fab-svg-slot" class="fab-icon-wrap flex items-center justify-center"></span>
       <span class="font-title text-[11px] text-[#43342E] leading-none mt-0.5">수첩</span>
 
@@ -132,26 +132,22 @@
     </button>
   </div>
 
-  <!-- ==================== 6. [요구사항 3·4·5·6] 다꾸 스프링 제본 타운 수첩 모달 ==================== -->
+  <!-- ==================== 6. [요구사항 1 & 2] 무(無)줄글 스프링 가죽 다이어리 도감 모달 ==================== -->
   <div id="notebook-modal" class="hidden fixed inset-0 z-50 pastel-modal-backdrop flex items-center justify-center p-2.5 sm:p-4">
-    <div class="cozy-planner-shell w-full max-w-4xl h-[86vh] max-h-[560px]">
+    <div class="cozy-planner-shell w-full max-w-4xl h-[84vh] max-h-[540px]">
       <div class="cozy-planner-inner">
-        <!-- 다이어리 상단 스티치 헤더 -->
-        <div class="px-4 py-2.5 flex items-center justify-between border-b border-[#E6CCB2] shrink-0" style="background: linear-gradient(90deg, #FFF5EA 0%, #FFEFF3 55%, #EFFBF5 100%);">
-          <div class="flex items-center gap-2 min-w-0">
+        <!-- 다이어리 상단 스티치 헤더 (줄글 0%, 아이콘 요약 칩만 표시) -->
+        <div class="px-3.5 py-2 flex items-center justify-between border-b border-[#E6CCB2] shrink-0" style="background: linear-gradient(90deg, #FFF5EA 0%, #FFEFF3 55%, #EFFBF5 100%);">
+          <div class="flex items-center gap-2 min-w-0 flex-wrap">
             <span id="modal-ico-notebook" class="flex items-center shrink-0"></span>
-            <div class="min-w-0">
-              <div class="flex items-center gap-2">
-                <span class="diary-modal-title truncate">미니미 타운 다꾸 경영 수첩</span>
-                <span id="modal-alert-summary" class="hidden diary-pill-badge !bg-[#FFE4E9] !text-[#BE123C] !border-[#FDA4AF] shrink-0"></span>
-              </div>
-              <div id="fab-sub-status" class="diary-muted-text hidden sm:block">퀘스트 도감 · 입주민 초상화 케어 · 1층 지배인 위임 · 시설 장부</div>
-            </div>
+            <span class="diary-modal-title truncate">타운 경영 도감</span>
+            <span id="modal-quest-summary" class="diary-pill-badge !bg-[#FEF3C7] !text-[#92400E] !border-[#FCD34D] shrink-0">0/10</span>
+            <span id="modal-alert-summary" class="hidden diary-pill-badge !bg-[#FFE4E9] !text-[#BE123C] !border-[#FDA4AF] shrink-0"></span>
           </div>
           <button id="btn-close-notebook" class="btn-close-round">✕</button>
         </div>
 
-        <!-- 좌측 인덱스 탭/리스트 + 중앙 SVG 스프링 제본 고리 + 우측 모눈 속지 -->
+        <!-- 좌측 북마크 인덱스/목록 + 중앙 SVG 스프링 바인더 + 우측 도감 속지 -->
         <div class="flex-1 flex flex-col sm:flex-row min-h-0 overflow-hidden relative">
           <!-- 좌측 속지 -->
           <div class="planner-left-sheet flex flex-col min-h-0 shrink-0">
@@ -177,102 +173,89 @@
               </button>
             </div>
 
-            <!-- 좌측 정갈한 리스트 (gap: 8px) -->
-            <div id="split-left-list" class="flex-1 overflow-y-auto custom-scroll p-2.5 flex flex-col gap-2 max-h-[145px] sm:max-h-none"></div>
+            <!-- 좌측 인덱스 리스트 -->
+            <div id="split-left-list" class="flex-1 overflow-y-auto custom-scroll p-2.5 flex flex-col gap-1.5 max-h-[132px] sm:max-h-none"></div>
           </div>
 
           <!-- 중앙 SVG 스프링 바인더 고리 열 -->
           <div id="notebook-binder-rings" class="planner-binder-spine"></div>
 
-          <!-- 우측 상세 다꾸 속지 -->
-          <div id="split-right-detail" class="planner-right-sheet flex-1 overflow-y-auto custom-scroll p-3.5 sm:p-4"></div>
+          <!-- 우측 무(無)줄글 도감 속지 -->
+          <div id="split-right-detail" class="planner-right-sheet flex-1 overflow-y-auto custom-scroll p-3 sm:p-4"></div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ==================== 7. 꽃밭 부지 개발 다이어리 팝업창 ==================== -->
+  <!-- ==================== 7. 신규 부지 개발 도감 모달 (무줄글 칩 카드) ==================== -->
   <div id="lot-dev-modal" class="hidden fixed inset-0 z-50 pastel-modal-backdrop flex items-center justify-center p-3">
-    <div class="cozy-planner-shell w-full max-w-2xl max-h-[86vh]">
+    <div class="cozy-planner-shell w-full max-w-xl max-h-[84vh]">
       <div class="cozy-planner-inner">
-        <div class="px-4 py-2.5 flex items-center justify-between border-b border-[#E6CCB2] shrink-0" style="background: linear-gradient(90deg, #E8FBF2 0%, #FFF7EB 100%);">
-          <div class="flex items-center gap-2">
+        <div class="px-3.5 py-2.5 flex items-center justify-between border-b border-[#E6CCB2] shrink-0" style="background: linear-gradient(90deg, #E8FBF2 0%, #FFF7EB 100%);">
+          <div class="flex items-center gap-2 flex-wrap">
             <span id="dev-ico-header" class="flex items-center"></span>
-            <div>
-              <div class="flex items-center gap-2 flex-wrap">
-                <span class="diary-modal-title">꽃밭 빈터 새 랜드마크 착공</span>
-                <span id="dev-lot-badge" class="diary-pill-badge"></span>
-              </div>
-              <p class="diary-muted-text">태양광 발전소, 딸기 농장, 벚꽃 힐링 공원, 크림 베이커리, 신규 2호관 중 선택하세요.</p>
-            </div>
+            <span class="diary-modal-title">신규 부지 착공</span>
+            <span id="dev-lot-badge" class="diary-pill-badge"></span>
           </div>
           <button id="btn-close-dev-modal" class="btn-close-round">✕</button>
         </div>
-        <div id="dev-cards-grid" class="p-3.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5 overflow-y-auto custom-scroll"></div>
+        <div id="dev-cards-grid" class="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2.5 overflow-y-auto custom-scroll"></div>
       </div>
     </div>
   </div>
 
-  <!-- ==================== 8. 5종 세대 맞춤 입주 계약 다이어리 모달 ==================== -->
+  <!-- ==================== 8. 세대 입주 계약 도감 모달 (무줄글 게이지·칩 카드) ==================== -->
   <div id="recruit-modal" class="hidden fixed inset-0 z-50 pastel-modal-backdrop flex items-center justify-center p-3">
-    <div class="cozy-planner-shell w-full max-w-3xl max-h-[88vh]">
+    <div class="cozy-planner-shell w-full max-w-2xl max-h-[86vh]">
       <div class="cozy-planner-inner">
-        <div class="px-4 py-2.5 flex items-center justify-between border-b border-[#E6CCB2] shrink-0" style="background: linear-gradient(90deg, #EAF4FF 0%, #FFF1F4 100%);">
-          <div class="flex items-center gap-2">
+        <div class="px-3.5 py-2.5 flex items-center justify-between border-b border-[#E6CCB2] shrink-0" style="background: linear-gradient(90deg, #EAF4FF 0%, #FFF1F4 100%);">
+          <div class="flex items-center gap-2 flex-wrap">
             <span id="rec-ico-header" class="flex items-center"></span>
-            <div>
-              <div class="flex items-center gap-2 flex-wrap">
-                <span class="diary-modal-title">세대별 맞춤 입주 계약서</span>
-                <span id="rec-room-title" class="diary-pill-badge"></span>
-              </div>
-              <p class="diary-muted-text">층간소음(4인가족/대학생), 쓰레기방 주의(히키코모리), 엘리베이터 선호(노부부) 상성을 확인하세요!</p>
-            </div>
+            <span class="diary-modal-title">입주 세대 선택</span>
+            <span id="rec-room-title" class="diary-pill-badge"></span>
           </div>
-          <button id="btn-close-recruit" class="btn-close-round">✕</button>
+          <div class="flex items-center gap-1.5">
+            <button id="btn-refresh-rec" class="jelly-action-btn pill btn-gold-lip !py-1 !px-2.5">후보 교체 10만</button>
+            <button id="btn-close-recruit" class="btn-close-round">✕</button>
+          </div>
         </div>
-        <div id="rec-cards-grid" class="p-3.5 grid grid-cols-1 sm:grid-cols-3 gap-2.5 overflow-y-auto custom-scroll"></div>
-        <div class="px-4 py-2.5 bg-[#FDF5EA] border-t border-[#E6CCB2] flex flex-wrap items-center justify-between gap-2 shrink-0">
-          <span class="diary-muted-text">히키코모리는 높은 월세를 칼입금하지만 주기적인 특수 청소 케어가 필요합니다.</span>
-          <button id="btn-refresh-rec" class="jelly-action-btn pill btn-gold-lip">다른 입주자 탐색 (10만)</button>
-        </div>
+        <div id="rec-cards-grid" class="p-3 grid grid-cols-1 sm:grid-cols-3 gap-2.5 overflow-y-auto custom-scroll"></div>
       </div>
     </div>
   </div>
 
-  <!-- ==================== 9. 내 맘대로 빌딩 이름 작명(Rename) 미니 다이어리 모달 ==================== -->
+  <!-- ==================== 9. 빌딩 이름 현판 각인 미니 모달 ==================== -->
   <div id="rename-building-modal" class="hidden fixed inset-0 z-[58] pastel-modal-backdrop flex items-center justify-center p-3">
-    <div class="cozy-planner-shell w-full max-w-md">
-      <div class="cozy-planner-inner p-4 space-y-3">
+    <div class="cozy-planner-shell w-full max-w-sm">
+      <div class="cozy-planner-inner p-3.5 space-y-2.5">
         <div class="flex items-center justify-between border-b border-[#E6CCB2] pb-2">
           <div class="flex items-center gap-2">
             <span id="rename-ico-crown" class="flex items-center"></span>
-            <span class="diary-modal-title">빌딩 고유 현판 이름 변경</span>
+            <span class="diary-modal-title">빌딩 현판 이름 변경</span>
           </div>
           <button id="btn-close-rename" class="btn-close-round">✕</button>
         </div>
 
-        <p class="diary-muted-text">원하는 빌딩 이름을 입력하면 <b>3D 옥상 스카이 사인, 1층 정문 명패, 리본 배지</b>에 즉시 새겨집니다!</p>
-
-        <input id="input-building-name" type="text" maxlength="16" placeholder="예: 진형 타워, 럭키 팰리스" class="diary-rename-input" />
+        <input id="input-building-name" type="text" maxlength="16" placeholder="예: 럭키 팰리스, 진형 타워" class="diary-rename-input" />
 
         <div id="rename-presets-row" class="flex flex-wrap gap-1.5"></div>
 
         <div class="flex justify-end gap-2 pt-1">
-          <button id="btn-cancel-rename" class="diary-pill-badge cursor-pointer !px-3.5 !py-1.5">취소</button>
-          <button id="btn-confirm-rename" class="jelly-action-btn btn-coral-lip px-4 py-2">
+          <button id="btn-cancel-rename" class="diary-pill-badge cursor-pointer !px-3 !py-1.5">취소</button>
+          <button id="btn-confirm-rename" class="jelly-action-btn btn-coral-lip px-3.5 py-1.5">
             <span id="rename-ico-pen" class="flex items-center"></span>
-            <span>옥상 현판 즉시 교체!</span>
+            <span>현판 새기기</span>
           </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ==================== 10. 강제 퇴거 스탬프 연출 오버레이 ==================== -->
+  <!-- ==================== 10. 퇴거 도장 스탬프 연출 오버레이 ==================== -->
   <div id="eviction-stamp-overlay" class="hidden fixed inset-0 z-[60] pointer-events-none">
-    <div id="eviction-stamp-box" class="absolute left-1/2 top-1/2 diary-card !border-4 !border-[#E11D48] !px-6 !py-3.5 flex items-center gap-3 font-title text-xl sm:text-3xl text-[#BE123C]">
+    <div id="eviction-stamp-box" class="absolute left-1/2 top-1/2 diary-card !border-4 !border-[#E11D48] !px-5 !py-3 flex items-center gap-2.5 font-title text-lg sm:text-2xl text-[#BE123C]">
       <span id="stamp-ico-slot" class="flex items-center"></span>
-      <span>쾅! 퇴거 명령 집행</span>
+      <span>퇴거 집행 완료</span>
     </div>
   </div>
 
