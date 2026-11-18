@@ -1,13 +1,12 @@
 // =========================================================
-// 【갓물주 라이프 3D: 미니미 타운 — 대형 건축 & 4종 입체 평면도 & 가구 카탈로그 에디션】 (data.js)
-// - 줄글 설명(Prose) 0%: 아이콘 + 키워드 칩 + 게이지 수치 중심 구조화
+// 【갓물주 라이프 3D: 미니미 타운 — 부티크 상점 거리 · 단독 상가 · 슈퍼카 드라이브 에디션】 (data.js)
 // - 4가지 입체 평면도: 원룸(studio) / 투룸(tworoom) / 쓰리룸(threeroom) / 복층 로프트(loft)
-// - 가구·시설 종류별 선택 카탈로그(FURNITURE_CATALOG): 침대 4종 · 소파 4종 · 가전 4종 · 벽지/바닥/복층계단 4종
+// - 가구 카탈로그 16종 + 단독 상가 3종(빵집·로스터리 카페·플라워샵) & 매장 업그레이드 3종
+// - 건물주 슈퍼카 차고 컬렉션 4종(베스파 스쿠터 · 빈티지 세단 · 페라리 레드 오픈카 · 골드 리무진)
 // =========================================================
 
 let svgUidSeq = 0;
 
-// 1. HUD, 키워드 배지, 스탯 게이지, 가구 탭용 커스텀 벡터 아이콘 생성기
 function createCustomSVGIcon(name, size = 24) {
   const uid = `ico_${name}_${++svgUidSeq}`;
   const commonDefs = `
@@ -47,9 +46,10 @@ function createCustomSVGIcon(name, size = 24) {
         <stop offset="0%" stop-color="#4F6BED"/>
         <stop offset="100%" stop-color="#1E3A8A"/>
       </linearGradient>
-      <linearGradient id="${uid}_lav" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stop-color="#E9D5FF"/>
-        <stop offset="100%" stop-color="#9333EA"/>
+      <linearGradient id="${uid}_redcar" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#FF6B6B"/>
+        <stop offset="55%" stop-color="#EF233C"/>
+        <stop offset="100%" stop-color="#9B0014"/>
       </linearGradient>
     </defs>
   `;
@@ -67,6 +67,35 @@ function createCustomSVGIcon(name, size = 24) {
           <circle cx="20.5" cy="14.5" r="8.2" fill="url(#${uid}_gold)" stroke="#43342E" stroke-width="1.5"/>
           <circle cx="20.5" cy="14.5" r="5.6" fill="none" stroke="#FFFBEB" stroke-width="1.2" opacity="0.85"/>
           <path d="M18.2 12.2L19.5 17L20.5 13.6L21.5 17L22.8 12.2" fill="none" stroke="#78350F" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>`;
+      break;
+
+    case 'supercar_ico':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <path d="M3.5 19.5L6.5 14.5L13 11.5H21L26.5 15L29 18.5V22H3.5V19.5Z" fill="url(#${uid}_redcar)" stroke="#43342E" stroke-width="1.5" stroke-linejoin="round"/>
+          <path d="M13 12.2L10.2 15.2H20.8L19 12.2H13Z" fill="url(#${uid}_sky)" stroke="#43342E" stroke-width="1.1"/>
+          <circle cx="9.2" cy="22" r="3.6" fill="#1E293B" stroke="#43342E" stroke-width="1.3"/>
+          <circle cx="9.2" cy="22" r="1.6" fill="url(#${uid}_gold)"/>
+          <circle cx="23.2" cy="22" r="3.6" fill="#1E293B" stroke="#43342E" stroke-width="1.3"/>
+          <circle cx="23.2" cy="22" r="1.6" fill="url(#${uid}_gold)"/>
+        </g>`;
+      break;
+
+    case 'horn_ico':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <path d="M6 14H11L21 8V24L11 18H6V14Z" fill="url(#${uid}_gold)" stroke="#43342E" stroke-width="1.5" stroke-linejoin="round"/>
+          <circle cx="6" cy="16" r="2.8" fill="url(#${uid}_coral)" stroke="#43342E" stroke-width="1.3"/>
+          <path d="M24 11.5C26.5 13.8 26.5 18.2 24 20.5M26.8 8.8C30.2 12.5 30.2 19.5 26.8 23.2" fill="none" stroke="#E11D48" stroke-width="2.1" stroke-linecap="round"/>
+        </g>`;
+      break;
+
+    case 'bakery_ico':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <path d="M6 20C6 13.5 10.5 10 16 10C21.5 10 26 13.5 26 20C26 22.5 23.5 24 21 23C19 22 17.5 22 16 22C14.5 22 13 22 11 23C8.5 24 6 22.5 6 20Z" fill="url(#${uid}_gold)" stroke="#43342E" stroke-width="1.5"/>
+          <path d="M12 11.5Q13.5 16 12 21M16 10.5V21.5M20 11.5Q18.5 16 20 21" fill="none" stroke="#92400E" stroke-width="1.4" stroke-linecap="round"/>
         </g>`;
       break;
 
@@ -393,13 +422,10 @@ function createCustomSVGIcon(name, size = 24) {
   return `<svg width="${size}" height="${size}" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="inline-block shrink-0 select-none">${commonDefs}${body}</svg>`;
 }
 
-// =========================================================
-// 2. 가구 카탈로그 전용 일러스트 아이콘 생성기 (createFurnitureArtworkSVG)
-// =========================================================
+// 가구 & 상가설비 & 슈퍼카 일러스트 SVG 아이콘
 function createFurnitureArtworkSVG(itemId, size = 40) {
   let art = '';
   switch (itemId) {
-    // 침대 4종
     case 'bed_iron':
       art = `
         <rect x="6" y="11" width="3" height="22" rx="1.5" fill="#475569" stroke="#3E2C23" stroke-width="1.5"/>
@@ -430,8 +456,6 @@ function createFurnitureArtworkSVG(itemId, size = 40) {
         <rect x="9" y="25" width="26" height="6" rx="2" fill="#34D399" stroke="#3E2C23" stroke-width="1.4"/>
         <line x1="29" y1="12" x2="29" y2="33" stroke="#FDE047" stroke-width="2.2"/>`;
       break;
-
-    // 소파 4종
     case 'sofa_beanbag':
       art = `
         <ellipse cx="22" cy="25" rx="13" ry="9.5" fill="#FACC15" stroke="#3E2C23" stroke-width="1.7"/>
@@ -456,8 +480,6 @@ function createFurnitureArtworkSVG(itemId, size = 40) {
         <rect x="11" y="21" width="22" height="5.5" rx="2.5" fill="#F59E0B" stroke="#3E2C23" stroke-width="1.5"/>
         <path d="M8 31Q22 37 36 31" fill="none" stroke="#78350F" stroke-width="3" stroke-linecap="round"/>`;
       break;
-
-    // 가전/특수시설 4종
     case 'app_fan':
       art = `
         <circle cx="22" cy="15" r="8.5" fill="#E0F2FE" stroke="#3E2C23" stroke-width="1.6"/>
@@ -484,8 +506,6 @@ function createFurnitureArtworkSVG(itemId, size = 40) {
         <polygon points="22,9 38,18 22,27 6,18" fill="#BAE6FD" stroke="#3E2C23" stroke-width="1.6" stroke-linejoin="round"/>
         <polygon points="22,14 38,23 22,32 6,23" fill="#34D399" stroke="#3E2C23" stroke-width="1.6" stroke-linejoin="round"/>`;
       break;
-
-    // 벽지/바닥/복층계단 4종
     case 'dec_peach':
       art = `
         <rect x="7" y="7" width="30" height="16" rx="3" fill="#F4CCB6" stroke="#3E2C23" stroke-width="1.5"/>
@@ -504,7 +524,52 @@ function createFurnitureArtworkSVG(itemId, size = 40) {
         <rect x="7" y="23" width="30" height="14" rx="3" fill="#FAF0E1" stroke="#3E2C23" stroke-width="1.5"/>
         <path d="M24 23H35V12H29V18H24V23Z" fill="#FACC15" stroke="#3E2C23" stroke-width="1.2"/>`;
       break;
-    case 'dec_lavender':
+    case 'upg_oven':
+      art = `
+        <rect x="8" y="9" width="28" height="26" rx="5" fill="#B45309" stroke="#3E2C23" stroke-width="1.6"/>
+        <path d="M13 24C13 17 31 17 31 24Z" fill="#EF4444" stroke="#3E2C23" stroke-width="1.4"/>
+        <circle cx="22" cy="22" r="3" fill="#FDE047"/>`;
+      break;
+    case 'upg_terrace':
+      art = `
+        <path d="M7 19L22 8L37 19Z" fill="#10B981" stroke="#3E2C23" stroke-width="1.6" stroke-linejoin="round"/>
+        <line x1="22" y1="19" x2="22" y2="34" stroke="#78350F" stroke-width="2.2"/>
+        <ellipse cx="22" cy="29" rx="10" ry="3" fill="#FFFDF7" stroke="#3E2C23" stroke-width="1.4"/>`;
+      break;
+    case 'upg_crate':
+      art = `
+        <rect x="7" y="19" width="30" height="15" rx="2.5" fill="#D97706" stroke="#3E2C23" stroke-width="1.6"/>
+        <circle cx="14" cy="16" r="4.5" fill="#EF4444" stroke="#3E2C23" stroke-width="1.3"/>
+        <circle cx="22" cy="15" r="4.5" fill="#F97316" stroke="#3E2C23" stroke-width="1.3"/>
+        <circle cx="30" cy="16" r="4.5" fill="#EF4444" stroke="#3E2C23" stroke-width="1.3"/>`;
+      break;
+    case 'car_scooter':
+      art = `
+        <path d="M11 26H26L29 15H24L22 21H15L13 16H9L11 26Z" fill="#34D399" stroke="#3E2C23" stroke-width="1.6" stroke-linejoin="round"/>
+        <circle cx="12" cy="28" r="4.2" fill="#334155" stroke="#3E2C23" stroke-width="1.4"/>
+        <circle cx="28" cy="28" r="4.2" fill="#334155" stroke="#3E2C23" stroke-width="1.4"/>`;
+      break;
+    case 'car_sedan':
+      art = `
+        <path d="M6 25L9 16H27L34 21L38 23V28H6V25Z" fill="#8B5A2B" stroke="#3E2C23" stroke-width="1.6" stroke-linejoin="round"/>
+        <rect x="11" y="17.5" width="14" height="5" rx="1.5" fill="#BAE6FD" stroke="#3E2C23" stroke-width="1.2"/>
+        <circle cx="13" cy="28.5" r="4.2" fill="#1E293B" stroke="#FFFFFF" stroke-width="1.5"/>
+        <circle cx="31" cy="28.5" r="4.2" fill="#1E293B" stroke="#FFFFFF" stroke-width="1.5"/>`;
+      break;
+    case 'car_supercar':
+      art = `
+        <path d="M5 25L10 18H26L36 22L39 25V28.5H5V25Z" fill="#EF233C" stroke="#3E2C23" stroke-width="1.6" stroke-linejoin="round"/>
+        <path d="M5 20L9 23" stroke="#3E2C23" stroke-width="2.4" stroke-linecap="round"/>
+        <circle cx="13" cy="28.5" r="4.4" fill="#1E293B" stroke="#FACC15" stroke-width="1.5"/>
+        <circle cx="31" cy="28.5" r="4.4" fill="#1E293B" stroke="#FACC15" stroke-width="1.5"/>`;
+      break;
+    case 'car_limo':
+      art = `
+        <path d="M3 24L7 17H33L39 22V28H3V24Z" fill="#FFFBEB" stroke="#D97706" stroke-width="1.8" stroke-linejoin="round"/>
+        <rect x="9" y="18.5" width="21" height="4.2" rx="1" fill="#1E293B"/>
+        <circle cx="10" cy="28.5" r="4" fill="#1E293B" stroke="#FACC15" stroke-width="1.5"/>
+        <circle cx="33" cy="28.5" r="4" fill="#1E293B" stroke="#FACC15" stroke-width="1.5"/>`;
+      break;
     default:
       art = `
         <rect x="7" y="7" width="30" height="16" rx="3" fill="#C6B7E6" stroke="#3E2C23" stroke-width="1.5"/>
@@ -520,9 +585,6 @@ function createFurnitureArtworkSVG(itemId, size = 40) {
     </svg>`;
 }
 
-// =========================================================
-// 3. 스프링 다이어리 전용 48x48 우표 치비 초상화 & [완료] 도장 에셋
-// =========================================================
 function createNotebookArtworkSVG(kind, size = 48) {
   const uid = `nb_${kind}_${++svgUidSeq}`;
 
@@ -582,8 +644,6 @@ function createNotebookArtworkSVG(kind, size = 48) {
         <line x1="30.8" y1="33.5" x2="33.2" y2="33.5" stroke="#43342E" stroke-width="1.6"/>
         <circle cx="27.2" cy="33.5" r="1.5" fill="#43342E"/>
         <circle cx="36.8" cy="33.5" r="1.5" fill="#43342E"/>
-        <ellipse cx="23" cy="37.2" rx="2.2" ry="1.1" fill="#FF8FA3"/>
-        <ellipse cx="41" cy="37.2" rx="2.2" ry="1.1" fill="#FF8FA3"/>
         <path d="M29.5 38.6Q32 41 34.5 38.6" fill="none" stroke="#43342E" stroke-width="1.6" stroke-linecap="round"/>`;
     } else if (role === 'newlywed') {
       portrait = `
@@ -591,11 +651,8 @@ function createNotebookArtworkSVG(kind, size = 48) {
         <path d="M13 33C13.5 22 32.5 22 33 33C28 28 18 28 13 33Z" fill="#4A3B32" stroke="#43342E" stroke-width="1.6"/>
         <circle cx="41" cy="36" r="9.5" fill="#FFE5D6" stroke="#43342E" stroke-width="1.9"/>
         <path d="M31.5 34C32 24 50 24 50.5 34C46 29 36 29 31.5 34Z" fill="#7C3F1D" stroke="#43342E" stroke-width="1.6"/>
-        <ellipse cx="38" cy="23" rx="4.2" ry="2.6" fill="#FF6B8B" stroke="#43342E" stroke-width="1.3" transform="rotate(-15 38 23)"/>
-        <ellipse cx="45" cy="23" rx="4.2" ry="2.6" fill="#FF6B8B" stroke="#43342E" stroke-width="1.3" transform="rotate(15 45 23)"/>
         <circle cx="20" cy="35.5" r="1.5" fill="#43342E"/><circle cx="26" cy="35.5" r="1.5" fill="#43342E"/>
         <circle cx="38" cy="36.5" r="1.5" fill="#43342E"/><circle cx="44" cy="36.5" r="1.5" fill="#43342E"/>
-        <path d="M21 39Q23 41 25 39M39 40Q41 42 43 40" fill="none" stroke="#43342E" stroke-width="1.4" stroke-linecap="round"/>
         <path d="M28.5 16C28.5 13.5 32 13.5 32 16C32 13.5 35.5 13.5 35.5 16C35.5 19 32 21.5 32 21.5C32 21.5 28.5 19 28.5 16Z" fill="#FF5C7A" stroke="#43342E" stroke-width="1.4"/>`;
     } else if (role === 'family4') {
       portrait = `
@@ -605,30 +662,19 @@ function createNotebookArtworkSVG(kind, size = 48) {
         <path d="M33.2 24C34 16 50 16 50.8 24Z" fill="#8B4513" stroke="#43342E" stroke-width="1.5"/>
         <circle cx="32" cy="42" r="9.6" fill="#FFE5D6" stroke="#43342E" stroke-width="1.9"/>
         <path d="M23 39C24 32 40 32 41 39Z" fill="#38BDF8" stroke="#43342E" stroke-width="1.6"/>
-        <line x1="27" y1="32" x2="37" y2="32" stroke="#FF6B8B" stroke-width="2.4" stroke-linecap="round"/>
-        <circle cx="29" cy="42" r="1.5" fill="#43342E"/><circle cx="35" cy="42" r="1.5" fill="#43342E"/>
-        <path d="M29 45.5Q32 48 35 45.5" fill="none" stroke="#43342E" stroke-width="1.6" stroke-linecap="round"/>`;
+        <circle cx="29" cy="42" r="1.5" fill="#43342E"/><circle cx="35" cy="42" r="1.5" fill="#43342E"/>`;
     } else if (role === 'elderly') {
       portrait = `
         <circle cx="23" cy="36" r="9.8" fill="#FFE5D6" stroke="#43342E" stroke-width="1.8"/>
         <ellipse cx="23" cy="26.5" rx="12.5" ry="3.2" fill="#FCD34D" stroke="#43342E" stroke-width="1.5"/>
-        <path d="M15.5 26.5C16 19.5 30 19.5 30.5 26.5Z" fill="#FDE68A" stroke="#43342E" stroke-width="1.5"/>
         <circle cx="41.5" cy="36" r="9.5" fill="#FFE5D6" stroke="#43342E" stroke-width="1.8"/>
-        <circle cx="42" cy="23.5" r="4.2" fill="#F3F4F6" stroke="#43342E" stroke-width="1.5"/>
-        <path d="M32 34C32.5 25 50.5 25 51 34Z" fill="#F3F4F6" stroke="#43342E" stroke-width="1.5"/>
-        <circle cx="20" cy="36.5" r="2.4" fill="none" stroke="#43342E" stroke-width="1.4"/>
-        <circle cx="26" cy="36.5" r="2.4" fill="none" stroke="#43342E" stroke-width="1.4"/>
-        <path d="M38.5 36Q40 34.2 41.5 36M43 36Q44.5 34.2 46 36" fill="none" stroke="#43342E" stroke-width="1.5" stroke-linecap="round"/>
-        <path d="M39.5 40Q42 42 44.5 40" fill="none" stroke="#43342E" stroke-width="1.4" stroke-linecap="round"/>`;
+        <path d="M32 34C32.5 25 50.5 25 51 34Z" fill="#F3F4F6" stroke="#43342E" stroke-width="1.5"/>`;
     } else if (role === 'hikikomori') {
       portrait = `
         <path d="M13 58C14 42 21 36 32 36C43 36 50 42 51 58Z" fill="#581C87" stroke="#43342E" stroke-width="2"/>
         <circle cx="32" cy="33" r="15" fill="#6D28D9" stroke="#43342E" stroke-width="2"/>
         <ellipse cx="32" cy="36" rx="11" ry="9.5" fill="#F5F3FF" stroke="#43342E" stroke-width="1.6"/>
-        <circle cx="27.5" cy="35" r="1.9" fill="#43342E"/>
-        <circle cx="36.5" cy="35" r="1.9" fill="#43342E"/>
-        <path d="M25 37.8Q27.5 39.2 30 37.8M34 37.8Q36.5 39.2 39 37.8" fill="none" stroke="#7E22CE" stroke-width="1.5" stroke-linecap="round"/>
-        <path d="M29.5 41Q32 39.8 34.5 41" fill="none" stroke="#43342E" stroke-width="1.5" stroke-linecap="round"/>`;
+        <circle cx="27.5" cy="35" r="1.9" fill="#43342E"/><circle cx="36.5" cy="35" r="1.9" fill="#43342E"/>`;
     } else if (role === 'streamer') {
       portrait = `
         <path d="M14 58C15 44 22 40 32 40C42 40 49 44 50 58Z" fill="#EC4899" stroke="#43342E" stroke-width="2"/>
@@ -636,18 +682,13 @@ function createNotebookArtworkSVG(kind, size = 48) {
         <polygon points="43,23 39,13 35,22" fill="#38BDF8" stroke="#43342E" stroke-width="1.6"/>
         <circle cx="32" cy="33" r="12" fill="#FFE5D6" stroke="#43342E" stroke-width="2"/>
         <path d="M20 30C21 19 43 19 44 30C38 25 26 25 20 30Z" fill="#9333EA" stroke="#43342E" stroke-width="1.6"/>
-        <circle cx="27.2" cy="34" r="1.8" fill="#43342E"/><circle cx="36.8" cy="34" r="1.8" fill="#43342E"/>
-        <ellipse cx="23" cy="37" rx="2.4" ry="1.2" fill="#FF8FA3"/><ellipse cx="41" cy="37" rx="2.4" ry="1.2" fill="#FF8FA3"/>
-        <path d="M28.5 38.5Q32 42 35.5 38.5" fill="none" stroke="#43342E" stroke-width="1.6" stroke-linecap="round"/>`;
+        <circle cx="27.2" cy="34" r="1.8" fill="#43342E"/><circle cx="36.8" cy="34" r="1.8" fill="#43342E"/>`;
     } else {
       portrait = `
         <path d="M15 58C16 45 23 41 32 41C41 41 48 45 49 58Z" fill="#1E3A8A" stroke="#43342E" stroke-width="2"/>
-        <polygon points="32,42 34.5,48 32,55 29.5,48" fill="#FF5C7A" stroke="#43342E" stroke-width="1.2"/>
         <circle cx="32" cy="33" r="11.5" fill="#FFE5D6" stroke="#43342E" stroke-width="2"/>
         <path d="M19 26C19.5 17 44.5 17 45 26L42.5 29H21.5L19 26Z" fill="#2563EB" stroke="#43342E" stroke-width="1.8"/>
-        <rect x="21" y="26.2" width="22" height="2.6" rx="1.2" fill="#FACC15" stroke="#43342E" stroke-width="1.1"/>
-        <circle cx="27.5" cy="34" r="1.8" fill="#43342E"/><circle cx="36.5" cy="34" r="1.8" fill="#43342E"/>
-        <path d="M29 38.5Q32 41 35 38.5" fill="none" stroke="#43342E" stroke-width="1.6" stroke-linecap="round"/>`;
+        <circle cx="27.5" cy="34" r="1.8" fill="#43342E"/><circle cx="36.5" cy="34" r="1.8" fill="#43342E"/>`;
     }
 
     return `
@@ -669,79 +710,34 @@ function createNotebookArtworkSVG(kind, size = 48) {
   let miniArt = '';
   switch (kind) {
     case 'infra_elevator':
-      miniArt = `
-        <rect x="9" y="6" width="26" height="32" rx="6" fill="#BAE6FD" stroke="#43342E" stroke-width="2"/>
-        <rect x="13" y="12" width="18" height="22" rx="3" fill="#FFFDF9" stroke="#43342E" stroke-width="1.6"/>
-        <line x1="22" y1="12" x2="22" y2="34" stroke="#43342E" stroke-width="1.6"/>
-        <circle cx="19" cy="9" r="1.5" fill="#FACC15"/><circle cx="25" cy="9" r="1.5" fill="#FF6B8B"/>`;
+      miniArt = `<rect x="9" y="6" width="26" height="32" rx="6" fill="#BAE6FD" stroke="#43342E" stroke-width="2"/><rect x="13" y="12" width="18" height="22" rx="3" fill="#FFFDF9" stroke="#43342E" stroke-width="1.6"/><line x1="22" y1="12" x2="22" y2="34" stroke="#43342E" stroke-width="1.6"/>`;
       break;
     case 'infra_recycling':
-      miniArt = `
-        <rect x="7" y="16" width="9" height="18" rx="3" fill="#60A5FA" stroke="#43342E" stroke-width="1.8"/>
-        <rect x="17.5" y="16" width="9" height="18" rx="3" fill="#34D399" stroke="#43342E" stroke-width="1.8"/>
-        <rect x="28" y="16" width="9" height="18" rx="3" fill="#FBBF24" stroke="#43342E" stroke-width="1.8"/>
-        <path d="M5 13H39L36 9H8L5 13Z" fill="#A7F3D0" stroke="#43342E" stroke-width="1.8" stroke-linejoin="round"/>`;
+      miniArt = `<rect x="7" y="16" width="9" height="18" rx="3" fill="#60A5FA" stroke="#43342E" stroke-width="1.8"/><rect x="17.5" y="16" width="9" height="18" rx="3" fill="#34D399" stroke="#43342E" stroke-width="1.8"/><rect x="28" y="16" width="9" height="18" rx="3" fill="#FBBF24" stroke="#43342E" stroke-width="1.8"/>`;
       break;
     case 'infra_parcel':
-      miniArt = `
-        <rect x="9" y="7" width="26" height="30" rx="5" fill="#FF8FA3" stroke="#43342E" stroke-width="2"/>
-        <rect x="13" y="11" width="8" height="7" rx="1.5" fill="#FFFDF9" stroke="#43342E" stroke-width="1.4"/>
-        <rect x="23" y="11" width="8" height="7" rx="1.5" fill="#BAE6FD" stroke="#43342E" stroke-width="1.4"/>
-        <rect x="13" y="21" width="18" height="11" rx="2" fill="#FDE68A" stroke="#43342E" stroke-width="1.5"/>`;
+      miniArt = `<rect x="9" y="7" width="26" height="30" rx="5" fill="#FF8FA3" stroke="#43342E" stroke-width="2"/><rect x="13" y="21" width="18" height="11" rx="2" fill="#FDE68A" stroke="#43342E" stroke-width="1.5"/>`;
       break;
     case 'infra_rooftop':
-      miniArt = `
-        <rect x="7" y="25" width="30" height="10" rx="4" fill="#E6A15C" stroke="#43342E" stroke-width="1.9"/>
-        <circle cx="16" cy="18" r="7" fill="#4ADE80" stroke="#43342E" stroke-width="1.8"/>
-        <circle cx="28" cy="17" r="7.5" fill="#FFB3C6" stroke="#43342E" stroke-width="1.8"/>
-        <circle cx="22" cy="13" r="6" fill="#86EFAC" stroke="#43342E" stroke-width="1.8"/>`;
+      miniArt = `<rect x="7" y="25" width="30" height="10" rx="4" fill="#E6A15C" stroke="#43342E" stroke-width="1.9"/><circle cx="16" cy="18" r="7" fill="#4ADE80" stroke="#43342E" stroke-width="1.8"/><circle cx="28" cy="17" r="7.5" fill="#FFB3C6" stroke="#43342E" stroke-width="1.8"/>`;
       break;
     case 'shop_mart':
-      miniArt = `
-        <rect x="7" y="15" width="30" height="21" rx="4" fill="#FFFDF9" stroke="#43342E" stroke-width="2"/>
-        <path d="M5 16L9 9H35L39 16Z" fill="#E05A47" stroke="#43342E" stroke-width="1.9" stroke-linejoin="round"/>
-        <rect x="12" y="22" width="9" height="14" rx="2" fill="#BAE6FD" stroke="#43342E" stroke-width="1.5"/>
-        <rect x="24" y="22" width="8" height="8" rx="2" fill="#FDE68A" stroke="#43342E" stroke-width="1.5"/>`;
+      miniArt = `<rect x="7" y="15" width="30" height="21" rx="4" fill="#FFFDF9" stroke="#43342E" stroke-width="2"/><path d="M5 16L9 9H35L39 16Z" fill="#E05A47" stroke="#43342E" stroke-width="1.9"/>`;
       break;
     case 'shop_wash':
-      miniArt = `
-        <rect x="9" y="8" width="26" height="29" rx="5" fill="#FFFDF9" stroke="#43342E" stroke-width="2"/>
-        <rect x="9" y="8" width="26" height="7" rx="3" fill="#60A5FA" stroke="#43342E" stroke-width="1.8"/>
-        <circle cx="22" cy="25" r="7.5" fill="#BAE6FD" stroke="#43342E" stroke-width="1.8"/>
-        <path d="M16 25Q19 22 22 25T28 25" fill="none" stroke="#0284C7" stroke-width="2"/>`;
+      miniArt = `<rect x="9" y="8" width="26" height="29" rx="5" fill="#FFFDF9" stroke="#43342E" stroke-width="2"/><circle cx="22" cy="24" r="7.5" fill="#BAE6FD" stroke="#43342E" stroke-width="1.8"/>`;
       break;
     case 'dev_solar':
-      miniArt = `
-        <circle cx="31" cy="11" r="4.8" fill="#FACC15" stroke="#43342E" stroke-width="1.5"/>
-        <polygon points="8,18 27,15 33,30 6,33" fill="#3B82F6" stroke="#43342E" stroke-width="1.8" stroke-linejoin="round"/>
-        <line x1="18" y1="16.5" x2="19.5" y2="31.5" stroke="#BAE6FD" stroke-width="1.5"/>
-        <line x1="7" y1="25.5" x2="30" y2="22.5" stroke="#BAE6FD" stroke-width="1.5"/>`;
+      miniArt = `<circle cx="31" cy="11" r="4.8" fill="#FACC15" stroke="#43342E" stroke-width="1.5"/><polygon points="8,18 27,15 33,30 6,33" fill="#3B82F6" stroke="#43342E" stroke-width="1.8"/>`;
       break;
     case 'dev_farm':
-      miniArt = `
-        <rect x="7" y="26" width="30" height="10" rx="3" fill="#C6834B" stroke="#43342E" stroke-width="1.8"/>
-        <path d="M22 27C16 27 12 20 12 14.5C12 10.5 16 9 22 9C28 9 32 10.5 32 14.5C32 20 28 27 22 27Z" fill="#FF6B8B" stroke="#43342E" stroke-width="1.8"/>
-        <path d="M15 10C18 6.5 21 7 22 9.5C23 7 26 6.5 29 10Z" fill="#34D399" stroke="#43342E" stroke-width="1.4"/>`;
+      miniArt = `<rect x="7" y="26" width="30" height="10" rx="3" fill="#C6834B" stroke="#43342E" stroke-width="1.8"/><circle cx="22" cy="18" r="8" fill="#FF6B8B" stroke="#43342E" stroke-width="1.8"/>`;
       break;
     case 'dev_park':
-      miniArt = `
-        <rect x="19" y="24" width="6" height="12" rx="2" fill="#8B5630" stroke="#43342E" stroke-width="1.6"/>
-        <circle cx="22" cy="16" r="10" fill="#FFB3C6" stroke="#43342E" stroke-width="1.8"/>
-        <circle cx="15" cy="19" r="6.5" fill="#FFC2D6" stroke="#43342E" stroke-width="1.5"/>
-        <circle cx="29" cy="19" r="6.5" fill="#FFC2D6" stroke="#43342E" stroke-width="1.5"/>`;
-      break;
-    case 'dev_bakery':
-      miniArt = `
-        <path d="M11 26C11 19 16 15 22 15C28 15 33 19 33 26Z" fill="#FBBF24" stroke="#43342E" stroke-width="1.8"/>
-        <rect x="12" y="24" width="20" height="11" rx="4" fill="#FFFDF9" stroke="#43342E" stroke-width="1.8"/>
-        <path d="M32 26H36C37.5 26 37.5 31 36 31H32" fill="none" stroke="#43342E" stroke-width="1.8"/>
-        <path d="M18 12Q19.5 9 18 6M25 12Q26.5 9 25 6" fill="none" stroke="#D97706" stroke-width="1.6" stroke-linecap="round"/>`;
+      miniArt = `<rect x="19" y="24" width="6" height="12" rx="2" fill="#8B5630" stroke="#43342E" stroke-width="1.6"/><circle cx="22" cy="16" r="10" fill="#FFB3C6" stroke="#43342E" stroke-width="1.8"/>`;
       break;
     default:
-      miniArt = `
-        <rect x="8" y="16" width="28" height="19" rx="4" fill="#FFFDF9" stroke="#43342E" stroke-width="2"/>
-        <path d="M5 18L22 7L39 18Z" fill="#E05A47" stroke="#43342E" stroke-width="2" stroke-linejoin="round"/>
-        <rect x="19" y="23" width="6" height="12" rx="2" fill="#E6A15C" stroke="#43342E" stroke-width="1.5"/>`;
+      miniArt = `<path d="M11 26C11 19 16 15 22 15C28 15 33 19 33 26Z" fill="#FBBF24" stroke="#43342E" stroke-width="1.8"/><rect x="12" y="24" width="20" height="11" rx="4" fill="#FFFDF9" stroke="#43342E" stroke-width="1.8"/>`;
       break;
   }
 
@@ -756,12 +752,12 @@ function createHouseholdAvatarSVG(type, size = 48) {
   return createNotebookArtworkSVG(`avatar_${type}`, size);
 }
 
-// --------------------- 핵심 게임 밸런스 및 대형 건축 스케일 ---------------------
+// --------------------- 핵심 게임 밸런스 및 타운 거리 스케일 ---------------------
 const GAME_BALANCE = {
   buildingWidth: 24.4,
   buildingDepth: 8.2,
   roomWidth: 9.0,
-  roomDepth: 7.6,
+  roomDepth: 7.5,
   wallHeight: 4.25,
   evictionGraceSec: 32,
   managerHireFee: 50,
@@ -782,14 +778,181 @@ const BUILDING_NAME_PRESETS = [
   '햇살 캐슬'
 ];
 
-// 대형 건축 스케일에 맞춘 여유로운 플로팅 아일랜드 부지 좌표
+// 순환 아스팔트 도로 외곽에 여유롭게 배치된 개발 부지 좌표 (겹침 0%)
 const INITIAL_ISLAND_LOTS = [
-  { lotId: 'lot_main', name: '수변 1번지', x: -4.2, z: -5.4, landPrice: 0, owned: true, devType: 'mixed_1', title: '해피 미니미 타운 1차' },
-  { lotId: 'lot_solar', name: '햇살언덕 2번지', x: -26.8, z: -4.6, landPrice: 320, owned: false, devType: null, title: null },
-  { lotId: 'lot_farm', name: '시냇가 3번지', x: -20.2, z: 14.2, landPrice: 420, owned: false, devType: null, title: null },
-  { lotId: 'lot_east', name: '아치교 4번지', x: 26.8, z: -5.0, landPrice: 680, owned: false, devType: null, title: null },
-  { lotId: 'lot_south_e', name: '벚꽃변 5번지', x: 24.5, z: 13.8, landPrice: 1200, owned: false, devType: null, title: null },
-  { lotId: 'lot_north', name: '전망대 6번지', x: -3.8, z: -22.8, landPrice: 2400, owned: false, devType: null, title: null }
+  { lotId: 'lot_main', name: '수변 1번지', x: -4.2, z: -6.4, landPrice: 0, owned: true, devType: 'mixed_1', title: '해피 미니미 타운 1차' },
+  { lotId: 'lot_solar', name: '햇살언덕 2번지', x: -43.5, z: 4.5, landPrice: 320, owned: false, devType: null, title: null },
+  { lotId: 'lot_farm', name: '시냇가 3번지', x: -42.5, z: 21.5, landPrice: 420, owned: false, devType: null, title: null },
+  { lotId: 'lot_east', name: '아치교 4번지', x: 45.0, z: 5.5, landPrice: 680, owned: false, devType: null, title: null },
+  { lotId: 'lot_south_e', name: '벚꽃변 5번지', x: 44.0, z: 22.8, landPrice: 1200, owned: false, devType: null, title: null },
+  { lotId: 'lot_north', name: '전망대 6번지', x: -4.0, z: -24.5, landPrice: 2400, owned: false, devType: null, title: null }
+];
+
+// --------------------- [1단계 3 & 4] 단독 상가 3종 & 매장 업그레이드 카탈로그 ---------------------
+const STANDALONE_SHOPS_TEMPLATE = [
+  {
+    shopId: 'shop_bakery',
+    kind: 'bakery',
+    name: '바게트 하우스',
+    engTitle: 'PATISSERIE',
+    subCopy: '수제 케이크 & 프랑스 바게트',
+    emoji: '🥐',
+    x: -16.2,
+    z: 15.2,
+    w: 9.2,
+    d: 5.8,
+    h: 5.0,
+    buyCost: 360,
+    baseVisitRevenue: 18,
+    passiveCycleProfit: 34,
+    staffRole: 'baker',
+    staffName: '파티시에 피에르',
+    awningStyle: 'coral',
+    roofColor: 0xE05A47
+  },
+  {
+    shopId: 'shop_roastery',
+    kind: 'roastery',
+    name: '미니미 로스터스',
+    engTitle: 'OAK & BARREL',
+    subCopy: '유기농 그로서리 & 스페셜티 로스터리',
+    emoji: '🍎',
+    x: 16.2,
+    z: 15.2,
+    w: 9.2,
+    d: 5.8,
+    h: 5.0,
+    buyCost: 420,
+    baseVisitRevenue: 20,
+    passiveCycleProfit: 38,
+    staffRole: 'barista',
+    staffName: '바리스타 루카스',
+    awningStyle: 'mint',
+    roofColor: 0x2D6A4F
+  },
+  {
+    shopId: 'shop_flower',
+    kind: 'flower',
+    name: '플로레스 앤 코',
+    engTitle: 'FLORES & CO.',
+    subCopy: '유럽풍 생화 & 빈티지 부티크',
+    emoji: '💐',
+    x: 23.0,
+    z: -3.6,
+    w: 8.2,
+    d: 5.6,
+    h: 4.8,
+    buyCost: 320,
+    baseVisitRevenue: 18,
+    passiveCycleProfit: 30,
+    staffRole: 'florist',
+    staffName: '플로리스트 클레어',
+    awningStyle: 'lavender',
+    roofColor: 0x6D597A
+  }
+];
+
+const SHOP_UPGRADE_CATALOG = [
+  {
+    id: 'upg_oven',
+    name: '🔥 프리미엄 오븐/커피머신 교체',
+    cost: 120,
+    visitBonus: 6,
+    cycleBonus: 18,
+    chip: '객단가 +6만 · 주기 +18만',
+    tone: 'coral',
+    reaction: '프리미엄 설비 덕분에 빵과 커피 풍미가 2배 깊어졌어요!'
+  },
+  {
+    id: 'upg_terrace',
+    name: '⛱️ 야외 파라솔 테라스 확장',
+    cost: 140,
+    visitBonus: 5,
+    cycleBonus: 22,
+    chip: '야외석 확장 · 주기 +22만',
+    tone: 'mint',
+    reaction: '초록 파라솔 야외 테라스 자리가 늘어나 손님들이 줄을 서요!'
+  },
+  {
+    id: 'upg_crate',
+    name: '🍎 유기농 과일 매대 추가',
+    cost: 95,
+    visitBonus: 4,
+    cycleBonus: 15,
+    chip: '과일 매대 · 주기 +15만',
+    tone: 'gold',
+    reaction: '싱싱한 사과와 오렌지 나무 상자 진열대가 거리를 화사하게 만들어요!'
+  }
+];
+
+// --------------------- [1단계 5] 건물주 슈퍼카 차고 컬렉션 4종 ---------------------
+const CAR_CATALOG = [
+  {
+    id: 'car_scooter',
+    name: '민트 베스파 스쿠터',
+    emoji: '🛵',
+    cost: 0,
+    maxSpeed: 14.5,
+    rentBonusPct: 0,
+    happyBonus: 0,
+    driveTipPct: 20,
+    chip: '기본 보유 · 기동성 최고',
+    tone: 'mint',
+    cheerQuotes: [
+      '우와~ 건물주님 민트 베스파 스쿠터 너무 귀여워요!',
+      '부릉부릉~ 상큼한 민트 스쿠터 지나간다!'
+    ]
+  },
+  {
+    id: 'car_sedan',
+    name: '클래식 브라운 빈티지 세단',
+    emoji: '🚗',
+    cost: 240,
+    maxSpeed: 17.5,
+    rentBonusPct: 10,
+    happyBonus: 5,
+    driveTipPct: 25,
+    chip: '월세 +10% · 레트로 감성',
+    tone: 'gold',
+    cheerQuotes: [
+      '클래식 빈티지 세단 품격이 장난 아니네요!!',
+      '유럽 영화 속 주인공 차 같아요~ 멋지다!'
+    ]
+  },
+  {
+    id: 'car_supercar',
+    name: '페라리 레드 오픈 슈퍼카',
+    emoji: '🏎️',
+    cost: 520,
+    maxSpeed: 24.0,
+    rentBonusPct: 25,
+    happyBonus: 12,
+    driveTipPct: 30,
+    chip: '행복·월세 +25% · 오픈 스포츠카',
+    tone: 'coral',
+    cheerQuotes: [
+      '우와! 우리 건물주님 슈퍼카 뽑으셨네!! 멋지다~! ❤️',
+      '부아앙~ 레드 오픈카 배기음 소리 대박!! 갓물주님 최고!',
+      '빨간 컨버터블 슈퍼카 포스 미쳤다!! 😍'
+    ]
+  },
+  {
+    id: 'car_limo',
+    name: '골드 크라운 롱바디 리무진',
+    emoji: '🚘',
+    cost: 950,
+    maxSpeed: 20.5,
+    rentBonusPct: 50,
+    happyBonus: 20,
+    driveTipPct: 50,
+    chip: '월세·수금 +50% · 궁극의 상징',
+    tone: 'gold',
+    cheerQuotes: [
+      '헉!! 골드 크라운 롱바디 리무진이라니 진정한 갓물주님!! 👑',
+      '리무진 길이 실화야?! 우리 동네 랜드마크 등극!! ❤️',
+      '번쩍번쩍 황금 리무진 아우라에 눈이 부셔요~!'
+    ]
+  }
 ];
 
 // --------------------- 4가지 입체 평면도 메타 및 호실 템플릿 ---------------------
@@ -832,10 +995,6 @@ const ROOM_TYPE_META = {
   }
 };
 
-// 건물 전체 스케일 약 2배 확장! 층별로 가로 스팬(rw)과 층고(rh)가 다른 5개 입체 호실 구성
-// - 1층 주거(101 원룸 + 102 투룸): 기본 개방!
-// - 2층 주거(201 쓰리룸 패밀리 펜트하우스): 한 층 전체(23.6m) 통합 대형 평수!
-// - 3층 주거(301 고층 스튜디오 + 302 1.8배 층고 복층 로프트 하우스): 복층 다락방 & 원목 실내계단!
 const ROOM_SLOTS_TEMPLATE = [
   {
     subId: '101',
@@ -934,7 +1093,6 @@ const ROOM_SLOTS_TEMPLATE = [
   }
 ];
 
-// --------------------- [핵심 3] 가구·시설 종류별 선택 카탈로그 데이터 ---------------------
 const FURNITURE_CATEGORIES = [
   { key: 'bed', label: '침실/침대', emoji: '🛏️', svgIcon: 'bed_ico' },
   { key: 'sofa', label: '거실/소파', emoji: '🛋️', svgIcon: 'sofa_ico' },
@@ -944,205 +1102,31 @@ const FURNITURE_CATEGORIES = [
 
 const FURNITURE_CATALOG = {
   bed: [
-    {
-      id: 'bed_iron',
-      category: 'bed',
-      name: '심플 철제 침대',
-      cost: 0,
-      rentAdd: 0,
-      happyAdd: 0,
-      chip: '기본 제공',
-      tone: 'sky',
-      reaction: '깔끔한 스카이블루 철제 침대가 실용적이에요!'
-    },
-    {
-      id: 'bed_queen',
-      category: 'bed',
-      name: '코지 원목 퀸침대',
-      cost: 75,
-      rentAdd: 26,
-      happyAdd: 12,
-      chip: '월세 +26만',
-      tone: 'mint',
-      reaction: '따뜻한 원목 퀸침대라 꿀잠 예약이에요~ 최고!'
-    },
-    {
-      id: 'bed_canopy',
-      category: 'bed',
-      name: '핑크 프린세스 캐노피 침대',
-      cost: 145,
-      rentAdd: 52,
-      happyAdd: 20,
-      chip: '월세 +52만',
-      tone: 'coral',
-      reaction: '와아!! 핑크 프린세스 캐노피 침대라니 동화 속 공주님 방 같아요!'
-    },
-    {
-      id: 'bed_bunk',
-      category: 'bed',
-      name: '패밀리 원목 2층 침대',
-      cost: 165,
-      rentAdd: 58,
-      happyAdd: 22,
-      chip: '월세 +58만',
-      tone: 'gold',
-      reaction: '튼튼한 원목 2층 침대 사다리 타기가 너무 신나요!'
-    }
+    { id: 'bed_iron', category: 'bed', name: '심플 철제 침대', cost: 0, rentAdd: 0, happyAdd: 0, chip: '기본 제공', tone: 'sky', reaction: '깔끔한 스카이블루 철제 침대가 실용적이에요!' },
+    { id: 'bed_queen', category: 'bed', name: '코지 원목 퀸침대', cost: 75, rentAdd: 26, happyAdd: 12, chip: '월세 +26만', tone: 'mint', reaction: '따뜻한 원목 퀸침대라 꿀잠 예약이에요~ 최고!' },
+    { id: 'bed_canopy', category: 'bed', name: '핑크 프린세스 캐노피 침대', cost: 145, rentAdd: 52, happyAdd: 20, chip: '월세 +52만', tone: 'coral', reaction: '와아!! 핑크 프린세스 캐노피 침대라니 동화 속 공주님 방 같아요!' },
+    { id: 'bed_bunk', category: 'bed', name: '패밀리 원목 2층 침대', cost: 165, rentAdd: 58, happyAdd: 22, chip: '월세 +58만', tone: 'gold', reaction: '튼튼한 원목 2층 침대 사다리 타기가 너무 신나요!' }
   ],
   sofa: [
-    {
-      id: 'sofa_beanbag',
-      category: 'sofa',
-      name: '1인용 옐로우 빈백',
-      cost: 0,
-      rentAdd: 0,
-      happyAdd: 0,
-      chip: '기본 제공',
-      tone: 'gold',
-      reaction: '말랑말랑 노란 빈백에 파묻히면 피로가 싹 풀려요!'
-    },
-    {
-      id: 'sofa_mint2',
-      category: 'sofa',
-      name: '민트 패브릭 2인 소파',
-      cost: 70,
-      rentAdd: 24,
-      happyAdd: 12,
-      chip: '월세 +24만',
-      tone: 'mint',
-      reaction: '상큼한 민트 패브릭 소파 덕분에 거실이 화사해졌어요!'
-    },
-    {
-      id: 'sofa_rocker',
-      category: 'sofa',
-      name: '노부부용 원목 흔들의자 세트',
-      cost: 115,
-      rentAdd: 40,
-      happyAdd: 18,
-      chip: '월세 +40만',
-      tone: 'coral',
-      reaction: '원목 흔들의자에 앉아 따뜻한 차 한 잔 마시니 천국이구려~'
-    },
-    {
-      id: 'sofa_leather_l',
-      category: 'sofa',
-      name: '고급 가죽 L자형 패밀리 소파',
-      cost: 155,
-      rentAdd: 56,
-      happyAdd: 22,
-      chip: '월세 +56만',
-      tone: 'gold',
-      reaction: '우와! 고급 가죽 L자형 소파가 펜트하우스 거실처럼 럭셔리해요!'
-    }
+    { id: 'sofa_beanbag', category: 'sofa', name: '1인용 옐로우 빈백', cost: 0, rentAdd: 0, happyAdd: 0, chip: '기본 제공', tone: 'gold', reaction: '말랑말랑 노란 빈백에 파묻히면 피로가 싹 풀려요!' },
+    { id: 'sofa_mint2', category: 'sofa', name: '민트 패브릭 2인 소파', cost: 70, rentAdd: 24, happyAdd: 12, chip: '월세 +24만', tone: 'mint', reaction: '상큼한 민트 패브릭 소파 덕분에 거실이 화사해졌어요!' },
+    { id: 'sofa_rocker', category: 'sofa', name: '노부부용 원목 흔들의자 세트', cost: 115, rentAdd: 40, happyAdd: 18, chip: '월세 +40만', tone: 'coral', reaction: '원목 흔들의자에 앉아 따뜻한 차 한 잔 마시니 천국이구려~' },
+    { id: 'sofa_leather_l', category: 'sofa', name: '고급 가죽 L자형 패밀리 소파', cost: 155, rentAdd: 56, happyAdd: 22, chip: '월세 +56만', tone: 'gold', reaction: '우와! 고급 가죽 L자형 소파가 펜트하우스 거실처럼 럭셔리해요!' }
   ],
   appliance: [
-    {
-      id: 'app_fan',
-      category: 'appliance',
-      name: '보급형 스탠드 선풍기',
-      cost: 0,
-      rentAdd: 0,
-      happyAdd: 0,
-      chip: '기본 제공',
-      tone: 'sky',
-      reaction: '솔솔 부는 스탠드 선풍기 바람이 시원해요~'
-    },
-    {
-      id: 'app_ac',
-      category: 'appliance',
-      name: '무풍 벽걸이 에어컨',
-      cost: 85,
-      rentAdd: 30,
-      happyAdd: 14,
-      chip: '월세 +30만',
-      tone: 'mint',
-      reaction: '무풍 벽걸이 에어컨까지 풀옵션이라니 갓물주님 최고예요!'
-    },
-    {
-      id: 'app_soundmat',
-      category: 'appliance',
-      name: '프리미엄 층간 방음 매트',
-      cost: 95,
-      rentAdd: 34,
-      happyAdd: 18,
-      grantsSoundproof: true,
-      chip: '방음 100% · +34만',
-      tone: 'sky',
-      reaction: '도톰한 층간 방음 매트 덕분에 발망치 걱정 끝이에요!'
-    },
-    {
-      id: 'app_rgb_desk',
-      category: 'appliance',
-      name: 'RGB 트리플 모니터 데스크',
-      cost: 160,
-      rentAdd: 58,
-      happyAdd: 24,
-      chip: '월세 +58만',
-      tone: 'coral',
-      reaction: '영롱한 RGB 트리플 모니터 데스크라니 방송·작업 효율 폭발!!'
-    }
+    { id: 'app_fan', category: 'appliance', name: '보급형 스탠드 선풍기', cost: 0, rentAdd: 0, happyAdd: 0, chip: '기본 제공', tone: 'sky', reaction: '솔솔 부는 스탠드 선풍기 바람이 시원해요~' },
+    { id: 'app_ac', category: 'appliance', name: '무풍 벽걸이 에어컨', cost: 85, rentAdd: 30, happyAdd: 14, chip: '월세 +30만', tone: 'mint', reaction: '무풍 벽걸이 에어컨까지 풀옵션이라니 갓물주님 최고예요!' },
+    { id: 'app_soundmat', category: 'appliance', name: '프리미엄 층간 방음 매트', cost: 95, rentAdd: 34, happyAdd: 18, grantsSoundproof: true, chip: '방음 100% · +34만', tone: 'sky', reaction: '도톰한 층간 방음 매트 덕분에 발망치 걱정 끝이에요!' },
+    { id: 'app_rgb_desk', category: 'appliance', name: 'RGB 트리플 모니터 데스크', cost: 160, rentAdd: 58, happyAdd: 24, chip: '월세 +58만', tone: 'coral', reaction: '영롱한 RGB 트리플 모니터 데스크라니 방송·작업 효율 폭발!!' }
   ],
   decor: [
-    {
-      id: 'dec_peach',
-      category: 'decor',
-      name: '피치 오트밀 & 메이플 마루',
-      wallKey: 'wallPeach',
-      floorKey: 'floor1',
-      stairStyle: 'oak',
-      cost: 0,
-      rentAdd: 0,
-      happyAdd: 0,
-      chip: '피치 파스텔',
-      tone: 'coral',
-      reaction: '포근한 피치 오트밀 벽지 색감이 마음을 따뜻하게 해줘요!'
-    },
-    {
-      id: 'dec_sage',
-      category: 'decor',
-      name: '세이지 그린 & 오크 마루',
-      wallKey: 'wallSage',
-      floorKey: 'floor2',
-      stairStyle: 'walnut',
-      cost: 65,
-      rentAdd: 22,
-      happyAdd: 12,
-      chip: '월세 +22만',
-      tone: 'mint',
-      reaction: '싱그러운 세이지 그린 벽지와 오크 마루 조합이 너무 세련됐어요!'
-    },
-    {
-      id: 'dec_butter',
-      category: 'decor',
-      name: '버터 크림 & 골드 원목계단',
-      wallKey: 'wallButter',
-      floorKey: 'floor3',
-      stairStyle: 'gold',
-      cost: 120,
-      rentAdd: 42,
-      happyAdd: 16,
-      chip: '월세 +42만',
-      tone: 'gold',
-      reaction: '햇살 같은 버터 크림 벽지와 화이트 마루 덕분에 집이 2배 넓어 보여요!'
-    },
-    {
-      id: 'dec_lavender',
-      category: 'decor',
-      name: '로얄 라벤더 & 부티크 계단',
-      wallKey: 'wallLavender',
-      floorKey: 'floor3',
-      stairStyle: 'coral',
-      cost: 170,
-      rentAdd: 62,
-      happyAdd: 22,
-      chip: '월세 +62만',
-      tone: 'coral',
-      reaction: '로얄 라벤더 벽지와 부티크 계단 마감이 예술 작품 같아요!'
-    }
+    { id: 'dec_peach', category: 'decor', name: '피치 오트밀 & 메이플 마루', wallKey: 'wallPeach', floorKey: 'floor1', stairStyle: 'oak', cost: 0, rentAdd: 0, happyAdd: 0, chip: '피치 파스텔', tone: 'coral', reaction: '포근한 피치 오트밀 벽지 색감이 마음을 따뜻하게 해줘요!' },
+    { id: 'dec_sage', category: 'decor', name: '세이지 그린 & 오크 마루', wallKey: 'wallSage', floorKey: 'floor2', stairStyle: 'walnut', cost: 65, rentAdd: 22, happyAdd: 12, chip: '월세 +22만', tone: 'mint', reaction: '싱그러운 세이지 그린 벽지와 오크 마루 조합이 너무 세련됐어요!' },
+    { id: 'dec_butter', category: 'decor', name: '버터 크림 & 골드 원목계단', wallKey: 'wallButter', floorKey: 'floor3', stairStyle: 'gold', cost: 120, rentAdd: 42, happyAdd: 16, chip: '월세 +42만', tone: 'gold', reaction: '햇살 같은 버터 크림 벽지와 화이트 마루 덕분에 집이 2배 넓어 보여요!' },
+    { id: 'dec_lavender', category: 'decor', name: '로얄 라벤더 & 부티크 계단', wallKey: 'wallLavender', floorKey: 'floor3', stairStyle: 'coral', cost: 170, rentAdd: 62, happyAdd: 22, chip: '월세 +62만', tone: 'coral', reaction: '로얄 라벤더 벽지와 부티크 계단 마감이 예술 작품 같아요!' }
   ]
 };
 
-// 부지 개발 카탈로그
 const DEVELOPMENT_CATALOG = {
   solar_plant: {
     type: 'solar_plant',
@@ -1154,10 +1138,7 @@ const DEVELOPMENT_CATALOG = {
     cycleSec: 9,
     cycleProfit: 52,
     rentSynergyPct: 5,
-    chips: [
-      { ico: 'solar_panel', text: '9초 +52만', tone: 'gold' },
-      { ico: 'sparkle_star', text: '시너지 +5%', tone: 'mint' }
-    ]
+    chips: [{ ico: 'solar_panel', text: '9초 +52만', tone: 'gold' }, { ico: 'sparkle_star', text: '시너지 +5%', tone: 'mint' }]
   },
   urban_farm: {
     type: 'urban_farm',
@@ -1169,10 +1150,7 @@ const DEVELOPMENT_CATALOG = {
     cycleSec: 11,
     cycleProfit: 74,
     rentSynergyPct: 8,
-    chips: [
-      { ico: 'berry_farm', text: '11초 +74만', tone: 'coral' },
-      { ico: 'sparkle_star', text: '시너지 +8%', tone: 'mint' }
-    ]
+    chips: [{ ico: 'berry_farm', text: '11초 +74만', tone: 'coral' }, { ico: 'sparkle_star', text: '시너지 +8%', tone: 'mint' }]
   },
   sakura_park: {
     type: 'sakura_park',
@@ -1184,10 +1162,7 @@ const DEVELOPMENT_CATALOG = {
     cycleSec: 12,
     cycleProfit: 38,
     rentSynergyPct: 15,
-    chips: [
-      { ico: 'heart_gauge', text: '소음 진정', tone: 'coral' },
-      { ico: 'sparkle_star', text: '월세 +15%', tone: 'mint' }
-    ]
+    chips: [{ ico: 'heart_gauge', text: '소음 진정', tone: 'coral' }, { ico: 'sparkle_star', text: '월세 +15%', tone: 'mint' }]
   },
   bakery_cafe: {
     type: 'bakery_cafe',
@@ -1199,10 +1174,7 @@ const DEVELOPMENT_CATALOG = {
     cycleSec: 10,
     cycleProfit: 92,
     rentSynergyPct: 12,
-    chips: [
-      { ico: 'coffee_cup', text: '10초 +92만', tone: 'gold' },
-      { ico: 'sparkle_star', text: '시너지 +12%', tone: 'mint' }
-    ]
+    chips: [{ ico: 'coffee_cup', text: '10초 +92만', tone: 'gold' }, { ico: 'sparkle_star', text: '시너지 +12%', tone: 'mint' }]
   },
   mixed_2: {
     type: 'mixed_2',
@@ -1213,10 +1185,7 @@ const DEVELOPMENT_CATALOG = {
     isResidential: true,
     baseRoomRent: 56,
     rentSynergyPct: 10,
-    chips: [
-      { ico: 'red_house', text: '4종 대형평형', tone: 'sky' },
-      { ico: 'sparkle_star', text: '시너지 +10%', tone: 'mint' }
-    ]
+    chips: [{ ico: 'red_house', text: '4종 대형평형', tone: 'sky' }, { ico: 'sparkle_star', text: '시너지 +10%', tone: 'mint' }]
   },
   mixed_1: {
     type: 'mixed_1',
@@ -1227,14 +1196,10 @@ const DEVELOPMENT_CATALOG = {
     isResidential: true,
     baseRoomRent: 38,
     rentSynergyPct: 0,
-    chips: [
-      { ico: 'red_house', text: '4종 대형평형', tone: 'coral' },
-      { ico: 'coin_stack', text: '상가 +28만', tone: 'gold' }
-    ]
+    chips: [{ ico: 'red_house', text: '4종 대형평형', tone: 'coral' }, { ico: 'coin_stack', text: '상가 +28만', tone: 'gold' }]
   }
 };
 
-// 공용 인프라 카탈로그
 const PUBLIC_INFRA_CATALOG = {
   elevator: {
     key: 'elevator',
@@ -1243,10 +1208,7 @@ const PUBLIC_INFRA_CATALOG = {
     artKey: 'infra_elevator',
     cost: 160,
     rentBonusPct: 10,
-    chips: [
-      { ico: 'elevator', text: '고층 필수', tone: 'sky' },
-      { ico: 'coin_stack', text: '월세 +10%', tone: 'mint' }
-    ]
+    chips: [{ ico: 'elevator', text: '고층 필수', tone: 'sky' }, { ico: 'coin_stack', text: '월세 +10%', tone: 'mint' }]
   },
   recycling: {
     key: 'recycling',
@@ -1255,10 +1217,7 @@ const PUBLIC_INFRA_CATALOG = {
     artKey: 'infra_recycling',
     cost: 110,
     rentBonusPct: 6,
-    chips: [
-      { ico: 'broom_clean', text: '청결 유지', tone: 'mint' },
-      { ico: 'coin_stack', text: '월세 +6%', tone: 'gold' }
-    ]
+    chips: [{ ico: 'broom_clean', text: '청결 유지', tone: 'mint' }, { ico: 'coin_stack', text: '월세 +6%', tone: 'gold' }]
   },
   parcel_box: {
     key: 'parcel_box',
@@ -1267,10 +1226,7 @@ const PUBLIC_INFRA_CATALOG = {
     artKey: 'infra_parcel',
     cost: 95,
     rentBonusPct: 6,
-    chips: [
-      { ico: 'relocate_move', text: '안심 택배', tone: 'coral' },
-      { ico: 'coin_stack', text: '월세 +6%', tone: 'gold' }
-    ]
+    chips: [{ ico: 'relocate_move', text: '안심 택배', tone: 'coral' }, { ico: 'coin_stack', text: '월세 +6%', tone: 'gold' }]
   },
   rooftop_garden: {
     key: 'rooftop_garden',
@@ -1279,10 +1235,7 @@ const PUBLIC_INFRA_CATALOG = {
     artKey: 'infra_rooftop',
     cost: 210,
     rentBonusPct: 12,
-    chips: [
-      { ico: 'heart_gauge', text: '행복도 UP', tone: 'coral' },
-      { ico: 'coin_stack', text: '월세 +12%', tone: 'mint' }
-    ]
+    chips: [{ ico: 'heart_gauge', text: '행복도 UP', tone: 'coral' }, { ico: 'coin_stack', text: '월세 +12%', tone: 'mint' }]
   }
 };
 
@@ -1293,7 +1246,6 @@ const ROOM_INTERIOR_TIERS = [
   { level: 3, name: '로얄 풀옵션', cost: 340, rentAdd: 65, chip: '풀세트 +20%' }
 ];
 
-// 세입자 가구군 6종 (복층/고급 세입자용 스트리머 VIP 추가!)
 const HOUSEHOLD_TYPES = {
   student: {
     type: 'student',
@@ -1309,13 +1261,10 @@ const HOUSEHOLD_TYPES = {
     needsElevator: false,
     needsRecycling: false,
     isHoarder: false,
-    traitBadges: [
-      { ico: 'guitar_note', label: '원룸 선호', tone: 'sky' },
-      { ico: 'coin_stack', label: '가성비 중시', tone: 'gold' }
-    ],
+    traitBadges: [{ ico: 'guitar_note', label: '원룸 선호', tone: 'sky' }, { ico: 'coin_stack', label: '가성비 중시', tone: 'gold' }],
     happyQuotes: [
       '방이 1.6배나 넓어져서 침대랑 책상이 쾌적해요!',
-      '1층 해피마트 24가 바로 아래라 야식 최고예요!',
+      '앞마당 분수대 건너 바게트 하우스 빵이 꿀맛이에요!',
       '러그로 공간이 깔끔하게 나뉘어 공부 집중이 잘 돼요~'
     ],
     noiseVictimQuotes: ['윗방이 쿵쿵거려 시험공부 집중이 안 돼요!'],
@@ -1336,14 +1285,11 @@ const HOUSEHOLD_TYPES = {
     needsElevator: false,
     needsRecycling: true,
     isHoarder: false,
-    traitBadges: [
-      { ico: 'heart_gauge', label: '투룸 스윗홈', tone: 'coral' },
-      { ico: 'recycle_bin', label: '분리수거 중시', tone: 'mint' }
-    ],
+    traitBadges: [{ ico: 'heart_gauge', label: '투룸 스윗홈', tone: 'coral' }, { ico: 'recycle_bin', label: '분리수거 중시', tone: 'mint' }],
     happyQuotes: [
       '아치형 가벽으로 거실이랑 안방이 나뉜 투룸이 로망이었어요!',
-      '아일랜드 식탁 모닝커피 향기가 너무 좋아요~',
-      '파스텔 벽지 색감이 동화 속 신혼집 같아요!'
+      '초록 파라솔 카페 테라스에서 마시는 주말 커피 최고예요~',
+      '플로레스 꽃집에서 산 튤립 화분이 너무 예뻐요!'
     ],
     noiseVictimQuotes: ['윗집 발망치 소리에 단잠을 다 설쳤어요!'],
     odorVictimQuotes: ['옆집 배달 쓰레기 냄새가 너무 심해요!'],
@@ -1363,13 +1309,10 @@ const HOUSEHOLD_TYPES = {
     needsElevator: true,
     needsRecycling: true,
     isHoarder: false,
-    traitBadges: [
-      { ico: 'red_house', label: '쓰리룸 특화', tone: 'mint' },
-      { ico: 'sound_wave', label: '발망치 주의', tone: 'coral' }
-    ],
+    traitBadges: [{ ico: 'red_house', label: '쓰리룸 특화', tone: 'mint' }, { ico: 'sound_wave', label: '발망치 주의', tone: 'coral' }],
     happyQuotes: [
       '부부 안방에 아이들 방까지 분리된 쓰리룸이라 너무 행복해요!',
-      '아이들이 2층 침대 사다리 타며 신나해요!',
+      '아이들이 분수대 광장이랑 빵집 케이크를 정말 좋아해요!',
       '넓은 메인 거실 식탁에서 온 가족이 도란도란 저녁 먹어요~'
     ],
     noiseVictimQuotes: ['애들아 살살 걸어라~ 아랫집 놀라시겠다!'],
@@ -1390,13 +1333,10 @@ const HOUSEHOLD_TYPES = {
     needsElevator: true,
     needsRecycling: false,
     isHoarder: false,
-    traitBadges: [
-      { ico: 'elevator', label: '승강기 필수', tone: 'gold' },
-      { ico: 'sound_wave', label: '투룸·정숙 선호', tone: 'sky' }
-    ],
+    traitBadges: [{ ico: 'elevator', label: '승강기 필수', tone: 'gold' }, { ico: 'sound_wave', label: '투룸·정숙 선호', tone: 'sky' }],
     happyQuotes: [
-      '거실과 침실이 아치문으로 나뉘어 참 아늑하구려~',
-      '흔들의자에 앉아 녹차 한 잔 마시니 평온하구먼!',
+      '분수대 벤치에 앉아 물소리를 들으니 참 평온하구려~',
+      '그로서리 가게 앞 나무 상자 사과가 참 싱싱하구먼!',
       '유리 엘리베이터 덕분에 마실 나가기 참 편하구려!'
     ],
     noiseVictimQuotes: ['윗집 발소리 때문에 머리가 지끈거려요!'],
@@ -1417,13 +1357,10 @@ const HOUSEHOLD_TYPES = {
     needsElevator: true,
     needsRecycling: false,
     isHoarder: false,
-    traitBadges: [
-      { ico: 'stairs_ico', label: '복층 로프트 선호', tone: 'gold' },
-      { ico: 'tv_ico', label: '초고수익 VIP', tone: 'coral' }
-    ],
+    traitBadges: [{ ico: 'stairs_ico', label: '복층 로프트 선호', tone: 'gold' }, { ico: 'tv_ico', label: '초고수익 VIP', tone: 'coral' }],
     happyQuotes: [
       '원목 계단 올라가면 2층 다락 침실이라니 복층 로프트 감성 미쳤다!!',
-      '1층 작업실에서 방송하고 2층 다락방 무드등 켜고 쉬니 최고예요!',
+      '건물주님 슈퍼카랑 우리 부티크 거리 브이로그 찍으면 조회수 폭발!',
       '천장이 1.8배나 높아서 스튜디오 조명발이 대박이에요~'
     ],
     noiseVictimQuotes: ['마이크에 층간소음이 다 들어가요! 방음 매트 부탁해요!'],
@@ -1444,14 +1381,11 @@ const HOUSEHOLD_TYPES = {
     needsElevator: false,
     needsRecycling: false,
     isHoarder: true,
-    traitBadges: [
-      { ico: 'coin_stack', label: '월세 칼입금', tone: 'gold' },
-      { ico: 'broom_clean', label: '쓰레기방 주의', tone: 'coral' }
-    ],
+    traitBadges: [{ ico: 'coin_stack', label: '월세 칼입금', tone: 'gold' }, { ico: 'broom_clean', label: '쓰레기방 주의', tone: 'coral' }],
     happyQuotes: [
       '배달 시켜야지... 트리플 모니터가 내 세상이야...',
       '외주 정산 완료... 이번 달 월세도 칼입금...',
-      '넓은 원룸 구석에 피자 박스를 차곡차곡 쌓아두자...'
+      '밤에 몰래 바게트 사 들고 방으로 호다닥 복귀...'
     ],
     cleanedGrumbleQuote: '아, 치우지 말라니까요... 다 쓸 데 있는 건데...',
     evictedQuote: '칫... 월세 안 밀렸는데... 짐 싸서 나갑니다...'
@@ -1464,8 +1398,8 @@ const GIVEN_NAMES = ['민준', '서연', '도윤', '지우', '하은', '지호',
 const CARE_BUBBLE_TYPES = [
   { id: 'pipe_fix', svgIcon: 'soundproof_hammer', label: '배관 점검', cashReward: 42, toastMsg: '배관 점검 완료! +42만' },
   { id: 'parcel_deliver', svgIcon: 'relocate_move', label: '택배 전달', cashReward: 45, toastMsg: '택배 전달 완료! +45만' },
-  { id: 'street_sweep', svgIcon: 'broom_clean', label: '보도 청소', cashReward: 50, toastMsg: '보도 청소 완료! +50만' },
-  { id: 'smart_light', svgIcon: 'gold_key', label: '조명 교체', cashReward: 48, toastMsg: '무드조명 교체! +48만' }
+  { id: 'street_sweep', svgIcon: 'broom_clean', label: '거리 청소', cashReward: 50, toastMsg: '부티크 거리 청소 완료! +50만' },
+  { id: 'smart_light', svgIcon: 'gold_key', label: '가로등 점검', cashReward: 48, toastMsg: '가로등 점검 완료! +48만' }
 ];
 
 const QUEST_LIST = [
@@ -1494,32 +1428,21 @@ const QUEST_LIST = [
   },
   {
     id: 'mq3',
-    icon: 'red_house',
-    title: '입주 세대 2가구 달성',
-    reward: 240,
-    focusLot: 'lot_main',
-    focusSubRoom: '102',
-    progress: (st) => {
-      const cnt = st.buildings.lot_main?.rooms.filter((x) => !!x.household).length || 0;
-      return { cur: Math.min(2, cnt), max: 2 };
-    },
-    check: (st) => (st.buildings.lot_main?.rooms.filter((x) => !!x.household).length || 0) >= 2
+    icon: 'bakery_ico',
+    title: '부티크 단독 상가(빵집/카페/꽃집) 1곳 인수',
+    reward: 280,
+    focusShop: 'shop_bakery',
+    progress: (st) => ({ cur: Math.min(1, Object.values(st.standaloneShops || {}).filter((s) => s.owned).length), max: 1 }),
+    check: (st) => Object.values(st.standaloneShops || {}).some((s) => s.owned)
   },
   {
     id: 'mq4',
-    icon: 'recycle_bin',
-    title: '건물 공용시설 1종 시공',
-    reward: 260,
-    openTab: 'infra',
-    progress: (st) => {
-      const inf = st.buildings.lot_main?.infra || {};
-      const cnt = Object.values(inf).filter(Boolean).length;
-      return { cur: Math.min(1, cnt), max: 1 };
-    },
-    check: (st) => {
-      const inf = st.buildings.lot_main?.infra || {};
-      return inf.recycling || inf.parcel_box || inf.elevator || inf.rooftop_garden;
-    }
+    icon: 'supercar_ico',
+    title: '신규 차량(세단·슈퍼카·리무진) 1대 구매',
+    reward: 350,
+    openGarage: true,
+    progress: (st) => ({ cur: Math.min(1, Math.max(0, (st.garage?.ownedCars?.length || 1) - 1)), max: 1 }),
+    check: (st) => (st.garage?.ownedCars?.length || 1) >= 2
   },
   {
     id: 'mq5',
@@ -1551,12 +1474,12 @@ const QUEST_LIST = [
   },
   {
     id: 'mq7',
-    icon: 'solar_panel',
-    title: '2번지 신규 부지 착공',
-    reward: 500,
-    focusLot: 'lot_solar',
-    progress: (st) => ({ cur: Math.min(2, st.lots.filter((l) => l.owned).length), max: 2 }),
-    check: (st) => st.lots.filter((l) => l.owned).length >= 2
+    icon: 'bakery_ico',
+    title: '단독 상가 3곳 모두 인수 달성',
+    reward: 550,
+    focusShop: 'shop_roastery',
+    progress: (st) => ({ cur: Math.min(3, Object.values(st.standaloneShops || {}).filter((s) => s.owned).length), max: 3 }),
+    check: (st) => Object.values(st.standaloneShops || {}).filter((s) => s.owned).length >= 3
   },
   {
     id: 'mq8',
@@ -1579,11 +1502,11 @@ const QUEST_LIST = [
   {
     id: 'mq10',
     icon: 'crown_badge',
-    title: '타운 5개 부지 완공',
-    reward: 1500,
-    focusLot: 'lot_east',
-    progress: (st) => ({ cur: Math.min(5, st.lots.filter((l) => l.owned).length), max: 5 }),
-    check: (st) => st.lots.filter((l) => l.owned).length >= 5
+    title: '페라리 슈퍼카 또는 골드 리무진 오너 등극',
+    reward: 1200,
+    openGarage: true,
+    progress: (st) => ({ cur: (st.garage?.ownedCars || []).some((c) => c === 'car_supercar' || c === 'car_limo') ? 1 : 0, max: 1 }),
+    check: (st) => (st.garage?.ownedCars || []).some((c) => c === 'car_supercar' || c === 'car_limo')
   }
 ];
 
@@ -1594,6 +1517,9 @@ window.createHouseholdAvatarSVG = createHouseholdAvatarSVG;
 window.GAME_BALANCE = GAME_BALANCE;
 window.BUILDING_NAME_PRESETS = BUILDING_NAME_PRESETS;
 window.INITIAL_ISLAND_LOTS = INITIAL_ISLAND_LOTS;
+window.STANDALONE_SHOPS_TEMPLATE = STANDALONE_SHOPS_TEMPLATE;
+window.SHOP_UPGRADE_CATALOG = SHOP_UPGRADE_CATALOG;
+window.CAR_CATALOG = CAR_CATALOG;
 window.ROOM_TYPE_META = ROOM_TYPE_META;
 window.ROOM_SLOTS_TEMPLATE = ROOM_SLOTS_TEMPLATE;
 window.FURNITURE_CATEGORIES = FURNITURE_CATEGORIES;

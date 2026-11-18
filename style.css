@@ -1,10 +1,8 @@
 /* =========================================================
-   【갓물주 라이프 3D: 미니미 타운 — 전체화면 단독 룸 뷰 & 가구 카탈로그 & 파스텔 크림 에디션】
+   【갓물주 라이프 3D: 미니미 타운 — 부티크 상점 거리 · 단독 상가 · 슈퍼카 드라이브 에디션】
    1. 모바일 다크모드 색상 반전 원천 차단 (color-scheme: light only)
-   2. 상단 3캡슐 한 줄 정렬 + [🔙 건물 전체로 나가기] + 호실 평형 전환 칩
-   3. 파스텔 스카이블루 하늘(#AEE2FF -> #E8F9FD -> #FFFDF9) + 밀크 화이트(#FFFFFF) 버튼
-   4. 바닐라 크림(#FFFDF7) & 버터 화이트(#FFF7EB) 타운 수첩 및 인테리어 가구 카탈로그 바텀시트
-   5. 코랄 핑크(#FF758F) & 에메랄드 민트(#2EC4B6) & 허니 골드(#FBBF24) 젤리 버튼
+   2. 모바일 세로(390x844) & 가로(844x390) 완벽 대응 상단 3캡슐 HUD & 드라이브 대시보드
+   3. 파스텔 스카이블루 하늘(#AEE2FF -> #E8F9FD -> #FFFDF9) + 바닐라 크림(#FFFDF7) UI
    ========================================================= */
 
 @font-face {
@@ -109,7 +107,6 @@ body {
   outline: none;
 }
 
-/* [핵심 1] 단독 룸 뷰 포커스 시 주변 배경 시선을 모아주는 소프트 스튜디오 비네팅 */
 #room-isolation-vignette {
   background: radial-gradient(
     ellipse 64% 58% at 50% 42%,
@@ -127,12 +124,12 @@ body {
   overflow: hidden;
 }
 
-/* ==================== 2. 겹침 없는 상단 3캡슐 HUD & 룸 뷰 복귀 버튼 ==================== */
+/* ==================== 2. 상단 3캡슐 HUD & 드라이브 실행 버튼 ==================== */
 .hud-top-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   flex-wrap: nowrap;
   width: 100%;
 }
@@ -147,18 +144,18 @@ body {
 .hud-stat-pill {
   flex: 1 1 0;
   min-width: 0;
-  padding: 5px 9px;
+  padding: 4.5px 8px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
 .milk-float-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4.5px;
-  padding: 5.5px 12px;
+  gap: 4px;
+  padding: 5px 11px;
   border-radius: 9999px;
   background: #FFFFFF !important;
   color: var(--cocoa-text) !important;
@@ -194,18 +191,46 @@ body {
   transform: translateY(2px);
 }
 
-/* [핵심 1] 건물 전체로 나가기 전용 상큼 코랄/밀크 버튼 */
+/* [1단계 5] 내 차 타기 (드라이브 모드) 런처 버튼 */
+.drive-launch-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 5.5px 12px;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #FF758F 0%, #EF233C 100%) !important;
+  color: #FFFFFF !important;
+  font-family: var(--font-title) !important;
+  font-size: 11.5px !important;
+  border: 2px solid #FFF3B0;
+  box-shadow:
+    0 3px 0 #9B0014,
+    0 8px 16px rgba(239, 35, 60, 0.28);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.14s cubic-bezier(0.34, 1.6, 0.64, 1);
+}
+
+.drive-launch-pill:hover {
+  transform: translateY(-1.5px) scale(1.03);
+}
+
+.drive-launch-pill:active {
+  transform: translateY(2px) scale(0.97);
+}
+
 .exit-room-pill-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 5px;
-  padding: 6.5px 14px;
+  padding: 6px 13px;
   border-radius: 9999px;
   background: linear-gradient(180deg, #FFFFFF 0%, #FFF0F3 100%) !important;
   color: #BE123C !important;
   font-family: var(--font-title) !important;
-  font-size: 12px !important;
+  font-size: 11.5px !important;
   border: 2.2px solid #FF758F;
   box-shadow:
     0 3px 0 rgba(225, 29, 72, 0.28),
@@ -219,33 +244,72 @@ body {
   transform: translateY(-1.5px) scale(1.02);
 }
 
-.exit-room-pill-btn:active {
-  transform: translateY(2px) scale(0.98);
-}
-
-.room-hop-chip {
+.room-hop-chip,
+.room-switch-chip {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  padding: 4px 9.5px;
+  gap: 4px;
+  padding: 4.5px 10.5px;
   border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.94) !important;
+  background: rgba(255, 255, 255, 0.96) !important;
   color: var(--cocoa-text) !important;
-  border: 1.6px solid #EED0B5;
+  border: 1.8px solid #EED0B5;
   font-family: var(--font-display) !important;
   font-size: 11px !important;
   font-weight: 700;
   white-space: nowrap;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(90, 65, 50, 0.12);
+  box-shadow: 0 2px 6px rgba(90, 65, 50, 0.14);
   transition: all 0.14s ease;
 }
 
-.room-hop-chip.active {
+.room-hop-chip.active,
+.room-switch-chip.active {
   background: #2EC4B6 !important;
   color: #FFFFFF !important;
   border-color: #0F766E;
   box-shadow: 0 2.5px 0 #0F766E;
+}
+
+/* ==================== 3. GTA 3인칭 드라이브 대시보드 ==================== */
+.drive-dashboard-bar {
+  background: rgba(255, 253, 247, 0.94) !important;
+  border: 2.5px solid #F2C6A8;
+  border-radius: 22px;
+  box-shadow:
+    0 4px 0 rgba(210, 165, 135, 0.35),
+    0 12px 28px rgba(62, 44, 35, 0.22);
+  backdrop-filter: blur(6px);
+}
+
+.drive-pedal-btn {
+  min-width: 44px;
+  height: 40px;
+  padding: 0 10px;
+  border-radius: 13px;
+  background: #FFFFFF !important;
+  color: var(--espresso-ink) !important;
+  border: 2px solid #E6B89C;
+  box-shadow: 0 3px 0 #D4A373;
+  font-family: var(--font-title) !important;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.08s ease;
+}
+
+.drive-pedal-btn.gas-accent {
+  background: linear-gradient(180deg, #FFF3B0 0%, #FACC15 100%) !important;
+  border-color: #D97706;
+  box-shadow: 0 3px 0 #B45309;
+}
+
+.drive-pedal-btn:active,
+.drive-pedal-btn.pressed {
+  transform: translateY(2.5px);
 }
 
 .milk-float-pill {
@@ -279,8 +343,8 @@ body {
 
 .fab-artwork-circle {
   position: relative;
-  width: 62px;
-  height: 62px;
+  width: 58px;
+  height: 58px;
   border-radius: 9999px;
   background: linear-gradient(180deg, #FFF3B0 0%, #FFD166 60%, #FBBF24 100%) !important;
   border: 3px solid #FFFFFF;
@@ -320,7 +384,7 @@ body {
   100% { transform: translateY(-3px) scale(1.1); }
 }
 
-/* ==================== 3. [핵심 3] 인테리어 가구 카탈로그 바텀시트 ==================== */
+/* ==================== 4. 가구 & 상가 카탈로그 바텀시트 ==================== */
 .furniture-sheet-shell {
   background: var(--vanilla-cream) !important;
   border: 2.5px solid #F2C6A8;
@@ -340,10 +404,10 @@ body {
   white-space: nowrap !important;
   overflow: hidden;
   text-overflow: ellipsis;
-  padding: 6.5px 4px !important;
+  padding: 6px 4px !important;
   border-radius: 11px;
   font-family: var(--font-display) !important;
-  font-size: clamp(10.5px, 1.3vw, 12px) !important;
+  font-size: clamp(10px, 1.3vw, 12px) !important;
   font-weight: 700;
   color: var(--espresso-ink) !important;
   background: #FFFFFF !important;
@@ -370,9 +434,13 @@ body {
 
 .fcat-cards-row {
   display: grid;
-  grid-template-columns: repeat(4, minmax(175px, 1fr));
+  grid-template-columns: repeat(4, minmax(170px, 1fr));
   gap: 8px;
   overflow-x: auto;
+}
+
+.fcat-cards-row.cols-3 {
+  grid-template-columns: repeat(3, minmax(185px, 1fr));
 }
 
 .fcat-item-card {
@@ -387,17 +455,27 @@ body {
   transition: transform 0.14s ease, border-color 0.14s ease;
 }
 
-.fcat-item-card.equipped-card {
+.fcat-item-card.equipped-card,
+.fcat-item-card.equipped {
   background: #F2FCF9 !important;
   border: 2px solid #2EC4B6;
   box-shadow: 0 3px 10px rgba(46, 196, 182, 0.16);
 }
 
-.fcat-item-card:hover {
-  transform: translateY(-1.5px);
+/* 모바일 가로모드(예: 844x390)에서도 방/상가가 가려지지 않도록 컴팩트 패딩 적용 */
+@media (max-height: 450px) {
+  .fcat-item-card {
+    padding: 5px 8px;
+    gap: 4px;
+  }
+  #room-focus-panel,
+  #shop-focus-panel {
+    top: 8px !important;
+    max-height: calc(100vh - 150px) !important;
+  }
 }
 
-/* ==================== 4. 밝은 바닐라 크림(#FFFDF7) & 버터 화이트(#FFF7EB) 타운 수첩 ==================== */
+/* ==================== 5. 바닐라 크림 타운 수첩 & 모달 공통 ==================== */
 .pastel-modal-backdrop {
   background: rgba(90, 75, 65, 0.24) !important;
   backdrop-filter: blur(6px);
@@ -457,7 +535,7 @@ body {
 
 .diary-modal-title {
   font-family: var(--font-title) !important;
-  font-size: clamp(14.5px, 1.6vw, 17px) !important;
+  font-size: clamp(14px, 1.6vw, 17px) !important;
   letter-spacing: -0.03em !important;
   color: var(--espresso-ink) !important;
   line-height: 1.25;
@@ -517,7 +595,6 @@ body {
   white-space: nowrap;
 }
 
-/* 탭 줄바꿈 원천 차단 (세대도감 / 건물장부 한 줄 유지) */
 .diary-index-tab {
   position: relative;
   display: flex;
@@ -562,7 +639,8 @@ body {
   color: var(--espresso-ink) !important;
 }
 
-.diary-soft-box {
+.diary-soft-box,
+.diary-subcard {
   background: #FFFFFF !important;
   border: 1.5px solid #F2DEC4;
   border-radius: 14px;
@@ -679,7 +757,7 @@ body {
   line-height: 1.15;
 }
 
-/* ==================== 5. 사선 캔디 게이지 바 & 상큼한 코랄/민트/골드 젤리 버튼 ==================== */
+/* ==================== 6. 사선 캔디 게이지 & 젤리 버튼 ==================== */
 .candy-gauge-track {
   width: 100%;
   height: 9px;
@@ -803,7 +881,7 @@ body {
   cursor: pointer;
 }
 
-/* ==================== 6. 관리인 슬라이더 ==================== */
+/* ==================== 7. 슬라이더 & 3D 오버레이 핀 ==================== */
 .coin-slider-wrap {
   position: relative;
   padding-top: 28px;
@@ -852,7 +930,6 @@ input[type='range'].golden-coin-range::-webkit-slider-thumb {
   cursor: grab;
 }
 
-/* ==================== 7. 밝은 밀크 화이트 플로팅 말풍선 · 월세 코인 버블 · 하트 연출 ==================== */
 .world-pin {
   position: absolute;
   left: -9999px;
@@ -892,6 +969,10 @@ input[type='range'].golden-coin-range::-webkit-slider-thumb {
 }
 
 .rent-coin-bubble {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+  transform: translate(-50%, -100%);
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -908,10 +989,6 @@ input[type='range'].golden-coin-range::-webkit-slider-thumb {
   white-space: nowrap;
   cursor: pointer;
   animation: coinBubbleHop 0.85s infinite alternate cubic-bezier(0.34, 1.65, 0.64, 1);
-}
-
-.rent-coin-bubble:hover {
-  filter: brightness(1.04);
 }
 
 @keyframes coinBubbleHop {
@@ -934,7 +1011,7 @@ input[type='range'].golden-coin-range::-webkit-slider-thumb {
   box-shadow: 0 6px 14px rgba(180, 83, 9, 0.28);
   font-family: var(--font-title) !important;
   font-size: 12px;
-  transition: left 0.58s cubic-bezier(0.22, 1, 0.36, 1), top 0.58s cubic-bezier(0.32, 0, 0.67, 0), transform 0.58s ease, opacity 0.58s ease;
+  transition: left 0.55s cubic-bezier(0.22, 1, 0.36, 1), top 0.55s cubic-bezier(0.32, 0, 0.67, 0), transform 0.55s ease, opacity 0.55s ease;
 }
 
 .building-ribbon-badge {
@@ -948,17 +1025,42 @@ input[type='range'].golden-coin-range::-webkit-slider-thumb {
   border: 2px solid #F2B8A2;
   box-shadow: var(--milk-shadow);
   font-family: var(--font-display) !important;
-  font-size: 12px;
+  font-size: 11.5px;
   color: var(--cocoa-text) !important;
   white-space: nowrap;
   cursor: pointer;
   transition: transform 0.16s ease, opacity 0.25s ease;
 }
 
-.building-ribbon-badge.coin-ready {
-  background: #FFFBEB !important;
-  border-color: #F59E0B;
-  animation: indicatorPinBounce 0.95s infinite alternate ease-in-out;
+.shop-float-badge {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+  transform: translate(-50%, -100%);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.97) !important;
+  border: 2px solid #FCD34D;
+  box-shadow: var(--milk-shadow);
+  font-family: var(--font-display) !important;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--cocoa-text) !important;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.14s ease;
+}
+
+.shop-float-badge:hover {
+  transform: translate(-50%, -108%) scale(1.04);
+}
+
+.shop-float-badge.owned-shop {
+  background: #FFFDF2 !important;
+  border-color: #2EC4B6;
 }
 
 .ribbon-lv-tag {
@@ -997,7 +1099,12 @@ input[type='range'].golden-coin-range::-webkit-slider-thumb {
   outline: none;
 }
 
-.lot-clay-badge {
+.lot-clay-badge,
+.lot-for-sale-sign {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+  transform: translate(-50%, -100%);
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -1039,18 +1146,18 @@ input[type='range'].golden-coin-range::-webkit-slider-thumb {
   transform: translate(-50%, -100%) scale(1);
 }
 
-.hotel-room-pin.active-pin {
-  background: #FFFBEB !important;
-  border-color: #F59E0B;
-}
-
-.cloud-speech-bubble {
+.cloud-speech-bubble,
+.speech-cloud {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+  transform: translate(-50%, -100%);
   pointer-events: none;
   display: flex;
   align-items: center;
   gap: 7px;
   max-width: 268px;
-  padding: 6.5px 12px 6.5px 8.5px;
+  padding: 6px 11px 6px 10px;
   border-radius: 18px;
   background: #FFFFFF !important;
   border: 2px solid #F3C6B6;
@@ -1058,11 +1165,13 @@ input[type='range'].golden-coin-range::-webkit-slider-thumb {
   color: var(--cocoa-text) !important;
   font-family: var(--font-body) !important;
   font-size: 11.5px;
-  line-height: 1.3;
+  line-height: 1.28;
+  white-space: nowrap;
   animation: cloudBubblePop 0.35s cubic-bezier(0.34, 1.68, 0.64, 1) forwards;
 }
 
-.cloud-speech-bubble::after {
+.cloud-speech-bubble::after,
+.speech-cloud::after {
   content: '';
   position: absolute;
   bottom: -6px;
@@ -1113,11 +1222,15 @@ input[type='range'].golden-coin-range::-webkit-slider-thumb {
   animation: indicatorPinBounce 1.2s infinite alternate ease-in-out;
 }
 
-.floating-gold-text {
+.floating-gold-text,
+.jackpot-pop {
   position: absolute;
+  left: -9999px;
+  top: -9999px;
+  transform: translate(-50%, -100%);
   pointer-events: none;
   font-family: var(--font-title) !important;
-  font-size: 14px;
+  font-size: 13.5px;
   color: var(--cocoa-text) !important;
   padding: 3.5px 10px;
   border-radius: 9999px;
@@ -1132,7 +1245,7 @@ input[type='range'].golden-coin-range::-webkit-slider-thumb {
   position: absolute;
   pointer-events: none;
   font-family: var(--font-title) !important;
-  font-size: 15px;
+  font-size: 14px;
   color: #E11D48 !important;
   padding: 3px 9px;
   border-radius: 9999px;
