@@ -32,6 +32,9 @@
   <!-- ==================== 1. WebGL 3D 파스텔 타운 뷰포트 ==================== -->
   <div id="webgl-container"></div>
 
+  <!-- [핵심 1] 전체화면 단독 룸 뷰 전용 스튜디오 소프트 비네팅/아이솔레이션 레이어 -->
+  <div id="room-isolation-vignette" class="hidden fixed inset-0 z-10 pointer-events-none"></div>
+
   <!-- ==================== 2. 3D 투영(Project) 오버레이 레이어 ==================== -->
   <div id="overlay-3d-layer">
     <div id="lots-overlay-layer"></div>
@@ -46,9 +49,9 @@
   <!-- 코인 상단 비행 레이어 -->
   <div id="flying-coin-layer" class="fixed inset-0 z-40 pointer-events-none overflow-hidden"></div>
 
-  <!-- ==================== 3. [버그 수정 1] 절대 겹치지 않는 상단 3캡슐 HUD & 밀크 화이트 플로팅 버튼 ==================== -->
-  <header class="fixed top-2.5 left-2.5 right-2.5 sm:right-auto sm:left-4 sm:top-3.5 z-30 flex flex-col gap-1.5 pointer-events-none sm:w-[430px]">
-    <!-- 1열: 3개 핵심 상태 캡슐 한 줄 정렬 (display: flex; justify-content: space-between; gap: 6px;) -->
+  <!-- ==================== 3. 겹침 없는 상단 3캡슐 HUD & 룸 뷰 복귀 바 ==================== -->
+  <header class="fixed top-2.5 left-2.5 right-2.5 sm:right-auto sm:left-4 sm:top-3.5 z-30 flex flex-col gap-1.5 pointer-events-none sm:w-[420px]">
+    <!-- 1열: 3개 핵심 상태 캡슐 한 줄 고정 정렬 -->
     <div class="hud-top-row pointer-events-auto">
       <!-- 캡슐 1: 보유 자산 -->
       <div id="hud-badge-gold" class="hud-clay-badge hud-stat-pill">
@@ -56,7 +59,7 @@
         <div class="leading-tight min-w-0">
           <div class="text-[10px] font-display text-[#7A6254] leading-none truncate">보유자산</div>
           <div id="hud-gold-wrap" class="font-title text-[13px] sm:text-base text-[#4A3728] leading-tight mt-0.5 whitespace-nowrap">
-            <span id="hud-gold" class="font-num">460</span><span class="text-[10.5px] ml-0.5">만</span>
+            <span id="hud-gold" class="font-num">880</span><span class="text-[10.5px] ml-0.5">만</span>
           </div>
         </div>
       </div>
@@ -80,11 +83,11 @@
       </div>
     </div>
 
-    <!-- 2열: 밝은 밀크 화이트 보조 컨트롤 버튼 (전체뷰 / 일괄수금 / 시간표시) -->
-    <div class="flex items-center gap-1.5 flex-wrap">
+    <!-- 2열 A: 타운 전체 뷰 보조 컨트롤 바 -->
+    <div id="hud-town-controls" class="flex items-center gap-1.5 flex-wrap">
       <button id="btn-overview-cam" title="타운 전체 보기" class="pointer-events-auto milk-float-btn border-sky">
         <span id="hud-ico-overview" class="flex items-center"></span>
-        <span>전체뷰</span>
+        <span>타운 전체뷰</span>
       </button>
 
       <button id="btn-collect-all" class="hidden pointer-events-auto milk-float-btn border-gold animate-bounce">
@@ -97,24 +100,80 @@
         <span id="hud-xray-badge" class="font-display text-[10.5px] px-2 py-0.5 rounded-full bg-[#E0F2FE] text-[#0369A1] border border-[#BAE6FD]">외관 100%</span>
       </div>
     </div>
+
+    <!-- 2열 B: [핵심 1] 전체화면 단독 룸 뷰 전용 나가기 & 평형 빠른 전환 바 -->
+    <div id="room-focus-topbar" class="hidden flex flex-col gap-1.5">
+      <div class="flex items-center gap-1.5 flex-wrap">
+        <button id="btn-exit-room-view" class="pointer-events-auto exit-room-pill-btn">
+          <span>🔙 건물 전체로 나가기</span>
+        </button>
+        <span class="pointer-events-none hidden sm:inline-flex milk-float-pill !py-1 !px-2.5 text-[11px] text-[#7A6254]">
+          ↻ 좌우 드래그로 방 내부 회전 관찰
+        </span>
+      </div>
+      <div id="room-switcher-chips" class="pointer-events-auto flex items-center gap-1 overflow-x-auto custom-scroll pb-0.5"></div>
+    </div>
   </header>
 
-  <!-- ==================== 4. 호실 클로즈업 전용 밝은 크림 인스펙터 ==================== -->
-  <aside id="room-focus-panel" class="hidden fixed top-24 sm:top-16 right-2.5 sm:right-4 z-30 w-[282px] sm:w-[308px] max-h-[calc(100vh-172px)] diary-inspector-shell flex flex-col overflow-hidden">
+  <!-- ==================== 4. 전체화면 룸 뷰 우측 상단 컴팩트 세대/호실 카드 ==================== -->
+  <aside id="room-focus-panel" class="hidden fixed top-[112px] lg:top-3.5 right-2.5 sm:right-4 z-30 w-[248px] sm:w-[276px] max-h-[calc(100vh-310px)] diary-inspector-shell flex flex-col overflow-hidden">
     <div class="px-3 py-2 flex items-center justify-between border-b border-[#F2D7B6] shrink-0" style="background: linear-gradient(180deg, #FFFDF7 0%, #FFF4E4 100%);">
       <div class="flex items-center gap-1.5 min-w-0">
         <span id="rf-room-num" class="hotel-num-tag shrink-0">101</span>
-        <span id="rf-title" class="diary-card-title truncate">해피 미니미 타운 1차</span>
+        <span id="rf-type-badge" class="kw-chip tone-sky !py-0.5 !px-2 shrink-0">🏠 원룸</span>
+        <span id="rf-title" class="diary-card-title truncate hidden sm:inline">해피 미니미 타운 1차</span>
         <button id="rf-btn-rename" title="빌딩 이름 변경" class="ribbon-edit-chip shrink-0"></button>
         <span id="rf-tier-badge" class="diary-pill-badge shrink-0">Lv.0</span>
       </div>
-      <button id="btn-close-room-focus" class="btn-close-round">✕</button>
+      <div class="flex items-center gap-1 shrink-0">
+        <button id="btn-toggle-rf-body" title="세대 카드 접기/펼치기" class="btn-close-round !w-6 !h-6 !text-[10px]">▾</button>
+        <button id="btn-close-room-focus" title="건물 전체로 나가기" class="btn-close-round !w-6 !h-6">✕</button>
+      </div>
     </div>
     <div id="rf-body" class="p-2.5 overflow-y-auto custom-scroll space-y-2"></div>
   </aside>
 
-  <!-- ==================== 5. 우측 하단 밀크 화이트 카메라 바 & 원형 수첩 FAB ==================== -->
-  <div class="fixed bottom-3 right-3 sm:bottom-4 sm:right-4 z-30 flex items-center gap-2 pointer-events-none">
+  <!-- ==================== 5. [핵심 3] 인테리어 가구·시설 종류별 선택 카탈로그 바텀시트 ==================== -->
+  <section id="furniture-catalog-sheet" class="hidden fixed bottom-0 left-0 right-0 z-30 pointer-events-none flex justify-center px-2 sm:px-4 pb-2 sm:pb-2.5">
+    <div class="pointer-events-auto furniture-sheet-shell w-full max-w-4xl">
+      <!-- 상단 타이틀 & 접기 토글 바 -->
+      <div class="px-3 py-1.5 flex items-center justify-between gap-2 border-b border-[#F2D7B6]" style="background: linear-gradient(90deg, #FFFDF7 0%, #FFF5EC 55%, #F2FCF9 100%);">
+        <div class="flex items-center gap-2 min-w-0 flex-wrap">
+          <span class="font-title text-[13px] sm:text-[14.5px] text-[#3E2C23] whitespace-nowrap">🛋️ 인테리어 가구 카탈로그</span>
+          <span id="fcat-room-badge" class="kw-chip tone-coral !py-0.5 !px-2">101호 · 원룸 스튜디오</span>
+          <span id="fcat-bonus-badge" class="kw-chip tone-mint !py-0.5 !px-2">인테리어 +0만</span>
+        </div>
+        <button id="btn-toggle-catalog" type="button" class="diary-pill-badge cursor-pointer hover:!bg-[#FFF3CD] shrink-0">
+          ▼ 접기
+        </button>
+      </div>
+
+      <!-- 카탈로그 본문 (4개 카테고리 탭 + 4종 가구 선택 카드) -->
+      <div id="fcat-collapsible-body" class="bg-[#FFFDF7]">
+        <!-- 줄바꿈 없는 4개 카테고리 탭 -->
+        <div id="fcat-tabs-row" class="grid grid-cols-4 gap-1.5 px-2.5 pt-2 pb-1.5 bg-[#FFF9F0] border-b border-[#F2DEC4]">
+          <button type="button" data-fcat="bed" class="fcat-tab-btn active">
+            <span>🛏️ 침실/침대</span>
+          </button>
+          <button type="button" data-fcat="sofa" class="fcat-tab-btn">
+            <span>🛋️ 거실/소파</span>
+          </button>
+          <button type="button" data-fcat="appliance" class="fcat-tab-btn">
+            <span>🖥️ 주방/가전</span>
+          </button>
+          <button type="button" data-fcat="decor" class="fcat-tab-btn">
+            <span>🎨 벽지/바닥/복층계단</span>
+          </button>
+        </div>
+
+        <!-- 아이템 선택 그리드 -->
+        <div id="fcat-items-grid" class="fcat-cards-row p-2.5 custom-scroll"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 6. 우측 하단 밀크 화이트 카메라 바 & 원형 수첩 FAB ==================== -->
+  <div id="bottom-town-bar" class="fixed bottom-3 right-3 sm:bottom-4 sm:right-4 z-30 flex items-center gap-2 pointer-events-none">
     <div class="pointer-events-auto milk-cam-bar px-2 py-1 flex items-center gap-1">
       <button id="btn-zoom-in" title="확대 (내부 투시)" class="w-7 h-7 rounded-full hover:bg-[#FFF5EA] font-title text-base text-[#4A3728] transition-colors">+</button>
       <button id="btn-zoom-out" title="축소 (마을 전체)" class="w-7 h-7 rounded-full hover:bg-[#FFF5EA] font-title text-base text-[#4A3728] transition-colors">−</button>
@@ -132,14 +191,12 @@
     </button>
   </div>
 
-  <!-- ==================== 6. [버그 수정 3] 밝은 바닐라 크림 단일 통합형 타운 수첩 모달 ==================== -->
+  <!-- ==================== 7. 밝은 바닐라 크림 단일 통합형 타운 수첩 모달 ==================== -->
   <div id="notebook-modal" class="hidden fixed inset-0 z-50 pastel-modal-backdrop flex items-center justify-center p-2.5 sm:p-4">
     <div class="cozy-planner-shell w-full max-w-2xl h-[85vh] max-h-[580px]">
-      <!-- 상단 장식용 스프링 링 -->
       <div id="notebook-binder-rings" class="planner-top-rings"></div>
 
       <div class="cozy-planner-inner">
-        <!-- 밝은 크림 헤더 -->
         <div class="px-3.5 py-2.5 flex items-center justify-between border-b border-[#F2D7B6] shrink-0" style="background: linear-gradient(90deg, #FFFDF7 0%, #FFF5EC 55%, #F2FCF9 100%);">
           <div class="flex items-center gap-2 min-w-0">
             <span id="modal-ico-notebook" class="flex items-center shrink-0"></span>
@@ -178,7 +235,7 @@
     </div>
   </div>
 
-  <!-- ==================== 7. 신규 부지 개발 모달 (밝은 크림 테마) ==================== -->
+  <!-- ==================== 8. 신규 부지 개발 모달 (밝은 크림 테마) ==================== -->
   <div id="lot-dev-modal" class="hidden fixed inset-0 z-50 pastel-modal-backdrop flex items-center justify-center p-3">
     <div class="cozy-planner-shell w-full max-w-xl max-h-[84vh]">
       <div class="cozy-planner-inner">
@@ -195,7 +252,7 @@
     </div>
   </div>
 
-  <!-- ==================== 8. 세대 입주 계약 모달 (밝은 크림 테마) ==================== -->
+  <!-- ==================== 9. 세대 입주 계약 모달 (밝은 크림 테마) ==================== -->
   <div id="recruit-modal" class="hidden fixed inset-0 z-50 pastel-modal-backdrop flex items-center justify-center p-3">
     <div class="cozy-planner-shell w-full max-w-2xl max-h-[86vh]">
       <div class="cozy-planner-inner">
@@ -215,7 +272,7 @@
     </div>
   </div>
 
-  <!-- ==================== 9. 빌딩 이름 현판 각인 미니 모달 ==================== -->
+  <!-- ==================== 10. 빌딩 이름 현판 각인 미니 모달 ==================== -->
   <div id="rename-building-modal" class="hidden fixed inset-0 z-[58] pastel-modal-backdrop flex items-center justify-center p-3">
     <div class="cozy-planner-shell w-full max-w-sm">
       <div class="cozy-planner-inner p-3.5 space-y-2.5">
@@ -242,7 +299,7 @@
     </div>
   </div>
 
-  <!-- ==================== 10. 퇴거 도장 스탬프 연출 오버레이 ==================== -->
+  <!-- ==================== 11. 퇴거 도장 스탬프 연출 오버레이 ==================== -->
   <div id="eviction-stamp-overlay" class="hidden fixed inset-0 z-[60] pointer-events-none">
     <div id="eviction-stamp-box" class="absolute left-1/2 top-1/2 diary-card !bg-[#FFFFFF] !border-4 !border-[#FF758F] !px-5 !py-3 flex items-center gap-2.5 font-title text-lg sm:text-2xl text-[#BE123C]">
       <span id="stamp-ico-slot" class="flex items-center"></span>

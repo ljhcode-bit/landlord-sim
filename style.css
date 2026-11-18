@@ -1,10 +1,10 @@
 /* =========================================================
-   【갓물주 라이프 3D: 미니미 타운 — 모바일 UI 완결 & 파스텔 스카이 & 크림 다이어리 에디션】
+   【갓물주 라이프 3D: 미니미 타운 — 전체화면 단독 룸 뷰 & 가구 카탈로그 & 파스텔 크림 에디션】
    1. 모바일 다크모드 색상 반전 원천 차단 (color-scheme: light only)
-   2. 상단 3캡슐 한 줄 정렬 (display: flex; justify-content: space-between; gap: 6px;)
-   3. 시커먼 배경 제거 -> 파스텔 스카이블루 하늘(#AEE2FF -> #E8F9FD -> #FFFDF9) + 밀크 화이트(#FFFFFF) 버튼
-   4. 바닐라 크림(#FFFDF7) & 버터 화이트(#FFF7EB) 타운 수첩 + 탭 줄바꿈 원천 차단(white-space: nowrap)
-   5. 코랄 핑크(#FF758F) & 에메랄드 민트(#2EC4B6) 젤리 버튼 + 월세 코인 버블 & 하트 파티클 연출
+   2. 상단 3캡슐 한 줄 정렬 + [🔙 건물 전체로 나가기] + 호실 평형 전환 칩
+   3. 파스텔 스카이블루 하늘(#AEE2FF -> #E8F9FD -> #FFFDF9) + 밀크 화이트(#FFFFFF) 버튼
+   4. 바닐라 크림(#FFFDF7) & 버터 화이트(#FFF7EB) 타운 수첩 및 인테리어 가구 카탈로그 바텀시트
+   5. 코랄 핑크(#FF758F) & 에메랄드 민트(#2EC4B6) & 허니 골드(#FBBF24) 젤리 버튼
    ========================================================= */
 
 @font-face {
@@ -65,7 +65,6 @@ textarea {
   letter-spacing: -0.02em;
 }
 
-/* [수정 2] 화사한 봄날 파스텔 스카이블루 하늘 배경 */
 html,
 body {
   margin: 0;
@@ -95,7 +94,7 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* ==================== 1. WebGL 캔버스 & 오버레이 레이어 ==================== */
+/* ==================== 1. WebGL 캔버스 & 스튜디오 비네팅 & 오버레이 ==================== */
 #webgl-container {
   position: fixed;
   inset: 0;
@@ -110,6 +109,16 @@ body {
   outline: none;
 }
 
+/* [핵심 1] 단독 룸 뷰 포커스 시 주변 배경 시선을 모아주는 소프트 스튜디오 비네팅 */
+#room-isolation-vignette {
+  background: radial-gradient(
+    ellipse 64% 58% at 50% 42%,
+    rgba(255, 253, 247, 0) 52%,
+    rgba(62, 44, 35, 0.24) 100%
+  );
+  transition: opacity 0.3s ease;
+}
+
 #overlay-3d-layer {
   position: fixed;
   inset: 0;
@@ -118,7 +127,7 @@ body {
   overflow: hidden;
 }
 
-/* ==================== 2. [수정 1] 겹침 없는 상단 3캡슐 HUD & 밀크 화이트 플로팅 버튼 ==================== */
+/* ==================== 2. 겹침 없는 상단 3캡슐 HUD & 룸 뷰 복귀 버튼 ==================== */
 .hud-top-row {
   display: flex;
   justify-content: space-between;
@@ -144,7 +153,6 @@ body {
   gap: 6px;
 }
 
-/* 모든 플로팅 버튼: 밀크 화이트(#FFFFFF) 바탕 + 코코아 브라운(#4A3728) 텍스트 + 파스텔 테두리 */
 .milk-float-btn {
   display: inline-flex;
   align-items: center;
@@ -184,6 +192,60 @@ body {
 
 .milk-float-btn:active {
   transform: translateY(2px);
+}
+
+/* [핵심 1] 건물 전체로 나가기 전용 상큼 코랄/밀크 버튼 */
+.exit-room-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6.5px 14px;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFF0F3 100%) !important;
+  color: #BE123C !important;
+  font-family: var(--font-title) !important;
+  font-size: 12px !important;
+  border: 2.2px solid #FF758F;
+  box-shadow:
+    0 3px 0 rgba(225, 29, 72, 0.28),
+    0 8px 18px rgba(120, 70, 60, 0.18);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.14s cubic-bezier(0.34, 1.6, 0.64, 1);
+}
+
+.exit-room-pill-btn:hover {
+  transform: translateY(-1.5px) scale(1.02);
+}
+
+.exit-room-pill-btn:active {
+  transform: translateY(2px) scale(0.98);
+}
+
+.room-hop-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 9.5px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.94) !important;
+  color: var(--cocoa-text) !important;
+  border: 1.6px solid #EED0B5;
+  font-family: var(--font-display) !important;
+  font-size: 11px !important;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(90, 65, 50, 0.12);
+  transition: all 0.14s ease;
+}
+
+.room-hop-chip.active {
+  background: #2EC4B6 !important;
+  color: #FFFFFF !important;
+  border-color: #0F766E;
+  box-shadow: 0 2.5px 0 #0F766E;
 }
 
 .milk-float-pill {
@@ -258,7 +320,84 @@ body {
   100% { transform: translateY(-3px) scale(1.1); }
 }
 
-/* ==================== 3. [수정 3] 밝은 바닐라 크림(#FFFDF7) & 버터 화이트(#FFF7EB) 타운 수첩 ==================== */
+/* ==================== 3. [핵심 3] 인테리어 가구 카탈로그 바텀시트 ==================== */
+.furniture-sheet-shell {
+  background: var(--vanilla-cream) !important;
+  border: 2.5px solid #F2C6A8;
+  outline: 3px solid rgba(255, 255, 255, 0.95);
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow:
+    0 -4px 24px rgba(90, 65, 50, 0.18),
+    0 6px 0 rgba(210, 165, 135, 0.3);
+}
+
+.fcat-tab-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  white-space: nowrap !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 6.5px 4px !important;
+  border-radius: 11px;
+  font-family: var(--font-display) !important;
+  font-size: clamp(10.5px, 1.3vw, 12px) !important;
+  font-weight: 700;
+  color: var(--espresso-ink) !important;
+  background: #FFFFFF !important;
+  border: 1.5px solid #EED0B5;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+
+.fcat-tab-btn[data-fcat='bed'] { background: #FFF0F3 !important; }
+.fcat-tab-btn[data-fcat='sofa'] { background: #EAFAF6 !important; }
+.fcat-tab-btn[data-fcat='appliance'] { background: #F0F9FF !important; }
+.fcat-tab-btn[data-fcat='decor'] { background: #FFF8E6 !important; }
+
+.fcat-tab-btn.active {
+  transform: translateY(-1.5px);
+  border: 2px solid #E07A5F;
+  box-shadow: 0 2.5px 0 rgba(224, 122, 95, 0.25);
+}
+
+.fcat-tab-btn[data-fcat='bed'].active { background: #FFD6E0 !important; }
+.fcat-tab-btn[data-fcat='sofa'].active { background: #B8F2E6 !important; }
+.fcat-tab-btn[data-fcat='appliance'].active { background: #CDE8FF !important; }
+.fcat-tab-btn[data-fcat='decor'].active { background: #FFE8A3 !important; }
+
+.fcat-cards-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(175px, 1fr));
+  gap: 8px;
+  overflow-x: auto;
+}
+
+.fcat-item-card {
+  background: var(--butter-card) !important;
+  border: 1.8px solid var(--card-border);
+  border-radius: 15px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 6px;
+  transition: transform 0.14s ease, border-color 0.14s ease;
+}
+
+.fcat-item-card.equipped-card {
+  background: #F2FCF9 !important;
+  border: 2px solid #2EC4B6;
+  box-shadow: 0 3px 10px rgba(46, 196, 182, 0.16);
+}
+
+.fcat-item-card:hover {
+  transform: translateY(-1.5px);
+}
+
+/* ==================== 4. 밝은 바닐라 크림(#FFFDF7) & 버터 화이트(#FFF7EB) 타운 수첩 ==================== */
 .pastel-modal-backdrop {
   background: rgba(90, 75, 65, 0.24) !important;
   backdrop-filter: blur(6px);
@@ -316,7 +455,6 @@ body {
   box-shadow: 0 12px 28px rgba(90, 65, 50, 0.18);
 }
 
-/* 정갈한 에스프레소 브라운(#3E2C23) 타이포그래피 */
 .diary-modal-title {
   font-family: var(--font-title) !important;
   font-size: clamp(14.5px, 1.6vw, 17px) !important;
@@ -357,13 +495,29 @@ body {
   line-height: 1.15;
   padding: 3px 8.5px;
   border-radius: 9999px;
-  background: #FFFFFF !important;
-  color: var(--espresso-ink) !important;
+  background: #FFFFFF;
+  color: var(--espresso-ink);
   border: 1.5px solid var(--card-border);
   white-space: nowrap;
 }
 
-/* [수정 3-2] 탭 줄바꿈 원천 차단 (세대도감 / 건물장부 한 줄 유지!) */
+.role-accent-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--font-display) !important;
+  font-size: 11px !important;
+  font-weight: 700;
+  line-height: 1.15;
+  padding: 3px 8.5px;
+  border-radius: 9999px;
+  color: #FFFFFF !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 0 2px 5px rgba(62, 44, 35, 0.16);
+  white-space: nowrap;
+}
+
+/* 탭 줄바꿈 원천 차단 (세대도감 / 건물장부 한 줄 유지) */
 .diary-index-tab {
   position: relative;
   display: flex;
@@ -399,12 +553,11 @@ body {
 .diary-index-tab[data-ntab='manager'].active { background: #FFE8A3 !important; }
 .diary-index-tab[data-ntab='infra'].active { background: #CDE8FF !important; }
 
-/* [수정 3-1] 수첩 내부 카드: 소프트 피치/버터 화이트(#FFF7EB) + 진한 에스프레소(#3E2C23) */
 .diary-card {
   background: var(--butter-card) !important;
   border: 1.5px solid var(--card-border);
   border-radius: 17px;
-  padding: 11px 13px;
+  padding: 10px 12px;
   box-shadow: 0 3px 8px rgba(160, 120, 90, 0.08);
   color: var(--espresso-ink) !important;
 }
@@ -413,11 +566,10 @@ body {
   background: #FFFFFF !important;
   border: 1.5px solid #F2DEC4;
   border-radius: 14px;
-  padding: 9px 11px;
+  padding: 8px 10px;
   color: var(--espresso-ink) !important;
 }
 
-/* [수정 3-3] 말줄임표 없이 제목을 1줄 전체 폭으로 온전히 보여주는 통합 퀘스트 카드 */
 .quest-unified-card {
   background: var(--butter-card) !important;
   border: 1.5px solid var(--card-border);
@@ -434,7 +586,6 @@ body {
   border: 2px solid #2EC4B6;
 }
 
-/* 호실/필지 선택용 가로 칩 버튼 */
 .selector-chip-btn {
   display: inline-flex;
   align-items: center;
@@ -459,7 +610,6 @@ body {
   box-shadow: 0 2.5px 0 #C9184A;
 }
 
-/* 키워드 캡슐 배지 */
 .kw-chip {
   display: inline-flex;
   align-items: center;
@@ -514,7 +664,6 @@ body {
   white-space: nowrap;
 }
 
-/* 밝은 밀크 화이트 바탕 호텔 넘버 태그 */
 .hotel-num-tag {
   display: inline-flex;
   align-items: center;
@@ -530,10 +679,10 @@ body {
   line-height: 1.15;
 }
 
-/* ==================== 4. 사선 캔디 게이지 바 & 상큼한 코랄/민트/골드 젤리 버튼 ==================== */
+/* ==================== 5. 사선 캔디 게이지 바 & 상큼한 코랄/민트/골드 젤리 버튼 ==================== */
 .candy-gauge-track {
   width: 100%;
-  height: 10px;
+  height: 9px;
   border-radius: 9999px;
   background: #F5E8D7 !important;
   border: 1px solid #DFC4A8;
@@ -575,15 +724,14 @@ body {
     linear-gradient(90deg, #56CCF2 0%, #2EC4B6 100%);
 }
 
-/* [수정 3-1] 원색 파란색(#1D4ED8) 폐기 -> 코랄 핑크(#FF758F) & 에메랄드 민트(#2EC4B6) 젤리 버튼 */
 .jelly-action-btn {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 4.5px;
-  padding: 7px 12px;
-  border-radius: 13px;
+  padding: 6.5px 11px;
+  border-radius: 12px;
   font-family: var(--font-display) !important;
   font-size: 11.5px !important;
   font-weight: 700 !important;
@@ -609,26 +757,23 @@ body {
 }
 
 .jelly-action-btn:disabled {
-  opacity: 0.45;
-  filter: grayscale(0.35);
+  opacity: 0.48;
+  filter: grayscale(0.3);
   cursor: not-allowed;
 }
 
-/* 코랄 핑크 (#FF758F) 젤리 버튼 */
 .btn-coral-lip {
   background: linear-gradient(180deg, #FF8BA3 0%, #FF758F 55%, #F25477 100%) !important;
   text-shadow: 0 1px 0 rgba(159, 18, 57, 0.55);
   box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.55), 0 3.5px 0 #D63A5E, 0 6px 12px rgba(255, 117, 143, 0.28);
 }
 
-/* 에메랄드 민트 (#2EC4B6) 젤리 버튼 */
 .btn-mint-lip {
   background: linear-gradient(180deg, #4AD9CC 0%, #2EC4B6 55%, #1CA396 100%) !important;
   text-shadow: 0 1px 0 rgba(15, 118, 110, 0.55);
   box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.55), 0 3.5px 0 #138075, 0 6px 12px rgba(46, 196, 182, 0.28);
 }
 
-/* 허니 골드 젤리 버튼 */
 .btn-gold-lip {
   background: linear-gradient(180deg, #FFD166 0%, #FBBF24 55%, #EA9A0A 100%) !important;
   color: #3E2C23 !important;
@@ -636,7 +781,6 @@ body {
   box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.65), 0 3.5px 0 #C27803, 0 6px 12px rgba(245, 158, 11, 0.24);
 }
 
-/* 서브 이동 버튼도 어두운 원색 파랑 대신 상큼한 코랄/민트 젤리 톤으로 통일 */
 .btn-sky-lip {
   background: linear-gradient(180deg, #FF9BB0 0%, #FF758F 100%) !important;
   text-shadow: 0 1px 0 rgba(159, 18, 57, 0.5);
@@ -659,7 +803,7 @@ body {
   cursor: pointer;
 }
 
-/* ==================== 5. 관리인 슬라이더 ==================== */
+/* ==================== 6. 관리인 슬라이더 ==================== */
 .coin-slider-wrap {
   position: relative;
   padding-top: 28px;
@@ -708,7 +852,7 @@ input[type='range'].golden-coin-range::-webkit-slider-thumb {
   cursor: grab;
 }
 
-/* ==================== 6. [수정 1 & 6] 밝은 밀크 화이트 플로팅 말풍선 · 월세 코인 버블 · 하트 연출 ==================== */
+/* ==================== 7. 밝은 밀크 화이트 플로팅 말풍선 · 월세 코인 버블 · 하트 연출 ==================== */
 .world-pin {
   position: absolute;
   left: -9999px;
@@ -718,7 +862,6 @@ input[type='range'].golden-coin-range::-webkit-slider-thumb {
   will-change: left, top, transform, opacity;
 }
 
-/* 모든 인디케이터/돌발 케어/말풍선: 밝은 밀크 화이트(#FFFFFF) + 코코아 브라운(#4A3728) 텍스트 */
 .action-indicator-pin {
   display: inline-flex;
   align-items: center;
@@ -748,7 +891,6 @@ input[type='range'].golden-coin-range::-webkit-slider-thumb {
   100% { transform: translate(-50%, -115%) scale(1.04); }
 }
 
-/* [요구사항 6-1] 🪙 터치 수금용 황금 동전 버블 (+20% 팁 보너스!) */
 .rent-coin-bubble {
   display: inline-flex;
   align-items: center;
@@ -871,12 +1013,11 @@ input[type='range'].golden-coin-range::-webkit-slider-thumb {
   cursor: pointer;
 }
 
-/* 호텔식 심플 호실 핀도 밝은 밀크 화이트 + 골드 포인트로 화사하게 변경 */
 .hotel-room-pin {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 3px 10px;
+  padding: 3.5px 10px;
   border-radius: 9999px;
   background: #FFFFFF !important;
   color: var(--cocoa-text) !important;
@@ -908,8 +1049,8 @@ input[type='range'].golden-coin-range::-webkit-slider-thumb {
   display: flex;
   align-items: center;
   gap: 7px;
-  max-width: 232px;
-  padding: 6px 11px 6px 8px;
+  max-width: 268px;
+  padding: 6.5px 12px 6.5px 8.5px;
   border-radius: 18px;
   background: #FFFFFF !important;
   border: 2px solid #F3C6B6;
@@ -917,7 +1058,7 @@ input[type='range'].golden-coin-range::-webkit-slider-thumb {
   color: var(--cocoa-text) !important;
   font-family: var(--font-body) !important;
   font-size: 11.5px;
-  line-height: 1.28;
+  line-height: 1.3;
   animation: cloudBubblePop 0.35s cubic-bezier(0.34, 1.68, 0.64, 1) forwards;
 }
 
@@ -952,7 +1093,6 @@ input[type='range'].golden-coin-range::-webkit-slider-thumb {
   100% { opacity: 1; transform: translate(-50%, -100%) scale(1); }
 }
 
-/* [수정 1] 조명 교체 +48만! 등 모든 돌발 버블: 밝은 밀크 화이트(#FFFFFF) + 코코아 브라운(#4A3728) + 파스텔 테두리 */
 .care-clay-bubble {
   display: inline-flex;
   align-items: center;

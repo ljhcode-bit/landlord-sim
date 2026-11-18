@@ -1,13 +1,13 @@
 // =========================================================
-// 【갓물주 라이프 3D: 미니미 타운】 데이터 & 탈(脫)AI 도감 SVG 일러스트 엔진 (data.js)
-// - 줄글 설명(Prose) 0%: 모든 세입자·시설·퀘스트 정보를 아이콘 + 키워드 칩 + 게이지 수치로 구조화
-// - createCustomSVGIcon: HUD·칩·게이지용 고대비 벡터 아이콘 24종
-// - createNotebookArtworkSVG: 48x48 우표 치비 초상화 6종, [🌸 완료] 벚꽃 스탬프, 스프링 고리, 시설·상가 일러스트
+// 【갓물주 라이프 3D: 미니미 타운 — 대형 건축 & 4종 입체 평면도 & 가구 카탈로그 에디션】 (data.js)
+// - 줄글 설명(Prose) 0%: 아이콘 + 키워드 칩 + 게이지 수치 중심 구조화
+// - 4가지 입체 평면도: 원룸(studio) / 투룸(tworoom) / 쓰리룸(threeroom) / 복층 로프트(loft)
+// - 가구·시설 종류별 선택 카탈로그(FURNITURE_CATALOG): 침대 4종 · 소파 4종 · 가전 4종 · 벽지/바닥/복층계단 4종
 // =========================================================
 
 let svgUidSeq = 0;
 
-// 1. HUD, 키워드 배지, 스탯 게이지용 커스텀 벡터 아이콘 생성기
+// 1. HUD, 키워드 배지, 스탯 게이지, 가구 탭용 커스텀 벡터 아이콘 생성기
 function createCustomSVGIcon(name, size = 24) {
   const uid = `ico_${name}_${++svgUidSeq}`;
   const commonDefs = `
@@ -47,6 +47,10 @@ function createCustomSVGIcon(name, size = 24) {
         <stop offset="0%" stop-color="#4F6BED"/>
         <stop offset="100%" stop-color="#1E3A8A"/>
       </linearGradient>
+      <linearGradient id="${uid}_lav" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#E9D5FF"/>
+        <stop offset="100%" stop-color="#9333EA"/>
+      </linearGradient>
     </defs>
   `;
 
@@ -75,6 +79,63 @@ function createCustomSVGIcon(name, size = 24) {
           <rect x="13.5" y="19.5" width="5" height="7.5" rx="2" fill="url(#${uid}_wood)" stroke="#43342E" stroke-width="1.2"/>
           <rect x="8.5" y="18.5" width="3.8" height="3.8" rx="1" fill="url(#${uid}_sky)" stroke="#43342E" stroke-width="1"/>
           <rect x="19.8" y="18.5" width="3.8" height="3.8" rx="1" fill="url(#${uid}_sky)" stroke="#43342E" stroke-width="1"/>
+        </g>`;
+      break;
+
+    case 'back_arrow':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <circle cx="16" cy="16" r="11.5" fill="url(#${uid}_coral)" stroke="#43342E" stroke-width="1.5"/>
+          <path d="M19.5 10.5L13 16L19.5 21.5" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>`;
+      break;
+
+    case 'bed_ico':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <rect x="4.5" y="10" width="4" height="15" rx="1.8" fill="url(#${uid}_wood)" stroke="#43342E" stroke-width="1.4"/>
+          <rect x="4.5" y="17" width="23" height="6.5" rx="2" fill="url(#${uid}_coral)" stroke="#43342E" stroke-width="1.4"/>
+          <rect x="8.5" y="13.5" width="7" height="4" rx="1.8" fill="#FFFFFF" stroke="#43342E" stroke-width="1.2"/>
+          <rect x="24" y="16" width="3.5" height="9" rx="1.5" fill="url(#${uid}_wood)" stroke="#43342E" stroke-width="1.3"/>
+        </g>`;
+      break;
+
+    case 'sofa_ico':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <rect x="6" y="10" width="20" height="11" rx="4" fill="url(#${uid}_mint)" stroke="#43342E" stroke-width="1.5"/>
+          <rect x="4" y="14" width="5" height="9" rx="2.2" fill="url(#${uid}_mint)" stroke="#43342E" stroke-width="1.4"/>
+          <rect x="23" y="14" width="5" height="9" rx="2.2" fill="url(#${uid}_mint)" stroke="#43342E" stroke-width="1.4"/>
+          <rect x="7.5" y="17" width="17" height="6" rx="2" fill="#FFFDF7" stroke="#43342E" stroke-width="1.3"/>
+        </g>`;
+      break;
+
+    case 'tv_ico':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <rect x="5" y="7" width="22" height="14.5" rx="3" fill="url(#${uid}_navy)" stroke="#43342E" stroke-width="1.5"/>
+          <rect x="7.5" y="9.5" width="17" height="9.5" rx="1.8" fill="url(#${uid}_sky)"/>
+          <rect x="13.5" y="21.5" width="5" height="3" fill="#64748B" stroke="#43342E" stroke-width="1.2"/>
+          <rect x="10" y="24" width="12" height="2.6" rx="1.3" fill="url(#${uid}_wood)" stroke="#43342E" stroke-width="1.2"/>
+        </g>`;
+      break;
+
+    case 'palette_ico':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <path d="M16 5C9.8 5 5 9.6 5 15.5C5 21.2 9.6 26 15.2 26C17.4 26 18.8 24.5 18.8 22.8C18.8 21.8 18.3 21 18.3 20.2C18.3 19.2 19.2 18.5 20.4 18.5H22.2C25.2 18.5 27.5 16.2 27.5 13.2C27.5 8.5 22.2 5 16 5Z" fill="url(#${uid}_cream)" stroke="#43342E" stroke-width="1.5"/>
+          <circle cx="11" cy="13" r="2.2" fill="#FF758F"/>
+          <circle cx="16" cy="10.2" r="2.2" fill="#FACC15"/>
+          <circle cx="21" cy="12.5" r="2.2" fill="#34D399"/>
+          <circle cx="11.5" cy="18.5" r="2.2" fill="#60A5FA"/>
+        </g>`;
+      break;
+
+    case 'stairs_ico':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <path d="M6 25H26V7H20V13H14V19H8V25Z" fill="url(#${uid}_wood)" stroke="#43342E" stroke-width="1.5" stroke-linejoin="round"/>
+          <line x1="7" y1="18" x2="21" y2="5.5" stroke="url(#${uid}_gold)" stroke-width="2.4" stroke-linecap="round"/>
         </g>`;
       break;
 
@@ -333,19 +394,144 @@ function createCustomSVGIcon(name, size = 24) {
 }
 
 // =========================================================
-// 2. [요구사항 2] 스프링 다이어리 전용 48x48 우표 치비 초상화 & [🌸 완료] 도장 에셋
+// 2. 가구 카탈로그 전용 일러스트 아이콘 생성기 (createFurnitureArtworkSVG)
+// =========================================================
+function createFurnitureArtworkSVG(itemId, size = 40) {
+  let art = '';
+  switch (itemId) {
+    // 침대 4종
+    case 'bed_iron':
+      art = `
+        <rect x="6" y="11" width="3" height="22" rx="1.5" fill="#475569" stroke="#3E2C23" stroke-width="1.5"/>
+        <rect x="35" y="16" width="3" height="17" rx="1.5" fill="#475569" stroke="#3E2C23" stroke-width="1.5"/>
+        <rect x="8" y="21" width="28" height="7" rx="2" fill="#7DD3FC" stroke="#3E2C23" stroke-width="1.5"/>
+        <rect x="10" y="17" width="8" height="4.5" rx="2" fill="#FFFFFF" stroke="#3E2C23" stroke-width="1.3"/>`;
+      break;
+    case 'bed_queen':
+      art = `
+        <rect x="6" y="10" width="32" height="12" rx="3" fill="#C6834B" stroke="#3E2C23" stroke-width="1.6"/>
+        <rect x="6" y="19" width="32" height="13" rx="3" fill="#6EE7B7" stroke="#3E2C23" stroke-width="1.6"/>
+        <rect x="10" y="15" width="10" height="5" rx="2" fill="#FFFDF7" stroke="#3E2C23" stroke-width="1.3"/>
+        <rect x="24" y="15" width="10" height="5" rx="2" fill="#FFFDF7" stroke="#3E2C23" stroke-width="1.3"/>`;
+      break;
+    case 'bed_canopy':
+      art = `
+        <rect x="7" y="7" width="30" height="5" rx="2.5" fill="#FF8FA3" stroke="#3E2C23" stroke-width="1.5"/>
+        <line x1="9" y1="11" x2="9" y2="33" stroke="#F59E0B" stroke-width="2.2"/>
+        <line x1="35" y1="11" x2="35" y2="33" stroke="#F59E0B" stroke-width="2.2"/>
+        <path d="M9 12Q16 18 11 28M35 12Q28 18 33 28" fill="none" stroke="#FFB3C6" stroke-width="3" stroke-linecap="round"/>
+        <rect x="9" y="22" width="26" height="10" rx="3" fill="#FF758F" stroke="#3E2C23" stroke-width="1.6"/>`;
+      break;
+    case 'bed_bunk':
+      art = `
+        <rect x="7" y="7" width="3" height="29" rx="1.2" fill="#B45309" stroke="#3E2C23" stroke-width="1.4"/>
+        <rect x="34" y="7" width="3" height="29" rx="1.2" fill="#B45309" stroke="#3E2C23" stroke-width="1.4"/>
+        <rect x="9" y="12" width="26" height="6" rx="2" fill="#38BDF8" stroke="#3E2C23" stroke-width="1.4"/>
+        <rect x="9" y="25" width="26" height="6" rx="2" fill="#34D399" stroke="#3E2C23" stroke-width="1.4"/>
+        <line x1="29" y1="12" x2="29" y2="33" stroke="#FDE047" stroke-width="2.2"/>`;
+      break;
+
+    // 소파 4종
+    case 'sofa_beanbag':
+      art = `
+        <ellipse cx="22" cy="25" rx="13" ry="9.5" fill="#FACC15" stroke="#3E2C23" stroke-width="1.7"/>
+        <ellipse cx="22" cy="18" rx="9" ry="7" fill="#FDE047" stroke="#3E2C23" stroke-width="1.5"/>`;
+      break;
+    case 'sofa_mint2':
+      art = `
+        <rect x="8" y="13" width="28" height="13" rx="4" fill="#34D399" stroke="#3E2C23" stroke-width="1.6"/>
+        <rect x="6" y="19" width="32" height="11" rx="3.5" fill="#A7F3D0" stroke="#3E2C23" stroke-width="1.6"/>
+        <circle cx="15" cy="19" r="3.2" fill="#FFFDF7" stroke="#3E2C23" stroke-width="1.2"/>
+        <circle cx="29" cy="19" r="3.2" fill="#FF8FA3" stroke="#3E2C23" stroke-width="1.2"/>`;
+      break;
+    case 'sofa_leather_l':
+      art = `
+        <rect x="6" y="12" width="31" height="12" rx="3.5" fill="#9A582C" stroke="#3E2C23" stroke-width="1.6"/>
+        <rect x="6" y="19" width="20" height="9" rx="2.5" fill="#C6834B" stroke="#3E2C23" stroke-width="1.5"/>
+        <rect x="25" y="19" width="12" height="15" rx="3" fill="#C6834B" stroke="#3E2C23" stroke-width="1.6"/>`;
+      break;
+    case 'sofa_rocker':
+      art = `
+        <rect x="13" y="10" width="18" height="13" rx="3" fill="#D97706" stroke="#3E2C23" stroke-width="1.6"/>
+        <rect x="11" y="21" width="22" height="5.5" rx="2.5" fill="#F59E0B" stroke="#3E2C23" stroke-width="1.5"/>
+        <path d="M8 31Q22 37 36 31" fill="none" stroke="#78350F" stroke-width="3" stroke-linecap="round"/>`;
+      break;
+
+    // 가전/특수시설 4종
+    case 'app_fan':
+      art = `
+        <circle cx="22" cy="15" r="8.5" fill="#E0F2FE" stroke="#3E2C23" stroke-width="1.6"/>
+        <circle cx="22" cy="15" r="2.5" fill="#38BDF8"/>
+        <rect x="20.5" y="23.5" width="3" height="8" fill="#94A3B8" stroke="#3E2C23" stroke-width="1.2"/>
+        <ellipse cx="22" cy="33" rx="7.5" ry="2.5" fill="#FFFFFF" stroke="#3E2C23" stroke-width="1.4"/>`;
+      break;
+    case 'app_ac':
+      art = `
+        <rect x="6" y="10" width="32" height="12" rx="4" fill="#FFFFFF" stroke="#3E2C23" stroke-width="1.7"/>
+        <rect x="9" y="18" width="26" height="2.5" rx="1" fill="#38BDF8"/>
+        <path d="M12 26Q10 31 14 34M22 26Q20 31 24 34M32 26Q30 31 34 34" fill="none" stroke="#0EA5E9" stroke-width="2.2" stroke-linecap="round"/>`;
+      break;
+    case 'app_rgb_desk':
+      art = `
+        <rect x="5" y="11" width="10" height="9" rx="1.8" fill="#A855F7" stroke="#3E2C23" stroke-width="1.4"/>
+        <rect x="17" y="10" width="10" height="10" rx="1.8" fill="#38BDF8" stroke="#3E2C23" stroke-width="1.4"/>
+        <rect x="29" y="11" width="10" height="9" rx="1.8" fill="#FF758F" stroke="#3E2C23" stroke-width="1.4"/>
+        <rect x="6" y="23" width="32" height="4" rx="1.8" fill="#334155" stroke="#3E2C23" stroke-width="1.4"/>
+        <rect x="10" y="27" width="3" height="7" fill="#475569"/><rect x="31" y="27" width="3" height="7" fill="#475569"/>`;
+      break;
+    case 'app_soundmat':
+      art = `
+        <polygon points="22,9 38,18 22,27 6,18" fill="#BAE6FD" stroke="#3E2C23" stroke-width="1.6" stroke-linejoin="round"/>
+        <polygon points="22,14 38,23 22,32 6,23" fill="#34D399" stroke="#3E2C23" stroke-width="1.6" stroke-linejoin="round"/>`;
+      break;
+
+    // 벽지/바닥/복층계단 4종
+    case 'dec_peach':
+      art = `
+        <rect x="7" y="7" width="30" height="16" rx="3" fill="#F4CCB6" stroke="#3E2C23" stroke-width="1.5"/>
+        <rect x="7" y="23" width="30" height="14" rx="3" fill="#ECCAA3" stroke="#3E2C23" stroke-width="1.5"/>
+        <path d="M24 23H35V12H29V18H24V23Z" fill="#C6834B" stroke="#3E2C23" stroke-width="1.2"/>`;
+      break;
+    case 'dec_sage':
+      art = `
+        <rect x="7" y="7" width="30" height="16" rx="3" fill="#B1D3B9" stroke="#3E2C23" stroke-width="1.5"/>
+        <rect x="7" y="23" width="30" height="14" rx="3" fill="#E4B07A" stroke="#3E2C23" stroke-width="1.5"/>
+        <path d="M24 23H35V12H29V18H24V23Z" fill="#6F4528" stroke="#3E2C23" stroke-width="1.2"/>`;
+      break;
+    case 'dec_butter':
+      art = `
+        <rect x="7" y="7" width="30" height="16" rx="3" fill="#F6DE9C" stroke="#3E2C23" stroke-width="1.5"/>
+        <rect x="7" y="23" width="30" height="14" rx="3" fill="#FAF0E1" stroke="#3E2C23" stroke-width="1.5"/>
+        <path d="M24 23H35V12H29V18H24V23Z" fill="#FACC15" stroke="#3E2C23" stroke-width="1.2"/>`;
+      break;
+    case 'dec_lavender':
+    default:
+      art = `
+        <rect x="7" y="7" width="30" height="16" rx="3" fill="#C6B7E6" stroke="#3E2C23" stroke-width="1.5"/>
+        <rect x="7" y="23" width="30" height="14" rx="3" fill="#F3E4CE" stroke="#3E2C23" stroke-width="1.5"/>
+        <path d="M24 23H35V12H29V18H24V23Z" fill="#FF758F" stroke="#3E2C23" stroke-width="1.2"/>`;
+      break;
+  }
+
+  return `
+    <svg width="${size}" height="${size}" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" class="shrink-0 select-none">
+      <rect x="2" y="2" width="40" height="40" rx="12" fill="#FFFDF7" stroke="#EED0B5" stroke-width="1.8"/>
+      ${art}
+    </svg>`;
+}
+
+// =========================================================
+// 3. 스프링 다이어리 전용 48x48 우표 치비 초상화 & [완료] 도장 에셋
 // =========================================================
 function createNotebookArtworkSVG(kind, size = 48) {
   const uid = `nb_${kind}_${++svgUidSeq}`;
 
-  // 1) [🌸 완료] 스탬프 도장 그래픽
   if (kind === 'stamp_well_done' || kind === 'stamp_complete') {
     return `
       <svg width="${size}" height="${size}" viewBox="0 0 68 68" fill="none" xmlns="http://www.w3.org/2000/svg" class="inline-block shrink-0 select-none">
         <g transform="rotate(-10 34 34)">
           <circle cx="34" cy="34" r="29" fill="#FFF0F3" fill-opacity="0.94" stroke="#E11D48" stroke-width="2.8"/>
           <circle cx="34" cy="34" r="24.5" fill="none" stroke="#FB7185" stroke-width="1.5" stroke-dasharray="3.5 2.8"/>
-          <!-- 벚꽃 심볼 -->
           <circle cx="34" cy="19.5" r="4.2" fill="#FF758F"/>
           <circle cx="29" cy="23" r="4.2" fill="#FF758F"/>
           <circle cx="39" cy="23" r="4.2" fill="#FF758F"/>
@@ -357,7 +543,6 @@ function createNotebookArtworkSVG(kind, size = 48) {
       </svg>`;
   }
 
-  // 2) 다이어리 중앙 스프링 제본 고리 SVG
   if (kind === 'binder_ring') {
     return `
       <svg width="26" height="22" viewBox="0 0 26 22" fill="none" xmlns="http://www.w3.org/2000/svg" class="shrink-0 select-none">
@@ -370,7 +555,6 @@ function createNotebookArtworkSVG(kind, size = 48) {
       </svg>`;
   }
 
-  // 3) 6종 캐릭터 48x48px 2D 치비(Chibi) 우표 배지 (대학생 / 신혼부부 / 4인가족 / 노부부 / 히키코모리 / 관리인)
   if (kind.startsWith('avatar_')) {
     const role = kind.replace('avatar_', '');
     const bgPalette = {
@@ -379,6 +563,7 @@ function createNotebookArtworkSVG(kind, size = 48) {
       family4: ['#DCFCE7', '#A7F3D0'],
       elderly: ['#FEF3C7', '#FDE68A'],
       hikikomori: ['#EDE9FE', '#DDD6FE'],
+      streamer: ['#FCE7F3', '#DDD6FE'],
       manager: ['#DBEAFE', '#BFDBFE']
     };
     const [bg1, bg2] = bgPalette[role] || bgPalette.student;
@@ -444,6 +629,16 @@ function createNotebookArtworkSVG(kind, size = 48) {
         <circle cx="36.5" cy="35" r="1.9" fill="#43342E"/>
         <path d="M25 37.8Q27.5 39.2 30 37.8M34 37.8Q36.5 39.2 39 37.8" fill="none" stroke="#7E22CE" stroke-width="1.5" stroke-linecap="round"/>
         <path d="M29.5 41Q32 39.8 34.5 41" fill="none" stroke="#43342E" stroke-width="1.5" stroke-linecap="round"/>`;
+    } else if (role === 'streamer') {
+      portrait = `
+        <path d="M14 58C15 44 22 40 32 40C42 40 49 44 50 58Z" fill="#EC4899" stroke="#43342E" stroke-width="2"/>
+        <polygon points="21,23 25,13 29,22" fill="#FF758F" stroke="#43342E" stroke-width="1.6"/>
+        <polygon points="43,23 39,13 35,22" fill="#38BDF8" stroke="#43342E" stroke-width="1.6"/>
+        <circle cx="32" cy="33" r="12" fill="#FFE5D6" stroke="#43342E" stroke-width="2"/>
+        <path d="M20 30C21 19 43 19 44 30C38 25 26 25 20 30Z" fill="#9333EA" stroke="#43342E" stroke-width="1.6"/>
+        <circle cx="27.2" cy="34" r="1.8" fill="#43342E"/><circle cx="36.8" cy="34" r="1.8" fill="#43342E"/>
+        <ellipse cx="23" cy="37" rx="2.4" ry="1.2" fill="#FF8FA3"/><ellipse cx="41" cy="37" rx="2.4" ry="1.2" fill="#FF8FA3"/>
+        <path d="M28.5 38.5Q32 42 35.5 38.5" fill="none" stroke="#43342E" stroke-width="1.6" stroke-linecap="round"/>`;
     } else {
       portrait = `
         <path d="M15 58C16 45 23 41 32 41C41 41 48 45 49 58Z" fill="#1E3A8A" stroke="#43342E" stroke-width="2"/>
@@ -464,7 +659,6 @@ function createNotebookArtworkSVG(kind, size = 48) {
           </linearGradient>
           <clipPath id="${uid}_aclip"><rect x="7" y="7" width="50" height="50" rx="14"/></clipPath>
         </defs>
-        <!-- 우표 타공 스티치 프레임 (48x48 Stamp Badge) -->
         <rect x="3" y="3" width="58" height="58" rx="17" fill="#FFFDF9" stroke="#D9B09E" stroke-width="2"/>
         <rect x="5" y="5" width="54" height="54" rx="15.5" fill="none" stroke="#E5B8A8" stroke-width="1.5" stroke-dasharray="3.2 2.6"/>
         <rect x="7" y="7" width="50" height="50" rx="14" fill="url(#${uid}_abg)" stroke="#43342E" stroke-width="1.9"/>
@@ -472,7 +666,6 @@ function createNotebookArtworkSVG(kind, size = 48) {
       </svg>`;
   }
 
-  // 4) 건물·시설·상가 외곽선 미니 일러스트 배지
   let miniArt = '';
   switch (kind) {
     case 'infra_elevator':
@@ -563,12 +756,14 @@ function createHouseholdAvatarSVG(type, size = 48) {
   return createNotebookArtworkSVG(`avatar_${type}`, size);
 }
 
-// --------------------- 핵심 게임 밸런스 및 무(無)줄글 구조화 데이터 ---------------------
+// --------------------- 핵심 게임 밸런스 및 대형 건축 스케일 ---------------------
 const GAME_BALANCE = {
-  roomWidth: 5.5,
-  roomDepth: 4.6,
-  wallHeight: 2.6,
-  evictionGraceSec: 30,
+  buildingWidth: 24.4,
+  buildingDepth: 8.2,
+  roomWidth: 9.0,
+  roomDepth: 7.6,
+  wallHeight: 4.25,
+  evictionGraceSec: 32,
   managerHireFee: 50,
   managerSalaryPerCycle: 95,
   managerCycleSec: 14,
@@ -581,22 +776,373 @@ const GAME_BALANCE = {
 const BUILDING_NAME_PRESETS = [
   '해피 미니미 타운 1차',
   '럭키 팰리스',
-  '드림 타워',
-  '골든 스테이트',
-  '스타 팰리스',
+  '드림 로프트 타워',
+  '골든 펜트하우스',
+  '스타 부티크 하우스',
   '햇살 캐슬'
 ];
 
+// 대형 건축 스케일에 맞춘 여유로운 플로팅 아일랜드 부지 좌표
 const INITIAL_ISLAND_LOTS = [
-  { lotId: 'lot_main', name: '수변 1번지', x: -4.8, z: -4.2, landPrice: 0, owned: true, devType: 'mixed_1', title: '해피 미니미 타운 1차' },
-  { lotId: 'lot_solar', name: '햇살언덕 2번지', x: -18.6, z: -3.5, landPrice: 320, owned: false, devType: null, title: null },
-  { lotId: 'lot_farm', name: '시냇가 3번지', x: -14.2, z: 10.6, landPrice: 420, owned: false, devType: null, title: null },
-  { lotId: 'lot_east', name: '아치교 4번지', x: 13.8, z: -4.5, landPrice: 680, owned: false, devType: null, title: null },
-  { lotId: 'lot_south_e', name: '벚꽃변 5번지', x: 13.2, z: 10.4, landPrice: 1200, owned: false, devType: null, title: null },
-  { lotId: 'lot_north', name: '전망대 6번지', x: 4.5, z: -16.8, landPrice: 2400, owned: false, devType: null, title: null }
+  { lotId: 'lot_main', name: '수변 1번지', x: -4.2, z: -5.4, landPrice: 0, owned: true, devType: 'mixed_1', title: '해피 미니미 타운 1차' },
+  { lotId: 'lot_solar', name: '햇살언덕 2번지', x: -26.8, z: -4.6, landPrice: 320, owned: false, devType: null, title: null },
+  { lotId: 'lot_farm', name: '시냇가 3번지', x: -20.2, z: 14.2, landPrice: 420, owned: false, devType: null, title: null },
+  { lotId: 'lot_east', name: '아치교 4번지', x: 26.8, z: -5.0, landPrice: 680, owned: false, devType: null, title: null },
+  { lotId: 'lot_south_e', name: '벚꽃변 5번지', x: 24.5, z: 13.8, landPrice: 1200, owned: false, devType: null, title: null },
+  { lotId: 'lot_north', name: '전망대 6번지', x: -3.8, z: -22.8, landPrice: 2400, owned: false, devType: null, title: null }
 ];
 
-// 부지 개발 카탈로그 (줄글 삭제 -> 키워드 칩 배열화)
+// --------------------- 4가지 입체 평면도 메타 및 호실 템플릿 ---------------------
+const ROOM_TYPE_META = {
+  studio: {
+    key: 'studio',
+    badge: '원룸 스튜디오',
+    shortBadge: '원룸',
+    emoji: '🏠',
+    tone: 'sky',
+    specialty: '대학생 · 히키코모리 특화',
+    preferredBy: ['student', 'hikikomori']
+  },
+  tworoom: {
+    key: 'tworoom',
+    badge: '투룸 스위트',
+    shortBadge: '투룸',
+    emoji: '🚪',
+    tone: 'coral',
+    specialty: '아치 가벽 분리 · 신혼/노부부 특화',
+    preferredBy: ['newlywed', 'elderly']
+  },
+  threeroom: {
+    key: 'threeroom',
+    badge: '쓰리룸 펜트하우스',
+    shortBadge: '쓰리룸',
+    emoji: '👨‍👩‍👧‍👦',
+    tone: 'mint',
+    specialty: '안방+메인거실+아이방 · 4인가족/VIP 특화',
+    preferredBy: ['family4', 'streamer']
+  },
+  loft: {
+    key: 'loft',
+    badge: '복층 로프트 하우스',
+    shortBadge: '복층',
+    emoji: '🪜',
+    tone: 'gold',
+    specialty: '원목 실내계단+2층 다락 · 스트리머/고급 특화',
+    preferredBy: ['streamer', 'newlywed', 'student']
+  }
+};
+
+// 건물 전체 스케일 약 2배 확장! 층별로 가로 스팬(rw)과 층고(rh)가 다른 5개 입체 호실 구성
+// - 1층 주거(101 원룸 + 102 투룸): 기본 개방!
+// - 2층 주거(201 쓰리룸 패밀리 펜트하우스): 한 층 전체(23.6m) 통합 대형 평수!
+// - 3층 주거(301 고층 스튜디오 + 302 1.8배 층고 복층 로프트 하우스): 복층 다락방 & 원목 실내계단!
+const ROOM_SLOTS_TEMPLATE = [
+  {
+    subId: '101',
+    name: '101',
+    layoutType: 'studio',
+    floor: 1,
+    col: 0,
+    colSpan: 1,
+    lx: -7.35,
+    ly: 4.82,
+    lz: 0.15,
+    rw: 8.9,
+    rd: 7.5,
+    rh: 4.25,
+    rentBonus: 0,
+    cycleSec: 9.5,
+    unlockCost: 0,
+    defaultUnlocked: true,
+    defaultDecor: 'dec_peach'
+  },
+  {
+    subId: '102',
+    name: '102',
+    layoutType: 'tworoom',
+    floor: 1,
+    col: 1,
+    colSpan: 2,
+    lx: 4.55,
+    ly: 4.82,
+    lz: 0.15,
+    rw: 14.5,
+    rd: 7.5,
+    rh: 4.25,
+    rentBonus: 36,
+    cycleSec: 10.4,
+    unlockCost: 0,
+    defaultUnlocked: true,
+    defaultDecor: 'dec_sage'
+  },
+  {
+    subId: '201',
+    name: '201',
+    layoutType: 'threeroom',
+    floor: 2,
+    col: 0,
+    colSpan: 3,
+    lx: 0.0,
+    ly: 9.45,
+    lz: 0.15,
+    rw: 23.6,
+    rd: 7.5,
+    rh: 4.45,
+    rentBonus: 95,
+    cycleSec: 11.2,
+    unlockCost: 190,
+    defaultUnlocked: false,
+    defaultDecor: 'dec_butter'
+  },
+  {
+    subId: '301',
+    name: '301',
+    layoutType: 'studio',
+    floor: 3,
+    col: 0,
+    colSpan: 1,
+    lx: -6.7,
+    ly: 14.28,
+    lz: 0.15,
+    rw: 10.2,
+    rd: 7.5,
+    rh: 4.3,
+    rentBonus: 24,
+    cycleSec: 10.2,
+    unlockCost: 160,
+    defaultUnlocked: false,
+    defaultDecor: 'dec_lavender'
+  },
+  {
+    subId: '302',
+    name: '302',
+    layoutType: 'loft',
+    floor: 3,
+    col: 1,
+    colSpan: 2,
+    lx: 5.2,
+    ly: 14.28,
+    lz: 0.15,
+    rw: 13.2,
+    rd: 7.5,
+    rh: 7.65,
+    rentBonus: 78,
+    cycleSec: 10.8,
+    unlockCost: 230,
+    defaultUnlocked: false,
+    defaultDecor: 'dec_butter'
+  }
+];
+
+// --------------------- [핵심 3] 가구·시설 종류별 선택 카탈로그 데이터 ---------------------
+const FURNITURE_CATEGORIES = [
+  { key: 'bed', label: '침실/침대', emoji: '🛏️', svgIcon: 'bed_ico' },
+  { key: 'sofa', label: '거실/소파', emoji: '🛋️', svgIcon: 'sofa_ico' },
+  { key: 'appliance', label: '주방/가전', emoji: '🖥️', svgIcon: 'tv_ico' },
+  { key: 'decor', label: '벽지/바닥/복층계단', emoji: '🎨', svgIcon: 'palette_ico' }
+];
+
+const FURNITURE_CATALOG = {
+  bed: [
+    {
+      id: 'bed_iron',
+      category: 'bed',
+      name: '심플 철제 침대',
+      cost: 0,
+      rentAdd: 0,
+      happyAdd: 0,
+      chip: '기본 제공',
+      tone: 'sky',
+      reaction: '깔끔한 스카이블루 철제 침대가 실용적이에요!'
+    },
+    {
+      id: 'bed_queen',
+      category: 'bed',
+      name: '코지 원목 퀸침대',
+      cost: 75,
+      rentAdd: 26,
+      happyAdd: 12,
+      chip: '월세 +26만',
+      tone: 'mint',
+      reaction: '따뜻한 원목 퀸침대라 꿀잠 예약이에요~ 최고!'
+    },
+    {
+      id: 'bed_canopy',
+      category: 'bed',
+      name: '핑크 프린세스 캐노피 침대',
+      cost: 145,
+      rentAdd: 52,
+      happyAdd: 20,
+      chip: '월세 +52만',
+      tone: 'coral',
+      reaction: '와아!! 핑크 프린세스 캐노피 침대라니 동화 속 공주님 방 같아요!'
+    },
+    {
+      id: 'bed_bunk',
+      category: 'bed',
+      name: '패밀리 원목 2층 침대',
+      cost: 165,
+      rentAdd: 58,
+      happyAdd: 22,
+      chip: '월세 +58만',
+      tone: 'gold',
+      reaction: '튼튼한 원목 2층 침대 사다리 타기가 너무 신나요!'
+    }
+  ],
+  sofa: [
+    {
+      id: 'sofa_beanbag',
+      category: 'sofa',
+      name: '1인용 옐로우 빈백',
+      cost: 0,
+      rentAdd: 0,
+      happyAdd: 0,
+      chip: '기본 제공',
+      tone: 'gold',
+      reaction: '말랑말랑 노란 빈백에 파묻히면 피로가 싹 풀려요!'
+    },
+    {
+      id: 'sofa_mint2',
+      category: 'sofa',
+      name: '민트 패브릭 2인 소파',
+      cost: 70,
+      rentAdd: 24,
+      happyAdd: 12,
+      chip: '월세 +24만',
+      tone: 'mint',
+      reaction: '상큼한 민트 패브릭 소파 덕분에 거실이 화사해졌어요!'
+    },
+    {
+      id: 'sofa_rocker',
+      category: 'sofa',
+      name: '노부부용 원목 흔들의자 세트',
+      cost: 115,
+      rentAdd: 40,
+      happyAdd: 18,
+      chip: '월세 +40만',
+      tone: 'coral',
+      reaction: '원목 흔들의자에 앉아 따뜻한 차 한 잔 마시니 천국이구려~'
+    },
+    {
+      id: 'sofa_leather_l',
+      category: 'sofa',
+      name: '고급 가죽 L자형 패밀리 소파',
+      cost: 155,
+      rentAdd: 56,
+      happyAdd: 22,
+      chip: '월세 +56만',
+      tone: 'gold',
+      reaction: '우와! 고급 가죽 L자형 소파가 펜트하우스 거실처럼 럭셔리해요!'
+    }
+  ],
+  appliance: [
+    {
+      id: 'app_fan',
+      category: 'appliance',
+      name: '보급형 스탠드 선풍기',
+      cost: 0,
+      rentAdd: 0,
+      happyAdd: 0,
+      chip: '기본 제공',
+      tone: 'sky',
+      reaction: '솔솔 부는 스탠드 선풍기 바람이 시원해요~'
+    },
+    {
+      id: 'app_ac',
+      category: 'appliance',
+      name: '무풍 벽걸이 에어컨',
+      cost: 85,
+      rentAdd: 30,
+      happyAdd: 14,
+      chip: '월세 +30만',
+      tone: 'mint',
+      reaction: '무풍 벽걸이 에어컨까지 풀옵션이라니 갓물주님 최고예요!'
+    },
+    {
+      id: 'app_soundmat',
+      category: 'appliance',
+      name: '프리미엄 층간 방음 매트',
+      cost: 95,
+      rentAdd: 34,
+      happyAdd: 18,
+      grantsSoundproof: true,
+      chip: '방음 100% · +34만',
+      tone: 'sky',
+      reaction: '도톰한 층간 방음 매트 덕분에 발망치 걱정 끝이에요!'
+    },
+    {
+      id: 'app_rgb_desk',
+      category: 'appliance',
+      name: 'RGB 트리플 모니터 데스크',
+      cost: 160,
+      rentAdd: 58,
+      happyAdd: 24,
+      chip: '월세 +58만',
+      tone: 'coral',
+      reaction: '영롱한 RGB 트리플 모니터 데스크라니 방송·작업 효율 폭발!!'
+    }
+  ],
+  decor: [
+    {
+      id: 'dec_peach',
+      category: 'decor',
+      name: '피치 오트밀 & 메이플 마루',
+      wallKey: 'wallPeach',
+      floorKey: 'floor1',
+      stairStyle: 'oak',
+      cost: 0,
+      rentAdd: 0,
+      happyAdd: 0,
+      chip: '피치 파스텔',
+      tone: 'coral',
+      reaction: '포근한 피치 오트밀 벽지 색감이 마음을 따뜻하게 해줘요!'
+    },
+    {
+      id: 'dec_sage',
+      category: 'decor',
+      name: '세이지 그린 & 오크 마루',
+      wallKey: 'wallSage',
+      floorKey: 'floor2',
+      stairStyle: 'walnut',
+      cost: 65,
+      rentAdd: 22,
+      happyAdd: 12,
+      chip: '월세 +22만',
+      tone: 'mint',
+      reaction: '싱그러운 세이지 그린 벽지와 오크 마루 조합이 너무 세련됐어요!'
+    },
+    {
+      id: 'dec_butter',
+      category: 'decor',
+      name: '버터 크림 & 골드 원목계단',
+      wallKey: 'wallButter',
+      floorKey: 'floor3',
+      stairStyle: 'gold',
+      cost: 120,
+      rentAdd: 42,
+      happyAdd: 16,
+      chip: '월세 +42만',
+      tone: 'gold',
+      reaction: '햇살 같은 버터 크림 벽지와 화이트 마루 덕분에 집이 2배 넓어 보여요!'
+    },
+    {
+      id: 'dec_lavender',
+      category: 'decor',
+      name: '로얄 라벤더 & 부티크 계단',
+      wallKey: 'wallLavender',
+      floorKey: 'floor3',
+      stairStyle: 'coral',
+      cost: 170,
+      rentAdd: 62,
+      happyAdd: 22,
+      chip: '월세 +62만',
+      tone: 'coral',
+      reaction: '로얄 라벤더 벽지와 부티크 계단 마감이 예술 작품 같아요!'
+    }
+  ]
+};
+
+// 부지 개발 카탈로그
 const DEVELOPMENT_CATALOG = {
   solar_plant: {
     type: 'solar_plant',
@@ -665,10 +1211,10 @@ const DEVELOPMENT_CATALOG = {
     artKey: 'shop_mart',
     buildCost: 780,
     isResidential: true,
-    baseRoomRent: 54,
+    baseRoomRent: 56,
     rentSynergyPct: 10,
     chips: [
-      { ico: 'red_house', text: '6호실 빌딩', tone: 'sky' },
+      { ico: 'red_house', text: '4종 대형평형', tone: 'sky' },
       { ico: 'sparkle_star', text: '시너지 +10%', tone: 'mint' }
     ]
   },
@@ -679,16 +1225,16 @@ const DEVELOPMENT_CATALOG = {
     artKey: 'shop_mart',
     buildCost: 0,
     isResidential: true,
-    baseRoomRent: 34,
+    baseRoomRent: 38,
     rentSynergyPct: 0,
     chips: [
-      { ico: 'red_house', text: '6호실 빌딩', tone: 'coral' },
+      { ico: 'red_house', text: '4종 대형평형', tone: 'coral' },
       { ico: 'coin_stack', text: '상가 +28만', tone: 'gold' }
     ]
   }
 };
 
-// 공용 인프라 카탈로그 (줄글 삭제 -> 키워드 칩화)
+// 공용 인프라 카탈로그
 const PUBLIC_INFRA_CATALOG = {
   elevator: {
     key: 'elevator',
@@ -698,7 +1244,7 @@ const PUBLIC_INFRA_CATALOG = {
     cost: 160,
     rentBonusPct: 10,
     chips: [
-      { ico: 'elevator', text: '2층 필수', tone: 'sky' },
+      { ico: 'elevator', text: '고층 필수', tone: 'sky' },
       { ico: 'coin_stack', text: '월세 +10%', tone: 'mint' }
     ]
   },
@@ -740,32 +1286,22 @@ const PUBLIC_INFRA_CATALOG = {
   }
 };
 
-// [요구사항 3] 호텔식 3자리 심플 넘버링 ('호' 제거: 101, 102, 103, 201, 202, 203)
-const ROOM_SLOTS_TEMPLATE = [
-  { subId: '101', name: '101', floor: 1, col: 0, lx: -5.6, ly: 3.05, lz: 0.2, cycleSec: 9.5, unlockCost: 0, defaultUnlocked: true },
-  { subId: '102', name: '102', floor: 1, col: 1, lx: 0.0, ly: 3.05, lz: 0.2, cycleSec: 11.0, unlockCost: 0, defaultUnlocked: true },
-  { subId: '103', name: '103', floor: 1, col: 2, lx: 5.6, ly: 3.05, lz: 0.2, cycleSec: 10.2, unlockCost: 130, defaultUnlocked: false },
-  { subId: '201', name: '201', floor: 2, col: 0, lx: -5.6, ly: 5.85, lz: 0.2, cycleSec: 11.8, unlockCost: 200, defaultUnlocked: false },
-  { subId: '202', name: '202', floor: 2, col: 1, lx: 0.0, ly: 5.85, lz: 0.2, cycleSec: 10.6, unlockCost: 280, defaultUnlocked: false },
-  { subId: '203', name: '203', floor: 2, col: 2, lx: 5.6, ly: 5.85, lz: 0.2, cycleSec: 11.4, unlockCost: 380, defaultUnlocked: false }
-];
-
 const ROOM_INTERIOR_TIERS = [
-  { level: 0, name: '기본 시멘트룸', cost: 0, rentAdd: 0, chip: '기본 마감' },
-  { level: 1, name: '파스텔 스트라이프', cost: 65, rentAdd: 28, chip: '월세 +28만' },
-  { level: 2, name: '코지 헤링본', cost: 160, rentAdd: 68, chip: '월세 +68만' },
-  { level: 3, name: '로얄 부티크', cost: 340, rentAdd: 135, chip: '세트 +25%' }
+  { level: 0, name: '기본 인테리어', cost: 0, rentAdd: 0, chip: '기본 마감' },
+  { level: 1, name: '파스텔 커스텀', cost: 65, rentAdd: 18, chip: '가구 1종+' },
+  { level: 2, name: '코지 부티크', cost: 160, rentAdd: 36, chip: '가구 2종+' },
+  { level: 3, name: '로얄 풀옵션', cost: 340, rentAdd: 65, chip: '풀세트 +20%' }
 ];
 
-// [요구사항 1] 줄글 전면 폐기 -> 아이콘+키워드 칩(traitBadges) & 스탯 수치(noiseLv) 중심 도감 데이터
+// 세입자 가구군 6종 (복층/고급 세입자용 스트리머 VIP 추가!)
 const HOUSEHOLD_TYPES = {
   student: {
     type: 'student',
     label: '대학생',
     accentHex: '#3B82F6',
     memberCount: 1,
-    minRent: 58,
-    maxRent: 108,
+    minRent: 68,
+    maxRent: 135,
     noiseOutput: 48,
     noiseLv: 2,
     noiseSensitivity: 25,
@@ -774,15 +1310,15 @@ const HOUSEHOLD_TYPES = {
     needsRecycling: false,
     isHoarder: false,
     traitBadges: [
-      { ico: 'guitar_note', label: '야행성 소음', tone: 'sky' },
+      { ico: 'guitar_note', label: '원룸 선호', tone: 'sky' },
       { ico: 'coin_stack', label: '가성비 중시', tone: 'gold' }
     ],
     happyQuotes: [
-      '듀얼 모니터 빛이 영롱해서 인강이 쏙쏙 들어와요!',
+      '방이 1.6배나 넓어져서 침대랑 책상이 쾌적해요!',
       '1층 해피마트 24가 바로 아래라 야식 최고예요!',
-      '헤링본 마루 위에서 기타 치니 소리가 따뜻해요~'
+      '러그로 공간이 깔끔하게 나뉘어 공부 집중이 잘 돼요~'
     ],
-    noiseVictimQuotes: ['윗방이 쿵쿵거려 공부 집중이 안 돼요!'],
+    noiseVictimQuotes: ['윗방이 쿵쿵거려 시험공부 집중이 안 돼요!'],
     odorVictimQuotes: ['옆방에서 퀴퀴한 냄새가 복도까지 나요..'],
     infraQuotes: ['스마트 택배함이 있으면 훨씬 편할 텐데요!']
   },
@@ -791,8 +1327,8 @@ const HOUSEHOLD_TYPES = {
     label: '신혼부부',
     accentHex: '#EC4899',
     memberCount: 2,
-    minRent: 120,
-    maxRent: 215,
+    minRent: 135,
+    maxRent: 245,
     noiseOutput: 18,
     noiseLv: 1,
     noiseSensitivity: 58,
@@ -801,13 +1337,13 @@ const HOUSEHOLD_TYPES = {
     needsRecycling: true,
     isHoarder: false,
     traitBadges: [
-      { ico: 'heart_gauge', label: '핑크 스윗홈', tone: 'coral' },
+      { ico: 'heart_gauge', label: '투룸 스윗홈', tone: 'coral' },
       { ico: 'recycle_bin', label: '분리수거 중시', tone: 'mint' }
     ],
     happyQuotes: [
-      '아일랜드 식탁 모닝커피 향기 너무 좋다!',
-      '파스텔 벽지 색감이 동화 속 신혼집 같아요!',
-      '1층 뽀송 워시 덕분에 이불 빨래가 뽀송해요~'
+      '아치형 가벽으로 거실이랑 안방이 나뉜 투룸이 로망이었어요!',
+      '아일랜드 식탁 모닝커피 향기가 너무 좋아요~',
+      '파스텔 벽지 색감이 동화 속 신혼집 같아요!'
     ],
     noiseVictimQuotes: ['윗집 발망치 소리에 단잠을 다 설쳤어요!'],
     odorVictimQuotes: ['옆집 배달 쓰레기 냄새가 너무 심해요!'],
@@ -818,8 +1354,8 @@ const HOUSEHOLD_TYPES = {
     label: '4인 가족',
     accentHex: '#059669',
     memberCount: 4,
-    minRent: 180,
-    maxRent: 320,
+    minRent: 210,
+    maxRent: 380,
     noiseOutput: 88,
     noiseLv: 3,
     noiseSensitivity: 30,
@@ -828,25 +1364,25 @@ const HOUSEHOLD_TYPES = {
     needsRecycling: true,
     isHoarder: false,
     traitBadges: [
-      { ico: 'sound_wave', label: '발망치 주의', tone: 'coral' },
-      { ico: 'coin_stack', label: '고수익 세대', tone: 'mint' }
+      { ico: 'red_house', label: '쓰리룸 특화', tone: 'mint' },
+      { ico: 'sound_wave', label: '발망치 주의', tone: 'coral' }
     ],
     happyQuotes: [
+      '부부 안방에 아이들 방까지 분리된 쓰리룸이라 너무 행복해요!',
       '아이들이 2층 침대 사다리 타며 신나해요!',
-      '온 가족이 도란도란 저녁 먹는 시간이 행복해요~',
-      '시냇물 다리 풍경이 참 평화로워요!'
+      '넓은 메인 거실 식탁에서 온 가족이 도란도란 저녁 먹어요~'
     ],
     noiseVictimQuotes: ['애들아 살살 걸어라~ 아랫집 놀라시겠다!'],
     odorVictimQuotes: ['옆방 악취 때문에 창문 환기를 못 해요!'],
-    infraQuotes: ['아이들 데리고 2층 계단 오르기가 숨차네요!']
+    infraQuotes: ['아이들 데리고 계단 오르기가 숨차네요, 승강기가 필요해요!']
   },
   elderly: {
     type: 'elderly',
     label: '노부부',
     accentHex: '#D97706',
     memberCount: 2,
-    minRent: 110,
-    maxRent: 185,
+    minRent: 125,
+    maxRent: 220,
     noiseOutput: 8,
     noiseLv: 1,
     noiseSensitivity: 92,
@@ -856,24 +1392,51 @@ const HOUSEHOLD_TYPES = {
     isHoarder: false,
     traitBadges: [
       { ico: 'elevator', label: '승강기 필수', tone: 'gold' },
-      { ico: 'sound_wave', label: '소음 민감', tone: 'sky' }
+      { ico: 'sound_wave', label: '투룸·정숙 선호', tone: 'sky' }
     ],
     happyQuotes: [
-      '흔들의자에 앉아 녹차 한 잔 마시니 평온하구려~',
-      '분재에 예쁜 새순이 돋았어요, 햇살이 고운 집이야!',
-      '유리 엘리베이터 덕분에 마실 나가기 참 편하구먼!'
+      '거실과 침실이 아치문으로 나뉘어 참 아늑하구려~',
+      '흔들의자에 앉아 녹차 한 잔 마시니 평온하구먼!',
+      '유리 엘리베이터 덕분에 마실 나가기 참 편하구려!'
     ],
     noiseVictimQuotes: ['윗집 발소리 때문에 머리가 지끈거려요!'],
     odorVictimQuotes: ['옆방 썩은 냄새 때문에 못 살겠소!'],
-    infraQuotes: ['엘리베이터 없이는 2층 계단 못 다니겠소..']
+    infraQuotes: ['엘리베이터 없이는 고층 계단 못 다니겠소..']
+  },
+  streamer: {
+    type: 'streamer',
+    label: '스트리머 VIP',
+    accentHex: '#9333EA',
+    memberCount: 1,
+    minRent: 220,
+    maxRent: 390,
+    noiseOutput: 55,
+    noiseLv: 2,
+    noiseSensitivity: 40,
+    odorSensitivity: 65,
+    needsElevator: true,
+    needsRecycling: false,
+    isHoarder: false,
+    traitBadges: [
+      { ico: 'stairs_ico', label: '복층 로프트 선호', tone: 'gold' },
+      { ico: 'tv_ico', label: '초고수익 VIP', tone: 'coral' }
+    ],
+    happyQuotes: [
+      '원목 계단 올라가면 2층 다락 침실이라니 복층 로프트 감성 미쳤다!!',
+      '1층 작업실에서 방송하고 2층 다락방 무드등 켜고 쉬니 최고예요!',
+      '천장이 1.8배나 높아서 스튜디오 조명발이 대박이에요~'
+    ],
+    noiseVictimQuotes: ['마이크에 층간소음이 다 들어가요! 방음 매트 부탁해요!'],
+    odorVictimQuotes: ['복도 냄새 때문에 택배 받으러 못 나가겠어요!'],
+    infraQuotes: ['방송 장비 옮기려면 엘리베이터가 꼭 필요해요!']
   },
   hikikomori: {
     type: 'hikikomori',
     label: '히키코모리',
     accentHex: '#7C3AED',
     memberCount: 1,
-    minRent: 135,
-    maxRent: 235,
+    minRent: 145,
+    maxRent: 255,
     noiseOutput: 15,
     noiseLv: 1,
     noiseSensitivity: 20,
@@ -886,9 +1449,9 @@ const HOUSEHOLD_TYPES = {
       { ico: 'broom_clean', label: '쓰레기방 주의', tone: 'coral' }
     ],
     happyQuotes: [
-      '배달 시켜야지... 모니터 3대가 내 세상이야...',
+      '배달 시켜야지... 트리플 모니터가 내 세상이야...',
       '외주 정산 완료... 이번 달 월세도 칼입금...',
-      '피자 박스는 저기 탑 위에 차곡차곡 쌓아두자...'
+      '넓은 원룸 구석에 피자 박스를 차곡차곡 쌓아두자...'
     ],
     cleanedGrumbleQuote: '아, 치우지 말라니까요... 다 쓸 데 있는 건데...',
     evictedQuote: '칫... 월세 안 밀렸는데... 짐 싸서 나갑니다...'
@@ -905,12 +1468,11 @@ const CARE_BUBBLE_TYPES = [
   { id: 'smart_light', svgIcon: 'gold_key', label: '조명 교체', cashReward: 48, toastMsg: '무드조명 교체! +48만' }
 ];
 
-// [요구사항 1] 무(無)텍스트 1줄 퀘스트 카드 데이터: 아이콘 + 핵심 키워드 + 진행바(cur/max) + 보상
 const QUEST_LIST = [
   {
     id: 'mq1',
-    icon: 'sparkle_star',
-    title: '101호 인테리어 Lv.1 시공',
+    icon: 'bed_ico',
+    title: '101호 가구 카탈로그 시공 1회',
     reward: 160,
     focusLot: 'lot_main',
     focusSubRoom: '101',
@@ -923,7 +1485,7 @@ const QUEST_LIST = [
   {
     id: 'mq2',
     icon: 'gold_key',
-    title: '101호 첫 입주 계약 체결',
+    title: '101호 원룸 입주 계약 체결',
     reward: 180,
     focusLot: 'lot_main',
     focusSubRoom: '101',
@@ -962,7 +1524,7 @@ const QUEST_LIST = [
   {
     id: 'mq5',
     icon: 'elevator',
-    title: '201호 개방 & 엘리베이터 시공',
+    title: '201호 쓰리룸 개방 & 엘리베이터 시공',
     reward: 380,
     focusLot: 'lot_main',
     focusSubRoom: '201',
@@ -979,21 +1541,22 @@ const QUEST_LIST = [
   },
   {
     id: 'mq6',
-    icon: 'solar_panel',
-    title: '2번지 신규 부지 착공',
+    icon: 'stairs_ico',
+    title: '302호 복층 로프트 하우스 개방',
     reward: 450,
-    focusLot: 'lot_solar',
-    progress: (st) => ({ cur: Math.min(2, st.lots.filter((l) => l.owned).length), max: 2 }),
-    check: (st) => st.lots.filter((l) => l.owned).length >= 2
+    focusLot: 'lot_main',
+    focusSubRoom: '302',
+    progress: (st) => ({ cur: st.buildings.lot_main?.rooms.find((x) => x.subId === '302')?.unlocked ? 1 : 0, max: 1 }),
+    check: (st) => !!st.buildings.lot_main?.rooms.find((x) => x.subId === '302')?.unlocked
   },
   {
     id: 'mq7',
-    icon: 'berry_farm',
-    title: '3번지 도시농장 확장',
-    reward: 550,
-    focusLot: 'lot_farm',
-    progress: (st) => ({ cur: Math.min(3, st.lots.filter((l) => l.owned).length), max: 3 }),
-    check: (st) => st.lots.filter((l) => l.owned).length >= 3
+    icon: 'solar_panel',
+    title: '2번지 신규 부지 착공',
+    reward: 500,
+    focusLot: 'lot_solar',
+    progress: (st) => ({ cur: Math.min(2, st.lots.filter((l) => l.owned).length), max: 2 }),
+    check: (st) => st.lots.filter((l) => l.owned).length >= 2
   },
   {
     id: 'mq8',
@@ -1025,14 +1588,18 @@ const QUEST_LIST = [
 ];
 
 window.createCustomSVGIcon = createCustomSVGIcon;
+window.createFurnitureArtworkSVG = createFurnitureArtworkSVG;
 window.createNotebookArtworkSVG = createNotebookArtworkSVG;
 window.createHouseholdAvatarSVG = createHouseholdAvatarSVG;
 window.GAME_BALANCE = GAME_BALANCE;
 window.BUILDING_NAME_PRESETS = BUILDING_NAME_PRESETS;
 window.INITIAL_ISLAND_LOTS = INITIAL_ISLAND_LOTS;
+window.ROOM_TYPE_META = ROOM_TYPE_META;
+window.ROOM_SLOTS_TEMPLATE = ROOM_SLOTS_TEMPLATE;
+window.FURNITURE_CATEGORIES = FURNITURE_CATEGORIES;
+window.FURNITURE_CATALOG = FURNITURE_CATALOG;
 window.DEVELOPMENT_CATALOG = DEVELOPMENT_CATALOG;
 window.PUBLIC_INFRA_CATALOG = PUBLIC_INFRA_CATALOG;
-window.ROOM_SLOTS_TEMPLATE = ROOM_SLOTS_TEMPLATE;
 window.ROOM_INTERIOR_TIERS = ROOM_INTERIOR_TIERS;
 window.HOUSEHOLD_TYPES = HOUSEHOLD_TYPES;
 window.FAMILY_LAST_NAMES = FAMILY_LAST_NAMES;
