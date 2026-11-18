@@ -1,16 +1,18 @@
 // =========================================================
-// 【갓물주 라이프 3D: 미니미 타운 — 3D 만화 윤곽선 & 다꾸 스프링 수첩 에디션】 (app.js)
-// 1. 클릭 가능 오브젝트 만화풍 윤곽선(EdgesGeometry #5A463C + 캐릭터 실루엣 헐) & 호실 골드/크림 격자 프레임
-// 2. 상호작용 구역 바닥 점선 포커스 패드(Base Ring) + 호버 황금/민트 발광·부유 + 선택 호실 회전 포커스 프레임
-//    + 고대비 미니 플로팅 액션 핀(➕ 개발 가능, ✨ 업그레이드, 🔨 케어 필요)
-// 3. 타운 수첩 다이어리 타이포그래피 축소(#43342E / #7A685F) + 스프링 제본 + 44px 우표 초상화 + 완료 도장
-// 4. 사선 줄무늬 캔디 게이지 바 & 3D 입체 립(0 4px 0) 고대비 액션 버튼
+// 【갓물주 라이프 3D: 미니미 타운 — 커스텀 입체 간판 & 빌딩 현판 & 다꾸 수첩 리마스터】 (app.js)
+// 1. 1층 상가 고해상도 캔버스 간판(createShopSignboardTexture) & 3D 입체 조형물:
+//    - 해피마트(MINI MART 24): 3색 스트라이프 간판 + 삼각김밥·장바구니·바코드 + 양면 24H 네온 돌출간판 + 물결 어닝 + A자 입간판
+//    - 뽀송 워시(BUBBLE PONG): 구름 프레임 간판 + 노란 네온 포인트 + 비누방울이 보글보글 피어오르는 입체 세탁기 마스코트
+//    - 달콤 다방(SWEET CAFE): 브라운·크림 물결 어닝 + 김이 모락모락 나는 입체 커피잔·크루아상 조형물
+// 2. 빌딩 고유 이름 현판 시스템:
+//    - 옥상 전면 입체 아치형 스카이 사인 + 1층 정문 황동 명패 + 지붕 위 왕관 리본 타이틀 배지 + 실시간 [이름 변경] 작명 기능
+// 3. 만화풍 다크 코코아 윤곽선(#5A463C), 호실 골드/크림 격자 몰딩, 바닥 점선 포커스 패드, 호버 발광, 다꾸 스프링 수첩
 // =========================================================
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-const SAVE_KEY = 'god_landlord_toon_planner_2026_v3';
+const SAVE_KEY = 'god_landlord_signage_remaster_2026_v4';
 
 // --------------------- 전역 게임 상태 생성 ---------------------
 let state = createInitialState();
@@ -67,7 +69,7 @@ function makeResidentialBuilding(lotId, devType, title) {
 function createInitialState() {
   const lots = JSON.parse(JSON.stringify(INITIAL_ISLAND_LOTS));
   const buildings = {
-    lot_main: makeResidentialBuilding('lot_main', 'mixed_1', '미니미 주상복합 1호관')
+    lot_main: makeResidentialBuilding('lot_main', 'mixed_1', '해피 미니미 타운 1차')
   };
   const developments = {};
 
@@ -120,11 +122,13 @@ let currentShellOpacity = 1.0;
 let focusedRoomId = null;
 let hoveredLotId = null;
 let hoveredRoomId = null;
+let hoveredShopMesh = null;
 let activeNotebookTab = 'quests';
 let selectedSplitItemId = null;
 let devModalLotId = null;
 let recruitRoomTarget = null;
 let recruitCandidates = [];
+let renameTargetLotId = null;
 
 const hudAnim = {
   shownGold: 460,
@@ -152,6 +156,7 @@ const activeParticles = [];
 const shockwaveRings = [];
 const waterRipples = [];
 const odorEmitters = {};
+const facadeEmitters = []; // [요구사항 1] 세탁소 비누방울 & 다방 커피 김 파티클 에미터!
 const residentActors = {};
 const petActors = [];
 const cloudActors = [];
@@ -161,9 +166,8 @@ const swayingBalloons = [];
 const ambientFloaters = [];
 const streetInteractiveProps = [];
 const signMaterialsToRefresh = [];
-const animatedDashMaterials = []; // 바닥 점선 포커스 패드 애니메이션 재질 목록
+const animatedDashMaterials = [];
 
-// 호버 & 선택 포커스 3D 가이드 그룹
 let hoverFocusGroup = null;
 let hoverRingMat = null;
 let selectedRoomFrameGroup = null;
@@ -182,7 +186,7 @@ const managerTagEls = {};
 const dom = {};
 
 // =========================================================
-// 1. [요구사항 1 & 3] 클레이 곡면(createRoundedToyMesh) + 만화풍 다크 코코아 윤곽선(Toon Outline)
+// 1. 클레이 곡면(createRoundedToyMesh) + 만화풍 코코아 윤곽선(#5A463C)
 // =========================================================
 function normalizeExtrudeUVs(geo, w, h, d) {
   const pos = geo.attributes.position;
@@ -248,7 +252,6 @@ function getRoundedToyGeo(w, h, d, radius = 0.09, bevel = 0.08) {
   return geo;
 }
 
-// [요구사항 1] EdgesGeometry + LineBasicMaterial(#5A463C) 만화풍 윤곽선 부착 헬퍼
 function addToonEdgeOutline(mesh, lineMat = null, thresholdAngle = 24) {
   const geo = mesh.geometry;
   if (!geo) return null;
@@ -259,12 +262,11 @@ function addToonEdgeOutline(mesh, lineMat = null, thresholdAngle = 24) {
     edgesGeoCache.set(cacheKey, edgeGeo);
   }
   const lines = new THREE.LineSegments(edgeGeo, lineMat || MAT.toonEdge);
-  lines.raycast = () => {}; // 클릭 레이캐스트 방해 금지
+  lines.raycast = () => {};
   mesh.add(lines);
   return lines;
 }
 
-// 둥근 캐릭터·반려동물용 Inverted Hull 백사이드 카툰 실루엣 외곽선
 function addToonHullOutline(mesh, thicknessScale = 1.07) {
   const hull = new THREE.Mesh(mesh.geometry, MAT.toonHull);
   hull.scale.setScalar(thicknessScale);
@@ -291,7 +293,7 @@ function createRoundedToyMesh(
   mesh.position.set(x, y, z);
   mesh.castShadow = cast;
   mesh.receiveShadow = receive;
-  if (withOutline && Math.max(w, h, d) >= 0.22) {
+  if (withOutline && Math.max(w, h, d) >= 0.2) {
     addToonEdgeOutline(mesh, customOutlineMat || MAT.toonEdge, 24);
   }
   return mesh;
@@ -401,7 +403,397 @@ function triggerSquashStretch(obj, intensity = 1.0) {
 }
 
 // =========================================================
-// 2. 프로시저럴 캔버스 텍스처 생성기 (TextureGenerator)
+// 2. [요구사항 1 & 2] 고해상도 상가 간판 아트워크 생성기 (createShopSignboardTexture)
+//    & 옥상 빌딩 스카이 사인 / 정문 황동 명패 텍스처 생성기
+// =========================================================
+function createShopSignboardTexture(shopType = 'mart') {
+  const canvas = document.createElement('canvas');
+  canvas.width = 768;
+  canvas.height = 220;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+
+  if (shopType === 'mart') {
+    // 1) 해피마트 / MINI MART 24: 민트·코랄·옐로우 3색 가로 스트라이프 + 삼각김밥·장바구니·바코드 아트워크!
+    ctx.fillStyle = '#FFFDF9';
+    ctx.beginPath();
+    ctx.roundRect(6, 6, w - 12, h - 12, 34);
+    ctx.fill();
+
+    // 상·하단 3색 시그니처 스트라이프 컬러 바
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(10, 10, w - 20, h - 20, 30);
+    ctx.clip();
+    ctx.fillStyle = '#34D399';
+    ctx.fillRect(0, 0, w, 24);
+    ctx.fillStyle = '#FF6B8B';
+    ctx.fillRect(0, 24, w, 16);
+    ctx.fillStyle = '#FACC15';
+    ctx.fillRect(0, 40, w, 12);
+
+    ctx.fillStyle = '#34D399';
+    ctx.fillRect(0, h - 22, w, 22);
+    ctx.restore();
+
+    ctx.strokeStyle = '#5A463C';
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.roundRect(6, 6, w - 12, h - 12, 34);
+    ctx.stroke();
+
+    // 좌측 귀여운 삼각김밥(Onigiri) 심볼 일러스트
+    const ox = 112;
+    const oy = 126;
+    ctx.save();
+    ctx.fillStyle = '#FFFFFF';
+    ctx.strokeStyle = '#43342E';
+    ctx.lineWidth = 6;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(ox, oy - 50);
+    ctx.quadraticCurveTo(ox + 54, oy + 28, ox + 42, oy + 42);
+    ctx.lineTo(ox - 42, oy + 42);
+    ctx.quadraticCurveTo(ox - 54, oy + 28, ox, oy - 50);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // 김(Nori) + 발그레 볼터치 + 스마일 눈
+    ctx.fillStyle = '#292524';
+    ctx.beginPath();
+    ctx.roundRect(ox - 20, oy + 12, 40, 30, 6);
+    ctx.fill();
+    ctx.fillStyle = '#FF8FA3';
+    ctx.beginPath(); ctx.arc(ox - 20, oy + 2, 6, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(ox + 20, oy + 2, 6, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#43342E';
+    ctx.beginPath(); ctx.arc(ox - 11, oy - 6, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(ox + 11, oy - 6, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+
+    // 중앙 외곽선이 뚜렷한 둥근 한글·영문 로고 타이포그래피
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.lineJoin = 'round';
+
+    ctx.font = '56px "Cafe24Ssurround", "CookieRun-Regular"';
+    ctx.strokeStyle = '#43342E';
+    ctx.lineWidth = 13;
+    ctx.strokeText('해피마트 24', w * 0.5, 108);
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 6;
+    ctx.strokeText('해피마트 24', w * 0.5, 108);
+    ctx.fillStyle = '#FF5C7A';
+    ctx.fillText('해피마트 24', w * 0.5, 108);
+
+    ctx.font = '26px "CookieRun-Regular", "OmyuPretty"';
+    ctx.fillStyle = '#047857';
+    ctx.fillText('MINI MART 24 · 도시락 & 간식', w * 0.5, 162);
+
+    // 우측 장바구니 배지 & 바코드 디테일
+    ctx.fillStyle = '#FEF3C7';
+    ctx.strokeStyle = '#43342E';
+    ctx.lineWidth = 4.5;
+    ctx.beginPath();
+    ctx.roundRect(w - 168, 72, 128, 62, 16);
+    ctx.fill();
+    ctx.stroke();
+
+    // 미니 바코드 라인
+    const bx = w - 150;
+    [5, 3, 7, 2, 6, 4, 3, 6, 3].forEach((bw, idx) => {
+      ctx.fillStyle = '#43342E';
+      ctx.fillRect(bx + idx * 10.5, 84, bw, 28);
+    });
+    ctx.font = '18px "Cafe24Ssurround", "CookieRun-Regular"';
+    ctx.fillStyle = '#B45309';
+    ctx.fillText('OPEN 24H', w - 104, 154);
+  } else if (shopType === 'wash') {
+    // 2) 뽀송 워시 / BUBBLE PONG: 스카이블루 & 화이트 구름 프레임 + 비누방울 일러스트!
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
+    bgGrad.addColorStop(0, '#7CC8FF');
+    bgGrad.addColorStop(1, '#38A3F8');
+    ctx.fillStyle = bgGrad;
+    ctx.beginPath();
+    ctx.roundRect(6, 6, w - 12, h - 12, 38);
+    ctx.fill();
+
+    // 안쪽 몽글몽글 구름 라운드 배너
+    ctx.fillStyle = '#F8FDFF';
+    ctx.beginPath();
+    ctx.roundRect(24, 22, w - 48, h - 44, 32);
+    ctx.fill();
+    ctx.strokeStyle = '#FACC15';
+    ctx.lineWidth = 6;
+    ctx.stroke();
+
+    ctx.strokeStyle = '#5A463C';
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.roundRect(6, 6, w - 12, h - 12, 38);
+    ctx.stroke();
+
+    // 좌·우 보글보글 비누방울 아트워크
+    [
+      [96, 95, 28, '#BAE6FD'],
+      [136, 138, 18, '#E0F2FE'],
+      [74, 145, 14, '#FEF08A'],
+      [w - 102, 96, 26, '#BAE6FD'],
+      [w - 140, 138, 17, '#FDE68A'],
+      [w - 76, 144, 14, '#BAE6FD']
+    ].forEach(([cx, cy, r, col]) => {
+      ctx.fillStyle = col;
+      ctx.strokeStyle = '#0284C7';
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.arc(cx - r * 0.32, cy - r * 0.32, r * 0.26, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.lineJoin = 'round';
+    ctx.font = '56px "Cafe24Ssurround", "CookieRun-Regular"';
+    ctx.strokeStyle = '#43342E';
+    ctx.lineWidth = 13;
+    ctx.strokeText('뽀송 워시', w * 0.5, 92);
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 6;
+    ctx.strokeText('뽀송 워시', w * 0.5, 92);
+    ctx.fillStyle = '#0284C7';
+    ctx.fillText('뽀송 워시', w * 0.5, 92);
+
+    ctx.font = '27px "CookieRun-Regular", "OmyuPretty"';
+    ctx.fillStyle = '#D97706';
+    ctx.fillText('BUBBLE PONG · 24시 코인세탁', w * 0.5, 152);
+  } else {
+    // 3) 달콤 다방 / SWEET CAFE: 브라운 & 밀크크림 + 커피잔·크루아상 일러스트!
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
+    bgGrad.addColorStop(0, '#9A582C');
+    bgGrad.addColorStop(1, '#6F3B1B');
+    ctx.fillStyle = bgGrad;
+    ctx.beginPath();
+    ctx.roundRect(6, 6, w - 12, h - 12, 34);
+    ctx.fill();
+
+    ctx.fillStyle = '#FFF9EE';
+    ctx.beginPath();
+    ctx.roundRect(22, 20, w - 44, h - 40, 26);
+    ctx.fill();
+    ctx.strokeStyle = '#FBBF24';
+    ctx.lineWidth = 5;
+    ctx.stroke();
+
+    ctx.strokeStyle = '#43342E';
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.roundRect(6, 6, w - 12, h - 12, 34);
+    ctx.stroke();
+
+    // 좌측 크루아상 & 커피 일러스트
+    ctx.fillStyle = '#F59E0B';
+    ctx.strokeStyle = '#43342E';
+    ctx.lineWidth = 4.5;
+    ctx.beginPath();
+    ctx.ellipse(105, 118, 38, 22, -0.25, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // 우측 라떼 컵 일러스트
+    ctx.fillStyle = '#FF8FA3';
+    ctx.beginPath();
+    ctx.roundRect(w - 135, 96, 54, 46, [6, 6, 22, 22]);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.lineJoin = 'round';
+    ctx.font = '56px "Cafe24Ssurround", "CookieRun-Regular"';
+    ctx.strokeStyle = '#43342E';
+    ctx.lineWidth = 12;
+    ctx.strokeText('달콤 다방', w * 0.5, 92);
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 5;
+    ctx.strokeText('달콤 다방', w * 0.5, 92);
+    ctx.fillStyle = '#B45309';
+    ctx.fillText('달콤 다방', w * 0.5, 92);
+
+    ctx.font = '26px "CookieRun-Regular", "OmyuPretty"';
+    ctx.fillStyle = '#78350F';
+    ctx.fillText('SWEET CAFE · 수제 크루아상 & 라떼', w * 0.5, 152);
+  }
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return tex;
+}
+
+// 24H 양면 원형 돌출 네온 간판(Blade Sign) 텍스처
+function createBladeNeon24Texture() {
+  return TextureGenerator.create((ctx, w, h) => {
+    ctx.clearRect(0, 0, w, h);
+    const g = ctx.createRadialGradient(w / 2, h / 2, 16, w / 2, h / 2, w * 0.46);
+    g.addColorStop(0, '#FFFBEB');
+    g.addColorStop(0.7, '#FF758F');
+    g.addColorStop(1, '#E11D48');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(w / 2, h / 2, w * 0.45, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = '#FDE047';
+    ctx.lineWidth = 10;
+    ctx.stroke();
+    ctx.strokeStyle = '#43342E';
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.arc(w / 2, h / 2, w * 0.47, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '74px "Cafe24Ssurround", "CookieRun-Regular"';
+    ctx.strokeStyle = '#43342E';
+    ctx.lineWidth = 12;
+    ctx.strokeText('24H', w / 2, h * 0.46);
+    ctx.fillStyle = '#FFFBEB';
+    ctx.fillText('24H', w / 2, h * 0.46);
+
+    ctx.font = '28px "CookieRun-Regular"';
+    ctx.fillStyle = '#FDE047';
+    ctx.fillText('MART', w / 2, h * 0.74);
+  }, 1, 1, 256, 256);
+}
+
+// 매장 앞 A자 미니 입간판(A-Frame Menu Board) 텍스처
+function createAFrameMenuTexture() {
+  return TextureGenerator.create((ctx, w, h) => {
+    ctx.fillStyle = '#FFF8EB';
+    ctx.beginPath();
+    ctx.roundRect(8, 8, w - 16, h - 16, 20);
+    ctx.fill();
+    ctx.strokeStyle = '#5A463C';
+    ctx.lineWidth = 8;
+    ctx.stroke();
+
+    // 귀여운 딸기우유 & 삼각김밥 세트 아이콘
+    ctx.fillStyle = '#FF8FA3';
+    ctx.fillRect(42, 48, 48, 68);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.moveTo(148, 48);
+    ctx.lineTo(186, 114);
+    ctx.lineTo(110, 114);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#43342E';
+    ctx.lineWidth = 4;
+    ctx.stroke();
+
+    ctx.textAlign = 'center';
+    ctx.font = '30px "Cafe24Ssurround", "CookieRun-Regular"';
+    ctx.fillStyle = '#E11D48';
+    ctx.fillText('1+1 행사중!', w / 2, 158);
+  }, 1, 1, 220, 200);
+}
+
+// [요구사항 2-1] 옥상 전면 아치형 빌딩 스카이 사인 & 1층 정문 황동 명패 텍스처 생성기!
+function createBuildingSkySignTexture(buildingTitle) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 768;
+  canvas.height = 192;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+
+  const bg = ctx.createLinearGradient(0, 0, w, h);
+  bg.addColorStop(0, '#FFFBEB');
+  bg.addColorStop(0.5, '#FEF3C7');
+  bg.addColorStop(1, '#FDE68A');
+  ctx.fillStyle = bg;
+  ctx.beginPath();
+  ctx.roundRect(8, 8, w - 16, h - 16, 42);
+  ctx.fill();
+
+  ctx.strokeStyle = '#D97706';
+  ctx.lineWidth = 10;
+  ctx.stroke();
+
+  ctx.strokeStyle = '#43342E';
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.roundRect(4, 4, w - 8, h - 8, 44);
+  ctx.stroke();
+
+  // 좌·우 귀여운 왕관/별 장식
+  ctx.fillStyle = '#FF6B8B';
+  ctx.beginPath(); ctx.arc(64, h / 2, 16, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(w - 64, h / 2, 16, 0, Math.PI * 2); ctx.fill();
+
+  const fontSize = buildingTitle.length > 10 ? 50 : 58;
+  ctx.font = `${fontSize}px "Cafe24Ssurround", "CookieRun-Regular"`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#FFFFFF';
+  ctx.lineWidth = 11;
+  ctx.strokeText(buildingTitle, w / 2, h * 0.53);
+  ctx.fillStyle = '#43342E';
+  ctx.fillText(buildingTitle, w / 2, h * 0.53);
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return tex;
+}
+
+function createBrassNameplateTexture(buildingTitle) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, '#FDE68A');
+  g.addColorStop(0.5, '#F59E0B');
+  g.addColorStop(1, '#B45309');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.roundRect(6, 6, w - 12, h - 12, 24);
+  ctx.fill();
+
+  ctx.strokeStyle = '#43342E';
+  ctx.lineWidth = 6;
+  ctx.stroke();
+
+  ctx.font = '38px "Cafe24Ssurround", "CookieRun-Regular"';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#FFFBEB';
+  ctx.strokeStyle = '#43342E';
+  ctx.lineWidth = 7;
+  ctx.lineJoin = 'round';
+  ctx.strokeText(buildingTitle, w / 2, h * 0.53);
+  ctx.fillText(buildingTitle, w / 2, h * 0.53);
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+// =========================================================
+// 3. 기본 프로시저럴 텍스처 생성기 (TextureGenerator)
 // =========================================================
 class TextureGenerator {
   static create(drawFn, rx = 1, ry = 1, w = 256, h = 256) {
@@ -419,15 +811,13 @@ class TextureGenerator {
     return tex;
   }
 
-  // [요구사항 2-1] 클릭 가능 구역 전용 반짝이는 화이트/민트 점선 테두리 텍스처
-  static dashedFocusStrip(dashColor = '#34D399', subColor = '#FFFFFF') {
+  static dashedFocusStrip(dashColor = '#10B981', subColor = '#FFFFFF') {
     return this.create((ctx, w, h) => {
       ctx.clearRect(0, 0, w, h);
       ctx.fillStyle = dashColor;
       ctx.beginPath();
       ctx.roundRect(12, 8, 104, h - 16, 12);
       ctx.fill();
-
       ctx.fillStyle = subColor;
       ctx.beginPath();
       ctx.roundRect(140, 10, 96, h - 20, 10);
@@ -491,11 +881,11 @@ class TextureGenerator {
     }, 2, 1, 256, 256);
   }
 
-  static stripedAwning(accentHex = '#FF758F') {
+  static stripedAwning(accentHex = '#FF758F', creamHex = '#FFFDF9') {
     return this.create((ctx, w, h) => {
       const sw = 32;
       for (let x = 0; x < w; x += sw) {
-        ctx.fillStyle = (x / sw) % 2 === 0 ? accentHex : '#FFFDF9';
+        ctx.fillStyle = (x / sw) % 2 === 0 ? accentHex : creamHex;
         ctx.fillRect(x, 0, sw, h);
       }
       ctx.fillStyle = 'rgba(255,255,255,0.32)';
@@ -584,38 +974,6 @@ class TextureGenerator {
     }, 3, 2, 256, 256);
   }
 
-  static storeSign(bgTop, bgBot, borderHex, title, subText) {
-    return this.create((ctx, w, h) => {
-      const g = ctx.createLinearGradient(0, 0, 0, h);
-      g.addColorStop(0, bgTop);
-      g.addColorStop(1, bgBot);
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.roundRect(5, 5, w - 10, h - 10, 30);
-      ctx.fill();
-      ctx.strokeStyle = borderHex;
-      ctx.lineWidth = 8;
-      ctx.stroke();
-      ctx.strokeStyle = '#5A463C';
-      ctx.lineWidth = 4;
-      ctx.strokeRect(3, 3, w - 6, h - 6);
-
-      ctx.font = '42px "Cafe24Ssurround", "CookieRun-Regular"';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.lineJoin = 'round';
-      ctx.strokeStyle = '#FFFFFF';
-      ctx.lineWidth = 8;
-      ctx.strokeText(title, w / 2, h * 0.43);
-      ctx.fillStyle = '#43342E';
-      ctx.fillText(title, w / 2, h * 0.43);
-
-      ctx.font = '24px "OmyuPretty", "CookieRun-Regular"';
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillText(subText, w / 2, h * 0.78);
-    }, 1, 1, 512, 144);
-  }
-
   static woodenSignEmblem() {
     return this.create((ctx, w, h) => {
       ctx.fillStyle = '#FFF8E3';
@@ -671,7 +1029,7 @@ class TextureGenerator {
       g.addColorStop(0.65, 'rgba(110, 72, 54, 0.12)');
       g.addColorStop(1, 'rgba(110, 72, 54, 0)');
       ctx.fillStyle = g;
-      ctx.fillRect(0, 0, s, s);
+      ctx.fillRect(0, s * 0, s, s);
     }, 1, 1, 128, 128);
   }
 }
@@ -694,17 +1052,19 @@ function initSharedResources() {
   TEX.wall2 = TextureGenerator.pastelStripeWallpaper('#FFFDF9', '#E6F7F0', '#A8DCC8');
   TEX.wall3 = TextureGenerator.pastelStripeWallpaper('#FFFDF9', '#FEF3C7', '#E8C56B');
 
-  TEX.awningCoral = TextureGenerator.stripedAwning('#FF6B8B');
-  TEX.awningMint = TextureGenerator.stripedAwning('#22C58B');
-  TEX.awningButter = TextureGenerator.stripedAwning('#FBBF24');
+  TEX.awningCoral = TextureGenerator.stripedAwning('#FF6B8B', '#FFFDF9');
+  TEX.awningSky = TextureGenerator.stripedAwning('#38BDF8', '#FFFDF9');
+  TEX.awningBrown = TextureGenerator.stripedAwning('#8B5630', '#FFF8EB');
   TEX.signEmblem = TextureGenerator.woodenSignEmblem();
 
   TEX.dashMint = TextureGenerator.dashedFocusStrip('#10B981', '#FFFFFF');
   TEX.dashGold = TextureGenerator.dashedFocusStrip('#FBBF24', '#FFFFFF');
 
-  TEX.martSign = TextureGenerator.storeSign('#FF94A8', '#FF6B8B', '#FFFDF9', '24H MINI MART', '모닝 도시락 · 달콤 간식');
-  TEX.washSign = TextureGenerator.storeSign('#7CC4FF', '#4DA3FF', '#FFFDF9', 'WASH PONG', '뽀송뽀송 버블 세탁방');
-  TEX.cafeSign = TextureGenerator.storeSign('#FDE073', '#FBBF24', '#FFFDF9', 'CREAM BAKERY', '갓 구운 소금빵 & 라떼');
+  TEX.martSign = createShopSignboardTexture('mart');
+  TEX.washSign = createShopSignboardTexture('wash');
+  TEX.cafeSign = createShopSignboardTexture('cafe');
+  TEX.blade24 = createBladeNeon24Texture();
+  TEX.aframeMenu = createAFrameMenuTexture();
 
   GEO.sphere = new THREE.SphereGeometry(0.5, 20, 16);
   GEO.cyl = new THREE.CylinderGeometry(0.5, 0.5, 1, 20);
@@ -714,11 +1074,10 @@ function initSharedResources() {
   GEO.coin.rotateX(Math.PI / 2);
   GEO.ring = new THREE.RingGeometry(0.32, 0.64, 28);
 
-  // [요구사항 1] 만화풍 다크 코코아/브라운(#5A463C) 엣지 & 실루엣 재질!
   MAT.toonEdge = new THREE.LineBasicMaterial({
     color: 0x5A463C,
     transparent: true,
-    opacity: 0.56
+    opacity: 0.54
   });
   MAT.toonHull = new THREE.MeshBasicMaterial({
     color: 0x5A463C,
@@ -728,17 +1087,11 @@ function initSharedResources() {
   });
   MAT.roomGridGold = makeClayMat(0xFDE68A, { emissive: 0xFBBF24, emissiveIntensity: 0.28, roughness: 0.38 });
   MAT.roomGridCream = makeClayMat(0xFFFDF9, { roughness: 0.42 });
+  MAT.neonYellow = makeClayMat(0xFDE047, { emissive: 0xFACC15, emissiveIntensity: 0.85, roughness: 0.2 });
+  MAT.neonCoral = makeClayMat(0xFF758F, { emissive: 0xFF4D6D, emissiveIntensity: 0.72, roughness: 0.22 });
 
-  MAT.dashBorderMint = new THREE.MeshBasicMaterial({
-    map: TEX.dashMint,
-    transparent: true,
-    opacity: 0.92
-  });
-  MAT.dashBorderGold = new THREE.MeshBasicMaterial({
-    map: TEX.dashGold,
-    transparent: true,
-    opacity: 0.95
-  });
+  MAT.dashBorderMint = new THREE.MeshBasicMaterial({ map: TEX.dashMint, transparent: true, opacity: 0.92 });
+  MAT.dashBorderGold = new THREE.MeshBasicMaterial({ map: TEX.dashGold, transparent: true, opacity: 0.95 });
   animatedDashMaterials.push(MAT.dashBorderMint, MAT.dashBorderGold);
 
   MAT.shadow = new THREE.MeshBasicMaterial({ map: TEX.shadow, transparent: true, depthWrite: false });
@@ -784,21 +1137,227 @@ function initSharedResources() {
   MAT.cloudWhite = makeClayMat(0xFFFDFB, { emissive: 0xFFE8F0, emissiveIntensity: 0.26, roughness: 0.65 });
   MAT.coin = MAT.gold;
 
+  // 눈누 폰트 로드 완료 시 모든 상가 간판 및 빌딩 옥상/현관 명패 텍스처 즉시 재렌더링!
   if (document.fonts && document.fonts.ready) {
     document.fonts.ready.then(() => {
-      TEX.martSign = TextureGenerator.storeSign('#FF94A8', '#FF6B8B', '#FFFDF9', '24H MINI MART', '모닝 도시락 · 달콤 간식');
-      TEX.washSign = TextureGenerator.storeSign('#7CC4FF', '#4DA3FF', '#FFFDF9', 'WASH PONG', '뽀송뽀송 버블 세탁방');
-      TEX.cafeSign = TextureGenerator.storeSign('#FDE073', '#FBBF24', '#FFFDF9', 'CREAM BAKERY', '갓 구운 소금빵 & 라떼');
-      signMaterialsToRefresh.forEach(({ mat, kind }) => {
-        mat.map = kind === 'mart' ? TEX.martSign : kind === 'wash' ? TEX.washSign : TEX.cafeSign;
-        mat.needsUpdate = true;
+      TEX.martSign = createShopSignboardTexture('mart');
+      TEX.washSign = createShopSignboardTexture('wash');
+      TEX.cafeSign = createShopSignboardTexture('cafe');
+      TEX.blade24 = createBladeNeon24Texture();
+      TEX.aframeMenu = createAFrameMenuTexture();
+
+      signMaterialsToRefresh.forEach((entry) => {
+        if (entry.kind === 'mart') entry.mat.map = TEX.martSign;
+        else if (entry.kind === 'wash') entry.mat.map = TEX.washSign;
+        else if (entry.kind === 'cafe') entry.mat.map = TEX.cafeSign;
+        else if (entry.kind === 'blade24') entry.mat.map = TEX.blade24;
+        else if (entry.kind === 'aframe') entry.mat.map = TEX.aframeMenu;
+        entry.mat.needsUpdate = true;
       });
+
+      Object.keys(state.buildings).forEach((lid) => refreshBuildingNameplates3D(lid));
     });
   }
 }
 
 // =========================================================
-// 3. [요구사항 2] 상호작용 구역 전용 바닥 점선 테두리 패드 & 호버/선택 포커스 링 생성기
+// 4. [요구사항 1 & 2] 입체 물결 어닝, 돌출 간판, A자 입간판, 세탁기/커피 마스코트, 옥상 현판 조립기
+// =========================================================
+
+// 입체 물결무늬 어닝(Scalloped Awning)
+function createScallopedAwning3D(width, awningTex, scallopMat) {
+  const g = new THREE.Group();
+  const canopy = createRoundedToyMesh(width, 0.28, 1.22, makeClayMat(0xFFFFFF, { map: awningTex }), 0, 0, 0, 0.1);
+  canopy.rotation.x = 0.26;
+  g.add(canopy);
+
+  // 앞단 동글동글 물결 레이스 프릴(Scallops)
+  const count = Math.max(5, Math.floor(width / 0.66));
+  const step = width / count;
+  for (let i = 0; i < count; i++) {
+    const sx = -width * 0.5 + step * (i + 0.5);
+    const flap = new THREE.Mesh(GEO.sphere, i % 2 === 0 ? scallopMat : MAT.white);
+    flap.scale.set(step * 0.92, 0.34, 0.22);
+    flap.position.set(sx, -0.2, 0.58);
+    flap.castShadow = true;
+    addToonHullOutline(flap, 1.06);
+    g.add(flap);
+  }
+  return g;
+}
+
+// 24H 양면 원형 네온 돌출 간판(Blade Sign)
+function createBladeSign24H3D() {
+  const g = new THREE.Group();
+  // 벽면 브래킷 철제 암 2개
+  g.add(createRoundedToyMesh(0.75, 0.1, 0.1, MAT.charcoal, 0.35, 0.24, 0, 0.03));
+  g.add(createRoundedToyMesh(0.75, 0.1, 0.1, MAT.charcoal, 0.35, -0.24, 0, 0.03));
+
+  // 은은하게 발광하는 원형 네온 테두리 드럼
+  const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.62, 0.18, 24), MAT.neonCoral);
+  drum.rotation.x = Math.PI / 2;
+  addToonEdgeOutline(drum, MAT.toonEdge, 30);
+  g.add(drum);
+
+  const faceMat = makeClayMat(0xFFFFFF, { map: TEX.blade24, emissive: 0xFF8FA3, emissiveIntensity: 0.35, roughness: 0.25 });
+  signMaterialsToRefresh.push({ mat: faceMat, kind: 'blade24' });
+
+  const frontFace = new THREE.Mesh(new THREE.CircleGeometry(0.56, 24), faceMat);
+  frontFace.position.z = 0.1;
+  const backFace = new THREE.Mesh(new THREE.CircleGeometry(0.56, 24), faceMat);
+  backFace.rotation.y = Math.PI;
+  backFace.position.z = -0.1;
+  g.add(frontFace, backFace);
+
+  return g;
+}
+
+// 매장 앞 A자 미니 입간판(A-Frame Menu Board)
+function createAFrameStand3D() {
+  const g = new THREE.Group();
+  const boardA = createRoundedToyMesh(0.72, 0.88, 0.08, MAT.woodWarm, 0, 0.44, 0.12, 0.08);
+  boardA.rotation.x = -0.22;
+  const boardB = createRoundedToyMesh(0.72, 0.88, 0.08, MAT.woodWarm, 0, 0.44, -0.12, 0.08);
+  boardB.rotation.x = 0.22;
+
+  const menuMat = makeClayMat(0xFFFFFF, { map: TEX.aframeMenu, roughness: 0.4 });
+  signMaterialsToRefresh.push({ mat: menuMat, kind: 'aframe' });
+  const menuFace = new THREE.Mesh(GEO.quad, menuMat);
+  menuFace.scale.set(0.58, 0.66, 1);
+  menuFace.position.set(0, 0.46, 0.18);
+  menuFace.rotation.x = -0.22;
+
+  g.add(boardA, boardB, menuFace);
+  return g;
+}
+
+// 코인세탁소 비누방울 입체 세탁기 마스코트 조형물
+function createWasherMascot3D(lotX, localX, localY, localZ, lotZ) {
+  const g = new THREE.Group();
+  const body = createRoundedToyMesh(0.95, 1.08, 0.62, MAT.white, 0, 0, 0, 0.18);
+  const topBar = createRoundedToyMesh(0.96, 0.24, 0.64, MAT.sky, 0, 0.44, 0, 0.1);
+  const neonRing = new THREE.Mesh(GEO.torus, MAT.neonYellow);
+  neonRing.scale.setScalar(0.82);
+  neonRing.position.set(0, -0.06, 0.32);
+  const glassDoor = new THREE.Mesh(GEO.sphere, MAT.screenCyan);
+  glassDoor.scale.set(0.52, 0.52, 0.18);
+  glassDoor.position.set(0, -0.06, 0.3);
+  g.add(body, topBar, neonRing, glassDoor);
+  g.rotation.z = -0.12;
+  g.position.set(localX, localY, localZ);
+
+  // 실시간 보글보글 비누방울 파티클 에미터 등록!
+  facadeEmitters.push({
+    kind: 'bubble',
+    wx: lotX + localX,
+    wy: localY + 0.65,
+    wz: lotZ + localZ + 0.15,
+    timer: 0.2
+  });
+  return g;
+}
+
+// 달콤 다방 김이 모락모락 나는 입체 커피잔 & 크루아상 조형물
+function createCafeCupAndCroissant3D(lotX, localX, localY, localZ, lotZ) {
+  const g = new THREE.Group();
+  // 받침 접시
+  const saucer = new THREE.Mesh(new THREE.CylinderGeometry(0.68, 0.55, 0.12, 22), MAT.white);
+  addToonEdgeOutline(saucer, MAT.toonEdge, 30);
+  // 통통한 핑크·크림 커피잔 + 라떼 표면 + 손잡이
+  const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.36, 0.66, 22), MAT.coral);
+  cup.position.y = 0.36;
+  addToonEdgeOutline(cup, MAT.toonEdge, 30);
+  const latteTop = new THREE.Mesh(new THREE.CylinderGeometry(0.44, 0.44, 0.05, 20), MAT.woodWarm);
+  latteTop.position.y = 0.68;
+  const handle = new THREE.Mesh(GEO.torus, MAT.white);
+  handle.scale.setScalar(0.55);
+  handle.position.set(0.48, 0.38, 0);
+
+  // 옆에 놓인 노릇노릇 입체 크루아상(초승달 베벨 3단 조형)
+  const croissant = new THREE.Group();
+  croissant.position.set(-0.72, 0.22, 0.22);
+  croissant.rotation.z = 0.25;
+  const cMid = new THREE.Mesh(GEO.sphere, MAT.butter);
+  cMid.scale.set(0.52, 0.32, 0.34);
+  addToonHullOutline(cMid, 1.07);
+  const cL = new THREE.Mesh(GEO.sphere, MAT.woodLight);
+  cL.scale.set(0.34, 0.24, 0.26);
+  cL.position.set(-0.26, -0.06, 0.08);
+  const cR = new THREE.Mesh(GEO.sphere, MAT.woodLight);
+  cR.scale.set(0.34, 0.24, 0.26);
+  cR.position.set(0.26, -0.06, 0.08);
+  croissant.add(cMid, cL, cR);
+
+  g.add(saucer, cup, latteTop, handle, croissant);
+  g.position.set(localX, localY, localZ);
+
+  // 모락모락 커피 김 파티클 에미터 등록!
+  facadeEmitters.push({
+    kind: 'steam',
+    wx: lotX + localX,
+    wy: localY + 0.82,
+    wz: lotZ + localZ,
+    timer: 0.35
+  });
+  return g;
+}
+
+// [요구사항 2-1] 옥상 전면 아치형 입체 스카이 사인 조립
+function createRooftopSkySign3D(buildingTitle, lotId) {
+  const g = new THREE.Group();
+  g.userData.origScale = new THREE.Vector3(1, 1, 1);
+
+  // 좌·우 골드 받침 기둥
+  g.add(createRoundedToyMesh(0.36, 0.75, 0.36, MAT.gold, -3.1, 0.32, 0, 0.09));
+  g.add(createRoundedToyMesh(0.36, 0.75, 0.36, MAT.gold, 3.1, 0.32, 0, 0.09));
+
+  // 코랄·골드 아치형 메인 프레임 보드
+  const backFrame = createRoundedToyMesh(7.6, 1.68, 0.34, MAT.coral, 0, 1.05, 0, 0.32);
+  const goldRim = createRoundedToyMesh(7.25, 1.42, 0.38, MAT.gold, 0, 1.05, 0.02, 0.28);
+
+  // 상단 왕관 피니얼 장식
+  const crownOrb = new THREE.Mesh(GEO.sphere, MAT.neonYellow);
+  crownOrb.scale.setScalar(0.38);
+  crownOrb.position.set(0, 2.02, 0.05);
+  addToonHullOutline(crownOrb, 1.08);
+
+  const skyMat = makeClayMat(0xFFFFFF, {
+    map: createBuildingSkySignTexture(buildingTitle),
+    emissive: 0xFEF08A,
+    emissiveIntensity: 0.2,
+    roughness: 0.3
+  });
+  const signFace = new THREE.Mesh(GEO.quad, skyMat);
+  signFace.scale.set(6.85, 1.24, 1);
+  signFace.position.set(0, 1.05, 0.23);
+
+  [backFrame, goldRim, signFace].forEach((m) => {
+    m.userData = { lotId, isRenameSign: true };
+    registerPick(m);
+  });
+
+  g.add(backFrame, goldRim, crownOrb, signFace);
+  return { group: g, skyMat };
+}
+
+function refreshBuildingNameplates3D(lotId) {
+  const b = state.buildings[lotId];
+  const reg = lot3D[lotId];
+  if (!b || !reg) return;
+  if (reg.skySignMat) {
+    if (reg.skySignMat.map) reg.skySignMat.map.dispose();
+    reg.skySignMat.map = createBuildingSkySignTexture(b.title);
+    reg.skySignMat.needsUpdate = true;
+  }
+  if (reg.brassPlateMat) {
+    if (reg.brassPlateMat.map) reg.brassPlateMat.map.dispose();
+    reg.brassPlateMat.map = createBrassNameplateTexture(b.title);
+    reg.brassPlateMat.needsUpdate = true;
+  }
+}
+
+// =========================================================
+// 5. 바닥 점선 포커스 패드 & 호버/선택 포커스 링 초기화
 // =========================================================
 function createInteractiveBaseRing(w, d, y = 0.04, isMint = true) {
   const g = new THREE.Group();
@@ -833,14 +1392,9 @@ function createInteractiveBaseRing(w, d, y = 0.04, isMint = true) {
 }
 
 function initFocusAndSelectionGuides3D() {
-  // 1) 마우스 호버 시 대상 구역에 켜지는 2배 두께 황금/형광민트 발광 외곽선 링
   hoverFocusGroup = new THREE.Group();
   hoverFocusGroup.visible = false;
-  hoverRingMat = new THREE.MeshBasicMaterial({
-    color: 0xFFD166,
-    transparent: true,
-    opacity: 0.92
-  });
+  hoverRingMat = new THREE.MeshBasicMaterial({ color: 0xFFD166, transparent: true, opacity: 0.94 });
 
   const barT = 0.24;
   const hFront = createRoundedToyMesh(1, 0.14, barT, hoverRingMat, 0, 0, 0.5, 0.04, false, false, false);
@@ -852,7 +1406,6 @@ function initFocusAndSelectionGuides3D() {
   hoverFocusGroup.add(hFront, hBack, hLeft, hRight);
   scene.add(hoverFocusGroup);
 
-  // 2) 현재 선택된(클로즈업된) 호실 전체를 감싸는 빛나는 포커스 프레임 & 회전 비콘!
   selectedRoomFrameGroup = new THREE.Group();
   selectedRoomFrameGroup.visible = false;
   const selMat = new THREE.MeshBasicMaterial({ color: 0xFFD166 });
@@ -862,26 +1415,22 @@ function initFocusAndSelectionGuides3D() {
   const RD = GAME_BALANCE.roomDepth;
   const RH = GAME_BALANCE.wallHeight;
 
-  // 바닥 및 상단 빛나는 프레임 바
-  const sBotF = createRoundedToyMesh(RW + 0.14, 0.14, 0.14, selMat, 0, 0.1, RD / 2 + 0.02, 0.04, false, false, false);
-  const sBotB = createRoundedToyMesh(RW + 0.14, 0.14, 0.14, selMat, 0, 0.1, -RD / 2 - 0.02, 0.04, false, false, false);
-  const sBotL = createRoundedToyMesh(0.14, 0.14, RD + 0.14, selMat, -RW / 2 - 0.02, 0.1, 0, 0.04, false, false, false);
-  const sBotR = createRoundedToyMesh(0.14, 0.14, RD + 0.14, selMat, RW / 2 + 0.02, 0.1, 0, 0.04, false, false, false);
+  selectedRoomFrameGroup.add(
+    createRoundedToyMesh(RW + 0.14, 0.14, 0.14, selMat, 0, 0.1, RD / 2 + 0.02, 0.04, false, false, false),
+    createRoundedToyMesh(RW + 0.14, 0.14, 0.14, selMat, 0, 0.1, -RD / 2 - 0.02, 0.04, false, false, false),
+    createRoundedToyMesh(0.14, 0.14, RD + 0.14, selMat, -RW / 2 - 0.02, 0.1, 0, 0.04, false, false, false),
+    createRoundedToyMesh(0.14, 0.14, RD + 0.14, selMat, RW / 2 + 0.02, 0.1, 0, 0.04, false, false, false),
+    createRoundedToyMesh(RW + 0.14, 0.1, 0.1, selMintMat, 0, RH + 0.06, RD / 2 + 0.02, 0.03, false, false, false),
+    createRoundedToyMesh(RW + 0.14, 0.1, 0.1, selMintMat, 0, RH + 0.06, -RD / 2 - 0.02, 0.03, false, false, false),
+    createRoundedToyMesh(0.1, 0.1, RD + 0.14, selMintMat, -RW / 2 - 0.02, RH + 0.06, 0, 0.03, false, false, false),
+    createRoundedToyMesh(0.1, 0.1, RD + 0.14, selMintMat, RW / 2 + 0.02, RH + 0.06, 0, 0.03, false, false, false)
+  );
 
-  const sTopF = createRoundedToyMesh(RW + 0.14, 0.1, 0.1, selMintMat, 0, RH + 0.06, RD / 2 + 0.02, 0.03, false, false, false);
-  const sTopB = createRoundedToyMesh(RW + 0.14, 0.1, 0.1, selMintMat, 0, RH + 0.06, -RD / 2 - 0.02, 0.03, false, false, false);
-  const sTopL = createRoundedToyMesh(0.1, 0.1, RD + 0.14, selMintMat, -RW / 2 - 0.02, RH + 0.06, 0, 0.03, false, false, false);
-  const sTopR = createRoundedToyMesh(0.1, 0.1, RD + 0.14, selMintMat, RW / 2 + 0.02, RH + 0.06, 0, 0.03, false, false, false);
-
-  selectedRoomFrameGroup.add(sBotF, sBotB, sBotL, sBotR, sTopF, sTopB, sTopL, sTopR);
-
-  // 네 모서리에서 빙글빙글 회전하며 빛나는 포커스 스타 비콘
   for (const cx of [-RW / 2, RW / 2]) {
     for (const cz of [-RD / 2, RD / 2]) {
       const beacon = createRoundedToyMesh(0.28, 0.28, 0.28, selMat, cx, RH + 0.22, cz, 0.06, false, false, true);
       beacon.rotation.x = Math.PI / 4;
       beacon.rotation.z = Math.PI / 4;
-      beacon.raycast = () => {};
       selectedRoomFrameGroup.add(beacon);
       selectedRoomBeacons.push(beacon);
     }
@@ -908,7 +1457,7 @@ function setHoverBoxBounds(wx, wy, wz, w, d, colorHex = 0xFFD166) {
 }
 
 // =========================================================
-// 4. 미니어처 아일랜드 조립 (배경은 윤곽선 없이 부드럽게 → 클릭 오브젝트와 확실히 분리!)
+// 6. 아일랜드 배경 및 힐링 디테일 조립
 // =========================================================
 function buildCozyFloatingIsland() {
   const island = new THREE.Group();
@@ -921,17 +1470,11 @@ function buildCozyFloatingIsland() {
   meadowTop.receiveShadow = true;
   island.add(meadowTop);
 
-  const cliffMid = new THREE.Mesh(
-    new THREE.CylinderGeometry(31.8, 25.5, 3.8, 40),
-    makeClayMat(0xEAB68E, { roughness: 0.8 })
-  );
+  const cliffMid = new THREE.Mesh(new THREE.CylinderGeometry(31.8, 25.5, 3.8, 40), makeClayMat(0xEAB68E, { roughness: 0.8 }));
   cliffMid.position.y = -3.15;
   island.add(cliffMid);
 
-  const cliffBot = new THREE.Mesh(
-    new THREE.CylinderGeometry(25.2, 13.5, 4.8, 32),
-    makeClayMat(0xD2946C, { roughness: 0.84 })
-  );
+  const cliffBot = new THREE.Mesh(new THREE.CylinderGeometry(25.2, 13.5, 4.8, 32), makeClayMat(0xD2946C, { roughness: 0.84 }));
   cliffBot.position.y = -7.25;
   island.add(cliffBot);
 
@@ -944,16 +1487,14 @@ function buildCozyFloatingIsland() {
     transparent: true,
     opacity: 0.94
   });
-  const streamPts = [
+  [
     { x: 4.5, z: -26, w: 4.5, d: 10.6, rot: 0.12 },
     { x: 5.2, z: -16, w: 4.6, d: 11.2, rot: -0.08 },
     { x: 5.0, z: -5.5, w: 4.7, d: 11.5, rot: 0.06 },
     { x: 4.6, z: 5.2, w: 4.7, d: 11.5, rot: 0.1 },
     { x: 4.0, z: 16.0, w: 4.9, d: 12.2, rot: -0.08 },
     { x: 3.4, z: 25.5, w: 5.1, d: 10.0, rot: 0.0 }
-  ];
-  streamPts.forEach((seg) => {
-    // 배경 시냇물은 윤곽선 없이(withOutline=false) 부드럽게 깔아 클릭 오브젝트와 대비 극대화!
+  ].forEach((seg) => {
     const wMesh = createRoundedToyMesh(seg.w, 0.18, seg.d, waterMat, seg.x, 0.06, seg.z, 0.12, false, true, false);
     wMesh.rotation.y = seg.rot;
     island.add(wMesh);
@@ -967,13 +1508,11 @@ function buildCozyFloatingIsland() {
     }
   });
 
-  // 배경 산책로도 윤곽선 없이 부드럽게 배치
   const cobbleMat = makeClayMat(0xFFFFFF, { map: TEX.cobble, roughness: 0.74 });
   island.add(createRoundedToyMesh(38, 0.12, 3.7, cobbleMat, -1.0, 0.05, 3.0, 0.14, false, true, false));
   island.add(createRoundedToyMesh(3.3, 0.12, 21, cobbleMat, -13.5, 0.05, 1.5, 0.14, false, true, false));
   island.add(createRoundedToyMesh(3.3, 0.12, 21, cobbleMat, 13.5, 0.05, 2.2, 0.14, false, true, false));
 
-  // 아치 다리
   const bridge = new THREE.Group();
   bridge.position.set(4.8, 0.12, 3.0);
   for (let i = -4; i <= 4; i++) {
@@ -995,22 +1534,17 @@ function buildCozyFloatingIsland() {
   }
   island.add(bridge);
 
-  // 배경 나무 & 꽃밭 (배경이므로 윤곽선 없이 은은하게!)
-  const treeCoords = [
+  [
     [-25, -13, true], [-23, 9, false], [-8, -19, true], [-2, 18, false],
     [22, -13, true], [23, 9, true], [16, 20, false], [-21, 19, true],
     [10, -21, false], [-15, -16, false], [21, -2, false]
-  ];
-  treeCoords.forEach(([tx, tz, isSakura], idx) => {
+  ].forEach(([tx, tz, isSakura], idx) => {
     const tree = createFluffyPastelTree(isSakura, 0.94 + (idx % 3) * 0.16);
     tree.position.set(tx, 0.05, tz);
     island.add(tree);
   });
 
-  const flowerPatches = [
-    [-9.8, 6.2], [0.2, 6.5], [9.5, 6.1], [-11.5, -9.2], [8.8, -9.8], [-3.2, -11.5]
-  ];
-  flowerPatches.forEach(([fx, fz]) => {
+  [[-9.8, 6.2], [0.2, 6.5], [9.5, 6.1], [-11.5, -9.2], [8.8, -9.8], [-3.2, -11.5]].forEach(([fx, fz]) => {
     const patch = createCloverAndDaisyCluster(5);
     patch.position.set(fx, 0.06, fz);
     island.add(patch);
@@ -1021,7 +1555,6 @@ function buildCozyFloatingIsland() {
   bench.rotation.y = -0.35;
   island.add(bench);
 
-  // 클릭 가능한 길거리 소품들(우체통, 자판기, 고양이 바구니, 장난감 미니카)은 또렷한 만화 윤곽선 적용!
   const postbox = createRedPostbox3D();
   postbox.position.set(-10.8, 0.08, 4.95);
   island.add(postbox);
@@ -1153,13 +1686,12 @@ function createGarland3D(width = 5.4, flagCount = 9) {
 
 function createBalloonBunch3D(scale = 1.0) {
   const pivot = new THREE.Group();
-  const configs = [
+  [
     { x: -0.24, y: 1.55, z: 0.06, mat: MAT.coral },
     { x: 0.22, y: 1.72, z: -0.06, mat: MAT.butter },
     { x: 0.0, y: 1.92, z: 0.1, mat: MAT.sky },
     { x: -0.08, y: 1.38, z: -0.14, mat: MAT.mint }
-  ];
-  configs.forEach((c) => {
+  ].forEach((c) => {
     const stringMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, c.y, 6), MAT.white);
     stringMesh.position.set(c.x * 0.5, c.y * 0.5, c.z * 0.5);
     stringMesh.rotation.z = -c.x * 0.32;
@@ -1287,13 +1819,12 @@ function createRoundedToyCar3D() {
 }
 
 function spawnCottonCandyClouds() {
-  const cloudSpots = [
+  [
     { x: -24, y: 15.2, z: -18, s: 1.25, speed: 0.65 },
     { x: 18, y: 16.4, z: -20, s: 1.4, speed: 0.52 },
     { x: -20, y: 14.8, z: 16, s: 1.15, speed: 0.72 },
     { x: 22, y: 15.8, z: 15, s: 1.3, speed: 0.58 }
-  ];
-  cloudSpots.forEach((cfg, idx) => {
+  ].forEach((cfg, idx) => {
     const cg = new THREE.Group();
     [[0, 0, 0, 2.2, 1.35, 1.6], [-1.15, -0.15, 0.15, 1.65, 1.1, 1.35], [1.2, -0.1, -0.1, 1.7, 1.15, 1.4], [0.25, 0.45, 0.1, 1.45, 1.05, 1.25]].forEach(([px, py, pz, sx, sy, sz]) => {
       const m = new THREE.Mesh(GEO.sphere, MAT.cloudWhite);
@@ -1310,7 +1841,8 @@ function spawnCottonCandyClouds() {
 }
 
 function spawnButterfliesAndBirds() {
-  const centers = [
+  const wingMats = [MAT.pinkSoft, MAT.butter, MAT.sky, MAT.mintSoft];
+  [
     [-9.8, 6.2, 'butterfly'],
     [0.2, 6.5, 'butterfly'],
     [9.5, 6.1, 'butterfly'],
@@ -1318,9 +1850,7 @@ function spawnButterfliesAndBirds() {
     [13.8, -4.5, 'bird'],
     [-6.0, -10.5, 'bird'],
     [4.8, 3.2, 'bird']
-  ];
-  const wingMats = [MAT.pinkSoft, MAT.butter, MAT.sky, MAT.mintSoft];
-  centers.forEach(([cx, cz, kind], i) => {
+  ].forEach(([cx, cz, kind], i) => {
     const g = new THREE.Group();
     if (kind === 'butterfly') {
       const m = wingMats[i % wingMats.length];
@@ -1473,7 +2003,7 @@ function spawnFootstepPuff(wx, wy, wz, scale = 0.2) {
 }
 
 // =========================================================
-// 5. 2등신 치비 캐릭터 + 만화풍 카툰 윤곽선 + 탄성 머리 장식
+// 7. 2등신 치비 캐릭터 + 카툰 윤곽선 + 탄성 머리 장식
 // =========================================================
 function createSproutTopper3D() {
   const g = new THREE.Group();
@@ -1732,12 +2262,11 @@ function createCutePet3D(kind = 'shiba') {
 }
 
 function spawnIslandPets3D() {
-  const petConfigs = [
+  [
     { kind: 'shiba', x: -1.5, z: 3.6 },
     { kind: 'bichon', x: 8.8, z: 3.4 },
     { kind: 'cat', x: -7.6, z: 3.1 }
-  ];
-  petConfigs.forEach((cfg) => {
+  ].forEach((cfg) => {
     const mesh = createCutePet3D(cfg.kind);
     mesh.position.set(cfg.x, 0.08, cfg.z);
     scene.add(mesh);
@@ -1755,7 +2284,7 @@ function spawnIslandPets3D() {
 }
 
 // =========================================================
-// 6. 전체 부지(빈터 포커스 패드 + 건물 포커스 패드 + 만화 윤곽선) 빌드
+// 8. 전체 부지(빈터 + 비주거 + 주상복합 1층 상가·옥상 현판·정문 명패) 빌드
 // =========================================================
 function buildAllLots3D() {
   for (const lot of state.lots) {
@@ -1775,6 +2304,9 @@ function buildAllLots3D() {
       shellMaterials: [],
       shellLineMat: null,
       roofCapGroup: null,
+      skySignGroup: null,
+      skySignMat: null,
+      brassPlateMat: null,
       upperSlab: null,
       interiorGroup: null,
       indoorLights: [],
@@ -1797,6 +2329,11 @@ function refreshLot3D(lotId) {
   while (reg.root.children.length > 0) {
     reg.root.remove(reg.root.children[0]);
   }
+  // 해당 필지의 기존 파사드 파티클 에미터 정리
+  for (let i = facadeEmitters.length - 1; i >= 0; i--) {
+    if (facadeEmitters[i].lotId === lotId) facadeEmitters.splice(i, 1);
+  }
+
   reg.shellMaterials = [];
   reg.shellLineMat = null;
   reg.indoorLights = [];
@@ -1805,6 +2342,9 @@ function refreshLot3D(lotId) {
   reg.elevatorCar = null;
   reg.upperSlab = null;
   reg.signpostPivot = null;
+  reg.skySignGroup = null;
+  reg.skySignMat = null;
+  reg.brassPlateMat = null;
 
   if (!lot.owned) {
     reg.padW = 9.8;
@@ -1827,11 +2367,9 @@ function refreshLot3D(lotId) {
   }
 }
 
-// 빈 부지: 배경 잔디와 확실히 분리되는 크림-민트 타일 베이스 + 반짝이는 민트 점선 테두리 링 + 피켓 울타리 + 나무 팻말!
 function buildEmptyForSaleLot3D(lot, reg) {
   const g = new THREE.Group();
 
-  // [요구사항 2-1] 배경 잔디와 분리되는 입체 타일 베이스 & 반짝이는 민트 점선 테두리 링!
   const outerPlate = createRoundedToyMesh(9.8, 0.16, 7.8, MAT.basePadMint, 0, 0.08, 0, 0.36, false, true, true);
   outerPlate.userData = { lotId: lot.lotId, isEmptyLot: true };
   registerPick(outerPlate);
@@ -1842,10 +2380,8 @@ function buildEmptyForSaleLot3D(lot, reg) {
   registerPick(innerGrass);
   g.add(innerGrass);
 
-  const dashRing = createInteractiveBaseRing(10.1, 8.1, 0.05, true);
-  g.add(dashRing);
+  g.add(createInteractiveBaseRing(10.1, 8.1, 0.05, true));
 
-  // 만화풍 윤곽선이 들어간 하얀 피켓 울타리
   const picketGeo = getPicketPostGeo();
   for (let x = -4.0; x <= 4.0; x += 0.8) {
     for (const z of [-3.2, 3.2]) {
@@ -1873,7 +2409,6 @@ function buildEmptyForSaleLot3D(lot, reg) {
   g.add(createRoundedToyMesh(0.09, 0.09, 6.4, MAT.white, -4.0, 0.54, 0, 0.03, true, true, false));
   g.add(createRoundedToyMesh(0.09, 0.09, 6.4, MAT.white, 4.0, 0.54, 0, 0.03, true, true, false));
 
-  // 네잎클로버와 데이지 꽃송이
   const daisyMats = [MAT.white, MAT.pinkSoft, MAT.butter];
   [
     [-2.7, -1.9, 'daisy', 0], [-1.9, 1.8, 'clover', 1], [2.6, -1.8, 'daisy', 1],
@@ -1884,7 +2419,6 @@ function buildEmptyForSaleLot3D(lot, reg) {
     g.add(fl);
   });
 
-  // 정중앙 선명한 윤곽선 3D 나무 망치 분양 팻말!
   const signpostPivot = new THREE.Group();
   signpostPivot.position.set(0, 0.24, 0);
   signpostPivot.userData.origScale = new THREE.Vector3(1, 1, 1);
@@ -1926,8 +2460,6 @@ function buildEmptyForSaleLot3D(lot, reg) {
 
 function buildIslandSpecialtyDev3D(lot, reg) {
   const g = new THREE.Group();
-
-  // 비주거 랜드마크도 선명한 바닥 타일 베이스 + 점선 포커스 링 적용!
   const base = createRoundedToyMesh(10.8, 0.3, 8.6, MAT.basePadCream, 0, 0.15, 0, 0.28, true, true, true);
   base.userData = { lotId: lot.lotId };
   registerPick(base);
@@ -1991,29 +2523,36 @@ function buildIslandSpecialtyDev3D(lot, reg) {
     pool.position.set(0, 0.57, 0);
     g.add(basin, pool);
   } else if (lot.devType === 'bakery_cafe') {
-    const body = createRoundedToyMesh(7.2, 3.2, 5.2, makeClayMat(0xFFFFFF, { map: TEX.brickWarm }), 0, 1.85, -0.5, 0.22);
-    const roof = createRoundedToyMesh(7.6, 0.5, 5.6, MAT.coral, 0, 3.65, -0.5, 0.2);
-    const cafeSignMat = makeClayMat(0xFFFFFF, { map: TEX.cafeSign, roughness: 0.36 });
+    // [요구사항 1-3] 달콤 다방(SWEET CAFE): 브라운·크림 물결 어닝 + 김이 모락모락 나는 커피잔·크루아상 입체 간판 조형물!
+    const body = createRoundedToyMesh(7.4, 3.25, 5.2, makeClayMat(0xFFFFFF, { map: TEX.brickWarm }), 0, 1.88, -0.5, 0.22);
+    const roof = createRoundedToyMesh(7.8, 0.5, 5.6, MAT.woodDark, 0, 3.68, -0.5, 0.2);
+
+    const signFrame = createRoundedToyMesh(5.6, 1.38, 0.28, MAT.woodDark, 0, 2.95, 2.15, 0.18);
+    const cafeSignMat = makeClayMat(0xFFFFFF, { map: TEX.cafeSign, roughness: 0.34 });
     signMaterialsToRefresh.push({ mat: cafeSignMat, kind: 'cafe' });
-    const sign = new THREE.Mesh(GEO.quad, cafeSignMat);
-    sign.scale.set(4.8, 1.18, 1);
-    sign.position.set(0, 2.98, 2.16);
-    const awning = createRoundedToyMesh(6.8, 0.34, 1.35, makeClayMat(0xFFFFFF, { map: TEX.awningButter }), 0, 2.1, 2.6, 0.12);
-    awning.rotation.x = 0.25;
+    const signFace = new THREE.Mesh(GEO.quad, cafeSignMat);
+    signFace.scale.set(5.2, 1.18, 1);
+    signFace.position.set(0, 2.95, 2.31);
+    signFrame.userData = { lotId: lot.lotId, isShopSign: true, shopLabel: '달콤 다방(SWEET CAFE): 갓 구운 크루아상과 라떼 매출 순항 중!' };
+    registerPick(signFrame);
+
+    const cafeAwning = createScallopedAwning3D(6.8, TEX.awningBrown, MAT.cream);
+    cafeAwning.position.set(0, 2.02, 2.68);
+
+    const cupSculpt = createCafeCupAndCroissant3D(lot.x, 0, 3.92, 1.65, lot.z);
+    facadeEmitters[facadeEmitters.length - 1].lotId = lot.lotId;
 
     const garland = createGarland3D(6.2, 9);
-    garland.position.set(0, 1.85, 3.25);
-    const bBunch = createBalloonBunch3D(0.95);
-    bBunch.position.set(3.6, 0.3, 2.8);
-    g.add(body, roof, sign, awning, garland, bBunch);
+    garland.position.set(0, 1.75, 3.3);
+    g.add(body, roof, signFrame, signFace, cafeAwning, cupSculpt, garland);
 
-    for (const tx of [-2.2, 2.2]) {
+    for (const tx of [-2.3, 2.3]) {
       const tbl = new THREE.Mesh(new THREE.CylinderGeometry(0.68, 0.68, 0.12, 20), MAT.white);
-      tbl.position.set(tx, 0.85, 3.1);
+      tbl.position.set(tx, 0.85, 3.25);
       const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.8, 10), MAT.woodDark);
-      pole.position.set(tx, 1.2, 3.1);
-      const umbrella = new THREE.Mesh(getPuffyDomeGeo(1.05, 0.65), MAT.coral);
-      umbrella.position.set(tx, 2.18, 3.1);
+      pole.position.set(tx, 1.2, 3.25);
+      const umbrella = new THREE.Mesh(getPuffyDomeGeo(1.05, 0.65), MAT.woodWarm);
+      umbrella.position.set(tx, 2.18, 3.25);
       umbrella.castShadow = true;
       addToonHullOutline(umbrella, 1.05);
       g.add(tbl, pole, umbrella);
@@ -2024,45 +2563,83 @@ function buildIslandSpecialtyDev3D(lot, reg) {
 }
 
 // =========================================================
-// 7. 주상복합 건물 (만화풍 엣지 윤곽선 + 바닥 점선 패드 + 호실 격자 몰딩 프레임)
+// 9. 주상복합 빌딩 조립 (해피마트/달콤다방 & 뽀송워시 입체 간판 + 옥상 스카이 사인 + 정문 황동 명패)
 // =========================================================
 function buildResidentialComplex3D(lot, reg) {
   const b = state.buildings[lot.lotId];
   const W = 17.6;
   const D = 5.6;
+  const isSecondComplex = lot.devType === 'mixed_2';
 
-  // 건물 부지 입체 타일 베이스 & 반짝이는 골드-화이트 점선 테두리 링!
   const baseDeck = createRoundedToyMesh(W + 2.2, 0.46, D + 3.0, MAT.basePadCream, 0, 0.23, 0.35, 0.26, true, true, true);
   baseDeck.userData = { lotId: lot.lotId };
   registerPick(baseDeck);
   reg.root.add(baseDeck);
   reg.root.add(createInteractiveBaseRing(W + 2.75, D + 3.55, 0.05, false));
 
-  // 1층 상가 아케이드 (만화 윤곽선 완비)
   const gfGroup = new THREE.Group();
   gfGroup.add(createRoundedToyMesh(W, 2.55, 0.26, MAT.cream, 0, 1.7, -D / 2 + 0.13, 0.08));
 
+  // ---------------- 좌측 1층 상가: 해피마트(1차) 또는 달콤 다방(신축 2차) ----------------
   gfGroup.add(createRoundedToyMesh(6.6, 0.09, D - 0.4, MAT.white, -5.2, 0.47, 0.2, 0.04));
-  gfGroup.add(createRoundedToyMesh(1.8, 0.84, 0.74, MAT.coral, -7.2, 0.86, 1.2, 0.14));
+  gfGroup.add(createRoundedToyMesh(1.8, 0.84, 0.74, isSecondComplex ? MAT.woodWarm : MAT.coral, -7.2, 0.86, 1.2, 0.14));
   for (const sx of [-5.2, -3.5]) {
     gfGroup.add(createRoundedToyMesh(1.25, 1.35, 0.5, MAT.mintSoft, sx, 1.12, -0.4, 0.1));
     gfGroup.add(createRoundedToyMesh(1.1, 0.24, 0.4, MAT.butter, sx, 1.9, -0.4, 0.08));
   }
   gfGroup.add(createRoundedToyMesh(1.9, 1.85, 0.48, MAT.sky, -4.4, 1.36, -2.1, 0.12));
 
-  const martSignMat = makeClayMat(0xFFFFFF, { map: TEX.martSign, roughness: 0.35 });
-  signMaterialsToRefresh.push({ mat: martSignMat, kind: 'mart' });
-  const martSign = new THREE.Mesh(GEO.quad, martSignMat);
-  martSign.scale.set(6.0, 1.08, 1);
-  martSign.position.set(-5.2, 2.55, D / 2 + 0.3);
-  const martAwning = createRoundedToyMesh(6.3, 0.32, 1.18, makeClayMat(0xFFFFFF, { map: TEX.awningCoral }), -5.2, 2.02, D / 2 + 0.68, 0.12);
-  martAwning.rotation.x = 0.26;
-  const martGarland = createGarland3D(5.8, 9);
-  martGarland.position.set(-5.2, 1.76, D / 2 + 1.26);
-  const martBalloons = createBalloonBunch3D(0.95);
-  martBalloons.position.set(-8.55, 0.46, D / 2 + 0.95);
-  gfGroup.add(martSign, martAwning, martGarland, martBalloons);
+  if (!isSecondComplex) {
+    // [요구사항 1-1] 해피마트(MINI MART 24) 입체 스트라이프 박스 간판 + 양면 24H 원형 돌출 간판 + 물결 어닝 + A자 입간판!
+    const martBox = createRoundedToyMesh(6.25, 1.28, 0.28, MAT.white, -5.2, 2.58, D / 2 + 0.28, 0.18);
+    martBox.userData = { lotId: lot.lotId, isShopSign: true, shopLabel: '해피마트 24: 삼각김밥·도시락 24시간 성업 중! (+고정 상가수익)' };
+    registerPick(martBox);
 
+    const martSignMat = makeClayMat(0xFFFFFF, { map: TEX.martSign, roughness: 0.3 });
+    signMaterialsToRefresh.push({ mat: martSignMat, kind: 'mart' });
+    const martFace = new THREE.Mesh(GEO.quad, martSignMat);
+    martFace.scale.set(5.96, 1.12, 1);
+    martFace.position.set(-5.2, 2.58, D / 2 + 0.44);
+
+    const bladeSign = createBladeSign24H3D();
+    bladeSign.position.set(-9.15, 2.48, D / 2 - 0.15);
+    bladeSign.userData = { origScale: new THREE.Vector3(1, 1, 1) };
+
+    const martAwning = createScallopedAwning3D(6.3, TEX.awningCoral, MAT.coral);
+    martAwning.position.set(-5.2, 1.92, D / 2 + 0.72);
+
+    const aframe = createAFrameStand3D();
+    aframe.position.set(-7.65, 0.46, D / 2 + 0.92);
+    aframe.rotation.y = 0.24;
+
+    const martGarland = createGarland3D(5.8, 9);
+    martGarland.position.set(-5.2, 1.62, D / 2 + 1.28);
+    const martBalloons = createBalloonBunch3D(0.95);
+    martBalloons.position.set(-8.55, 0.46, D / 2 + 0.95);
+
+    gfGroup.add(martBox, martFace, bladeSign, martAwning, aframe, martGarland, martBalloons);
+  } else {
+    // [요구사항 1-3] 신축 2호관 1층: 달콤 다방(SWEET CAFE) + 브라운·크림 물결 어닝 + 김이 모락모락 나는 입체 커피잔·크루아상!
+    const cafeBox = createRoundedToyMesh(6.25, 1.28, 0.28, MAT.woodDark, -5.2, 2.58, D / 2 + 0.28, 0.18);
+    cafeBox.userData = { lotId: lot.lotId, isShopSign: true, shopLabel: '달콤 다방(SWEET CAFE): 향긋한 수제 라떼 & 크루아상 완판 행진!' };
+    registerPick(cafeBox);
+
+    const cafeSignMat = makeClayMat(0xFFFFFF, { map: TEX.cafeSign, roughness: 0.3 });
+    signMaterialsToRefresh.push({ mat: cafeSignMat, kind: 'cafe' });
+    const cafeFace = new THREE.Mesh(GEO.quad, cafeSignMat);
+    cafeFace.scale.set(5.96, 1.12, 1);
+    cafeFace.position.set(-5.2, 2.58, D / 2 + 0.44);
+
+    const cafeAwning = createScallopedAwning3D(6.3, TEX.awningBrown, MAT.cream);
+    cafeAwning.position.set(-5.2, 1.92, D / 2 + 0.72);
+
+    const cupMascot = createCafeCupAndCroissant3D(lot.x, -8.35, 2.52, D / 2 + 0.55, lot.z);
+    facadeEmitters[facadeEmitters.length - 1].lotId = lot.lotId;
+
+    gfGroup.add(cafeBox, cafeFace, cafeAwning, cupMascot);
+  }
+
+  // ---------------- 우측 1층 상가: [요구사항 1-2] 뽀송 워시(BUBBLE PONG) 구름 간판 + 비누방울 세탁기 마스코트 ----------------
   gfGroup.add(createRoundedToyMesh(6.6, 0.09, D - 0.4, makeClayMat(0xEFF6FF), 5.2, 0.47, 0.2, 0.04));
   for (let i = 0; i < 3; i++) {
     const wx = 3.5 + i * 1.65;
@@ -2076,21 +2653,54 @@ function buildResidentialComplex3D(lot, reg) {
   }
   gfGroup.add(createRoundedToyMesh(0.86, 0.5, 0.66, MAT.butter, 7.2, 0.69, 1.1, 0.12));
 
-  const washSignMat = makeClayMat(0xFFFFFF, { map: TEX.washSign, roughness: 0.35 });
-  signMaterialsToRefresh.push({ mat: washSignMat, kind: 'wash' });
-  const washSign = new THREE.Mesh(GEO.quad, washSignMat);
-  washSign.scale.set(6.0, 1.08, 1);
-  washSign.position.set(5.2, 2.55, D / 2 + 0.3);
-  const washAwning = createRoundedToyMesh(6.3, 0.32, 1.18, makeClayMat(0xFFFFFF, { map: TEX.awningMint }), 5.2, 2.02, D / 2 + 0.68, 0.12);
-  washAwning.rotation.x = 0.26;
-  const washGarland = createGarland3D(5.8, 9);
-  washGarland.position.set(5.2, 1.76, D / 2 + 1.26);
-  const washBalloons = createBalloonBunch3D(0.95);
-  washBalloons.position.set(8.55, 0.46, D / 2 + 0.95);
-  gfGroup.add(washSign, washAwning, washGarland, washBalloons);
+  // 스카이블루 & 화이트 구름 모양 입체 간판 프레임 + 노란 네온 포인트 바
+  const washCloudGroup = new THREE.Group();
+  const washBox = createRoundedToyMesh(5.85, 1.26, 0.28, MAT.sky, 5.0, 2.58, D / 2 + 0.28, 0.22);
+  washBox.userData = { lotId: lot.lotId, isShopSign: true, shopLabel: '뽀송 워시(BUBBLE PONG): 24시 버블 세탁기가 힘차게 돌아가요!' };
+  registerPick(washBox);
+  washCloudGroup.add(washBox);
 
+  // 간판 가장자리 몽글몽글 하얀 구름 장식 볼 + 노란색 네온 포인트 조명 바
+  [-2.65, -1.3, 0, 1.3, 2.65].forEach((cx, i) => {
+    const puff = new THREE.Mesh(GEO.sphere, MAT.white);
+    puff.scale.set(0.82, 0.48, 0.34);
+    puff.position.set(5.0 + cx, 3.22 + (i % 2) * 0.06, D / 2 + 0.26);
+    addToonHullOutline(puff, 1.06);
+    washCloudGroup.add(puff);
+  });
+  washCloudGroup.add(createRoundedToyMesh(5.5, 0.1, 0.12, MAT.neonYellow, 5.0, 1.94, D / 2 + 0.42, 0.04, false, false, false));
+
+  const washSignMat = makeClayMat(0xFFFFFF, { map: TEX.washSign, roughness: 0.3 });
+  signMaterialsToRefresh.push({ mat: washSignMat, kind: 'wash' });
+  const washFace = new THREE.Mesh(GEO.quad, washSignMat);
+  washFace.scale.set(5.55, 1.1, 1);
+  washFace.position.set(5.0, 2.58, D / 2 + 0.44);
+  washCloudGroup.add(washFace);
+
+  // 간판 옆에서 실제로 비누방울이 보글보글 피어오르는 입체 세탁기 마스코트!
+  const washerMascot = createWasherMascot3D(lot.x, 8.38, 2.64, D / 2 + 0.42, lot.z);
+  facadeEmitters[facadeEmitters.length - 1].lotId = lot.lotId;
+
+  const washAwning = createScallopedAwning3D(6.3, TEX.awningSky, MAT.sky);
+  washAwning.position.set(5.2, 1.92, D / 2 + 0.72);
+  const washGarland = createGarland3D(5.8, 9);
+  washGarland.position.set(5.2, 1.62, D / 2 + 1.28);
+
+  gfGroup.add(washCloudGroup, washerMascot, washAwning, washGarland);
+
+  // ---------------- 중앙 정문 로비 아치 + [요구사항 2-1] 1층 현관 황동 빌딩 명패! ----------------
   gfGroup.add(createRoundedToyMesh(2.9, 2.25, 0.34, MAT.woodWarm, 0, 1.55, D / 2 + 0.1, 0.14));
   gfGroup.add(createRoundedToyMesh(2.2, 1.95, 0.38, MAT.glass, 0, 1.42, D / 2 + 0.12, 0.1, false, false, true));
+
+  const brassFrame = createRoundedToyMesh(2.55, 0.56, 0.18, MAT.gold, 0, 2.66, D / 2 + 0.3, 0.1);
+  const brassMat = makeClayMat(0xFFFFFF, { map: createBrassNameplateTexture(b.title), roughness: 0.28, metalness: 0.22 });
+  reg.brassPlateMat = brassMat;
+  const brassFace = new THREE.Mesh(GEO.quad, brassMat);
+  brassFace.scale.set(2.34, 0.44, 1);
+  brassFace.position.set(0, 2.66, D / 2 + 0.41);
+  brassFrame.userData = { lotId: lot.lotId, isRenameSign: true };
+  registerPick(brassFrame);
+  gfGroup.add(brassFrame, brassFace);
 
   const martLight = new THREE.PointLight(0xFFE4B5, 1.18, 9.5, 1.6);
   martLight.position.set(-5.2, 2.2, 0.6);
@@ -2103,7 +2713,7 @@ function buildResidentialComplex3D(lot, reg) {
 
   reg.root.add(gfGroup);
 
-  // 층간 슬래브 (선명한 엣지 구분선)
+  // 층간 슬래브
   reg.root.add(createRoundedToyMesh(W + 0.4, 0.3, D + 0.4, MAT.slab, 0, 2.92, 0.2, 0.12));
   const upperSlab = createRoundedToyMesh(W + 0.4, 0.3, D + 0.4, MAT.slab, 0, 5.72, 0.2, 0.12);
   reg.upperSlab = upperSlab;
@@ -2124,22 +2734,22 @@ function buildResidentialComplex3D(lot, reg) {
     rebuildRoom3D(room);
   }
 
-  // X-Ray 반투명 외벽 쉘 + 동반 투명화되는 쉘 전용 만화 윤곽선!
+  // X-Ray 반투명 외벽 쉘 & 옥상 전면 스카이 사인(Rooftop Monument Sign)!
   const shellLineMat = new THREE.LineBasicMaterial({
     color: 0x5A463C,
     transparent: true,
-    opacity: 0.56
+    opacity: 0.54
   });
   reg.shellLineMat = shellLineMat;
 
-  const facadeTex = lot.devType === 'mixed_2' ? TEX.brickMint : TEX.brickWarm;
+  const facadeTex = isSecondComplex ? TEX.brickMint : TEX.brickWarm;
   const facadeMat = makeClayMat(0xFFFFFF, {
     map: facadeTex,
     roughness: 0.62,
     transparent: true,
     opacity: 1.0
   });
-  const roofMat = makeClayMat(lot.devType === 'mixed_2' ? 0x34D399 : 0xFF7E98, {
+  const roofMat = makeClayMat(isSecondComplex ? 0x34D399 : 0xFF7E98, {
     roughness: 0.54,
     transparent: true,
     opacity: 1.0
@@ -2168,12 +2778,19 @@ function buildResidentialComplex3D(lot, reg) {
 
   const roofCapGroup = new THREE.Group();
   const roofSlab = createRoundedToyMesh(W + 1.0, 0.56, D + 1.05, roofMat, 0, 8.86, 0.2, 0.24, true, true, true, shellLineMat);
-  const chimney = createRoundedToyMesh(0.98, 1.18, 0.98, facadeMat, 6.2, 9.52, -1.2, 0.16, true, true, true, shellLineMat);
-  const roofBalloonL = createBalloonBunch3D(1.05);
-  roofBalloonL.position.set(-7.6, 9.1, 2.2);
-  const roofBalloonR = createBalloonBunch3D(1.05);
-  roofBalloonR.position.set(7.6, 9.1, 2.2);
-  roofCapGroup.add(roofSlab, chimney, roofBalloonL, roofBalloonR);
+  const chimney = createRoundedToyMesh(0.98, 1.18, 0.98, facadeMat, 6.5, 9.52, -1.2, 0.16, true, true, true, shellLineMat);
+
+  // 옥상 전면 정중앙 아치형 입체 빌딩 현판(Rooftop Monument Sky Sign)!
+  const { group: skySignGroup, skyMat } = createRooftopSkySign3D(b.title, lot.lotId);
+  skySignGroup.position.set(0, 9.05, D / 2 + 0.22);
+  reg.skySignGroup = skySignGroup;
+  reg.skySignMat = skyMat;
+
+  const roofBalloonL = createBalloonBunch3D(1.02);
+  roofBalloonL.position.set(-7.8, 9.1, 2.2);
+  const roofBalloonR = createBalloonBunch3D(1.02);
+  roofBalloonR.position.set(7.8, 9.1, 2.2);
+  roofCapGroup.add(roofSlab, chimney, skySignGroup, roofBalloonL, roofBalloonR);
   reg.roofCapGroup = roofCapGroup;
   reg.root.add(roofCapGroup);
 
@@ -2188,7 +2805,7 @@ function buildResidentialComplex3D(lot, reg) {
 }
 
 // =========================================================
-// 8. 공용시설 4종 & 야외 포커스 패드(분리수거장·관리인 부스) 3D 조립
+// 10. 공용시설 4종 & 야외 포커스 패드 조립
 // =========================================================
 function rebuildPublicInfraAndManager3D(lotId) {
   const b = state.buildings[lotId];
@@ -2199,7 +2816,6 @@ function rebuildPublicInfraAndManager3D(lotId) {
   while (reg.managerGroup.children.length > 0) reg.managerGroup.remove(reg.managerGroup.children[0]);
   reg.elevatorCar = null;
 
-  // 1) 유리 전망 엘리베이터 (만화 윤곽선 적용!)
   if (b.infra.elevator) {
     const shaft = createRoundedToyMesh(2.1, 8.4, 2.1, MAT.glass, 9.9, 4.5, 0.4, 0.16, false, false, true);
     const topCap = createRoundedToyMesh(2.38, 0.48, 2.38, MAT.sky, 9.9, 8.84, 0.4, 0.16);
@@ -2214,7 +2830,6 @@ function rebuildPublicInfraAndManager3D(lotId) {
     }
   }
 
-  // 2) 야외 분리수거장 + 바닥 타일 베이스 & 민트 점선 테두리 링!
   const recPad = createRoundedToyMesh(3.2, 0.14, 2.1, MAT.basePadMint, -10.1, 0.52, 1.6, 0.12);
   recPad.userData = { lotId, openNotebookTab: 'infra' };
   registerPick(recPad);
@@ -2249,15 +2864,14 @@ function rebuildPublicInfraAndManager3D(lotId) {
   }
 
   if (b.infra.rooftop_garden) {
-    reg.infraGroup.add(createRoundedToyMesh(13.5, 0.24, 3.8, makeClayMat(0x86EFAC), 0, 9.18, 0.3, 0.14));
-    for (const tx of [-4.5, 0, 4.5]) {
-      const miniTree = createFluffyPastelTree(tx === 0, 0.7);
-      miniTree.position.set(tx, 9.22, 0.3);
+    reg.infraGroup.add(createRoundedToyMesh(13.5, 0.24, 3.8, makeClayMat(0x86EFAC), 0, 9.18, -0.4, 0.14));
+    for (const tx of [-5.2, 5.2]) {
+      const miniTree = createFluffyPastelTree(tx < 0, 0.7);
+      miniTree.position.set(tx, 9.22, -0.4);
       reg.infraGroup.add(miniTree);
     }
   }
 
-  // 5) 1층 정문 지배인 부스 + 바닥 점선 포커스 패드!
   if (b.manager.hired) {
     const booth = new THREE.Group();
     booth.position.set(0.1, 0.44, 4.25);
@@ -2287,7 +2901,7 @@ function rebuildPublicInfraAndManager3D(lotId) {
 }
 
 // =========================================================
-// 9. [요구사항 1] 호실 간 선명한 크림 화이트 / 골드 격자 몰딩 프레임 + 내부 가구
+// 11. 호실 격자 몰딩 프레임 & 5종 세대 맞춤 가구
 // =========================================================
 function rebuildRoom3D(room) {
   const reg = lot3D[room.lotId];
@@ -2317,7 +2931,6 @@ function rebuildRoom3D(room) {
     }
   );
 
-  // 클릭 가능한 호실 바닥 & 벽체
   const floorMesh = createRoundedToyMesh(RW - 0.18, 0.16, RD - 0.18, floorMat, 0, 0.08, 0, 0.08, false, true, true);
   floorMesh.userData = { roomId: room.id, lotId: room.lotId };
   registerPick(floorMesh);
@@ -2328,21 +2941,18 @@ function rebuildRoom3D(room) {
   registerPick(backWall);
   rg.add(backWall);
 
-  // 좌·우 파티션 격자 벽체
   rg.add(createRoundedToyMesh(0.2, RH, RD - 0.12, wallMat, -RW / 2 + 0.1, RH / 2, 0, 0.08, true, true, true));
   if (room.col === 2) {
     rg.add(createRoundedToyMesh(0.2, RH, RD - 0.12, wallMat, RW / 2 - 0.1, RH / 2, 0, 0.08, true, true, true));
   }
 
-  // [요구사항 1] 호실 간 경계가 한눈에 딱딱 떨어져 보이는 크림 화이트 / 샴페인 골드 몰딩 테두리 프레임!
   const trimMat = room.unlocked ? MAT.roomGridGold : MAT.roomGridCream;
-  // 상단 벽면 몰딩 캡 (뒷벽 + 좌측 파티션 상단)
   rg.add(createRoundedToyMesh(RW - 0.06, 0.14, 0.28, trimMat, 0, RH + 0.04, -RD / 2 + 0.1, 0.05, false, false, true));
   rg.add(createRoundedToyMesh(0.28, 0.14, RD - 0.06, trimMat, -RW / 2 + 0.1, RH + 0.04, 0, 0.05, false, false, true));
   if (room.col === 2) {
     rg.add(createRoundedToyMesh(0.28, 0.14, RD - 0.06, trimMat, RW / 2 - 0.1, RH + 0.04, 0, 0.05, false, false, true));
   }
-  // 전면 하단 격자 실(Sill) & 골드 몰딩 레일 + 호실 간 전면 구분 기둥!
+
   const frontSill = createRoundedToyMesh(RW - 0.1, 0.34, 0.22, trimMat, 0, 0.2, RD / 2 - 0.09, 0.07, true, true, true);
   frontSill.userData = { roomId: room.id, lotId: room.lotId };
   registerPick(frontSill);
@@ -2626,7 +3236,7 @@ function buildHikikomoriAndTrash3D(rg, trashStage) {
 }
 
 // =========================================================
-// 10. 입주민 치비 동기화 & X-Ray + 호버/선택 포커스 업데이트
+// 12. 입주민 동기화 & X-Ray + 호버/포커스 하이라이트 업데이트
 // =========================================================
 function syncBuildingResidents3D(lotId) {
   const b = state.buildings[lotId];
@@ -2675,8 +3285,8 @@ function syncBuildingResidents3D(lotId) {
 function updateXRayAndFocusHighlights(dt, nowSec) {
   const z = camera.zoom;
   let targetOpacity = 1.0;
-  if (z > 1.15) {
-    targetOpacity = Math.max(0.06, 1.0 - (z - 1.15) / 0.55);
+  if (z > 1.18) {
+    targetOpacity = Math.max(0.06, 1.0 - (z - 1.18) / 0.55);
   }
   currentShellOpacity += (targetOpacity - currentShellOpacity) * Math.min(1, dt * 9);
 
@@ -2686,8 +3296,8 @@ function updateXRayAndFocusHighlights(dt, nowSec) {
 
   for (const reg of Object.values(lot3D)) {
     if (reg.interiorGroup) reg.interiorGroup.visible = showInterior;
-    if (reg.roofCapGroup) reg.roofCapGroup.visible = currentShellOpacity > 0.25;
-    if (reg.shellLineMat) reg.shellLineMat.opacity = currentShellOpacity * 0.56;
+    if (reg.roofCapGroup) reg.roofCapGroup.visible = currentShellOpacity > 0.28;
+    if (reg.shellLineMat) reg.shellLineMat.opacity = currentShellOpacity * 0.54;
 
     for (const m of reg.shellMaterials) {
       m.opacity = currentShellOpacity;
@@ -2697,7 +3307,6 @@ function updateXRayAndFocusHighlights(dt, nowSec) {
       ptLight.intensity = indoorIntensity;
     }
 
-    // [요구사항 2-2] 마우스 호버 시 오브젝트 전체가 살짝 위로 떠오르는 바운스 효과!
     const isLotHovered = hoveredLotId === reg.lotId && !hoveredRoomId;
     const targetLift = isLotHovered ? 0.2 : 0;
     reg.hoverY += (targetLift - reg.hoverY) * Math.min(1, dt * 12);
@@ -2723,7 +3332,6 @@ function updateXRayAndFocusHighlights(dt, nowSec) {
             residentActors[r.id].forEach((ac) => { ac.mesh.visible = !cutUpperFloor; });
           }
         }
-        // 호실 개별 호버 시 해당 호실이 살짝 위로 떠오르는 연출!
         if (!activeBounces.some((ab) => ab.obj === rg)) {
           const rmLift = hoveredRoomId === r.id ? 0.14 : 0;
           rg.position.y += (r.ly + rmLift - rg.position.y) * Math.min(1, dt * 14);
@@ -2732,12 +3340,10 @@ function updateXRayAndFocusHighlights(dt, nowSec) {
     }
   }
 
-  // 바닥 점선 패드 UV 애니메이션 흐름
   animatedDashMaterials.forEach((dm) => {
     if (dm.map) dm.map.offset.x = (nowSec * 0.45) % 1;
   });
 
-  // 호버 발광 외곽선 링 위치 갱신
   if (hoveredRoomId) {
     const rm = findRoom(hoveredRoomId);
     const lot = rm ? getLot(rm.lotId) : null;
@@ -2768,7 +3374,6 @@ function updateXRayAndFocusHighlights(dt, nowSec) {
     hoverFocusGroup.visible = false;
   }
 
-  // 선택된 호실 회전 포커스 프레임(Selection Box) 갱신!
   if (focusedRm && selectedRoomFrameGroup) {
     const lot = getLot(focusedRm.lotId);
     selectedRoomFrameGroup.visible = true;
@@ -2788,7 +3393,71 @@ function updateXRayAndFocusHighlights(dt, nowSec) {
 }
 
 // =========================================================
-// 11. 층간소음 · 쓰레기방 악취 · 만족도 퇴거 · 관리인 자동 위임
+// 13. [요구사항 2-3] 빌딩 이름 실시간 작명(Rename) 시스템!
+// =========================================================
+function openRenameBuildingModal(lotId) {
+  const lot = getLot(lotId);
+  if (!lot || !lot.owned) return;
+  renameTargetLotId = lotId;
+  const curName = state.buildings[lotId]?.title || lot.title || '';
+
+  dom.inputBuildingName.value = curName;
+  dom.renamePresetsRow.innerHTML = BUILDING_NAME_PRESETS.map((preset) => `
+    <button type="button" data-preset="${preset}" class="diary-pill-badge cursor-pointer hover:!bg-[#FEF3C7] hover:!border-[#D97706]">
+      ${preset}
+    </button>
+  `).join('');
+
+  dom.renamePresetsRow.querySelectorAll('[data-preset]').forEach((btn) => {
+    btn.onclick = () => {
+      dom.inputBuildingName.value = btn.dataset.preset;
+      dom.inputBuildingName.focus();
+    };
+  });
+
+  dom.renameModal.classList.remove('hidden');
+  setTimeout(() => {
+    dom.inputBuildingName.focus();
+    dom.inputBuildingName.select();
+  }, 40);
+}
+
+function confirmRenameBuilding() {
+  if (!renameTargetLotId) return;
+  const raw = dom.inputBuildingName.value.trim();
+  if (!raw) {
+    showToast('새 빌딩 이름을 입력해 주세요!', 'rose');
+    return;
+  }
+  const cleanName = raw.slice(0, 16);
+  const lot = getLot(renameTargetLotId);
+  const b = state.buildings[renameTargetLotId];
+  const reg = lot3D[renameTargetLotId];
+
+  if (lot) lot.title = cleanName;
+  if (b) b.title = cleanName;
+
+  // 3D 옥상 스카이 사인 & 1층 정문 황동 명패 실시간 교체 + 탄성 축하 연출!
+  refreshBuildingNameplates3D(renameTargetLotId);
+  if (reg?.skySignGroup) triggerSquashStretch(reg.skySignGroup, 1.55);
+  if (reg?.root) triggerSquashStretch(reg.root, 0.95);
+  if (lot) {
+    spawnCoinFountain3D(lot.x, 9.6, lot.z + 2.4, 10, true);
+    spawnSmokePoof3D(lot.x, 9.5, lot.z + 2.5, 0xFFFDF9, 8);
+  }
+
+  // 플로팅 리본 배지 & 열려 있는 모달/인스펙터 즉시 반영
+  if (lotOverlayEls[renameTargetLotId]) lotOverlayEls[renameTargetLotId].dataset.sig = '';
+  if (focusedRoomId) renderFocusedRoomDrawer();
+  if (!dom.notebookModal.classList.contains('hidden')) renderNotebookSplitView();
+
+  dom.renameModal.classList.add('hidden');
+  showToast(`옥상 스카이 사인과 정문 명패가 [${cleanName}](으)로 교체되었습니다!`, 'emerald');
+  saveState();
+}
+
+// =========================================================
+// 14. 층간소음 · 쓰레기방 악취 · 만족도 퇴거 · 관리인 자동 위임
 // =========================================================
 let fxAccum = 0;
 
@@ -2970,9 +3639,7 @@ function triggerManagerDispatchTag(lotId) {
   const tag = document.createElement('div');
   tag.className = 'world-pin care-clay-bubble';
   tag.innerHTML = `${createCustomSVGIcon('manager_cap', 16)}<span>지배인 자동 케어 출동!</span>`;
-  if (lot) {
-    setPinPos(tag, project(lot.x + 0.5, 2.4, lot.z + 4.1));
-  }
+  if (lot) setPinPos(tag, project(lot.x + 0.5, 2.4, lot.z + 4.1));
   dom.careLayer.appendChild(tag);
   managerTagEls[lotId] = tag;
   setTimeout(() => {
@@ -2982,7 +3649,7 @@ function triggerManagerDispatchTag(lotId) {
 }
 
 // =========================================================
-// 12. 3D 파티클·이펙트
+// 15. 3D 파티클·이펙트 (비누방울 & 커피 김 파티클 포함!)
 // =========================================================
 function easeOutBounce(t) {
   const n1 = 7.5625;
@@ -3025,6 +3692,35 @@ function spawnSmokePoof3D(wx, wy, wz, colorHex = 0xFFFDF9, count = 7) {
       life: 0.78
     });
   }
+}
+
+function spawnSoapBubbleOrSteam3D(em) {
+  if (activeParticles.length > 95) return;
+  const isBubble = em.kind === 'bubble';
+  const mat = new THREE.MeshBasicMaterial({
+    color: isBubble ? (Math.random() < 0.7 ? 0xBAE6FD : 0xFEF08A) : 0xFFFDF9,
+    transparent: true,
+    opacity: isBubble ? 0.75 : 0.52
+  });
+  const m = new THREE.Mesh(GEO.sphere, mat);
+  m.scale.setScalar(isBubble ? 0.16 + Math.random() * 0.14 : 0.22 + Math.random() * 0.12);
+  m.position.set(
+    em.wx + (Math.random() - 0.5) * 0.32,
+    em.wy,
+    em.wz + (Math.random() - 0.5) * 0.22
+  );
+  m.raycast = () => {};
+  scene.add(m);
+  activeParticles.push({
+    mesh: m,
+    vx: (Math.random() - 0.5) * 0.45,
+    vy: isBubble ? 0.95 + Math.random() * 0.5 : 0.75 + Math.random() * 0.35,
+    vz: (Math.random() - 0.5) * 0.35,
+    gravity: -0.15,
+    floorY: -10,
+    life: isBubble ? 1.35 : 1.15,
+    grow: !isBubble
+  });
 }
 
 function spawnCoinFountain3D(wx, wy, wz, count = 10, isSparkle = false) {
@@ -3087,7 +3783,7 @@ function clearOdorFlies(roomId) {
 }
 
 // =========================================================
-// 13. 카메라 포커스 & 우측 다이어리 호실 인스펙터
+// 16. 카메라 포커스 & 우측 다이어리 호실 인스펙터
 // =========================================================
 function focusCameraOnRoom(roomId) {
   const room = findRoom(roomId);
@@ -3153,6 +3849,9 @@ function renderFocusedRoomDrawer() {
 
   dom.rfTitle.textContent = `${b.title} · ${room.name}`;
   dom.rfTierBadge.textContent = `Lv.${room.interiorLv}`;
+  if (dom.rfBtnRename) {
+    dom.rfBtnRename.onclick = () => openRenameBuildingModal(room.lotId);
+  }
 
   if (!room.unlocked) {
     dom.rfBody.innerHTML = `
@@ -3440,7 +4139,7 @@ function relocateHouseholdToVacant(room) {
 }
 
 // =========================================================
-// 14. [요구사항 3·4·5·6] 다꾸 스프링 제본 수첩 & 44px 우표 초상화 & 완료 도장 렌더링
+// 17. 다꾸 스프링 제본 수첩 & [이름 변경] 버튼 연동
 // =========================================================
 function openNotebookModal(tab = null) {
   if (tab) activeNotebookTab = tab;
@@ -3465,7 +4164,6 @@ function renderNotebookSplitView() {
     btn.classList.toggle('active', btn.dataset.ntab === activeNotebookTab);
   });
 
-  // 탭 1: 퀘스트 & [참 잘했어요! 완료 도장] 스탬프 도감
   if (activeNotebookTab === 'quests') {
     if (!selectedSplitItemId || !QUEST_LIST.some((q) => q.id === selectedSplitItemId)) {
       const firstReady = QUEST_LIST.find((q) => !state.claimedQuests.includes(q.id) && q.check(state));
@@ -3569,10 +4267,7 @@ function renderNotebookSplitView() {
         }
       };
     }
-  }
-
-  // 탭 2: 세입자 도감 (44x44 우표 초상화 배지 + 사선 캔디 게이지 + 고대비 3D 립 액션 버튼)
-  else if (activeNotebookTab === 'tenants') {
+  } else if (activeNotebookTab === 'tenants') {
     const allRooms = Object.values(state.buildings).flatMap((b) => b.rooms.filter((r) => r.unlocked));
     if (!selectedSplitItemId || !allRooms.some((r) => r.id === selectedSplitItemId)) {
       selectedSplitItemId = allRooms[0]?.id;
@@ -3711,10 +4406,7 @@ function renderNotebookSplitView() {
       const rcBtn = document.getElementById('sp-rec-now');
       if (rcBtn) rcBtn.onclick = () => { dom.notebookModal.classList.add('hidden'); focusCameraOnRoom(curR.id); openRecruitModal(curR); };
     }
-  }
-
-  // 탭 3: 관리인 위임 (관리인 44x44 초상화 배지 + 황금 코인 슬라이더)
-  else if (activeNotebookTab === 'manager') {
+  } else if (activeNotebookTab === 'manager') {
     const bList = Object.values(state.buildings);
     if (!selectedSplitItemId || !state.buildings[selectedSplitItemId]) selectedSplitItemId = bList[0].lotId;
     const curB = state.buildings[selectedSplitItemId];
@@ -3823,7 +4515,7 @@ function renderNotebookSplitView() {
     };
   }
 
-  // 탭 4: 시설·장부 (외곽선이 뚜렷한 미니 시설·상가 일러스트 배지 매칭!)
+  // 탭 4: 건물장부 ([이름 변경] 버튼으로 옥상 현판·정문 명패 실시간 교체!)
   else if (activeNotebookTab === 'infra') {
     if (!selectedSplitItemId || !state.lots.some((l) => l.lotId === selectedSplitItemId)) {
       selectedSplitItemId = state.lots[0].lotId;
@@ -3833,10 +4525,10 @@ function renderNotebookSplitView() {
       const cat = l.devType ? DEVELOPMENT_CATALOG[l.devType] : null;
       return `
         <div data-lid="${l.lotId}" class="diary-item-row ${selectedSplitItemId === l.lotId ? 'selected' : ''}">
-          ${createCustomSVGIcon(cat ? cat.svgIcon : 'plus_pin', 24)}
+          ${cat ? createNotebookArtworkSVG(cat.artKey || 'shop_mart', 34) : createCustomSVGIcon('plus_pin', 24)}
           <div class="min-w-0 flex-1">
             <div class="diary-card-title truncate">${l.owned ? l.title : l.name}</div>
-            <div class="diary-muted-text">${l.owned ? '운영 중' : `개발 가능 (${l.landPrice}만)`}</div>
+            <div class="diary-muted-text">${l.owned ? '운영 중' : `부지 개발 (${l.landPrice}만)`}</div>
           </div>
         </div>`;
     }).join('');
@@ -3849,10 +4541,10 @@ function renderNotebookSplitView() {
         <div class="diary-card text-center space-y-3 !py-6">
           <div class="flex justify-center">${createCustomSVGIcon('berry_farm', 40)}</div>
           <h3 class="diary-card-title !text-[15px]">${curLot.name} (미개발 꽃밭 빈터)</h3>
-          <p class="diary-muted-text">태양광 발전소, 딸기 농장, 벚꽃 힐링 공원, 베이커리, 2호관을 건설할 수 있습니다.</p>
+          <p class="diary-muted-text">태양광 발전소, 딸기 농장, 벚꽃 힐링 공원, 달콤 다방, 신규 주상복합을 세울 수 있습니다.</p>
           <button id="sp-open-dev" class="jelly-action-btn btn-mint-lip px-5 py-2.5">
             ${createCustomSVGIcon('plus_pin', 16)}
-            <span>위치로 이동해 개발하기</span>
+            <span>부지 개발하러 이동</span>
           </button>
         </div>`;
       document.getElementById('sp-open-dev').onclick = () => {
@@ -3862,6 +4554,7 @@ function renderNotebookSplitView() {
         openLotDevModal(curLot.lotId);
       };
     } else if (curB) {
+      const bLv = calcBuildingLevel(curB);
       const infraCards = Object.values(PUBLIC_INFRA_CATALOG).map((inf) => {
         const installed = curB.infra[inf.key];
         return `
@@ -3882,27 +4575,42 @@ function renderNotebookSplitView() {
           </div>`;
       }).join('');
 
+      const leftShopName = curLot.devType === 'mixed_2' ? '달콤 다방 (SWEET CAFE)' : '해피마트 24 (MINI MART 24)';
+      const leftShopArt = curLot.devType === 'mixed_2' ? 'dev_bakery' : 'shop_mart';
+
       dom.splitRightDetail.innerHTML = `
         <div class="space-y-3">
-          <div class="flex items-center justify-between flex-wrap gap-2">
-            <h3 class="diary-card-title !text-[15px]">[${curB.title}] 공용시설 & 1층 상가</h3>
-            <button id="sp-go-lot" class="jelly-action-btn pill btn-sky-lip">위치로 이동</button>
+          <div class="diary-card flex items-center justify-between flex-wrap gap-2">
+            <div class="flex items-center gap-2">
+              ${createCustomSVGIcon('crown_badge', 24)}
+              <span class="diary-card-title !text-[15px]">${curB.title}</span>
+              <span class="diary-pill-badge !bg-[#FFE4EC] !text-[#BE123C]">Lv.${bLv}</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button id="sp-rename-bldg" class="jelly-action-btn pill btn-coral-lip">
+                ${createCustomSVGIcon('edit_pen', 14)}
+                <span>이름 변경</span>
+              </button>
+              <button id="sp-go-lot" class="jelly-action-btn pill btn-sky-lip">위치로 이동</button>
+            </div>
           </div>
-          <!-- 1층 상가 미니 일러스트 카드 -->
+
           <div class="diary-soft-box flex items-center justify-between gap-2 flex-wrap">
             <div class="flex items-center gap-2">
-              ${createNotebookArtworkSVG('shop_mart', 34)}
+              ${createNotebookArtworkSVG(leftShopArt, 34)}
               ${createNotebookArtworkSVG('shop_wash', 34)}
               <div>
-                <div class="diary-card-title">24H 미니마트 & 워시퐁 코인세탁소</div>
-                <div class="diary-muted-text">11초마다 고정 상가 매출 +28만원 자동 입금 중</div>
+                <div class="diary-card-title">1층 입점 상가: ${leftShopName} & 뽀송 워시</div>
+                <div class="diary-muted-text">11초마다 고정 상가 임대 수익 +28만원 자동 입금 중</div>
               </div>
             </div>
-            <span class="diary-pill-badge !bg-[#FEF3C7]">상가 가동중</span>
+            <span class="diary-pill-badge !bg-[#FEF3C7]">성업 중</span>
           </div>
+
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">${infraCards}</div>
         </div>`;
 
+      document.getElementById('sp-rename-bldg').onclick = () => openRenameBuildingModal(curLot.lotId);
       document.getElementById('sp-go-lot').onclick = () => {
         dom.notebookModal.classList.add('hidden');
         focusCameraOnLot(curLot.lotId, 1.35);
@@ -3924,18 +4632,25 @@ function renderNotebookSplitView() {
       const cat = DEVELOPMENT_CATALOG[curLot.devType];
       dom.splitRightDetail.innerHTML = `
         <div class="diary-card space-y-3">
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between flex-wrap gap-2">
             <div class="flex items-center gap-2.5">
-              ${createCustomSVGIcon(cat.svgIcon, 34)}
+              ${createNotebookArtworkSVG(cat.artKey || 'dev_solar', 38)}
               <span class="diary-card-title !text-[15px]">${curLot.title}</span>
             </div>
-            <button id="sp-go-devlot" class="jelly-action-btn pill btn-sky-lip">위치로 이동</button>
+            <div class="flex items-center gap-1.5">
+              <button id="sp-rename-dev" class="jelly-action-btn pill btn-coral-lip">
+                ${createCustomSVGIcon('edit_pen', 14)}
+                <span>이름 변경</span>
+              </button>
+              <button id="sp-go-devlot" class="jelly-action-btn pill btn-sky-lip">위치로 이동</button>
+            </div>
           </div>
           <p class="diary-body-text">${cat.desc}</p>
           <div class="diary-soft-box diary-card-title !text-[#047857]">
             ${cat.cycleSec}초마다 +${cat.cycleProfit}만원 자동 수익 창출 · 타운 전체 월세 시너지 +${cat.rentSynergyPct}%
           </div>
         </div>`;
+      document.getElementById('sp-rename-dev').onclick = () => openRenameBuildingModal(curLot.lotId);
       document.getElementById('sp-go-devlot').onclick = () => {
         dom.notebookModal.classList.add('hidden');
         focusCameraOnLot(curLot.lotId, 1.4);
@@ -3949,7 +4664,7 @@ function renderNotebookSplitView() {
 }
 
 // =========================================================
-// 15. 세대 입주 계약서 모달 & 꽃밭 빈터 개발 모달
+// 18. 세대 입주 계약서 & 부지 개발 모달
 // =========================================================
 function openRecruitModal(room) {
   recruitRoomTarget = room;
@@ -4060,7 +4775,7 @@ function openLotDevModal(lotId) {
         <div class="space-y-1.5">
           <div class="flex items-center justify-between gap-1.5">
             <div class="flex items-center gap-2">
-              ${createCustomSVGIcon(cat.svgIcon, 26)}
+              ${createNotebookArtworkSVG(cat.artKey || 'dev_solar', 34)}
               <span class="diary-card-title">${cat.name}</span>
             </div>
             <span class="diary-pill-badge !bg-[#ECFDF5] !text-[#047857]">+${cat.rentSynergyPct}%</span>
@@ -4107,7 +4822,7 @@ function openLotDevModal(lotId) {
 }
 
 // =========================================================
-// 16. 경제 틱 · 미니어처 월드 라이프 · 고대비 액션 핀 오버레이
+// 19. 경제 틱 · 미니어처 라이프 · 플로팅 왕관 리본 배지 & 고대비 핀 오버레이
 // =========================================================
 function getLot(lotId) {
   return state.lots.find((l) => l.lotId === lotId);
@@ -4119,6 +4834,13 @@ function findRoom(roomId) {
     if (r) return r;
   }
   return null;
+}
+
+function calcBuildingLevel(b) {
+  const unlockedPts = b.rooms.filter((r) => r.unlocked).length;
+  const upgradePts = b.rooms.reduce((acc, r) => acc + (r.interiorLv || 0), 0);
+  const infraPts = Object.values(b.infra).filter(Boolean).length;
+  return Math.max(1, Math.min(9, 1 + Math.floor((unlockedPts - 2 + upgradePts + infraPts) / 2)));
 }
 
 function calcGlobalSynergyPct() {
@@ -4236,9 +4958,7 @@ function showRoomSpeech(room, text, isComplaint = false, duration = 3.8) {
     <span class="leading-snug">${text}</span>
   `;
 
-  if (lot) {
-    setPinPos(el, project(lot.x + room.lx, room.ly + 1.72, lot.z + room.lz + 0.4));
-  }
+  if (lot) setPinPos(el, project(lot.x + room.lx, room.ly + 1.72, lot.z + room.lz + 0.4));
   dom.speechLayer.appendChild(el);
   speechEls[room.id] = el;
 
@@ -4251,6 +4971,15 @@ function showRoomSpeech(room, text, isComplaint = false, duration = 3.8) {
 }
 
 function tickMiniatureWorldLife(dt, nowSec) {
+  // 세탁기 마스코트 비누방울 & 달콤 다방 커피 김 파티클 실시간 발사!
+  facadeEmitters.forEach((em) => {
+    em.timer -= dt;
+    if (em.timer <= 0) {
+      em.timer = em.kind === 'bubble' ? 0.42 : 0.55;
+      spawnSoapBubbleOrSteam3D(em);
+    }
+  });
+
   for (const list of Object.values(residentActors)) {
     list.forEach((ac, idx) => {
       const lot = getLot(ac.room.lotId);
@@ -4260,12 +4989,8 @@ function tickMiniatureWorldLife(dt, nowSec) {
         parts.bodyRoot.scale.y = 1 + breath * 0.035;
         parts.bodyRoot.scale.x = 1 - breath * 0.018;
         parts.headGroup.rotation.z = Math.sin(nowSec * 1.8 + ac.breathOffset) * 0.04;
-        if (parts.topperPivot) {
-          parts.topperPivot.rotation.z = Math.sin(nowSec * 4.5 + ac.breathOffset) * 0.14;
-        }
-        if (parts.propellerBlade) {
-          parts.propellerBlade.rotation.y += dt * 11.0;
-        }
+        if (parts.topperPivot) parts.topperPivot.rotation.z = Math.sin(nowSec * 4.5 + ac.breathOffset) * 0.14;
+        if (parts.propellerBlade) parts.propellerBlade.rotation.y += dt * 11.0;
       }
 
       const dx = ac.tx - ac.cx;
@@ -4285,9 +5010,7 @@ function tickMiniatureWorldLife(dt, nowSec) {
           parts.legR.rotation.x = -swing;
           parts.armL.rotation.x = -swing * 0.7;
           parts.armR.rotation.x = swing * 0.7;
-          if (parts.topperPivot) {
-            parts.topperPivot.rotation.x = -Math.abs(Math.sin(ac.phase)) * 0.22;
-          }
+          if (parts.topperPivot) parts.topperPivot.rotation.x = -Math.abs(Math.sin(ac.phase)) * 0.22;
         }
 
         ac.puffTimer -= dt;
@@ -4556,7 +5279,7 @@ function spawnFloatText(wx, wy, wz, text) {
   setTimeout(() => el.remove(), 1200);
 }
 
-// [요구사항 2-3] 상호작용 가능 상태 미니 플로팅 인디케이터 (고대비 `➕ 개발 가능`, `✨ 업그레이드`, `🔨 케어 필요`)
+// [요구사항 2-2 & 4] 파스텔 왕관 리본 타이틀 배지 & 고대비 미니 인디케이터 핀 생성
 function rebuildStaticOverlayDOM() {
   dom.lotsLayer.innerHTML = '';
   dom.roomsLayer.innerHTML = '';
@@ -4568,10 +5291,9 @@ function rebuildStaticOverlayDOM() {
 
   for (const lot of state.lots) {
     if (!lot.owned) {
-      // 빈 땅은 지저분한 주소·가격 라벨 대신, 개발 가능/호버 시 작고 선명한 고대비 `➕ 개발 가능` 미니 핀만 노출!
       const devPin = document.createElement('button');
       devPin.className = 'world-pin action-indicator-pin pin-dev hidden';
-      devPin.innerHTML = `${createCustomSVGIcon('plus_pin', 15)}<span>개발 가능</span>`;
+      devPin.innerHTML = `${createCustomSVGIcon('plus_pin', 15)}<span>부지 개발</span>`;
       devPin.onclick = (e) => {
         e.stopPropagation();
         const reg = lot3D[lot.lotId];
@@ -4583,12 +5305,16 @@ function rebuildStaticOverlayDOM() {
       continue;
     }
 
+    const b = state.buildings[lot.lotId];
     const el = document.createElement('div');
-    el.className = 'world-pin lot-clay-badge';
+    el.className = b ? 'world-pin building-ribbon-badge' : 'world-pin lot-clay-badge';
     el.dataset.sig = '';
     el.onclick = (e) => {
       e.stopPropagation();
-      const b = state.buildings[lot.lotId];
+      if (e.target.closest('.ribbon-edit-chip')) {
+        openRenameBuildingModal(lot.lotId);
+        return;
+      }
       if (b && b.pendingCoins > 0) {
         collectLotPendingCoins(lot.lotId);
       } else {
@@ -4641,7 +5367,6 @@ function updateProjectedOverlays() {
   const readyQuests = QUEST_LIST.filter((q) => !state.claimedQuests.includes(q.id) && q.check(state)).length;
   let tenantCrisisCount = 0;
 
-  // 1) 빈 땅 고대비 미니 핀(`➕ 개발 가능`) & 소유 건물 지붕 배지
   for (const lot of state.lots) {
     if (!lot.owned) {
       const devPin = devActionPinEls[lot.lotId];
@@ -4649,9 +5374,7 @@ function updateProjectedOverlays() {
       const canAfford = state.gold >= lot.landPrice + 220;
       const showDevPin = !isCloseUp && (canAfford || hoveredLotId === lot.lotId);
       devPin.classList.toggle('hidden', !showDevPin);
-      if (showDevPin) {
-        setPinPos(devPin, project(lot.x, 2.55, lot.z));
-      }
+      if (showDevPin) setPinPos(devPin, project(lot.x, 2.55, lot.z));
       continue;
     }
 
@@ -4660,35 +5383,32 @@ function updateProjectedOverlays() {
     const b = state.buildings[lot.lotId];
 
     if (b) {
-      const occ = b.rooms.filter((r) => r.household).length;
-      const canUpgradeAny = b.rooms.some((r) => r.unlocked && r.interiorLv === 0 && state.gold >= 65);
-      const sig = `b_${occ}_${b.pendingCoins}_${canUpgradeAny}`;
+      const bLv = calcBuildingLevel(b);
+      const sig = `rb_${b.title}_${bLv}_${b.pendingCoins}`;
       if (el.dataset.sig !== sig) {
         el.dataset.sig = sig;
-        el.className = `world-pin lot-clay-badge ${b.pendingCoins > 0 ? 'coin-ready' : ''}`;
+        el.className = `world-pin building-ribbon-badge ${b.pendingCoins > 0 ? 'coin-ready' : ''}`;
         el.innerHTML = b.pendingCoins > 0
-          ? `${createCustomSVGIcon('coin_stack', 17)}<span>${b.title} · <b>+${b.pendingCoins}만 수금!</b></span>`
-          : canUpgradeAny
-            ? `${createCustomSVGIcon('sparkle_star', 17)}<span>${b.title} · <b>업그레이드 가능</b></span>`
-            : `${createCustomSVGIcon('red_house', 17)}<span>${b.title} · 입주 ${occ}/6</span>`;
+          ? `${createCustomSVGIcon('coin_stack', 17)}<span>${b.title}</span><span class="ribbon-lv-tag">+${b.pendingCoins}만 수금!</span>`
+          : `${createCustomSVGIcon('crown_badge', 17)}<span>${b.title}</span><span class="ribbon-lv-tag">Lv.${bLv}</span><span class="ribbon-edit-chip" title="빌딩 이름 변경">${createCustomSVGIcon('edit_pen', 12)}</span>`;
       }
+      // 줌인 시 내부 시야 확보를 위해 부드럽게 페이드아웃!
       el.style.opacity = isCloseUp ? '0' : '1';
       el.style.pointerEvents = isCloseUp ? 'none' : 'auto';
-      setPinPos(el, project(lot.x, 10.7, lot.z));
+      setPinPos(el, project(lot.x, 11.45, lot.z));
     } else {
       const cat = DEVELOPMENT_CATALOG[lot.devType];
-      const sig = `dev_${lot.devType}`;
+      const sig = `dev_${lot.title}`;
       if (el.dataset.sig !== sig) {
         el.dataset.sig = sig;
         el.className = 'world-pin lot-clay-badge';
         el.innerHTML = `${createCustomSVGIcon(cat.svgIcon, 17)}<span>${lot.title} (+${cat.cycleProfit}만)</span>`;
       }
       el.style.opacity = isCloseUp ? '0.2' : '1';
-      setPinPos(el, project(lot.x, 4.4, lot.z));
+      setPinPos(el, project(lot.x, 4.7, lot.z));
     }
   }
 
-  // 2) 호실 클로즈업 칩 & 고대비 미니 인디케이터 핀(`✨ 업그레이드` / `🔨 수리·청소 필요`)
   for (const b of Object.values(state.buildings)) {
     const lot = getLot(b.lotId);
     for (const r of b.rooms) {
@@ -4704,7 +5424,7 @@ function updateProjectedOverlays() {
           cPin.className = 'world-pin action-indicator-pin pin-crisis';
           const label =
             r.evictionCountdown !== null ? `퇴거 D-${Math.ceil(r.evictionCountdown)}s` :
-            r.trashStage >= 2 ? '청소 필요!' : '수리·방음 필요!';
+            r.trashStage >= 2 ? '청소 필요' : '수리 필요';
           const sig = `c_${label}`;
           if (cPin.dataset.sig !== sig) {
             cPin.dataset.sig = sig;
@@ -4763,9 +5483,7 @@ function updateProjectedOverlays() {
       const spEl = speechEls[r.id];
       if (spEl) {
         spEl.style.opacity = isCloseUp ? '1' : '0';
-        if (isCloseUp) {
-          setPinPos(spEl, project(lot.x + r.lx, r.ly + 1.72, lot.z + r.lz + 0.4));
-        }
+        if (isCloseUp) setPinPos(spEl, project(lot.x + r.lx, r.ly + 1.72, lot.z + r.lz + 0.4));
       }
     }
 
@@ -4798,7 +5516,7 @@ function updateProjectedOverlays() {
 }
 
 // =========================================================
-// 17. HUD 카운팅 보간 · 씬 초기화 · 입력 바인딩
+// 20. HUD 카운팅 · 씬 초기화 · 입력 바인딩
 // =========================================================
 function registerPick(mesh) {
   if (!pickableMeshes.includes(mesh)) pickableMeshes.push(mesh);
@@ -4981,6 +5699,7 @@ function mountStaticCustomSVGIcons() {
     ['hud-ico-overview', 'red_house', 15],
     ['hud-ico-collect', 'coin_stack', 16],
     ['rf-ico-house', 'red_house', 18],
+    ['rf-btn-rename', 'edit_pen', 12],
     ['fab-svg-slot', 'town_notebook', 28],
     ['modal-ico-notebook', 'town_notebook', 24],
     ['tab-ico-quests', 'quest_trophy', 15],
@@ -4989,6 +5708,8 @@ function mountStaticCustomSVGIcons() {
     ['tab-ico-infra', 'elevator', 15],
     ['dev-ico-header', 'solar_panel', 24],
     ['rec-ico-header', 'gold_key', 24],
+    ['rename-ico-crown', 'crown_badge', 22],
+    ['rename-ico-pen', 'edit_pen', 15],
     ['stamp-ico-slot', 'evict_stamp', 32]
   ];
   for (const [id, name, size] of mounts) {
@@ -4996,7 +5717,6 @@ function mountStaticCustomSVGIcons() {
     if (el) el.innerHTML = createCustomSVGIcon(name, size);
   }
 
-  // [요구사항 4] 타운 수첩 좌·우 속지 사이에 귀여운 SVG 스프링 제본 고리 8개 장착!
   const binderEl = document.getElementById('notebook-binder-rings');
   if (binderEl) {
     binderEl.innerHTML = Array.from({ length: 8 })
@@ -5017,7 +5737,6 @@ function bindUIAndInput() {
   let downY = 0;
   let multi = false;
 
-  // 마우스 호버 시 즉각적인 황금/민트 발광 링 & 오브젝트 부유 피드백!
   renderer.domElement.addEventListener('pointermove', (e) => {
     if (ptrs.size > 0) return;
     pointerNDC.x = (e.clientX / window.innerWidth) * 2 - 1;
@@ -5025,17 +5744,21 @@ function bindUIAndInput() {
     raycaster.setFromCamera(pointerNDC, camera);
     const hits = raycaster.intersectObjects(pickableMeshes, false);
 
-    // 반투명 X-Ray 상태일 때는 외벽 쉘 뒤의 호실을 우선 선택!
     const validHit = hits.find((h) => !(h.object.userData.isShell && currentShellOpacity < 0.65));
     if (validHit) {
       renderer.domElement.style.cursor = 'pointer';
       const ud = validHit.object.userData;
       hoveredRoomId = currentShellOpacity < 0.78 && ud.roomId ? ud.roomId : null;
       hoveredLotId = ud.lotId || null;
+      if (ud.isShopSign && hoveredShopMesh !== validHit.object) {
+        hoveredShopMesh = validHit.object;
+        triggerSquashStretch(validHit.object, 0.75);
+      }
     } else {
       renderer.domElement.style.cursor = 'grab';
       hoveredRoomId = null;
       hoveredLotId = null;
+      hoveredShopMesh = null;
     }
   });
 
@@ -5063,7 +5786,13 @@ function bindUIAndInput() {
 
     if (validHit) {
       const ud = validHit.object.userData;
-      if (ud.openNotebookTab) {
+      if (ud.isRenameSign && ud.lotId) {
+        openRenameBuildingModal(ud.lotId);
+      } else if (ud.isShopSign) {
+        triggerSquashStretch(validHit.object, 1.35);
+        spawnSmokePoof3D(validHit.point.x, validHit.point.y + 0.2, validHit.point.z, 0xFFFDF9, 6);
+        if (ud.shopLabel) showToast(ud.shopLabel, 'emerald');
+      } else if (ud.openNotebookTab) {
         selectedSplitItemId = ud.lotId;
         openNotebookModal(ud.openNotebookTab);
       } else if (ud.isStreetProp && ud.propRoot) {
@@ -5136,6 +5865,14 @@ function bindUIAndInput() {
     renderRecruitCards();
   };
 
+  // 빌딩 이름 작명 모달 이벤트 바인딩
+  document.getElementById('btn-close-rename').onclick = () => dom.renameModal.classList.add('hidden');
+  document.getElementById('btn-cancel-rename').onclick = () => dom.renameModal.classList.add('hidden');
+  document.getElementById('btn-confirm-rename').onclick = confirmRenameBuilding;
+  dom.inputBuildingName.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') confirmRenameBuilding();
+  });
+
   let resetArmed = false;
   const resetBtn = document.getElementById('btn-reset-save');
   resetBtn.onclick = () => {
@@ -5178,6 +5915,7 @@ function cacheDom() {
 
   dom.roomFocusPanel = document.getElementById('room-focus-panel');
   dom.rfTitle = document.getElementById('rf-title');
+  dom.rfBtnRename = document.getElementById('rf-btn-rename');
   dom.rfTierBadge = document.getElementById('rf-tier-badge');
   dom.rfBody = document.getElementById('rf-body');
 
@@ -5197,6 +5935,10 @@ function cacheDom() {
   dom.recruitModal = document.getElementById('recruit-modal');
   dom.recRoomTitle = document.getElementById('rec-room-title');
   dom.recCardsGrid = document.getElementById('rec-cards-grid');
+
+  dom.renameModal = document.getElementById('rename-building-modal');
+  dom.inputBuildingName = document.getElementById('input-building-name');
+  dom.renamePresetsRow = document.getElementById('rename-presets-row');
 
   dom.evictionOverlay = document.getElementById('eviction-stamp-overlay');
   dom.evictionStampBox = document.getElementById('eviction-stamp-box');
@@ -5274,9 +6016,8 @@ window.addEventListener('DOMContentLoaded', () => {
       p.mesh.position.y += p.vy * dt;
       p.mesh.position.z += p.vz * dt;
       p.mesh.rotation.y += 6 * dt;
-      if (p.shrink) {
-        p.mesh.scale.multiplyScalar(0.95);
-      }
+      if (p.shrink) p.mesh.scale.multiplyScalar(0.95);
+      if (p.grow) p.mesh.scale.multiplyScalar(1.015);
       if (p.mesh.position.y < p.floorY) {
         p.mesh.position.y = p.floorY;
         p.vy = Math.abs(p.vy) * 0.45;

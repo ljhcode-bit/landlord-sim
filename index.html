@@ -100,11 +100,12 @@
   </div>
 
   <!-- ==================== 4. 호실 클로즈업 전용 우측 다이어리 인스펙터 ==================== -->
-  <aside id="room-focus-panel" class="hidden fixed top-16 right-3 sm:right-4 z-30 w-[296px] sm:w-[322px] max-h-[calc(100vh-148px)] diary-inspector-shell flex flex-col overflow-hidden">
+  <aside id="room-focus-panel" class="hidden fixed top-16 right-3 sm:right-4 z-30 w-[300px] sm:w-[328px] max-h-[calc(100vh-148px)] diary-inspector-shell flex flex-col overflow-hidden">
     <div class="px-3.5 py-2.5 flex items-center justify-between border-b border-[#E6CCB2] shrink-0" style="background: linear-gradient(180deg, #FFF5EC 0%, #FCEBD9 100%);">
-      <div class="flex items-center gap-2 min-w-0">
+      <div class="flex items-center gap-1.5 min-w-0">
         <span id="rf-ico-house" class="flex items-center shrink-0"></span>
         <span id="rf-title" class="diary-card-title truncate">101호</span>
+        <button id="rf-btn-rename" title="빌딩 이름 변경" class="ribbon-edit-chip shrink-0"></button>
         <span id="rf-tier-badge" class="diary-pill-badge shrink-0">Lv.0</span>
       </div>
       <button id="btn-close-room-focus" class="btn-close-round">✕</button>
@@ -172,7 +173,7 @@
               </button>
               <button data-ntab="infra" class="ntab-btn diary-index-tab">
                 <span id="tab-ico-infra" class="flex items-center"></span>
-                <span>시설장부</span>
+                <span>건물장부</span>
               </button>
             </div>
 
@@ -238,7 +239,36 @@
     </div>
   </div>
 
-  <!-- ==================== 9. 강제 퇴거 스탬프 연출 오버레이 ==================== -->
+  <!-- ==================== 9. 내 맘대로 빌딩 이름 작명(Rename) 미니 다이어리 모달 ==================== -->
+  <div id="rename-building-modal" class="hidden fixed inset-0 z-[58] pastel-modal-backdrop flex items-center justify-center p-3">
+    <div class="cozy-planner-shell w-full max-w-md">
+      <div class="cozy-planner-inner p-4 space-y-3">
+        <div class="flex items-center justify-between border-b border-[#E6CCB2] pb-2">
+          <div class="flex items-center gap-2">
+            <span id="rename-ico-crown" class="flex items-center"></span>
+            <span class="diary-modal-title">빌딩 고유 현판 이름 변경</span>
+          </div>
+          <button id="btn-close-rename" class="btn-close-round">✕</button>
+        </div>
+
+        <p class="diary-muted-text">원하는 빌딩 이름을 입력하면 <b>3D 옥상 스카이 사인, 1층 정문 명패, 리본 배지</b>에 즉시 새겨집니다!</p>
+
+        <input id="input-building-name" type="text" maxlength="16" placeholder="예: 진형 타워, 럭키 팰리스" class="diary-rename-input" />
+
+        <div id="rename-presets-row" class="flex flex-wrap gap-1.5"></div>
+
+        <div class="flex justify-end gap-2 pt-1">
+          <button id="btn-cancel-rename" class="diary-pill-badge cursor-pointer !px-3.5 !py-1.5">취소</button>
+          <button id="btn-confirm-rename" class="jelly-action-btn btn-coral-lip px-4 py-2">
+            <span id="rename-ico-pen" class="flex items-center"></span>
+            <span>옥상 현판 즉시 교체!</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 10. 강제 퇴거 스탬프 연출 오버레이 ==================== -->
   <div id="eviction-stamp-overlay" class="hidden fixed inset-0 z-[60] pointer-events-none">
     <div id="eviction-stamp-box" class="absolute left-1/2 top-1/2 diary-card !border-4 !border-[#E11D48] !px-6 !py-3.5 flex items-center gap-3 font-title text-xl sm:text-3xl text-[#BE123C]">
       <span id="stamp-ico-slot" class="flex items-center"></span>

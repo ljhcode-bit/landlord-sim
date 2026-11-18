@@ -777,6 +777,113 @@ input[type='range'].golden-coin-range::-moz-range-thumb {
   }
 }
 
+/* [요구사항 2-2] 3D 건물 상단 '우아한 플로팅 파스텔 리본/왕관 타이틀 배지' */
+.building-ribbon-badge {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 13px;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #FFFDF9 0%, #FFF2E6 100%);
+  border: 2px solid #5A463C;
+  outline: 2.5px solid #FFFFFF;
+  box-shadow:
+    inset 0 2px 0 #FFFFFF,
+    0 3px 0 rgba(90, 70, 60, 0.28),
+    0 8px 18px rgba(67, 52, 46, 0.24);
+  font-family: var(--font-display) !important;
+  font-size: 12px;
+  color: var(--espresso-ink);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.16s ease, opacity 0.25s ease;
+}
+
+/* 양옆 귀여운 파스텔 리본 날개 장식 */
+.building-ribbon-badge::before,
+.building-ribbon-badge::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 16px;
+  background: #FF8FA3;
+  border: 1.6px solid #5A463C;
+  z-index: -1;
+}
+
+.building-ribbon-badge::before {
+  left: -9px;
+  transform: translateY(-38%) rotate(-12deg);
+  border-radius: 4px 0 0 4px;
+}
+
+.building-ribbon-badge::after {
+  right: -9px;
+  transform: translateY(-38%) rotate(12deg);
+  border-radius: 0 4px 4px 0;
+}
+
+.building-ribbon-badge:hover {
+  transform: translate(-50%, -108%) scale(1.05);
+}
+
+.building-ribbon-badge.coin-ready {
+  background: linear-gradient(180deg, #FEF9C3 0%, #FDE047 100%);
+  border-color: #92400E;
+  animation: indicatorPinBounce 0.95s infinite alternate ease-in-out;
+}
+
+.ribbon-lv-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 1.5px 6.5px;
+  border-radius: 9999px;
+  background: #FFE4EC;
+  color: #BE123C;
+  border: 1.2px solid #FDA4AF;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.ribbon-edit-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background: #FEF3C7;
+  border: 1.3px solid #D97706;
+  cursor: pointer;
+  transition: transform 0.14s ease;
+}
+
+.ribbon-edit-chip:hover {
+  transform: scale(1.16);
+  background: #FDE68A;
+}
+
+/* 빌딩 이름 작명 입력창 */
+.diary-rename-input {
+  width: 100%;
+  padding: 9px 13px;
+  border-radius: 14px;
+  background: #FFFFFF;
+  border: 2px solid #D9A78B;
+  color: var(--espresso-ink);
+  font-family: var(--font-title) !important;
+  font-size: 14px;
+  outline: none;
+  box-shadow: inset 0 2px 4px rgba(90, 60, 45, 0.08);
+}
+
+.diary-rename-input:focus {
+  border-color: #E11D48;
+  box-shadow: 0 0 0 3px rgba(255, 117, 143, 0.22);
+}
+
 /* 소유 건물 지붕 배지 (또렷한 코코아 윤곽 + 화이트 아웃라인) */
 .lot-clay-badge {
   display: inline-flex;

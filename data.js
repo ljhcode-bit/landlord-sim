@@ -249,6 +249,24 @@ function createCustomSVGIcon(name, size = 24) {
         </g>`;
       break;
 
+    case 'crown_badge':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <path d="M5 23L7.5 10L12.8 15.2L16 7.5L19.2 15.2L24.5 10L27 23H5Z" fill="url(#${uid}_gold)" stroke="#43342E" stroke-width="1.5" stroke-linejoin="round"/>
+          <rect x="5" y="22.5" width="22" height="3.8" rx="1.8" fill="url(#${uid}_coral)" stroke="#43342E" stroke-width="1.3"/>
+          <circle cx="16" cy="17.5" r="2" fill="#FFFDF9"/>
+        </g>`;
+      break;
+
+    case 'edit_pen':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <path d="M7 25L8.5 19.5L20.5 7.5C21.6 6.4 23.4 6.4 24.5 7.5C25.6 8.6 25.6 10.4 24.5 11.5L12.5 23.5L7 25Z" fill="url(#${uid}_gold)" stroke="#43342E" stroke-width="1.5" stroke-linejoin="round"/>
+          <path d="M18.5 9.5L22.5 13.5" stroke="#43342E" stroke-width="1.4"/>
+          <path d="M7 25L10.5 24L8 21.5L7 25Z" fill="#43342E"/>
+        </g>`;
+      break;
+
     default:
       body = `
         <g filter="url(#${uid}_sh)">
@@ -456,6 +474,33 @@ function createNotebookArtworkSVG(kind, size = 44) {
         <circle cx="22" cy="25" r="7.5" fill="#BAE6FD" stroke="#43342E" stroke-width="1.8"/>
         <path d="M16 25Q19 22 22 25T28 25" fill="none" stroke="#0284C7" stroke-width="2"/>`;
       break;
+    case 'dev_solar':
+      miniArt = `
+        <circle cx="31" cy="11" r="4.8" fill="#FACC15" stroke="#43342E" stroke-width="1.5"/>
+        <polygon points="8,18 27,15 33,30 6,33" fill="#3B82F6" stroke="#43342E" stroke-width="1.8" stroke-linejoin="round"/>
+        <line x1="18" y1="16.5" x2="19.5" y2="31.5" stroke="#BAE6FD" stroke-width="1.5"/>
+        <line x1="7" y1="25.5" x2="30" y2="22.5" stroke="#BAE6FD" stroke-width="1.5"/>`;
+      break;
+    case 'dev_farm':
+      miniArt = `
+        <rect x="7" y="26" width="30" height="10" rx="3" fill="#C6834B" stroke="#43342E" stroke-width="1.8"/>
+        <path d="M22 27C16 27 12 20 12 14.5C12 10.5 16 9 22 9C28 9 32 10.5 32 14.5C32 20 28 27 22 27Z" fill="#FF6B8B" stroke="#43342E" stroke-width="1.8"/>
+        <path d="M15 10C18 6.5 21 7 22 9.5C23 7 26 6.5 29 10Z" fill="#34D399" stroke="#43342E" stroke-width="1.4"/>`;
+      break;
+    case 'dev_park':
+      miniArt = `
+        <rect x="19" y="24" width="6" height="12" rx="2" fill="#8B5630" stroke="#43342E" stroke-width="1.6"/>
+        <circle cx="22" cy="16" r="10" fill="#FFB3C6" stroke="#43342E" stroke-width="1.8"/>
+        <circle cx="15" cy="19" r="6.5" fill="#FFC2D6" stroke="#43342E" stroke-width="1.5"/>
+        <circle cx="29" cy="19" r="6.5" fill="#FFC2D6" stroke="#43342E" stroke-width="1.5"/>`;
+      break;
+    case 'dev_bakery':
+      miniArt = `
+        <path d="M11 26C11 19 16 15 22 15C28 15 33 19 33 26Z" fill="#FBBF24" stroke="#43342E" stroke-width="1.8"/>
+        <rect x="12" y="24" width="20" height="11" rx="4" fill="#FFFDF9" stroke="#43342E" stroke-width="1.8"/>
+        <path d="M32 26H36C37.5 26 37.5 31 36 31H32" fill="none" stroke="#43342E" stroke-width="1.8"/>
+        <path d="M18 12Q19.5 9 18 6M25 12Q26.5 9 25 6" fill="none" stroke="#D97706" stroke-width="1.6" stroke-linecap="round"/>`;
+      break;
     default:
       miniArt = `
         <rect x="8" y="16" width="28" height="19" rx="4" fill="#FFFDF9" stroke="#43342E" stroke-width="2"/>
@@ -491,8 +536,17 @@ const GAME_BALANCE = {
   relocateCost: 20
 };
 
+const BUILDING_NAME_PRESETS = [
+  '해피 미니미 타운 1차',
+  '럭키 팰리스',
+  '드림 타워',
+  '골든 스테이트',
+  '스타 팰리스',
+  '햇살 캐슬'
+];
+
 const INITIAL_ISLAND_LOTS = [
-  { lotId: 'lot_main', name: '중앙 수변 1번지', x: -4.8, z: -4.2, landPrice: 0, owned: true, devType: 'mixed_1', title: '미니미 주상복합 1호관' },
+  { lotId: 'lot_main', name: '중앙 수변 1번지', x: -4.8, z: -4.2, landPrice: 0, owned: true, devType: 'mixed_1', title: '해피 미니미 타운 1차' },
   { lotId: 'lot_solar', name: '서쪽 햇살언덕 2번지', x: -18.6, z: -3.5, landPrice: 320, owned: false, devType: null, title: null },
   { lotId: 'lot_farm', name: '남서 시냇가 3번지', x: -14.2, z: 10.6, landPrice: 420, owned: false, devType: null, title: null },
   { lotId: 'lot_east', name: '아치교 동쪽 4번지', x: 13.8, z: -4.5, landPrice: 680, owned: false, devType: null, title: null },
@@ -505,6 +559,7 @@ const DEVELOPMENT_CATALOG = {
     type: 'solar_plant',
     name: '친환경 태양광 발전소',
     svgIcon: 'solar_panel',
+    artKey: 'dev_solar',
     buildCost: 220,
     isResidential: false,
     cycleSec: 9,
@@ -516,6 +571,7 @@ const DEVELOPMENT_CATALOG = {
     type: 'urban_farm',
     name: '힐링 도시 농장 & 텃밭',
     svgIcon: 'berry_farm',
+    artKey: 'dev_farm',
     buildCost: 280,
     isResidential: false,
     cycleSec: 11,
@@ -527,6 +583,7 @@ const DEVELOPMENT_CATALOG = {
     type: 'sakura_park',
     name: '파스텔 벚꽃 힐링 공원',
     svgIcon: 'paw_print',
+    artKey: 'dev_park',
     buildCost: 340,
     isResidential: false,
     cycleSec: 12,
@@ -536,34 +593,37 @@ const DEVELOPMENT_CATALOG = {
   },
   bakery_cafe: {
     type: 'bakery_cafe',
-    name: '크림 베이커리 & 카페',
+    name: '달콤 다방 & 베이커리',
     svgIcon: 'gift_box',
+    artKey: 'dev_bakery',
     buildCost: 460,
     isResidential: false,
     cycleSec: 10,
     cycleProfit: 92,
     rentSynergyPct: 12,
-    desc: '고소한 빵 냄새가 퍼지는 핫플레이스 상가! 높은 상권 매출(+92만)과 슬세권 +12% 시너지를 줍니다.'
+    desc: '김이 모락모락 나는 입체 커피잔·크루아상 조형물과 브라운 어닝이 빛나는 핫플레이스 상가!'
   },
   mixed_2: {
     type: 'mixed_2',
-    name: '프리미엄 주상복합 2호관',
+    name: '럭키 팰리스',
     svgIcon: 'red_house',
+    artKey: 'shop_mart',
     buildCost: 780,
     isResidential: true,
     baseRoomRent: 54,
     rentSynergyPct: 10,
-    desc: '1층 상가와 6개의 하이엔드 호실을 갖춘 새 주상복합! 직접 리모델링하고 지배인을 둘 수 있습니다.'
+    desc: '1층 달콤 다방(SWEET CAFE)·뽀송 워시 상가와 6개의 하이엔드 호실을 갖춘 프리미엄 주상복합!'
   },
   mixed_1: {
     type: 'mixed_1',
-    name: '주상복합 1호관',
+    name: '해피 미니미 타운 1차',
     svgIcon: 'red_house',
+    artKey: 'shop_mart',
     buildCost: 0,
     isResidential: true,
     baseRoomRent: 34,
     rentSynergyPct: 0,
-    desc: '1층 24H MINI MART & WASH PONG 상가와 상층부 6개 주거 호실을 갖춘 첫 출발 건물입니다.'
+    desc: '1층 해피마트(MINI MART 24) & 뽀송 워시(BUBBLE PONG) 상가와 6개 주거 호실을 갖춘 첫 빌딩입니다.'
   }
 };
 
@@ -856,6 +916,7 @@ window.createCustomSVGIcon = createCustomSVGIcon;
 window.createNotebookArtworkSVG = createNotebookArtworkSVG;
 window.createHouseholdAvatarSVG = createHouseholdAvatarSVG;
 window.GAME_BALANCE = GAME_BALANCE;
+window.BUILDING_NAME_PRESETS = BUILDING_NAME_PRESETS;
 window.INITIAL_ISLAND_LOTS = INITIAL_ISLAND_LOTS;
 window.DEVELOPMENT_CATALOG = DEVELOPMENT_CATALOG;
 window.PUBLIC_INFRA_CATALOG = PUBLIC_INFRA_CATALOG;
