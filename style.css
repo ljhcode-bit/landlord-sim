@@ -2446,3 +2446,367 @@ input[type='range'].golden-coin-range::-webkit-slider-thumb {
   font-family: 'Pretendard', sans-serif;
   animation: harborPopIn 0.35s var(--spring-ease) forwards;
 }
+
+/* ==================== 18. 16:9 가로모드 슬림 사이드 드로어 · 3대 퀵 슬롯 · 머니건 팝오버 · 가구 백화점 · 1:1 쇼룸 결투 ==================== */
+.top-glass-circle-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(255, 255, 255, 0.96);
+  box-shadow: 0 6px 18px rgba(44, 34, 30, 0.12), 0 2px 0 #DFCBB5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto !important;
+  transition: transform 0.15s var(--spring-ease), box-shadow 0.15s ease;
+}
+
+.top-glass-circle-btn:hover {
+  transform: translateY(-2px) rotate(18deg);
+  box-shadow: 0 8px 22px rgba(44, 34, 30, 0.16), 0 3px 0 #D5BC9F;
+}
+
+.top-glass-circle-btn:active {
+  transform: translateY(1px) scale(0.95);
+}
+
+.quick-glass-circle-btn {
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  background: rgba(255, 253, 249, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1.8px solid #FFFFFF;
+  box-shadow: 0 6px 16px rgba(44, 34, 30, 0.14), 0 3px 0 #DFCBB5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s var(--spring-ease), box-shadow 0.15s ease;
+}
+
+.quick-glass-circle-btn.tone-money  { background: linear-gradient(180deg, #FFFBEB 0%, #FEF3C7 100%); border-color: #FDE68A; box-shadow: 0 6px 16px rgba(245, 158, 11, 0.18), 0 3px 0 #EAB30866; }
+.quick-glass-circle-btn.tone-drive  { background: linear-gradient(180deg, #ECFDF5 0%, #D1FAE5 100%); border-color: #A7F3D0; box-shadow: 0 6px 16px rgba(16, 185, 129, 0.18), 0 3px 0 #10B98166; }
+.quick-glass-circle-btn.tone-forbes { background: linear-gradient(180deg, #FFF7ED 0%, #FFEDD5 100%); border-color: #FED7AA; box-shadow: 0 6px 16px rgba(249, 115, 22, 0.18), 0 3px 0 #FB923C66; }
+
+.quick-glass-circle-btn:hover {
+  transform: translateY(-2px) scale(1.05);
+}
+
+.quick-glass-circle-btn:active {
+  transform: translateY(2px) scale(0.95);
+}
+
+/* 수첩이 3대 퀵 스택과 절대 겹치지 않도록 좌측으로 펼쳐짐 */
+.pocket-planner-card {
+  right: 68px !important;
+  bottom: 0px !important;
+  width: 264px;
+}
+
+.pocket-ledger-mini-pill {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #FFF7ED;
+  border: 1px solid #FED7AA;
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 800;
+  font-size: 10.5px;
+  color: #9A3412;
+  cursor: pointer;
+}
+
+/* 머니건 4단계 리얼 플렉스 팝오버 */
+.moneygun-popover-card {
+  position: absolute;
+  right: 64px;
+  bottom: 64px;
+  width: 286px;
+  padding: 12px;
+  border-radius: 22px;
+  background: rgba(255, 253, 248, 0.97);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 2px solid #FDE68A;
+  box-shadow: 0 18px 38px rgba(44, 34, 30, 0.22), 0 4px 0 #EAB30866;
+  animation: harborPopIn 0.2s var(--spring-ease) forwards;
+}
+
+.moneygun-tier-btn {
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: #FFFDF7;
+  border: 1.5px solid #EDE0D1;
+  box-shadow: 0 2px 0 #DFCBB5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform 0.12s ease, background-color 0.12s ease;
+}
+
+.moneygun-tier-btn:hover:not(:disabled) {
+  background: #FFFBEB;
+  border-color: #F59E0B;
+  transform: translateY(-1px);
+}
+
+.moneygun-tier-btn:disabled {
+  opacity: 0.46;
+  cursor: not-allowed;
+  filter: grayscale(0.4);
+}
+
+/* 방/상가 클린 감상 뷰 하단 수동 오픈 캡슐 바 */
+.focus-manual-capsule {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(255, 252, 246, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1.8px solid rgba(255, 255, 255, 0.96);
+  box-shadow: 0 10px 28px rgba(44, 34, 30, 0.16), 0 3px 0 #DFCBB5;
+  pointer-events: auto !important;
+  white-space: nowrap;
+}
+
+.focus-cap-room-tag {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 900;
+  font-size: 13px;
+  color: #3A2E2B;
+  padding: 0 4px;
+}
+
+.focus-cap-divider {
+  width: 1.5px;
+  height: 16px;
+  background: #E2CEB8;
+}
+
+.focus-cap-action-btn {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1.5px solid #E8D5C0;
+  background: #FFFDF9;
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 800;
+  font-size: 12px;
+  color: #3A2E2B;
+  cursor: pointer;
+  transition: transform 0.14s ease, background-color 0.14s ease;
+}
+
+.focus-cap-action-btn.primary {
+  background: linear-gradient(180deg, #FFE885 0%, #FBBF24 100%);
+  border-color: #F59E0B;
+  color: #3A2E2B;
+  box-shadow: 0 2px 0 #D97706;
+}
+
+.focus-cap-action-btn:hover {
+  transform: translateY(-1.5px);
+}
+
+/* 16:9 가로모드 우측 슬림 사이드 드로어 통일 규격 (중앙 75% 3D 뷰 가림 0%!) */
+.slim-right-drawer-modal {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  justify-content: flex-end;
+  align-items: stretch;
+  padding: 72px 20px 24px 16px;
+}
+
+.slim-drawer-shell {
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  height: 100%;
+  max-height: calc(100vh - 96px);
+  pointer-events: auto !important;
+  box-shadow: -8px 16px 38px rgba(44, 34, 30, 0.18), 0 5px 0 #C8A27E;
+  animation: slimDrawerSlideIn 0.22s var(--spring-ease) forwards;
+}
+
+.slim-side-drawer {
+  pointer-events: auto !important;
+  box-shadow: -8px 16px 38px rgba(44, 34, 30, 0.18), 0 5px 0 #C8A27E;
+  animation: slimDrawerSlideIn 0.22s var(--spring-ease) forwards;
+}
+
+@keyframes slimDrawerSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(22px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.slim-bottom-catalog-dock {
+  max-height: 165px;
+  overflow: hidden;
+}
+
+.slim-dock-row {
+  display: flex !important;
+  align-items: stretch;
+  gap: 8px;
+  overflow-x: auto;
+  max-height: 118px;
+}
+
+.slim-dock-row .fcat-item-card {
+  min-width: 172px;
+  max-width: 188px;
+  padding: 6px 8px;
+  flex-shrink: 0;
+}
+
+.tier-filter-pill {
+  padding: 3px 6.5px;
+  border-radius: 999px;
+  border: 1.5px solid #E7D6C4;
+  background: #FFFDF9;
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 800;
+  font-size: 10px;
+  color: #5C4938;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.tier-filter-pill.active {
+  background: linear-gradient(180deg, #FDE68A 0%, #F59E0B 100%);
+  border-color: #D97706;
+  color: #2C221E;
+}
+
+/* 1:1 럭셔리 쇼룸 플렉스 꾸미기 결투 UI */
+.duel-vs-card {
+  padding: 10px 14px;
+  border-radius: 22px;
+  background: rgba(255, 253, 248, 0.94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 2px solid #F59E0B;
+  box-shadow: 0 12px 30px rgba(44, 34, 30, 0.16);
+}
+
+.duel-mode-pill {
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1.5px solid #E5D4C0;
+  background: #FFFDF7;
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 800;
+  font-size: 11.5px;
+  color: #5C4938;
+  cursor: pointer;
+}
+
+.duel-mode-pill.active {
+  background: linear-gradient(135deg, #581C87 0%, #9333EA 100%);
+  border-color: #581C87;
+  color: #FFFFFF;
+}
+
+.duel-judge-cta-btn {
+  padding: 6px 13px;
+  border-radius: 999px;
+  border: 1.5px solid #B45309;
+  background: linear-gradient(180deg, #FFE869 0%, #F59E0B 100%);
+  box-shadow: 0 2.5px 0 #B45309;
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 900;
+  font-size: 12px;
+  color: #2C221E;
+  cursor: pointer;
+}
+
+.duel-tug-track {
+  height: 11px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #9333EA 0%, #6B21A8 100%);
+  overflow: hidden;
+  border: 1.5px solid #3A2E2B;
+}
+
+.duel-tug-my-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #F59E0B 0%, #FDE047 100%);
+  transition: width 0.28s ease;
+}
+
+.duel-bottom-dock {
+  border-radius: 20px;
+  background: rgba(255, 253, 248, 0.95);
+  border: 2px solid #E9CEB3;
+  box-shadow: 0 12px 32px rgba(44, 34, 30, 0.2);
+  overflow: hidden;
+}
+
+.duel-furn-chip-card {
+  min-width: 176px;
+  max-width: 192px;
+  padding: 6px 9px;
+  border-radius: 15px;
+  background: #FFFDF9;
+  border: 1.5px solid #E8D5C0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.duel-furn-chip-card.in-stock {
+  background: #ECFDF5;
+  border-color: #34D399;
+}
+
+.duel-furn-chip-card.equipped-duel {
+  background: #FFFBEB;
+  border: 2px solid #F59E0B;
+}
+
+/* 슈퍼카 디지털 속도계 & V12 풀악셀 부스터 버튼 */
+.drive-speedo-pill {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: #1E293B;
+  border: 1.5px solid #475569;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.nitro-boost-btn {
+  background: linear-gradient(180deg, #FB7185 0%, #E11D48 100%) !important;
+  color: #FFFFFF !important;
+  border-color: #9F1239 !important;
+  box-shadow: 0 4px 0 #881337 !important;
+  font-weight: 900 !important;
+}
+
+.nitro-boost-btn.pressed {
+  transform: translateY(3px) scale(0.97) !important;
+  box-shadow: 0 1px 0 #881337 !important;
+  filter: brightness(1.12);
+}

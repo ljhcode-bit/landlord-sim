@@ -681,6 +681,34 @@ function createCustomSVGIcon(name, size = 24) {
         </g>`;
       break;
 
+    case 'furniture_shop_ico':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <path d="M6.5 15.5C6.5 12.8 8.7 10.6 11.4 10.6H20.6C23.3 10.6 25.5 12.8 25.5 15.5V22.5H6.5V15.5Z" fill="url(#${uid}_coral)" stroke="#3A2E2B" stroke-width="1.6"/>
+          <rect x="4.5" y="16.2" width="4.5" height="7.5" rx="2" fill="url(#${uid}_gold)" stroke="#3A2E2B" stroke-width="1.5"/>
+          <rect x="23" y="16.2" width="4.5" height="7.5" rx="2" fill="url(#${uid}_gold)" stroke="#3A2E2B" stroke-width="1.5"/>
+          <rect x="7.5" y="19" width="17" height="4.8" rx="1.8" fill="url(#${uid}_cream)" stroke="#3A2E2B" stroke-width="1.4"/>
+          <path d="M12.5 8.5L14 5.2L16 7L18 5.2L19.5 8.5Z" fill="url(#${uid}_gold)" stroke="#3A2E2B" stroke-width="1.2"/>
+        </g>`;
+      break;
+
+    case 'duel_versus_ico':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <circle cx="16" cy="16" r="11" fill="#581C87" stroke="#3A2E2B" stroke-width="1.7"/>
+          <path d="M9.5 22.5L22.5 9.5M9.5 9.5L22.5 22.5" stroke="url(#${uid}_gold)" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="16" cy="16" r="4.2" fill="url(#${uid}_coral)" stroke="#FFFDF7" stroke-width="1.4"/>
+        </g>`;
+      break;
+
+    case 'nitro_flame_ico':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <path d="M16.5 4.2C21.5 9.2 24.5 13.8 23.5 19.2C22.6 24.1 18.8 27.2 14.8 27.2C10.4 27.2 7.5 23.8 8.2 18.8C8.8 14.8 11.8 12.2 13.2 9.4C13.6 12.2 15.2 12.8 16.5 10.6C17.2 8.8 17 6.5 16.5 4.2Z" fill="url(#${uid}_coral)" stroke="#3A2E2B" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M15.8 14.2C18.2 16.5 19.2 19.2 18.4 22.2C17.8 24.4 16.1 25.6 14.4 25.4C12.5 25.2 11.4 23.4 12 20.8C12.5 18.6 14.2 16.8 15.8 14.2Z" fill="url(#${uid}_gold)"/>
+        </g>`;
+      break;
+
     case 'statue_gold':
       body = `
         <g filter="url(#${uid}_sh)">
@@ -1148,7 +1176,8 @@ function createNotebookArtworkSVG(kind, size = 48) {
       mansour: ['#FEF3C7', '#FDE68A'],
       movie_star: ['#FFE4E6', '#FBCFE8'],
       fund_manager: ['#DBEAFE', '#BFDBFE'],
-      cruise_captain: ['#E0F2FE', '#BAE6FD']
+      cruise_captain: ['#E0F2FE', '#BAE6FD'],
+      it_ceo: ['#ECFDF5', '#A7F3D0']
     };
     const [bg1, bg2] = bgPalette[role] || bgPalette.student;
     let portrait = '';
@@ -1262,6 +1291,14 @@ function createNotebookArtworkSVG(kind, size = 48) {
         <path d="M19 24L21.5 15H42.5L45 24Z" fill="#FFFDF7" stroke="#3A2E2B" stroke-width="1.8"/>
         <circle cx="32" cy="19.5" r="2.6" fill="#FFD93D" stroke="#3A2E2B" stroke-width="1.2"/>
         <circle cx="28" cy="35" r="1.8" fill="#3A2E2B"/><circle cx="36" cy="35" r="1.8" fill="#3A2E2B"/>`;
+    } else if (role === 'it_ceo') {
+      portrait = `
+        <path d="M14 58C15 44 22 40 32 40C42 40 49 44 50 58Z" fill="#0F172A" stroke="#3A2E2B" stroke-width="2"/>
+        <circle cx="32" cy="33.5" r="11.5" fill="#FFE5D6" stroke="#3A2E2B" stroke-width="2"/>
+        <path d="M20 27C21 17 43 17 44 27L41.5 29H22.5Z" fill="#334155" stroke="#3A2E2B" stroke-width="1.7"/>
+        <rect x="23" y="31" width="7.8" height="4.8" rx="1.6" fill="#E0F2FE" stroke="#0284C7" stroke-width="1.4"/>
+        <rect x="33.2" y="31" width="7.8" height="4.8" rx="1.6" fill="#E0F2FE" stroke="#0284C7" stroke-width="1.4"/>
+        <line x1="30.8" y1="33.2" x2="33.2" y2="33.2" stroke="#0284C7" stroke-width="1.4"/>`;
     } else {
       portrait = `
         <path d="M15 58C16 45 23 41 32 41C41 41 48 45 49 58Z" fill="#1E3A8A" stroke="#3A2E2B" stroke-width="2"/>
@@ -1731,40 +1768,55 @@ const ROOM_SLOTS_TEMPLATE = [
 ];
 
 const FURNITURE_CATEGORIES = [
-  { key: 'bed', label: '침실/침대', svgIcon: 'bed_ico' },
-  { key: 'sofa', label: '거실/소파', svgIcon: 'sofa_ico' },
-  { key: 'appliance', label: '주방/가전', svgIcon: 'tv_ico' },
-  { key: 'decor', label: '벽지/마루/계단', svgIcon: 'palette_ico' }
+  { key: 'bed', label: '🛏️ 침대·침실', svgIcon: 'bed_ico' },
+  { key: 'sofa', label: '🛋️ 소파·거실', svgIcon: 'sofa_ico' },
+  { key: 'appliance', label: '📺 가전·설비', svgIcon: 'tv_ico' },
+  { key: 'decor', label: '💎 로열 오브제', svgIcon: 'palette_ico' }
 ];
+
+const FURNITURE_TIER_META = {
+  1: { tier: 1, badge: '🌱 Tier 1 · 베이직', short: 'T1 베이직', color: '#15803D', bg: '#DCFCE7' },
+  2: { tier: 2, badge: '🏠 Tier 2 · 모던 부티크', short: 'T2 부티크', color: '#0369A1', bg: '#E0F2FE' },
+  3: { tier: 3, badge: '💎 Tier 3 · 로열 펜트하우스', short: 'T3 로열', color: '#7E22CE', bg: '#F3E8FF' },
+  4: { tier: 4, badge: '👑 Tier 4 · 만수르 리미티드', short: 'T4 리미티드', color: '#B45309', bg: '#FEF3C7' }
+};
 
 const FURNITURE_CATALOG = {
   bed: [
-    { id: 'bed_iron', category: 'bed', name: '심플 스카이 침대', cost: 0, rentAdd: 0, happyAdd: 0, chip: '기본 제공', tone: 'sky', reaction: '깔끔한 스카이블루 철제 침대가 실용적이에요!' },
-    { id: 'bed_queen', category: 'bed', name: '코지 원목 퀸침대', cost: 75, rentAdd: 26, happyAdd: 12, chip: '월세 +26만', tone: 'mint', reaction: '따뜻한 원목 퀸침대라 꿀잠 예약이에요!' },
-    { id: 'bed_canopy', category: 'bed', name: '프린세스 캐노피 침대', cost: 145, rentAdd: 52, happyAdd: 20, chip: '월세 +52만', tone: 'coral', reaction: '와아! 핑크 캐노피 침대라니 동화 속 방 같아요!' },
-    { id: 'bed_bunk', category: 'bed', name: '패밀리 원목 2층침대', cost: 165, rentAdd: 58, happyAdd: 22, chip: '월세 +58만', tone: 'gold', reaction: '튼튼한 원목 2층 침대 사다리 타기가 신나요!' },
-    { id: 'bed_jacuzzi', category: 'bed', harborTier: true, name: '오션뷰 스파 자쿠지 스위트', cost: 280, rentAdd: 165, happyAdd: 34, chip: 'VIP · 월세 +165만', tone: 'sky', reaction: '오션뷰 월풀 스파 자쿠지에서 노을 바다를 보며 반신욕이라니 천국이에요!' }
+    { id: 'bed_iron', category: 'bed', tier: 1, luxuryPts: 40, name: '심플 스카이 침대', cost: 8, rentAdd: 6, happyAdd: 5, chip: 'T1 · 월세 +6만', tone: 'sky', reaction: '깔끔한 스카이블루 철제 침대가 실용적이에요!' },
+    { id: 'bed_wood_single', category: 'bed', tier: 1, luxuryPts: 65, name: '코지 원목 싱글 침대', cost: 12, rentAdd: 12, happyAdd: 8, chip: 'T1 · 월세 +12만', tone: 'mint', reaction: '따뜻한 코지 원목 싱글 침대가 아늑해요!' },
+    { id: 'bed_queen', category: 'bed', tier: 2, luxuryPts: 160, name: '호텔식 원목 퀸 침대', cost: 55, rentAdd: 28, happyAdd: 14, chip: 'T2 · 월세 +28만', tone: 'mint', reaction: '따뜻한 호텔식 원목 퀸침대라 꿀잠 예약이에요!' },
+    { id: 'bed_bunk', category: 'bed', tier: 2, luxuryPts: 195, name: '패밀리 원목 2층침대', cost: 75, rentAdd: 38, happyAdd: 18, chip: 'T2 · 월세 +38만', tone: 'gold', reaction: '튼튼한 원목 2층 침대 사다리 타기가 신나요!' },
+    { id: 'bed_canopy', category: 'bed', tier: 3, luxuryPts: 420, name: '구스다운 캐노피 킹 침대', cost: 180, rentAdd: 88, happyAdd: 26, chip: 'T3 VIP · +88만', tone: 'coral', reaction: '이탈리아 구스다운 캐노피 킹 침대라니 왕족이 된 기분이에요!' },
+    { id: 'bed_jacuzzi', category: 'bed', tier: 3, luxuryPts: 580, harborTier: true, name: '오션뷰 스파 자쿠지 스위트', cost: 290, rentAdd: 165, happyAdd: 34, chip: 'T3 VIP · +165만', tone: 'sky', reaction: '오션뷰 월풀 스파 자쿠지에서 반신욕이라니 천국이에요!' },
+    { id: 'bed_golden_float', category: 'bed', tier: 4, luxuryPts: 1450, isMansourLimited: true, name: '24K 황금 플로팅 베드', cost: 1400, rentAdd: 620, happyAdd: 55, chip: '👑 T4 · 월세 +620만', tone: 'gold', reaction: '세상에!! 공중에 떠오른 24K 순금 플로팅 킹 베드라니 만수르 궁전이에요!!' }
   ],
   sofa: [
-    { id: 'sofa_beanbag', category: 'sofa', name: '버터 옐로우 빈백', cost: 0, rentAdd: 0, happyAdd: 0, chip: '기본 제공', tone: 'gold', reaction: '말랑말랑 노란 빈백에 파묻히면 피로가 싹 풀려요!' },
-    { id: 'sofa_mint2', category: 'sofa', name: '애플민트 2인 소파', cost: 70, rentAdd: 24, happyAdd: 12, chip: '월세 +24만', tone: 'mint', reaction: '상큼한 애플민트 패브릭 소파로 거실이 화사해졌어요!' },
-    { id: 'sofa_rocker', category: 'sofa', name: '원목 흔들의자 다과셋', cost: 115, rentAdd: 40, happyAdd: 18, chip: '월세 +40만', tone: 'coral', reaction: '원목 흔들의자에 앉아 따뜻한 차 한 잔 마시니 천국이구려~' },
-    { id: 'sofa_leather_l', category: 'sofa', name: '프리미엄 가죽 L소파', cost: 155, rentAdd: 56, happyAdd: 22, chip: '월세 +56만', tone: 'gold', reaction: '고급 가죽 L자형 소파가 펜트하우스 거실처럼 럭셔리해요!' },
-    { id: 'sofa_piano', category: 'sofa', harborTier: true, name: '콘서트 그랜드 피아노 라운지', cost: 320, rentAdd: 185, happyAdd: 36, chip: 'VIP · 월세 +185만', tone: 'gold', reaction: '클래식 블랙 그랜드 피아노 선율이 트와일라잇 항구에 울려 퍼져요!' }
+    { id: 'sofa_beanbag', category: 'sofa', tier: 1, luxuryPts: 35, name: '버터 옐로우 빈백', cost: 6, rentAdd: 5, happyAdd: 5, chip: 'T1 · 월세 +5만', tone: 'gold', reaction: '말랑말랑 노란 빈백에 파묻히면 피로가 싹 풀려요!' },
+    { id: 'sofa_simple_lamp', category: 'sofa', tier: 1, luxuryPts: 60, name: '심플 스탠드 & 우드 스툴', cost: 10, rentAdd: 10, happyAdd: 8, chip: 'T1 · 월세 +10만', tone: 'mint', reaction: '은은한 심플 플로어 스탠드 조명이 방 분위기를 살려줘요!' },
+    { id: 'sofa_mint2', category: 'sofa', tier: 2, luxuryPts: 150, name: '벨벳 모듈 2인 소파', cost: 48, rentAdd: 26, happyAdd: 14, chip: 'T2 · 월세 +26만', tone: 'mint', reaction: '벨벳 모듈 소파로 거실이 부티크 호텔처럼 화사해졌어요!' },
+    { id: 'sofa_rocker', category: 'sofa', tier: 2, luxuryPts: 185, name: '원목 흔들의자 다과셋', cost: 68, rentAdd: 36, happyAdd: 18, chip: 'T2 · 월세 +36만', tone: 'coral', reaction: '원목 흔들의자에 앉아 따뜻한 차 한 잔 마시니 천국이구려~' },
+    { id: 'sofa_leather_l', category: 'sofa', tier: 3, luxuryPts: 390, name: '이탈리아 가죽 L소파', cost: 165, rentAdd: 82, happyAdd: 24, chip: 'T3 VIP · +82만', tone: 'gold', reaction: '고급 가죽 L자형 소파가 펜트하우스 거실처럼 럭셔리해요!' },
+    { id: 'sofa_piano', category: 'sofa', tier: 3, luxuryPts: 560, harborTier: true, name: '콘서트 그랜드 피아노', cost: 320, rentAdd: 185, happyAdd: 36, chip: 'T3 VIP · +185만', tone: 'gold', reaction: '클래식 그랜드 피아노 선율이 거실에 울려 퍼져요!' },
+    { id: 'sofa_gold_piano', category: 'sofa', tier: 4, luxuryPts: 1280, isMansourLimited: true, name: '24K 순금 그랜드 피아노', cost: 950, rentAdd: 460, happyAdd: 50, chip: '👑 T4 · 월세 +460만', tone: 'gold', reaction: '눈부신 24K 순금 그랜드 피아노라니 전 세계 10대 한정판 플렉스 대박!!' }
   ],
   appliance: [
-    { id: 'app_fan', category: 'appliance', name: '스탠드 서큘레이터', cost: 0, rentAdd: 0, happyAdd: 0, chip: '기본 제공', tone: 'sky', reaction: '솔솔 부는 서큘레이터 바람이 시원해요~' },
-    { id: 'app_ac', category: 'appliance', name: '시네마 빔프로젝터', cost: 85, rentAdd: 30, happyAdd: 14, chip: '월세 +30만', tone: 'mint', reaction: '대형 시네마 빔프로젝터까지 풀옵션이라니 갓물주님 최고!' },
-    { id: 'app_soundmat', category: 'appliance', name: 'LP 턴테이블 & 방음매트', cost: 95, rentAdd: 34, happyAdd: 18, grantsSoundproof: true, chip: '방음완벽 · +34만', tone: 'sky', reaction: '감성 LP 턴테이블과 도톰한 방음 매트로 층간소음 걱정 끝!' },
-    { id: 'app_rgb_desk', category: 'appliance', name: 'RGB 트리플 데스크', cost: 160, rentAdd: 58, happyAdd: 24, chip: '월세 +58만', tone: 'coral', reaction: '영롱한 RGB 트리플 모니터 데스크라니 방송 효율 폭발!' },
-    { id: 'app_winecellar', category: 'appliance', harborTier: true, name: '오크 와인 셀러 & 샹들리에', cost: 360, rentAdd: 215, happyAdd: 40, grantsSoundproof: true, chip: 'VIP · 월세 +215만', tone: 'coral', reaction: '호박빛 와인 셀러와 천장 크리스탈 샹들리에 품격에 반했어요!' }
+    { id: 'app_fan', category: 'appliance', tier: 1, luxuryPts: 35, name: '스탠드 서큘레이터', cost: 7, rentAdd: 5, happyAdd: 5, chip: 'T1 · 월세 +5만', tone: 'sky', reaction: '솔솔 부는 서큘레이터 바람이 시원해요~' },
+    { id: 'app_mini_fridge', category: 'appliance', tier: 1, luxuryPts: 70, name: '코지 미니 냉장고', cost: 14, rentAdd: 13, happyAdd: 9, chip: 'T1 · 월세 +13만', tone: 'mint', reaction: '귀여운 파스텔 미니 냉장고에 시원한 음료가 가득해요!' },
+    { id: 'app_ac', category: 'appliance', tier: 2, luxuryPts: 170, name: '75인치 OLED & 빔프로젝터', cost: 65, rentAdd: 34, happyAdd: 15, chip: 'T2 · 월세 +34만', tone: 'mint', reaction: '75인치 시네마 빔프로젝터 풀옵션이라니 갓물주님 최고!' },
+    { id: 'app_soundmat', category: 'appliance', tier: 2, luxuryPts: 205, name: '프리미엄 에스프레소 & 방음바', cost: 78, rentAdd: 40, happyAdd: 18, grantsSoundproof: true, chip: 'T2 방음 · +40만', tone: 'sky', reaction: '향긋한 에스프레소 머신과 LP 방음 매트로 완벽해요!' },
+    { id: 'app_rgb_desk', category: 'appliance', tier: 3, luxuryPts: 380, name: 'RGB 방송 스튜디오 데스크', cost: 170, rentAdd: 84, happyAdd: 25, chip: 'T3 VIP · +84만', tone: 'coral', reaction: '영롱한 RGB 트리플 모니터 스튜디오라니 조회수 폭발!' },
+    { id: 'app_winecellar', category: 'appliance', tier: 3, luxuryPts: 610, harborTier: true, name: '대리석 홈바 & 와인셀러', cost: 340, rentAdd: 215, happyAdd: 40, grantsSoundproof: true, chip: 'T3 VIP · +215만', tone: 'coral', reaction: '대리석 홈바와 오크 와인셀러, 천장 샹들리에 품격에 반했어요!' },
+    { id: 'app_aquarium', category: 'appliance', tier: 4, luxuryPts: 1380, isMansourLimited: true, grantsSoundproof: true, name: '대형 산호초 아쿠아리움 수조', cost: 1250, rentAdd: 580, happyAdd: 52, chip: '👑 T4 · 월세 +580만', tone: 'sky', reaction: '방 한쪽 벽이 통째로 열대어와 산호초가 유영하는 대형 아쿠아리움이라니 환상적이에요!!' }
   ],
   decor: [
-    { id: 'dec_peach', category: 'decor', name: '피치 베이지 & 메이플', wallKey: 'wallPeach', floorKey: 'floor1', stairStyle: 'oak', cost: 0, rentAdd: 0, happyAdd: 0, chip: '피치 파스텔', tone: 'coral', reaction: '포근한 피치 오트밀 벽지 색감이 마음을 따뜻하게 해줘요!' },
-    { id: 'dec_sage', category: 'decor', name: '세이지 민트 & 오크', wallKey: 'wallSage', floorKey: 'floor2', stairStyle: 'walnut', cost: 65, rentAdd: 22, happyAdd: 12, chip: '월세 +22만', tone: 'mint', reaction: '싱그러운 세이지 벽지와 헤링본 오크 마루 조합이 세련됐어요!' },
-    { id: 'dec_butter', category: 'decor', name: '버터 크림 & 골드계단', wallKey: 'wallButter', floorKey: 'floor3', stairStyle: 'gold', cost: 120, rentAdd: 42, happyAdd: 16, chip: '월세 +42만', tone: 'gold', reaction: '햇살 같은 버터 크림 벽지 덕분에 집이 두 배 넓어 보여요!' },
-    { id: 'dec_lavender', category: 'decor', name: '로얄 라벤더 & 부티크', wallKey: 'wallLavender', floorKey: 'floor3', stairStyle: 'coral', cost: 170, rentAdd: 62, happyAdd: 22, chip: '월세 +62만', tone: 'coral', reaction: '로얄 라벤더 벽지와 부티크 계단 마감이 예술 작품 같아요!' },
-    { id: 'dec_harbor_royal', category: 'decor', harborTier: true, name: '트와일라잇 로열 월넛 & 골드', wallKey: 'wallButter', floorKey: 'floor2', stairStyle: 'gold', cost: 260, rentAdd: 150, happyAdd: 30, chip: 'VIP · 월세 +150만', tone: 'gold', reaction: '유럽풍 클래식 웨인스코팅과 골드 계단 마감이 5성급 스위트 그 자체네요!' }
+    { id: 'dec_peach', category: 'decor', tier: 1, luxuryPts: 35, name: '피치 베이지 & 기본 진열대', wallKey: 'wallPeach', floorKey: 'floor1', stairStyle: 'oak', cost: 8, rentAdd: 6, happyAdd: 5, chip: 'T1 · 월세 +6만', tone: 'coral', reaction: '포근한 피치 벽지와 깔끔한 진열대가 마음을 따뜻하게 해줘요!' },
+    { id: 'dec_basic_shelf', category: 'decor', tier: 1, luxuryPts: 65, name: '내추럴 우드 진열장 & 메이플', wallKey: 'wallPeach', floorKey: 'floor2', stairStyle: 'oak', cost: 13, rentAdd: 12, happyAdd: 8, chip: 'T1 · 월세 +12만', tone: 'mint', reaction: '원목 오픈 진열장이 생겨서 소품 정리가 깔끔해졌어요!' },
+    { id: 'dec_sage', category: 'decor', tier: 2, luxuryPts: 155, name: '모던 세이지 & 헤링본 오크', wallKey: 'wallSage', floorKey: 'floor2', stairStyle: 'walnut', cost: 48, rentAdd: 26, happyAdd: 13, chip: 'T2 · 월세 +26만', tone: 'mint', reaction: '싱그러운 세이지 벽지와 헤링본 오크 마루 조합이 세련됐어요!' },
+    { id: 'dec_butter', category: 'decor', tier: 2, luxuryPts: 195, name: '버터 크림 & 골드 몰딩', wallKey: 'wallButter', floorKey: 'floor3', stairStyle: 'gold', cost: 72, rentAdd: 38, happyAdd: 16, chip: 'T2 · 월세 +38만', tone: 'gold', reaction: '햇살 같은 버터 크림 벽지 덕분에 집이 두 배 넓어 보여요!' },
+    { id: 'dec_lavender', category: 'decor', tier: 3, luxuryPts: 400, name: '로얄 라벤더 갤러리 홀', wallKey: 'wallLavender', floorKey: 'floor3', stairStyle: 'coral', cost: 185, rentAdd: 90, happyAdd: 24, chip: 'T3 VIP · +90만', tone: 'coral', reaction: '로얄 라벤더 갤러리 벽지와 부티크 마감이 예술 작품 같아요!' },
+    { id: 'dec_harbor_royal', category: 'decor', tier: 3, luxuryPts: 540, harborTier: true, name: '크리스탈 샹들리에 & 로열 월넛', wallKey: 'wallButter', floorKey: 'floor2', stairStyle: 'gold', cost: 270, rentAdd: 150, happyAdd: 32, chip: 'T3 VIP · +150만', tone: 'gold', reaction: '크리스탈 샹들리에와 유럽풍 로열 월넛 마감이 5성급 스위트네요!' },
+    { id: 'dec_diamond_art', category: 'decor', tier: 4, luxuryPts: 1650, isMansourLimited: true, name: '다이아몬드 명화 컬렉션 홀', wallKey: 'wallButter', floorKey: 'floor3', stairStyle: 'gold', cost: 1800, rentAdd: 780, happyAdd: 60, chip: '👑 T4 · 월세 +780만', tone: 'gold', reaction: '황금 액자 명화 컬렉션과 블루 다이아몬드 좌대라니 루브르 미술관 VIP실 같아요!!' }
   ]
 };
 
@@ -1971,11 +2023,13 @@ const HOUSEHOLD_TYPES = {
   },
   streamer: {
     type: 'streamer',
-    label: '스트리머 VIP',
+    isVipTenant: true,
+    minLuxuryStars: 3,
+    label: '스타 유튜버 VIP',
     accentHex: '#8B3DFF',
     memberCount: 1,
-    minRent: 220,
-    maxRent: 390,
+    minRent: 340,
+    maxRent: 580,
     noiseOutput: 55,
     noiseLv: 2,
     noiseSensitivity: 40,
@@ -1984,8 +2038,28 @@ const HOUSEHOLD_TYPES = {
     needsRecycling: false,
     isHoarder: false,
     happyQuotes: [
-      '원목 계단 올라가면 2층 다락 침실이라니 복층 로프트 감성 최고!',
+      '캐노피 침대와 하이엔드 방송 장비가 세팅된 럭셔리 룸이라니 브이로그 각이에요!',
       '건물주님 슈퍼카랑 우리 부티크 거리 브이로그 찍으면 조회수 폭발!'
+    ]
+  },
+  it_ceo: {
+    type: 'it_ceo',
+    isVipTenant: true,
+    minLuxuryStars: 3,
+    label: 'IT 기업 대표 VIP',
+    accentHex: '#0284C7',
+    memberCount: 1,
+    minRent: 480,
+    maxRent: 840,
+    noiseOutput: 12,
+    noiseLv: 1,
+    noiseSensitivity: 45,
+    odorSensitivity: 55,
+    needsElevator: false,
+    needsRecycling: false,
+    isHoarder: false,
+    happyQuotes: [
+      '스파 자쿠지와 하이엔드 피아노 라운지가 갖춰진 스위트라 재충전에 최고입니다!'
     ]
   },
   hikikomori: {
@@ -2009,7 +2083,9 @@ const HOUSEHOLD_TYPES = {
   movie_star: {
     type: 'movie_star',
     isHarborVip: true,
-    label: '글로벌 영화배우',
+    isVipTenant: true,
+    minLuxuryStars: 3,
+    label: '글로벌 영화배우 VIP',
     accentHex: '#F59E0B',
     memberCount: 2,
     minRent: 580,
@@ -2028,6 +2104,8 @@ const HOUSEHOLD_TYPES = {
   fund_manager: {
     type: 'fund_manager',
     isHarborVip: true,
+    isVipTenant: true,
+    minLuxuryStars: 3,
     label: '월스트리트 펀드매니저',
     accentHex: '#0EA5E9',
     memberCount: 1,
@@ -2047,6 +2125,8 @@ const HOUSEHOLD_TYPES = {
   cruise_captain: {
     type: 'cruise_captain',
     isHarborVip: true,
+    isVipTenant: true,
+    minLuxuryStars: 3,
     label: '럭셔리 크루즈 선장',
     accentHex: '#10B981',
     memberCount: 2,
@@ -3115,5 +3195,115 @@ const HARBOR_SHOP_UPGRADE_CATALOG = [
   }
 ];
 
+const MONEYGUN_FLEX_TIERS = [
+  {
+    id: 'mg_10',
+    emoji: '💵',
+    title: '소소한 용돈 살포',
+    costLabel: '10만 원',
+    fixedCost: 10,
+    billCount: 30,
+    coinBurst: false,
+    happyAdd: 5,
+    feverMult: 1.5,
+    feverSec: 15,
+    subDesc: '지폐 30장 · 행복도 +5% · 15초 1.5배'
+  },
+  {
+    id: 'mg_50',
+    emoji: '💴',
+    title: '강남 클럽 플렉스',
+    costLabel: '50만 원',
+    fixedCost: 50,
+    billCount: 80,
+    coinBurst: true,
+    happyAdd: 15,
+    feverMult: 2.0,
+    feverSec: 30,
+    subDesc: '지폐 80장+코인 · 행복도 +15% · 30초 2배'
+  },
+  {
+    id: 'mg_200',
+    emoji: '💰',
+    title: '건물주 자본 폭격',
+    costLabel: '200만 원',
+    fixedCost: 200,
+    billCount: 180,
+    coinBurst: true,
+    crowdCheer: true,
+    happyAdd: 35,
+    feverMult: 3.0,
+    feverSec: 45,
+    subDesc: '황금지폐 180장+군중환호 · +35% · 45초 3배'
+  },
+  {
+    id: 'mg_allin20',
+    emoji: '👑',
+    title: '만수르 올인 샤워',
+    costLabel: '자산 20% 플렉스!',
+    pctOfGold: 0.2,
+    minCost: 10,
+    billCount: 280,
+    coinBurst: true,
+    crowdCheer: true,
+    skyFireworks: true,
+    maxHappy: true,
+    happyAdd: 100,
+    feverMult: 5.0,
+    feverSec: 60,
+    subDesc: '보유자산 20% 차감 · 행복 MAX · 60초 5배 피버!'
+  }
+];
+
+const SHOWROOM_DUEL_OPPONENTS = [
+  {
+    id: 'duel_kang',
+    modeTab: 'rival',
+    name: '블랙타워 강 회장',
+    badge: '숙명의 라이벌 · FORBES 4위',
+    avatarRole: 'rival_kang',
+    stakePrize: 480,
+    targetLuxuryRange: [950, 1850],
+    aiBuildPool: ['bed_canopy', 'sofa_leather_l', 'app_winecellar', 'dec_lavender', 'bed_jacuzzi'],
+    taunt: '"흥! 내 블랙타워 럭셔리 쇼룸 앞에선 네 인테리어 따윈 초라해 보일걸?!"'
+  },
+  {
+    id: 'duel_pvp_cheongdam',
+    modeTab: 'pvp',
+    name: '청담 갤러리 정 대표',
+    badge: '온라인 랭커 매칭 · 다이아 티어',
+    avatarRole: 'movie_star',
+    stakePrize: 650,
+    targetLuxuryRange: [1250, 2300],
+    aiBuildPool: ['bed_jacuzzi', 'sofa_piano', 'app_winecellar', 'dec_harbor_royal'],
+    taunt: '"청담동 하이엔드 부티크 감각이 뭔지 제대로 보여드리죠!"'
+  },
+  {
+    id: 'duel_pvp_pangyo',
+    modeTab: 'pvp',
+    name: '판교 유니콘 송 의장',
+    badge: '온라인 랭커 매칭 · 마스터 티어',
+    avatarRole: 'it_ceo',
+    stakePrize: 920,
+    targetLuxuryRange: [1800, 3200],
+    aiBuildPool: ['bed_jacuzzi', 'sofa_gold_piano', 'app_rgb_desk', 'dec_harbor_royal'],
+    taunt: '"자본력과 스마트 하이엔드 설비의 정점을 겨뤄봅시다!"'
+  },
+  {
+    id: 'duel_pvp_hannam',
+    modeTab: 'pvp',
+    name: '한남 더힐 박 컬렉터',
+    badge: '온라인 랭커 매칭 · 그랜드마스터',
+    avatarRole: 'fund_manager',
+    stakePrize: 1400,
+    targetLuxuryRange: [2600, 4400],
+    aiBuildPool: ['bed_golden_float', 'sofa_gold_piano', 'app_aquarium', 'dec_harbor_royal'],
+    taunt: '"24K 리미티드 명품 컬렉션이 없다면 제 쇼룸을 이기기 힘들 겁니다!"'
+  }
+];
+
+window.FURNITURE_TIER_META = FURNITURE_TIER_META;
+window.MONEYGUN_FLEX_TIERS = MONEYGUN_FLEX_TIERS;
+window.SHOWROOM_DUEL_OPPONENTS = SHOWROOM_DUEL_OPPONENTS;
 window.CHRONICLE_DAY_TIERS = CHRONICLE_DAY_TIERS;
 window.HARBOR_SHOP_UPGRADE_CATALOG = HARBOR_SHOP_UPGRADE_CATALOG;
