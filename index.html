@@ -1124,9 +1124,16 @@
       </div>
 
       <div class="pt-1.5 space-y-1">
-        <div class="flex items-center justify-between text-[12px] font-extrabold">
-          <span id="duel-my-score-label" class="text-[#B45309]">👑 내 럭셔리 쇼룸: 0점 (가치 0만)</span>
-          <span id="duel-opp-score-label" class="text-[#6B21A8]">🦹‍♂️ 블랙타워 강 회장: 0점 (가치 0만)</span>
+        <div class="flex items-center justify-between gap-2 text-[12px] font-extrabold">
+          <div class="flex items-center gap-1.5 min-w-0">
+            <span id="duel-my-avatar-slot" class="w-8 h-8 rounded-xl bg-[#FFFDF8] border border-[#F59E0B] flex items-center justify-center overflow-hidden shrink-0 shadow-sm"></span>
+            <span id="duel-my-score-label" class="text-[#B45309] truncate">👑 내 럭셔리 쇼룸: 0점</span>
+          </div>
+          <span class="px-2 py-0.5 rounded-full bg-[#3A2E2B] text-[#FFD93D] font-title text-[10px] shrink-0">VS</span>
+          <div class="flex items-center gap-1.5 min-w-0">
+            <span id="duel-opp-score-label" class="text-[#6B21A8] truncate">🐆 블랙팬서 강 회장: 0점</span>
+            <span id="duel-opp-avatar-slot" class="w-8 h-8 rounded-xl bg-[#F3E8FF] border border-[#9333EA] flex items-center justify-center overflow-hidden shrink-0 shadow-sm"></span>
+          </div>
         </div>
         <div class="duel-tug-track">
           <div id="duel-tug-fill" class="duel-tug-my-fill" style="width: 50%;"></div>
@@ -1171,8 +1178,8 @@
           <div class="flex items-center gap-2.5 flex-wrap">
             <span class="text-[22px]">🐾</span>
             <div>
-              <div class="diary-modal-title !text-[16.5px]">팝마트 &amp; 동물의 숲 에디션 · 내 동물 건물주 선택 (10종)</div>
-              <div class="font-body text-[11.5px] font-bold text-[#69544C]">4프레임 실시간 아장아장 걸음걸이 &amp; 만세 점프 모션 시트 적용! 원하는 동물 주인공을 골라주세요.</div>
+              <div class="diary-modal-title !text-[16.5px]">팝마트 &amp; 동물의 숲 에디션 · 내 동물 갓물주 선택 (10종)</div>
+              <div class="font-body text-[11.5px] font-bold text-[#69544C]">초고화질 마스터 피규어 &amp; 360도 입체 클레이 모션 + 전용 패시브 버프! 나의 동물 건물주를 선택하세요.</div>
             </div>
           </div>
           <button id="btn-close-animal-modal" type="button" class="btn-close-round" aria-label="닫기">

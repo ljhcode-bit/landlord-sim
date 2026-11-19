@@ -3309,7 +3309,7 @@ window.CHRONICLE_DAY_TIERS = CHRONICLE_DAY_TIERS;
 window.HARBOR_SHOP_UPGRADE_CATALOG = HARBOR_SHOP_UPGRADE_CATALOG;
 
 // =========================================================
-// 12. 팝마트 & 동물의 숲 감성 3D 미니어처 토이 10종 동물 캐릭터 (4프레임 모션 시트) & 스킬/가구/UI 에셋 매니페스트
+// 12. 팝마트 & 동물의 숲 감성 360도 3D 매트 클레이 피규어 10종 동물 캐릭터 & 초고화질 마스터 이미지 매니페스트
 // =========================================================
 const ANIMAL_CHARACTER_ROSTER = [
   {
@@ -3317,10 +3317,11 @@ const ANIMAL_CHARACTER_ROSTER = [
     num: 1,
     emoji: '🐰',
     name: '바닐라 토끼',
-    title: '파티시에 주인공',
-    desc: '따끈한 크루아상을 굽는 러블리 토끼 건물주',
+    title: '상가 수익 +15%',
+    buffKey: 'shop_rev_15',
+    desc: '따끈한 크루아상을 굽는 파티시에 토끼 · 전 상가 매출 +15%',
     accentHex: '#FB7185',
-    sheetPath: './assets/characters/char_01_bunny_sheet.png',
+    imgPath: './assets/characters/char_01_bunny.png',
     roles: ['baker', 'newlywed']
   },
   {
@@ -3328,10 +3329,11 @@ const ANIMAL_CHARACTER_ROSTER = [
     num: 2,
     emoji: '🐑',
     name: '파자마 양',
-    title: '포근 힐링러',
-    desc: '구름처럼 폭신한 파자마를 입은 코지 양',
+    title: '세입자 행복도 +15%',
+    buffKey: 'happy_15',
+    desc: '몽글몽글 구름 양털과 물방울 파자마 양 · 전 세대 행복도 +15%',
     accentHex: '#A78BFA',
-    sheetPath: './assets/characters/char_02_sheep_sheet.png',
+    imgPath: './assets/characters/char_02_sheep.png',
     roles: ['elderly', 'wash_clerk']
   },
   {
@@ -3339,10 +3341,11 @@ const ANIMAL_CHARACTER_ROSTER = [
     num: 3,
     emoji: '🐕',
     name: '해피 시바견',
-    title: '편의점 매니저',
-    desc: '눈썹 점이 매력적인 성실 만점 시바견',
+    title: '일괄 수금 보너스 +15%',
+    buffKey: 'collect_15',
+    desc: '하얀 눈썹 점과 도넛 꼬리가 매력적인 시바견 · 일괄 수금 +15%',
     accentHex: '#38BDF8',
-    sheetPath: './assets/characters/char_03_shiba_sheet.png',
+    imgPath: './assets/characters/char_03_shiba.png',
     roles: ['mart_clerk', 'manager']
   },
   {
@@ -3350,21 +3353,23 @@ const ANIMAL_CHARACTER_ROSTER = [
     num: 4,
     emoji: '🐥',
     name: '배낭 아기오리',
-    title: '아장아장 입주자',
-    desc: '컬러풀 미니 배낭을 멘 호기심 대장 오리',
+    title: '슈퍼카 속도 & 가구 할인 +15%',
+    buffKey: 'speed_furn_15',
+    desc: '컬러 배낭과 침낭을 멘 아기오리 · 최고속도 +15% & 가구 15% 페이백',
     accentHex: '#FACC15',
-    sheetPath: './assets/characters/char_04_duck_sheet.png',
+    imgPath: './assets/characters/char_04_duck.png',
     roles: ['student', 'family4', 'hikikomori']
   },
   {
     id: 'char_05_hamster',
     num: 5,
     emoji: '🐹',
-    name: '로열 햄스터',
-    title: '황금열쇠 VIP',
-    desc: '24K 미니 왕관과 황금열쇠를 든 갓물주 햄스터',
+    name: '황금왕관 햄스터',
+    title: '월세 정산 속도 +15%',
+    buffKey: 'rent_speed_15',
+    desc: '24K 왕관과 황금 마스터키를 든 볼살 햄스터 · 월세 정산 속도 +15%',
     accentHex: '#F59E0B',
-    sheetPath: './assets/characters/char_05_hamster_sheet.png',
+    imgPath: './assets/characters/char_05_hamster.png',
     roles: ['landlord_avatar', 'landlord', 'landlord_driver', 'cruise_captain']
   },
   {
@@ -3372,22 +3377,24 @@ const ANIMAL_CHARACTER_ROSTER = [
     num: 6,
     emoji: '🐆',
     name: '블랙팬서 강 회장',
-    title: '숙명의 라이벌 보스',
-    desc: '보라 벨벳 수트와 금목걸이를 두른 라이벌 회장',
+    title: '라이벌 보스 · 결투 상금 +20%',
+    buffKey: 'duel_prize_20',
+    desc: '보라 벨벳 더블 수트와 24K 금목걸이의 카리스마 라이벌 회장',
     accentHex: '#7E22CE',
     isRivalBoss: true,
-    sheetPath: './assets/characters/char_06_panther_rival_sheet.png',
-    roles: ['rival_kang']
+    imgPath: './assets/characters/char_06_panther_rival.png',
+    roles: ['rival_kang', 'chairman_kang']
   },
   {
     id: 'char_07_cat',
     num: 7,
     emoji: '🐱',
-    name: '청담 폴드 고양이',
-    title: '청담 VIP 세입자',
-    desc: '명품 트위드 재킷과 진주 목걸이의 럭셔리 냥이',
+    name: '청담동 폴드 고양이',
+    title: '쇼룸 결투 미관 점수 +15%',
+    buffKey: 'duel_score_15',
+    desc: '트위드 재킷과 진주 목걸이의 영앤리치 폴드 냥이 · 쇼룸 점수 +15%',
     accentHex: '#F472B6',
-    sheetPath: './assets/characters/char_07_cat_rich_sheet.png',
+    imgPath: './assets/characters/char_07_cat_rich.png',
     roles: ['movie_star', 'florist']
   },
   {
@@ -3395,10 +3402,11 @@ const ANIMAL_CHARACTER_ROSTER = [
     num: 8,
     emoji: '🐻',
     name: '테디베어 바리스타',
-    title: '로스터리 카페 사장',
-    desc: '향긋한 스페셜티 커피를 내리는 다정한 곰돌이',
+    title: '카페·베이커리 수익 +20%',
+    buffKey: 'cafe_bakery_20',
+    desc: '체크 조끼를 입은 따스한 테디베어 사장님 · 카페·빵집 수익 +20%',
     accentHex: '#B45309',
-    sheetPath: './assets/characters/char_08_bear_barista_sheet.png',
+    imgPath: './assets/characters/char_08_bear_barista.png',
     roles: ['barista', 'chef']
   },
   {
@@ -3406,10 +3414,11 @@ const ANIMAL_CHARACTER_ROSTER = [
     num: 9,
     emoji: '🦊',
     name: '월스트리트 여우',
-    title: '플렉스 큰손',
-    desc: '네이비 수트와 선글라스로 무장한 금융 엘리트 여우',
+    title: '머니건 피버 시간 +25%',
+    buffKey: 'fever_dur_25',
+    desc: '네이비 수트와 황금 머니건을 든 플렉스 여우 · 피버 지속시간 +25%',
     accentHex: '#2563EB',
-    sheetPath: './assets/characters/char_09_fox_flex_sheet.png',
+    imgPath: './assets/characters/char_09_fox_flex.png',
     roles: ['fund_manager', 'it_ceo', 'developer', 'mansour']
   },
   {
@@ -3417,10 +3426,11 @@ const ANIMAL_CHARACTER_ROSTER = [
     num: 10,
     emoji: '🐼',
     name: '슈스 아기판다',
-    title: '슈퍼스타 셀럽 VIP',
-    desc: '골드 헤드폰과 민트 후디를 입은 글로벌 인플루언서',
+    title: 'VIP 세입자 임대료 +20%',
+    buffKey: 'vip_rent_20',
+    desc: '민트 후디와 골드 헤드폰, 버블티를 든 셀럽 판다 · VIP 월세 +20%',
     accentHex: '#10B981',
-    sheetPath: './assets/characters/char_10_panda_celeb_sheet.png',
+    imgPath: './assets/characters/char_10_panda_celeb.png',
     roles: ['streamer', 'musician', 'petlover']
   }
 ];
