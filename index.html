@@ -49,237 +49,111 @@
     <div id="jackpot-overlay-layer"></div>
   </div>
 
-  <!-- ==================== 2B. 상용 게임 시네마틱 3D 라이브 오프닝 로딩 & 타이틀 스크린 ==================== -->
-  <section id="title-screen-overlay" class="fixed inset-0 z-[90] flex flex-col items-center justify-between py-7 sm:py-10 px-4 title-screen-glass select-none">
-    <!-- 상단 서브 배지 -->
-    <div class="flex flex-col items-center gap-2 mt-1 sm:mt-2 title-logo-float">
-      <div class="title-sub-ribbon inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full">
-        <span id="title-ico-crown" class="flex items-center"></span>
-        <span class="font-title text-[11.5px] sm:text-[13px] tracking-wider text-[#9A4E04]">NINTENDO-STYLE 3D COZY TYCOON</span>
-      </div>
+  <!-- ==================== 2B. 시안 2번 스타일 비대칭 분할 오프닝 타이틀 (우측 65% 3D 인형의 집 라이브 뷰 + 좌측 35% 크림 글래스 카드) ==================== -->
+  <section id="title-screen-overlay" class="fixed inset-0 z-[90] pointer-events-none select-none">
+    <div id="title-floating-card" class="title-floating-card pointer-events-auto">
+      <h1 class="title-brand-display" aria-label="갓물주 라이프">
+        <span>갓물주</span>
+        <span>라이프</span>
+      </h1>
 
-      <!-- 중앙 3D 입체 엠블럼 & 메인 게임 타이틀 로고 -->
-      <div id="title-emblem-slot" class="mt-1"></div>
-
-      <div class="text-center space-y-1">
-        <h1 class="title-main-heading font-title text-[28px] sm:text-[44px] leading-tight break-keep">
-          갓물주 라이프 : 해피 미니미 타운
-        </h1>
-        <p class="font-title text-[13px] sm:text-[16px] tracking-wide text-[#6E4F3A] bg-[#FFFDF7]/85 inline-block px-4 py-0.5 rounded-full border-2 border-[#EED6BE]">
-          GOD-LANDLORD : Happy Minimi Town
-        </p>
-      </div>
-    </div>
-
-    <!-- 하단 단계별 로딩 프로그레스 바 / [타운 입장하기] 전환 독 & 꿀팁 박스 -->
-    <div class="w-full max-w-lg flex flex-col items-center gap-3 mb-1 sm:mb-3">
-      <!-- 로딩 진행 영역 (0% -> 100%) -->
-      <div id="title-loading-box" class="w-full diary-card !bg-[#FFFDF7]/95 !border-[3px] !border-[#E8CCB0] !p-4 space-y-2.5 shadow-2xl">
-        <div class="flex items-center justify-between gap-2">
-          <div class="flex items-center gap-2 min-w-0">
-            <span id="title-stage-ico" class="flex items-center shrink-0"></span>
-            <span id="title-stage-text" class="font-title text-[12.5px] sm:text-[14px] text-[#3A2E2B] truncate">
-              파티세리 빵집에서 실사 크루아상 굽는 중...
-            </span>
-          </div>
-          <span id="title-pct-num" class="font-num text-[14px] sm:text-[16px] text-[#D97706] shrink-0">12%</span>
-        </div>
-
-        <div class="relative pt-4 pb-1">
-          <div id="title-car-runner" class="title-mini-car-runner" style="left: 12%;"></div>
-          <div class="candy-gauge-track !h-4 !border-2 !border-[#D8B998]">
-            <div id="title-progress-fill" class="candy-gauge-fill candy-gold transition-all duration-150" style="width: 12%;"></div>
+      <div class="w-full mt-8 flex flex-col items-center">
+        <!-- 1.2초 슬림 골드 로딩 바 -->
+        <div id="title-loading-box" class="title-slim-loader-wrap">
+          <div class="title-slim-loader-track">
+            <div id="title-progress-fill" class="title-slim-loader-fill" style="width: 8%;"></div>
           </div>
         </div>
+
+        <!-- 로딩 완료 시 부드럽게 나타나는 살구·코랄-골드 필 버튼 -->
+        <button id="btn-start-game" type="button" class="hidden title-coral-start-btn">
+          <span>시작하기</span>
+          <span class="title-start-chevron" aria-hidden="true">&gt;</span>
+        </button>
       </div>
 
-      <!-- 100% 완료 시 나타나는 쫀득한 대형 [타운 입장하기 (TOUCH TO START)] 버튼 -->
-      <button id="btn-start-game" type="button" class="hidden title-start-cta w-full max-w-md py-3.5 sm:py-4 px-6">
-        <span id="title-start-ico" class="flex items-center"></span>
-        <div class="flex flex-col items-start leading-tight">
-          <span class="font-title text-[19px] sm:text-[22px] text-[#3A2E2B]">타운 입장하기</span>
-          <span class="font-title text-[11px] sm:text-[12px] tracking-wider text-[#8C4A08]">TOUCH TO START · GAME START</span>
-        </div>
-      </button>
-
-      <!-- 랜덤 게임 꿀팁 카드 -->
-      <div class="w-full diary-subcard !bg-[#FFFBEB]/95 !border-2 !border-[#FDE68A] px-3.5 py-2 flex items-center gap-2 shadow-md">
-        <span id="title-tip-ico" class="flex items-center shrink-0"></span>
-        <span id="title-tip-text" class="font-body text-[11.5px] sm:text-[12.5px] font-extrabold text-[#5C4942] break-keep">
-          TIP: 세입자 방을 클릭해 취향에 맞는 가구를 배치하면 임대료 시너지가 폭발합니다!
-        </span>
-      </div>
+      <!-- 하단 서브 메뉴 (이어하기 / 환경설정) -->
+      <nav class="title-sub-nav" aria-label="타이틀 서브 메뉴">
+        <button id="btn-continue-game" type="button" class="title-sub-link">이어하기</button>
+        <span class="title-sub-divider" aria-hidden="true"></span>
+        <button id="btn-title-settings" type="button" class="title-sub-link">환경설정</button>
+      </nav>
     </div>
   </section>
 
   <!-- 코인 비행 & HUD 플로팅 텍스트 레이어 -->
   <div id="flying-coin-layer" class="fixed inset-0 z-40 pointer-events-none overflow-hidden"></div>
 
-  <!-- ==================== 3. 글래스모피즘 플로팅 필(Floating Pill) 상단 HUD ==================== -->
-  <header id="main-game-header" class="hidden fixed top-2.5 left-2.5 right-2.5 sm:right-auto sm:left-4 sm:top-3.5 z-30 flex flex-col gap-1.5 sm:gap-2 pointer-events-none sm:w-auto sm:max-w-[calc(100vw-348px)]">
-    <!-- 1열: 3대 핵심 재화 아일랜드 필 배지 + 실시간 포브스(FORBES) 건물주 자산 순위 트로피 배지 -->
-    <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
-      <div class="hud-top-row pointer-events-auto sm:w-[456px]">
-        <div id="hud-badge-gold" class="hud-glass-pill relative">
-          <span id="hud-ico-gold" class="flex items-center justify-center shrink-0"></span>
-          <div class="leading-tight min-w-0 flex-1">
-            <div class="hud-pill-label">보유자산</div>
-            <div id="hud-gold-wrap" class="hud-pill-num text-[#3A2E2B]">
-              <span id="hud-gold" class="font-num">1,350</span><span class="hud-unit">만</span>
-            </div>
-          </div>
-          <div id="hud-gold-pop-anchor" class="absolute right-3 top-0.5 pointer-events-none"></div>
-        </div>
-
-        <div id="hud-badge-yield" class="hud-glass-pill">
-          <span id="hud-ico-yield" class="flex items-center justify-center shrink-0"></span>
-          <div class="leading-tight min-w-0 flex-1">
-            <div class="hud-pill-label">주기순익</div>
-            <div id="hud-net-income" class="hud-pill-num text-[#15803D]">+28만</div>
-          </div>
-        </div>
-
-        <button id="hud-badge-happy" type="button" title="행복도 마일스톤 진화 트래커 보기" class="hud-glass-pill cursor-pointer text-left hover:scale-[1.02] active:scale-[0.98] transition-transform">
-          <span id="hud-ico-happy" class="flex items-center justify-center shrink-0"></span>
-          <div class="leading-tight min-w-0 flex-1">
-            <div class="flex items-center justify-between gap-0.5">
-              <span id="hud-happy-label" class="hud-pill-label !text-[9.5px] sm:!text-[10.5px] whitespace-nowrap">행복</span>
-              <span id="hud-happiness" class="hud-pill-num !text-[11px] sm:!text-[13.5px] text-[#E03E52] whitespace-nowrap shrink-0">42%</span>
-            </div>
-            <div class="hud-mini-gauge-track mt-1">
-              <div id="hud-happy-bar" class="hud-mini-gauge-fill" style="width: 42%;"></div>
-            </div>
-          </div>
-        </button>
+  <!-- ==================== 3. 미니멀 수첩 인덱스 상단 라벨 (좌상단 20px, 촌스러운 테두리 제로) ==================== -->
+  <header id="main-game-header" class="hidden fixed top-[20px] left-[20px] z-30 flex flex-col items-start gap-2 pointer-events-none">
+    <!-- 단 하나의 깔끔한 크림 화이트 수첩 인덱스 캡슐 -->
+    <div id="hud-badge-gold" class="hud-minimal-index-pill pointer-events-auto relative">
+      <div id="hud-gold-wrap" class="hud-minimal-stat">
+        <span id="hud-gold">1,250</span><span>만</span>
       </div>
-
-      <!-- 상단 실시간 포브스(FORBES) 건물주 자산 순위 보드 진입 배지 -->
-      <button id="hud-badge-forbes" type="button" title="FORBES 대한민국 갓물주 자산 순위 보드 열기" class="pointer-events-auto forbes-hud-pill self-start sm:self-auto">
-        <span id="hud-ico-forbes" class="flex items-center shrink-0"></span>
-        <div class="leading-tight text-left">
-          <div class="text-[9.5px] font-title text-[#8C4A08] tracking-tight hidden sm:block">FORBES RICH LIST</div>
-          <div class="flex items-center gap-1 whitespace-nowrap">
-            <span id="hud-forbes-rank-text" class="font-title text-[12px] sm:text-[13.5px] text-[#3A2E2B]">자산 순위: 9위 ▲</span>
-            <span id="hud-forbes-worth-sub" class="font-num text-[10.5px] text-[#B45309] sm:hidden">(2,240만)</span>
-          </div>
-        </div>
+      <span id="hud-net-income" class="hud-minimal-rate">+4.2만/s</span>
+      <span class="hud-minimal-sep" aria-hidden="true"></span>
+      <button id="hud-badge-happy" type="button" title="행복도 마일스톤 진화 트래커 보기" class="hud-minimal-happy">
+        <span class="hud-heart-mark" aria-hidden="true">♥</span>
+        <span id="hud-happiness">85%</span>
       </button>
+      <div id="hud-gold-pop-anchor" class="absolute right-3 top-0.5 pointer-events-none"></div>
     </div>
 
-    <!-- 2열 A: 타운 전체 뷰 액션 캡슐 바 (라이벌 승부 호출 + 만수르 돈 뿌리기 포함) -->
-    <div id="hud-town-controls" class="flex items-center gap-1 sm:gap-1.5 flex-wrap">
-      <button id="btn-overview-cam" type="button" title="타운 전체 보기" class="pointer-events-auto tactile-pill-btn tone-cream">
-        <span id="hud-ico-overview" class="flex items-center"></span>
-        <span>타운뷰</span>
-      </button>
-
-      <button id="btn-rival-battle" type="button" title="블랙타워 강 회장 라이벌 3대 자본력 승부 호출!" class="pointer-events-auto rival-bolt-pill">
-        <span id="hud-ico-rival" class="flex items-center"></span>
-        <span class="sm:hidden">라이벌승부</span>
-        <span class="hidden sm:inline">라이벌 승부 호출!</span>
-      </button>
-
-      <button id="btn-make-it-rain" type="button" title="만수르 황금 머니건 돈 뿌리기 (MAKE IT RAIN!)" class="pointer-events-auto mansour-rain-pill">
-        <span id="hud-ico-moneygun" class="flex items-center"></span>
-        <span class="sm:hidden">돈뿌리기</span>
-        <span class="hidden sm:inline">만수르 돈 뿌리기</span>
-      </button>
-
-      <button id="btn-enter-drive" type="button" title="3인칭 거리 & 해안 드라이브" class="pointer-events-auto drive-launch-pill">
-        <span id="hud-ico-drive" class="flex items-center"></span>
-        <span class="sm:hidden">드라이브</span>
-        <span class="hidden sm:inline">드라이브</span>
-      </button>
-
-      <button id="btn-open-garage" type="button" title="VIP 슈퍼카 차고" class="pointer-events-auto tactile-pill-btn tone-butter">
-        <span id="hud-ico-garage" class="flex items-center"></span>
-        <span class="sm:hidden">차고</span>
-        <span class="hidden sm:inline">VIP 차고</span>
-      </button>
-
-      <button id="btn-quick-expand" type="button" title="신규 부지 착공 및 증축" class="pointer-events-auto tactile-pill-btn tone-sky">
-        <span id="hud-ico-expand" class="flex items-center"></span>
-        <span class="sm:hidden">착공</span>
-        <span class="hidden sm:inline">부지착공</span>
-      </button>
-
-      <button id="btn-collect-all" type="button" class="hidden pointer-events-auto tactile-pill-btn tone-mint">
-        <span id="hud-ico-collect" class="flex items-center"></span>
-        <span>일괄수금</span>
-      </button>
-
-      <div class="pointer-events-auto hidden xl:inline-flex hud-time-chip">
-        <span id="hud-time-text" class="font-title text-[11.5px] text-[#3A2E2B]">1일차 09:00</span>
-        <span id="hud-xray-badge" class="kw-chip tone-sky !py-0.5 !px-2">외관 100%</span>
-      </div>
-    </div>
-
-    <!-- 골든벨 피버 타임 실시간 배너 배지 -->
-    <div id="hud-fever-pill" class="hidden pointer-events-none fever-hud-pill self-start">
+    <!-- 골든벨 피버 타임 실시간 미니 캡슐 (발동 시에만 표시) -->
+    <div id="hud-fever-pill" class="hidden pointer-events-none hud-minimal-fever-pill">
       <span id="hud-ico-fever" class="flex items-center"></span>
-      <span id="hud-fever-text">갓물주 골든벨 피버 2.5배! 60초</span>
+      <span id="hud-fever-text">골든벨 피버 2.5x · 60s</span>
     </div>
 
-    <!-- 2열 B: 전체화면 단독 룸 뷰 상단 컨트롤 -->
+    <!-- 전체화면 단독 룸 뷰 보조 칩 (특정 방 줌인 시에만 표시) -->
     <div id="room-focus-topbar" class="hidden flex flex-col gap-1.5">
-      <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-        <button id="btn-exit-room-view" type="button" class="pointer-events-auto exit-room-pill-btn">
-          <span id="ico-exit-room" class="flex items-center"></span>
-          <span>건물 전체로 나가기</span>
-        </button>
-        <button id="btn-room-enter-fp" type="button" class="pointer-events-auto tactile-pill-btn tone-mint">
+      <div class="flex items-center gap-1.5 flex-wrap">
+        <button id="btn-room-enter-fp" type="button" title="1인칭 집들이 입장" class="pointer-events-auto focus-mini-icon-pill">
           <span id="ico-room-fp" class="flex items-center"></span>
-          <span>1인칭 집들이 입장</span>
+          <span>집들이</span>
         </button>
-        <span class="pointer-events-none hidden md:inline-flex hud-time-chip !py-1 !px-3 text-[11.5px] text-[#5C4942]">
-          <span id="ico-rotate-hint" class="flex items-center"></span>
-          <span>좌우 드래그로 3D 회전 관찰</span>
-        </span>
       </div>
       <div id="room-switcher-chips" class="pointer-events-auto flex items-center gap-1.5 overflow-x-auto sm:overflow-visible sm:flex-wrap no-scrollbar pb-1 pr-2 sm:max-w-[calc(100vw-360px)]"></div>
     </div>
 
-    <!-- 2열 C: 단독 상가 클로즈업 뷰 상단 컨트롤 -->
+    <!-- 단독 상가 클로즈업 뷰 보조 칩 (특정 상가 줌인 시에만 표시) -->
     <div id="shop-focus-topbar" class="hidden flex flex-col gap-1.5">
-      <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-        <button id="btn-exit-shop-view" type="button" class="pointer-events-auto exit-room-pill-btn">
-          <span id="ico-exit-shop" class="flex items-center"></span>
-          <span>타운 거리로 나가기</span>
-        </button>
-        <button id="btn-shop-enter-fp" type="button" class="pointer-events-auto tactile-pill-btn tone-butter">
+      <div class="flex items-center gap-1.5 flex-wrap">
+        <button id="btn-shop-enter-fp" type="button" title="1인칭 매장 직접 입장" class="pointer-events-auto focus-mini-icon-pill">
           <span id="ico-shop-fp" class="flex items-center"></span>
-          <span>1인칭 매장 직접 입장</span>
+          <span>매장입장</span>
         </button>
       </div>
       <div id="shop-switcher-chips" class="pointer-events-auto flex items-center gap-1.5 overflow-x-auto sm:overflow-visible sm:flex-wrap no-scrollbar pb-1 pr-2 sm:max-w-[calc(100vw-364px)]"></div>
     </div>
 
-    <!-- 2열 D: 슈퍼카 드라이브 모드 상단 바 (1인칭 운전석 토글 & 하차 입장 포함) -->
+    <!-- 슈퍼카 드라이브 모드 전용 미니 아이콘 바 (주행 중에만 작은 시점·차고 아이콘 표시!) -->
     <div id="drive-focus-topbar" class="hidden flex flex-col gap-1.5">
       <div class="flex items-center gap-1.5 flex-wrap">
-        <button id="btn-exit-drive-mode" type="button" class="pointer-events-auto exit-room-pill-btn">
-          <span id="ico-exit-drive" class="flex items-center"></span>
-          <span>타운 뷰 복귀</span>
-        </button>
-        <button id="btn-toggle-cockpit" type="button" class="pointer-events-auto tactile-pill-btn tone-butter">
+        <button id="btn-toggle-cockpit" type="button" title="시점 전환 (1인칭 운전석 / 3인칭)" class="pointer-events-auto focus-mini-icon-pill">
           <span id="ico-toggle-cockpit" class="flex items-center"></span>
-          <span id="label-toggle-cockpit">1인칭 운전석</span>
+          <span id="label-toggle-cockpit">시점</span>
         </button>
-        <button id="btn-drive-step-out" type="button" class="pointer-events-auto tactile-pill-btn tone-mint">
-          <span id="ico-drive-step-out" class="flex items-center"></span>
-          <span>1인칭 상점 입장</span>
+        <button id="btn-open-garage" type="button" title="VIP 슈퍼카 차고" class="pointer-events-auto focus-mini-icon-pill">
+          <span id="hud-ico-garage" class="flex items-center"></span>
+          <span>차고</span>
         </button>
-        <button id="btn-drive-scenic-jump" type="button" class="pointer-events-auto tactile-pill-btn tone-sky">
+        <button id="btn-drive-scenic-jump" type="button" title="해안 드라이빙 존 이동" class="pointer-events-auto focus-mini-icon-pill">
           <span id="ico-drive-scenic" class="flex items-center"></span>
-          <span id="label-drive-scenic">외곽 해안 드라이빙 존</span>
+          <span id="label-drive-scenic">해안</span>
         </button>
-        <button id="btn-drive-rival-race" type="button" class="pointer-events-auto rival-bolt-pill">
+        <button id="btn-drive-step-out" type="button" title="1인칭 상점 입장" class="pointer-events-auto focus-mini-icon-pill">
+          <span id="ico-drive-step-out" class="flex items-center"></span>
+          <span>입장</span>
+        </button>
+        <button id="btn-drive-rival-race" type="button" title="라이벌 레이스 대결" class="pointer-events-auto focus-mini-icon-pill">
           <span id="ico-drive-race" class="flex items-center"></span>
-          <span>라이벌 레이스 대결</span>
+          <span>레이스</span>
         </button>
-        <button id="btn-drive-rain" type="button" class="pointer-events-auto mansour-rain-pill">
+        <button id="btn-drive-rain" type="button" title="머니건 발사" class="pointer-events-auto focus-mini-icon-pill">
           <span id="ico-drive-rain" class="flex items-center"></span>
-          <span>머니건 발사</span>
+          <span>머니건</span>
         </button>
       </div>
       <!-- 해안 1:1 슈퍼카 레이스 진행도 게이지 바 -->
@@ -295,33 +169,34 @@
           </div>
         </div>
       </div>
-      <div class="flex items-center gap-1.5 flex-wrap">
-        <span id="drive-car-badge" class="pointer-events-none kw-chip tone-coral !py-1 !px-2.5"></span>
-        <span id="drive-speed-badge" class="pointer-events-none kw-chip tone-sky !py-1 !px-2.5 font-num">62 km/h</span>
-        <span id="drive-loot-badge" class="pointer-events-none kw-chip tone-gold !py-1 !px-2.5"></span>
+      <div class="hidden">
+        <span id="drive-car-badge"></span>
+        <span id="drive-speed-badge">62 km/h</span>
+        <span id="drive-loot-badge"></span>
       </div>
     </div>
 
-    <!-- 2열 E: 1인칭 갓물주 마실 · 집들이 전용 상단 바 -->
+    <!-- 1인칭 갓물주 마실 · 집들이 전용 미니 바 -->
     <div id="fp-focus-topbar" class="hidden flex flex-col gap-1.5">
       <div class="flex items-center gap-1.5 flex-wrap">
-        <button id="btn-exit-fp-mode" type="button" class="pointer-events-auto exit-room-pill-btn">
-          <span id="ico-exit-fp" class="flex items-center"></span>
-          <span id="label-exit-fp">거리로 나가기</span>
-        </button>
-        <span id="fp-place-badge" class="pointer-events-none kw-chip tone-gold !py-1 !px-3">바게트 하우스 · 1인칭 입장</span>
-        <button id="btn-fp-switch-dest" type="button" class="pointer-events-auto tactile-pill-btn tone-cream">
+        <span id="fp-place-badge" class="pointer-events-none focus-mini-icon-pill">바게트 하우스</span>
+        <button id="btn-fp-switch-dest" type="button" class="pointer-events-auto focus-mini-icon-pill">
           <span id="ico-fp-dest" class="flex items-center"></span>
-          <span>상점/호실 이동</span>
+          <span>이동</span>
         </button>
-        <button id="btn-fp-rain" type="button" class="pointer-events-auto mansour-rain-pill">
+        <button id="btn-fp-rain" type="button" class="pointer-events-auto focus-mini-icon-pill">
           <span id="ico-fp-rain" class="flex items-center"></span>
-          <span>1인칭 머니건!</span>
+          <span>머니건</span>
         </button>
       </div>
       <div id="fp-held-chips-row" class="pointer-events-none flex items-center gap-1.5 flex-wrap"></div>
     </div>
   </header>
+
+  <!-- 특정 방/상가 줌인 또는 드라이브/1인칭 시에만 우측 상단에 뜨는 작은 원형 [ ✕ ] 닫기 버튼 -->
+  <button id="btn-focus-close-floating" type="button" title="타운 전체 화면으로 돌아가기" aria-label="닫기" class="hidden fixed top-[20px] right-[20px] z-[42] focus-top-close-circle">
+    ✕
+  </button>
 
   <!-- ==================== 4. 전체화면 룸 뷰 세대 인스펙터 카드 ==================== -->
   <aside id="room-focus-panel" class="hidden fixed top-[130px] sm:top-3.5 left-2.5 right-2.5 sm:left-auto sm:right-4 z-30 sm:w-[310px] max-h-[calc(100vh-290px)] diary-inspector-shell flex flex-col overflow-hidden">
@@ -576,28 +451,86 @@
     </div>
   </section>
 
-  <!-- ==================== 8. 우측 하단 3D 줌 컨트롤 & 가죽 다이어리 수첩 FAB ==================== -->
-  <div id="bottom-town-bar" class="hidden fixed bottom-3 right-3 sm:bottom-4 sm:right-4 z-30 flex items-center gap-2.5 pointer-events-none">
-    <div class="pointer-events-auto milk-cam-bar px-2.5 py-1.5 flex items-center gap-1">
-      <button id="btn-zoom-in" type="button" title="확대 (내부 투시)" class="cam-icon-btn" aria-label="확대">
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 3V13M3 8H13" stroke="#3A2E2B" stroke-width="2.5" stroke-linecap="round"/></svg>
-      </button>
-      <button id="btn-zoom-out" type="button" title="축소 (마을 전체)" class="cam-icon-btn" aria-label="축소">
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3.5 8H12.5" stroke="#3A2E2B" stroke-width="2.5" stroke-linecap="round"/></svg>
-      </button>
-      <button id="btn-cam-rotate" type="button" title="카메라 90도 회전" class="cam-icon-btn" aria-label="회전">
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M12.5 6.5A5 5 0 1 0 11.8 11.2M12.8 3.5V7H9.3" stroke="#3A2E2B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <button id="btn-reset-save" type="button" title="데이터 초기화" class="px-2.5 h-7 rounded-full hover:bg-[#FFE8EE] font-title text-[11.5px] text-[#5C4942] transition-colors whitespace-nowrap">초기화</button>
+  <!-- ==================== 8. 우측 하단 단일 [ 📒 ] 미니 수첩 아이콘 & 펼쳐지는 '건물주 미니 수첩(Pocket Planner)' ==================== -->
+  <div id="bottom-town-bar" class="hidden fixed bottom-[24px] right-[24px] z-[44] pointer-events-none">
+    <!-- 펼쳐지는 아담한 건물주 미니 수첩 (width: 260px, 크림 속지 #FFFDF9 + 스프링 링 + 컬러 인덱스 탭 + 스탬프 그리드) -->
+    <div id="pocket-planner-popover" class="hidden pocket-planner-card pointer-events-auto" role="dialog" aria-label="건물주 미니 수첩">
+      <!-- 상단 컬러 인덱스 탭 -->
+      <div class="pocket-index-tabs" aria-hidden="true">
+        <span class="p-tab coral"></span>
+        <span class="p-tab gold"></span>
+        <span class="p-tab mint"></span>
+        <span class="p-tab sky"></span>
+      </div>
+
+      <!-- 가죽 표지 + 왼쪽 스프링 링 + 크림색 속지 -->
+      <div class="pocket-leather-frame">
+        <div class="pocket-spiral-rings" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+
+        <div class="pocket-paper-sheet">
+          <div class="pocket-sheet-header">
+            <span class="pocket-sheet-title">건물주 수첩</span>
+            <button id="btn-close-pocket-planner" type="button" class="pocket-mini-close" aria-label="수첩 접기">✕</button>
+          </div>
+
+          <!-- 3열 미니 아이콘 스탬프 그리드 (100% 컬러 벡터 스탬프 아이콘) -->
+          <div class="pocket-stamp-grid">
+            <button id="btn-collect-all" type="button" class="pocket-stamp-btn tone-gold" title="밀린 월세·매출 일괄 수금">
+              <span id="hud-ico-collect" class="stamp-svg-slot" aria-hidden="true"></span>
+              <span class="stamp-label">수금</span>
+              <span id="stamp-collect-badge" class="hidden stamp-count-dot">0</span>
+            </button>
+
+            <button id="btn-quick-expand" type="button" class="pocket-stamp-btn tone-sky" title="호실·상가·부지 착공 관리">
+              <span id="hud-ico-expand" class="stamp-svg-slot" aria-hidden="true"></span>
+              <span class="stamp-label">착공</span>
+            </button>
+
+            <button id="btn-make-it-rain" type="button" class="pocket-stamp-btn tone-coral" title="만수르 돈 뿌리기">
+              <span id="hud-ico-moneygun" class="stamp-svg-slot" aria-hidden="true"></span>
+              <span class="stamp-label">머니건</span>
+            </button>
+
+            <button id="btn-enter-drive" type="button" class="pocket-stamp-btn tone-mint" title="슈퍼카 드라이브 주행 시작">
+              <span id="hud-ico-drive" class="stamp-svg-slot" aria-hidden="true"></span>
+              <span class="stamp-label">드라이브</span>
+            </button>
+
+            <button id="btn-rival-battle" type="button" class="pocket-stamp-btn tone-lavender" title="라이벌 강 회장 승부 호출">
+              <span id="hud-ico-rival" class="stamp-svg-slot" aria-hidden="true"></span>
+              <span class="stamp-label">라이벌</span>
+            </button>
+
+            <button id="hud-badge-forbes" type="button" class="pocket-stamp-btn tone-butter" title="포브스 자산 순위 보드">
+              <span id="hud-ico-forbes" class="stamp-svg-slot" aria-hidden="true"></span>
+              <span class="stamp-label">서열</span>
+            </button>
+
+            <button id="btn-guide-tour" type="button" class="pocket-stamp-btn tone-peach" title="5단계 시네마틱 시뮬레이션 가이드">
+              <span id="hud-ico-tour" class="stamp-svg-slot" aria-hidden="true"></span>
+              <span class="stamp-label">투어</span>
+            </button>
+
+            <button id="btn-open-ledger-modal" type="button" class="pocket-stamp-btn tone-cream" title="타운 미션·세입자·인프라 장부">
+              <span id="hud-ico-ledger" class="stamp-svg-slot" aria-hidden="true"></span>
+              <span class="stamp-label">장부</span>
+            </button>
+
+            <button id="btn-pocket-settings" type="button" class="pocket-stamp-btn tone-sand" title="환경설정">
+              <span id="hud-ico-settings" class="stamp-svg-slot" aria-hidden="true"></span>
+              <span class="stamp-label">설정</span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <button id="fab-notebook" type="button" aria-label="타운 경영 수첩 열기" class="pointer-events-auto fab-artwork-circle">
-      <span id="fab-svg-slot" class="fab-icon-wrap flex items-center justify-center"></span>
-      <span class="font-title text-[11.5px] text-[#3A2E2B] leading-none mt-0.5">수첩</span>
-
-      <span id="fab-red-dot" class="hidden urgent-coral-dot absolute -top-1.5 -right-1.5 min-w-[23px] h-[23px] px-1 font-num text-[11.5px] flex items-center justify-center">
-        1
-      </span>
+    <!-- 평소 화면에 우측 하단 딱 1개만 떠 있는 작은 가죽 다이어리 아이콘 버튼 (56x56) -->
+    <button id="fab-notebook" type="button" aria-label="건물주 미니 수첩 열기" title="건물주 미니 수첩" class="pointer-events-auto pocket-diary-fab">
+      <span id="fab-svg-slot" class="pocket-fab-svg flex items-center justify-center" aria-hidden="true"></span>
+      <span id="fab-red-dot" class="hidden pocket-fab-dot">1</span>
     </button>
   </div>
 
@@ -990,6 +923,59 @@
       </div>
       <div id="rankup-banner-sub" class="font-body text-[12px] font-extrabold text-[#15803D]">
         서열 추월 축하 배당금 +500만 지급 · 신규 VIP 칭호 해금!
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 23. 5단계 시네마틱 라이브 시뮬레이션 온보딩 투어 하단 캡슐 바 ==================== -->
+  <section id="cinematic-tour-bar" class="hidden fixed bottom-4 left-3 right-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-[82] pointer-events-none flex justify-center">
+    <div class="cinematic-tour-capsule pointer-events-auto">
+      <span id="tour-step-badge" class="tour-step-pill shrink-0">STEP 1 / 5</span>
+      <p id="tour-step-caption" class="tour-caption-line">
+        건물과 상가를 클릭해 내부를 들여다보고, 가구와 설비를 배치해 가치를 올리세요.
+      </p>
+      <div class="flex items-center gap-1.5 shrink-0">
+        <button id="btn-tour-next" type="button" class="tour-next-btn">다음 ▶</button>
+        <button id="btn-tour-skip" type="button" class="tour-skip-btn">건너뛰기 ✕</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 24. 코지 크림 환경설정 모달 ==================== -->
+  <div id="settings-modal" class="hidden fixed inset-0 z-[95] pastel-modal-backdrop flex items-center justify-center p-3">
+    <div class="cozy-planner-shell w-full max-w-sm">
+      <div class="cozy-planner-inner p-4 space-y-3.5">
+        <div class="flex items-center justify-between border-b border-[#EED6BE] pb-2.5">
+          <div class="flex items-center gap-2">
+            <span id="settings-ico-header" class="flex items-center"></span>
+            <span class="diary-modal-title">환경설정</span>
+          </div>
+          <button id="btn-close-settings" type="button" class="btn-close-round" aria-label="닫기">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M3.5 3.5L10.5 10.5M10.5 3.5L3.5 10.5" stroke="#3A2E2B" stroke-width="2.3" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+
+        <div class="space-y-2.5">
+          <div class="diary-card flex items-center justify-between gap-2">
+            <span class="font-title text-[13.5px] text-[#3A2E2B]">사운드 & 효과음</span>
+            <button id="btn-toggle-sfx" type="button" class="tactile-pill-btn tone-mint !px-3.5 !py-1.5">ON</button>
+          </div>
+
+          <div class="diary-card flex items-center justify-between gap-2">
+            <span class="font-title text-[13.5px] text-[#3A2E2B]">부드러운 그림자 (Soft Shadow)</span>
+            <button id="btn-toggle-shadows" type="button" class="tactile-pill-btn tone-gold !px-3.5 !py-1.5">고품질</button>
+          </div>
+
+          <div class="diary-card flex items-center justify-between gap-2">
+            <span class="font-title text-[13.5px] text-[#3A2E2B]">시네마틱 가이드 투어</span>
+            <button id="btn-settings-run-tour" type="button" class="tactile-pill-btn tone-cream !px-3.5 !py-1.5">다시 보기</button>
+          </div>
+
+          <div class="diary-card flex items-center justify-between gap-2">
+            <span class="font-title text-[13.5px] text-[#3A2E2B]">세이브 데이터 초기화</span>
+            <button id="btn-settings-reset" type="button" class="tactile-pill-btn tone-coral !px-3.5 !py-1.5">초기화</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>

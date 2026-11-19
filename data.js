@@ -510,6 +510,25 @@ function createCustomSVGIcon(name, size = 24) {
         </g>`;
       break;
 
+    case 'tour_clapper':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <rect x="5" y="12" width="22" height="15" rx="3" fill="url(#${uid}_cream)" stroke="#3A2E2B" stroke-width="1.7"/>
+          <rect x="4.5" y="6.2" width="22.5" height="6.2" rx="2" transform="rotate(-8 5 11)" fill="url(#${uid}_coral)" stroke="#3A2E2B" stroke-width="1.6"/>
+          <path d="M9.5 6.2L7.5 11.8M16 5.5L14 11.1M22.5 4.8L20.5 10.4" stroke="#FFFDF7" stroke-width="2.2" stroke-linecap="round"/>
+          <polygon points="13.5,16 13.5,23.2 20.2,19.6" fill="url(#${uid}_gold)" stroke="#3A2E2B" stroke-width="1.4" stroke-linejoin="round"/>
+        </g>`;
+      break;
+
+    case 'settings_gear':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <circle cx="16" cy="16" r="9.2" fill="url(#${uid}_cream)" stroke="#3A2E2B" stroke-width="1.8"/>
+          <path d="M16 4V7.5M16 24.5V28M4 16H7.5M24.5 16H28M7.5 7.5L10.2 10.2M21.8 21.8L24.5 24.5M24.5 7.5L21.8 10.2M10.2 21.8L7.5 24.5" stroke="#3A2E2B" stroke-width="2.8" stroke-linecap="round"/>
+          <circle cx="16" cy="16" r="4.4" fill="url(#${uid}_gold)" stroke="#3A2E2B" stroke-width="1.5"/>
+        </g>`;
+      break;
+
     case 'fever_flame':
       body = `
         <g filter="url(#${uid}_sh)">
@@ -2692,6 +2711,35 @@ function createLoadingMiniCarSVG() {
   `;
 }
 
+const GUIDED_TOUR_STEPS = [
+  {
+    step: 1,
+    badge: 'STEP 1 / 5',
+    text: '건물과 상가를 클릭해 내부를 들여다보고, 가구와 설비를 배치해 가치를 올리세요.'
+  },
+  {
+    step: 2,
+    badge: 'STEP 2 / 5',
+    text: '만수르 돈 뿌리기로 주민 행복도를 끌어올리고 3배 수익 피버를 터뜨리세요.'
+  },
+  {
+    step: 3,
+    badge: 'STEP 3 / 5',
+    text: '마을 행복도가 오르면 칭송 현수막과 루프탑 가든, 황금 건물주 동상이 세워집니다.'
+  },
+  {
+    step: 4,
+    badge: 'STEP 4 / 5',
+    text: '슈퍼카로 해안 드라이빙 존을 질주하거나 1인칭 시점으로 매장을 방문해 보세요.'
+  },
+  {
+    step: 5,
+    badge: 'STEP 5 / 5',
+    text: '라이벌 강 회장과의 경매·레이스 승부에서 승리해 대한민국 자산 순위 1위에 등극하세요!'
+  }
+];
+
+window.GUIDED_TOUR_STEPS = GUIDED_TOUR_STEPS;
 window.FORBES_RIVAL_RANKERS = FORBES_RIVAL_RANKERS;
 window.RIVAL_BATTLE_MODES = RIVAL_BATTLE_MODES;
 window.TITLE_LOADING_STAGES = TITLE_LOADING_STAGES;
