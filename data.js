@@ -2150,6 +2150,88 @@ const HOUSEHOLD_TYPES = {
     happyQuotes: [
       '창밖으로 내 슈퍼요트가 정박된 선착장이 한눈에 내려다보여 대만족입니다!'
     ]
+  },
+  botanist_couple: {
+    type: 'botanist_couple',
+    label: '보타니컬 가드너',
+    accentHex: '#10B981',
+    memberCount: 2,
+    minRent: 44,
+    maxRent: 92,
+    noiseOutput: 12,
+    noiseLv: 1,
+    noiseSensitivity: 48,
+    odorSensitivity: 70,
+    needsElevator: false,
+    needsRecycling: true,
+    isHoarder: false,
+    happyQuotes: [
+      '햇살 가득한 창가에 다육이와 스테인드글라스 화분을 두니 천국 같아요!'
+    ]
+  },
+  chef_michelin: {
+    type: 'chef_michelin',
+    isVipTenant: true,
+    minLuxuryStars: 2,
+    unlockRank: 85,
+    label: '미슐랭 파티시에 셰프',
+    accentHex: '#EC4899',
+    memberCount: 1,
+    minRent: 135,
+    maxRent: 260,
+    noiseOutput: 20,
+    noiseLv: 1,
+    noiseSensitivity: 40,
+    odorSensitivity: 80,
+    needsElevator: false,
+    needsRecycling: true,
+    isHoarder: false,
+    happyQuotes: [
+      '황금 트러플과 마카롱 신메뉴를 연구하기에 완벽한 스위트 주방이네요!'
+    ]
+  },
+  perfumer_vip: {
+    type: 'perfumer_vip',
+    isVipTenant: true,
+    minLuxuryStars: 3,
+    unlockRank: 75,
+    label: '크리스탈 조향사 VIP',
+    accentHex: '#A855F7',
+    memberCount: 1,
+    minRent: 240,
+    maxRent: 460,
+    noiseOutput: 10,
+    noiseLv: 1,
+    noiseSensitivity: 55,
+    odorSensitivity: 92,
+    needsElevator: true,
+    needsRecycling: false,
+    isHoarder: false,
+    happyQuotes: [
+      '자수정 크리스탈 향수병이 빛나는 아틀리에 거실이 너무 우아해요!'
+    ]
+  },
+  gallery_curator: {
+    type: 'gallery_curator',
+    isHarborVip: true,
+    isVipTenant: true,
+    minLuxuryStars: 4,
+    unlockRank: 30,
+    label: '아트토이 갤러리 관장',
+    accentHex: '#F43F5E',
+    memberCount: 1,
+    minRent: 880,
+    maxRent: 1680,
+    noiseOutput: 10,
+    noiseLv: 1,
+    noiseSensitivity: 45,
+    odorSensitivity: 55,
+    needsElevator: true,
+    needsRecycling: false,
+    isHoarder: false,
+    happyQuotes: [
+      '달항아리 금박 도자기와 프리즘 아트토이 컬렉션을 전시하기에 최고의 펜트하우스군요!'
+    ]
   }
 };
 
@@ -2183,8 +2265,8 @@ const QUEST_LIST = [
     id: 'ep1_q2',
     chapter: 1,
     icon: 'manager_cap',
-    title: '[Ch.1] 라쿤 관리소장 급여 Lv.2 인상',
-    desc: '수첩의 [관리인 급여·인사 관리]에서 라쿤 김소장의 월급을 Lv.2로 올려 월세 상한선(26만)을 뚫어주세요!',
+    title: '[Ch.1] 황금 분재 거북소장 급여 Lv.2 인상',
+    desc: '1층의 [황금 분재 거북소장]을 클릭해 월급을 Lv.2로 올려 월세 상한선(32만)을 뚫어주세요!',
     reward: 45,
     fameReward: 25,
     openTab: 'manager',
@@ -2198,7 +2280,7 @@ const QUEST_LIST = [
     id: 'ep1_q3',
     chapter: 1,
     icon: 'duel_versus_ico',
-    title: '[Ch.1] 90위 불독 황 사장 격파 & 85위권 진입',
+    title: '[Ch.1] 90위 트러플 황 사장 격파 & 85위권 진입',
     desc: '1:1 럭셔리 쇼룸 결투에서 승리해 명성도(Fame)를 쌓고 부자 서열 85위 이내로 진입하세요!',
     reward: 110,
     fameReward: 55,
@@ -2237,7 +2319,7 @@ const QUEST_LIST = [
     id: 'ep2_q2',
     chapter: 2,
     icon: 'manager_cap',
-    title: '[Ch.2] 라쿤 관리소장 Lv.5 정식 소장 승급',
+    title: '[Ch.2] 황금 분재 거북소장 Lv.5 정식 소장 승급',
     desc: '관리인 급여를 Lv.5(월급 15만 · 한도 80만)로 인상해 전 호실 무인 자동 수금 & 자동 수리를 개통하세요!',
     reward: 240,
     fameReward: 95,
@@ -2897,52 +2979,56 @@ const FAME_PRESTIGE_TIERS = [
   { minFame: 1250,  bonusPct: 100, crestIdx: 1, badge: '50위 중견 부티크 재벌',     title: '💎 중견 부티크 부동산 재벌',     unlockNote: '+100% · T4 순금피아노·아쿠아리움 & 하버 VIP 해금' },
   { minFame: 3000,  bonusPct: 150, crestIdx: 2, badge: '30위 전국구 랜드마크 거물', title: '👑 로열 하버 랜드마크 총수',     unlockNote: '+150% · T4 플로팅베드·명화홀 & 월스트리트 VIP 해금' },
   { minFame: 8200,  bonusPct: 300, crestIdx: 2, badge: '10위 다이아몬드 타워 제왕', title: '💠 다이아몬드 스카이라인 제왕',  unlockNote: '+300% · 최상위 다이아몬드 리그 입성' },
-  { minFame: 22000, bonusPct: 500, crestIdx: 3, badge: '1위 글로벌 만수르 절대성군', title: '🦁 세계관 최강 만수르 대제',     unlockNote: '+500% MAX · 전 세계 부자 서열 1위 정복!' }
+  { minFame: 22000, bonusPct: 500, crestIdx: 3, badge: '1위 갤럭시 만수르 절대성군', title: '🌌 세계관 최강 갤럭시 라이온 대제', unlockNote: '+500% MAX · 전 세계 부자 서열 1위 정복!' }
 ];
 
 const MANAGER_SALARY_TABLE = [
-  { level: 1,  roleTitle: '수습 라쿤 관리인',         staffName: '라쿤 김수습',     salary: 2,    rentCap: 15,    raiseCost: 0,     autoCollect: false, autoRepair: false, vipCarePct: 0,   perkDesc: '호실당 최대 월세 15만 한도 (수동 수금)' },
-  { level: 2,  roleTitle: '초급 라쿤 관리주임',       staffName: '라쿤 김주임',     salary: 4,    rentCap: 32,    raiseCost: 18,    autoCollect: false, autoRepair: false, vipCarePct: 0,   perkDesc: '호실당 최대 월세 32만 한도 확장' },
-  { level: 3,  roleTitle: '성실 라쿤 관리계장',       staffName: '라쿤 김계장',     salary: 7,    rentCap: 46,    raiseCost: 44,    autoCollect: false, autoRepair: true,  vipCarePct: 0,   perkDesc: '호실당 최대 월세 46만 · 쓰레기 자동 청소 시작' },
-  { level: 4,  roleTitle: '숙련 라쿤 시설과장',       staffName: '라쿤 김과장',     salary: 11,   rentCap: 60,    raiseCost: 88,    autoCollect: false, autoRepair: true,  vipCarePct: 0,   perkDesc: '호실당 최대 월세 60만 · 복도 광택 유지' },
-  { level: 5,  roleTitle: '정식 라쿤 관리소장',       staffName: '라쿤 김소장',     salary: 15,   rentCap: 80,    raiseCost: 165,   autoCollect: true,  autoRepair: true,  vipCarePct: 5,   perkDesc: '호실당 80만 한도 · 전 호실 자동 수금 & 고장 수리!' },
-  { level: 6,  roleTitle: '선임 관리소장 (+비버팀장)', staffName: '김소장 & 비버박', salary: 24,   rentCap: 125,   raiseCost: 290,   autoCollect: true,  autoRepair: true,  vipCarePct: 8,   perkDesc: '호실당 125만 한도 · 비버 시설팀장 합류 (+VIP 8%)' },
-  { level: 7,  roleTitle: '수석 단지 관리소장',       staffName: '김소장 & 비버박', salary: 36,   rentCap: 185,   raiseCost: 480,   autoCollect: true,  autoRepair: true,  vipCarePct: 12,  perkDesc: '호실당 185만 한도 · VIP 케어 +12%' },
-  { level: 8,  roleTitle: '부티크 하우스 총지배인',    staffName: '김소장 & 비버박', salary: 52,   rentCap: 265,   raiseCost: 780,   autoCollect: true,  autoRepair: true,  vipCarePct: 18,  perkDesc: '호실당 265만 한도 · VIP 케어 +18%' },
-  { level: 9,  roleTitle: '수석 호텔리어 매니저',      staffName: '김소장 & 비버박', salary: 74,   rentCap: 370,   raiseCost: 1220,  autoCollect: true,  autoRepair: true,  vipCarePct: 24,  perkDesc: '호실당 370만 한도 · VIP 케어 +24%' },
-  { level: 10, roleTitle: '호텔급 컨시어지 디렉터',    staffName: '디렉터 라쿤 킴',  salary: 100,  rentCap: 500,   raiseCost: 1850,  autoCollect: true,  autoRepair: true,  vipCarePct: 30,  perkDesc: '호실당 500만 한도 · VIP 세입자 특별 케어 +30%!' },
-  { level: 11, roleTitle: '로열 스위트 수석 컨시어지', staffName: '디렉터 라쿤 킴',  salary: 140,  rentCap: 720,   raiseCost: 2750,  autoCollect: true,  autoRepair: true,  vipCarePct: 36,  perkDesc: '호실당 720만 한도 · VIP 케어 +36%' },
-  { level: 12, roleTitle: '그랜드 하버 총괄 지배인',   staffName: '디렉터 라쿤 킴',  salary: 195,  rentCap: 1050,  raiseCost: 4100,  autoCollect: true,  autoRepair: true,  vipCarePct: 42,  perkDesc: '호실당 1,050만 한도 · VIP 케어 +42%' },
-  { level: 13, roleTitle: '펜트하우스 수석 버틀러',    staffName: '버틀러 라쿤 킴',  salary: 270,  rentCap: 1520,  raiseCost: 6100,  autoCollect: true,  autoRepair: true,  vipCarePct: 50,  perkDesc: '호실당 1,520만 한도 · VIP 케어 +50%' },
-  { level: 14, roleTitle: '메종 드 럭셔리 하우스장',   staffName: '버틀러 라쿤 킴',  salary: 375,  rentCap: 2200,  raiseCost: 9000,  autoCollect: true,  autoRepair: true,  vipCarePct: 58,  perkDesc: '호실당 2,200만 한도 · VIP 케어 +58%' },
-  { level: 15, roleTitle: '다이아몬드 타워 총집사',    staffName: '총집사 라쿤 킴',  salary: 520,  rentCap: 3200,  raiseCost: 13500, autoCollect: true,  autoRepair: true,  vipCarePct: 66,  perkDesc: '호실당 3,200만 한도 · VIP 케어 +66%' },
-  { level: 16, roleTitle: '글로벌 리츠 운영 본부장',   staffName: '본부장 라쿤 킴',  salary: 720,  rentCap: 4600,  raiseCost: 20000, autoCollect: true,  autoRepair: true,  vipCarePct: 74,  perkDesc: '호실당 4,600만 한도 · VIP 케어 +74%' },
-  { level: 17, roleTitle: '초고층 랜드마크 부사장',    staffName: '부사장 라쿤 킴',  salary: 990,  rentCap: 6600,  raiseCost: 29500, autoCollect: true,  autoRepair: true,  vipCarePct: 82,  perkDesc: '호실당 6,600만 한도 · VIP 케어 +82%' },
-  { level: 18, roleTitle: '로열 패밀리 수석 시종장',   staffName: '시종장 라쿤 킴',  salary: 1350, rentCap: 9400,  raiseCost: 43000, autoCollect: true,  autoRepair: true,  vipCarePct: 90,  perkDesc: '호실당 9,400만 한도 · VIP 케어 +90%' },
-  { level: 19, roleTitle: '아부다비 팰리스 총괄원장',  staffName: '원장 라쿤 킴',    salary: 1820, rentCap: 13500, raiseCost: 64000, autoCollect: true,  autoRepair: true,  vipCarePct: 95,  perkDesc: '호실당 13,500만 한도 · VIP 케어 +95%' },
-  { level: 20, roleTitle: '만수르 황실 수석 총괄집사장', staffName: '마스터 라쿤 킴', salary: 2450, rentCap: 25000, raiseCost: 95000, autoCollect: true,  autoRepair: true,  vipCarePct: 100, perkDesc: '호실당 25,000만 무제한급 한도 · VIP 케어 +100% MAX!' }
+  { level: 1,  roleTitle: '수습 황금분재 거북 관리인',   staffName: '거북 김수습',     salary: 2,    rentCap: 15,    raiseCost: 0,     autoCollect: false, autoRepair: false, vipCarePct: 0,   perkDesc: '호실당 최대 월세 15만 한도 (수동 수금)' },
+  { level: 2,  roleTitle: '초급 분재거북 관리주임',     staffName: '거북 김주임',     salary: 4,    rentCap: 32,    raiseCost: 18,    autoCollect: false, autoRepair: false, vipCarePct: 0,   perkDesc: '호실당 최대 월세 32만 한도 확장' },
+  { level: 3,  roleTitle: '성실 분재거북 관리계장',     staffName: '거북 김계장',     salary: 7,    rentCap: 46,    raiseCost: 44,    autoCollect: false, autoRepair: true,  vipCarePct: 0,   perkDesc: '호실당 최대 월세 46만 · 쓰레기 자동 청소 시작' },
+  { level: 4,  roleTitle: '숙련 분재거북 시설과장',     staffName: '거북 김과장',     salary: 11,   rentCap: 60,    raiseCost: 88,    autoCollect: false, autoRepair: true,  vipCarePct: 0,   perkDesc: '호실당 최대 월세 60만 · 복도 광택 유지' },
+  { level: 5,  roleTitle: '정식 황금분재 거북소장',     staffName: '거북 김소장',     salary: 15,   rentCap: 80,    raiseCost: 165,   autoCollect: true,  autoRepair: true,  vipCarePct: 5,   perkDesc: '호실당 80만 한도 · 전 호실 자동 수금 & 고장 수리!' },
+  { level: 6,  roleTitle: '선임 분재소장 (+올빼미실장)', staffName: '김소장 & 태엽박', salary: 24,   rentCap: 125,   raiseCost: 290,   autoCollect: true,  autoRepair: true,  vipCarePct: 8,   perkDesc: '호실당 125만 한도 · 스팀펑크 태엽올빼미 합류 (+VIP 8%)' },
+  { level: 7,  roleTitle: '수석 단지 분재소장',         staffName: '김소장 & 태엽박', salary: 36,   rentCap: 185,   raiseCost: 480,   autoCollect: true,  autoRepair: true,  vipCarePct: 12,  perkDesc: '호실당 185만 한도 · VIP 케어 +12%' },
+  { level: 8,  roleTitle: '부티크 하우스 총지배인',      staffName: '김소장 & 태엽박', salary: 52,   rentCap: 265,   raiseCost: 780,   autoCollect: true,  autoRepair: true,  vipCarePct: 18,  perkDesc: '호실당 265만 한도 · VIP 케어 +18%' },
+  { level: 9,  roleTitle: '수석 호텔리어 매니저',        staffName: '김소장 & 태엽박', salary: 74,   rentCap: 370,   raiseCost: 1220,  autoCollect: true,  autoRepair: true,  vipCarePct: 24,  perkDesc: '호실당 370만 한도 · VIP 케어 +24%' },
+  { level: 10, roleTitle: '호텔급 컨시어지 디렉터',      staffName: '디렉터 거북 킴',  salary: 100,  rentCap: 500,   raiseCost: 1850,  autoCollect: true,  autoRepair: true,  vipCarePct: 30,  perkDesc: '호실당 500만 한도 · VIP 세입자 특별 케어 +30%!' },
+  { level: 11, roleTitle: '로열 스위트 수석 컨시어지',   staffName: '디렉터 거북 킴',  salary: 140,  rentCap: 720,   raiseCost: 2750,  autoCollect: true,  autoRepair: true,  vipCarePct: 36,  perkDesc: '호실당 720만 한도 · VIP 케어 +36%' },
+  { level: 12, roleTitle: '그랜드 하버 총괄 지배인',     staffName: '디렉터 거북 킴',  salary: 195,  rentCap: 1050,  raiseCost: 4100,  autoCollect: true,  autoRepair: true,  vipCarePct: 42,  perkDesc: '호실당 1,050만 한도 · VIP 케어 +42%' },
+  { level: 13, roleTitle: '펜트하우스 수석 버틀러',      staffName: '버틀러 거북 킴',  salary: 270,  rentCap: 1520,  raiseCost: 6100,  autoCollect: true,  autoRepair: true,  vipCarePct: 50,  perkDesc: '호실당 1,520만 한도 · VIP 케어 +50%' },
+  { level: 14, roleTitle: '메종 드 럭셔리 하우스장',     staffName: '버틀러 거북 킴',  salary: 375,  rentCap: 2200,  raiseCost: 9000,  autoCollect: true,  autoRepair: true,  vipCarePct: 58,  perkDesc: '호실당 2,200만 한도 · VIP 케어 +58%' },
+  { level: 15, roleTitle: '다이아몬드 타워 총집사',      staffName: '총집사 거북 킴',  salary: 520,  rentCap: 3200,  raiseCost: 13500, autoCollect: true,  autoRepair: true,  vipCarePct: 66,  perkDesc: '호실당 3,200만 한도 · VIP 케어 +66%' },
+  { level: 16, roleTitle: '글로벌 리츠 운영 본부장',     staffName: '본부장 거북 킴',  salary: 720,  rentCap: 4600,  raiseCost: 20000, autoCollect: true,  autoRepair: true,  vipCarePct: 74,  perkDesc: '호실당 4,600만 한도 · VIP 케어 +74%' },
+  { level: 17, roleTitle: '초고층 랜드마크 부사장',      staffName: '부사장 거북 킴',  salary: 990,  rentCap: 6600,  raiseCost: 29500, autoCollect: true,  autoRepair: true,  vipCarePct: 82,  perkDesc: '호실당 6,600만 한도 · VIP 케어 +82%' },
+  { level: 18, roleTitle: '로열 패밀리 수석 시종장',     staffName: '시종장 거북 킴',  salary: 1350, rentCap: 9400,  raiseCost: 43000, autoCollect: true,  autoRepair: true,  vipCarePct: 90,  perkDesc: '호실당 9,400만 한도 · VIP 케어 +90%' },
+  { level: 19, roleTitle: '아부다비 팰리스 총괄원장',    staffName: '원장 거북 킴',    salary: 1820, rentCap: 13500, raiseCost: 64000, autoCollect: true,  autoRepair: true,  vipCarePct: 95,  perkDesc: '호실당 13,500만 한도 · VIP 케어 +95%' },
+  { level: 20, roleTitle: '만수르 황실 분재 총괄집사장', staffName: '마스터 거북 킴',  salary: 2450, rentCap: 25000, raiseCost: 95000, autoCollect: true,  autoRepair: true,  vipCarePct: 100, perkDesc: '호실당 25,000만 무제한급 한도 · VIP 케어 +100% MAX!' }
 ];
 
 function generateForbes100Rankers() {
-  // 정확히 99위 스타트 & 7일 차 50~40위권 진입을 위한 기하급수 로그 곡선: RequiredScore = 215 * Math.pow(1.12, 100 - Rank)
+  // 정확히 99위 스타트 & 30종 팝마트 하이브리드 디자이너 아트토이가 100인 서열에 모두 배치됨!
   const specialNamed = {
-    1:   { name: '두바이 만수르 사자 왕',       badge: '1위 · 글로벌 절대성군',   role: 'lion_mansour', tone: 'gold',  titleUnlock: '세계관 최강 만수르 대제',         desc: '유전과 황금 사자 타워를 지배하는 전 세계 부자 서열 1위 절대 군주' },
-    2:   { name: '모나코 슈퍼요트 백조 여제',    badge: '2위 · 지중해 해운여제',   role: 'movie_star',   tone: 'sky',   titleUnlock: '모나코 오션뷰 제왕',             desc: '지중해와 트와일라잇 하버 리조트 지분을 쥐고 있는 해운 재벌' },
-    3:   { name: '월스트리트 황금여우 회장의장', badge: '3위 · 글로벌 금융황제',   role: 'fund_manager', tone: 'gold',  titleUnlock: '글로벌 월스트리트 지배자',        desc: '전 세계 프라임 오피스 빌딩 120채를 보유한 글로벌 리츠 총수' },
-    5:   { name: '강남 테헤란로 베어 대총수',    badge: '5위 · 테헤란로 제왕',     role: 'barista',      tone: 'gold',  titleUnlock: '테헤란로 마천루 총수',           desc: '역세권 50층 마천루 타워 벨트를 독점한 부동산 거물' },
-    10:  { name: '블랙타워 강 회장 (본진)',      badge: '10위 · 숙명의 라이벌 보스!', role: 'rival_kang', tone: 'coral', isArchRival: true, titleUnlock: '강 회장 본진 참교육자 · TOP 10', desc: '보라색 하이퍼카와 초고층 블랙타워 본진을 거느린 최대 숙적!' },
-    20:  { name: '한남 더힐 폴드냥 컬렉터',      badge: '20위 · 명품 갤러리 재벌', role: 'movie_star',   tone: 'coral', titleUnlock: '한남 하이엔드 컬렉터',           desc: '다이아몬드 명화와 최고급 펜트하우스만 수집하는 상위 20위 거물' },
-    30:  { name: '해운대 마리나 판다 총재',      badge: '30위 · 시크릿 해금 관문!', role: 'streamer',    tone: 'mint',  titleUnlock: '전국구 30대 부동산 거물',        desc: '30위 돌파 시 최상위 24K 시크릿 가구 & 월스트리트 VIP가 해금됩니다!' },
-    40:  { name: '로열 하버 크루즈 캡틴 햄회장', badge: '40위 · 1주일 마스터 목표', role: 'cruise_captain', tone: 'sky', titleUnlock: '로열 하버 마리나 대주주',         desc: '일주일간 정교한 경영과 결투 끝에 도달하는 상위 40위권 재벌!' },
-    50:  { name: '청담 부티크 여우 한 의장',     badge: '50위 · 중견 부티크 재벌!', role: 'it_ceo',      tone: 'gold',  titleUnlock: '50위 중견 부티크 재벌',          desc: '50위 돌파 시 T4 순금 피아노·아쿠아리움 및 하버 VIP 계약권이 해금됩니다!' },
-    65:  { name: '블랙타워 강 회장 (지사장)',    badge: '65위 · Ch.2 승급 관문!',  role: 'rival_kang',   tone: 'coral', isSubRival: true, titleUnlock: '스트리트 상권 수호자',   desc: '제1마을 상권을 호시탐탐 노리는 블랙타워 강 회장의 지역 전초기지' },
-    75:  { name: '성수 브릭타운 비버 박 대표',   badge: '75위 · 리모델링 큰손',    role: 'beaver_chief', tone: 'mint',  titleUnlock: '성수 붉은벽돌 명인',             desc: '구옥 공장을 힙한 카페와 로프트로 개조해 자수성가한 건축가 건물주' },
-    80:  { name: '압구정 로즈가든 토끼 사모님',  badge: '80위 · 시크릿 1차 관문!', role: 'baker',        tone: 'coral', titleUnlock: '80위 신흥 부티크 오너',          desc: '80위 돌파 시 시크릿 에메랄드 소파 & 유튜버·IT대표 VIP가 해금됩니다!' },
-    85:  { name: '홍대 루프탑 시바 윤 사장',     badge: '85위 · Ch.1 졸업 관문',   role: 'mart_clerk',   tone: 'sky',   titleUnlock: '원룸촌 탈출 신예 건물주',        desc: '원룸촌에서 시작해 홍대 상가주택으로 체급을 키운 선배 건물주' },
-    90:  { name: '동네 졸부 불독 황 사장',       badge: '90위 · Ch.1 첫 결투 보스!', role: 'bulldog_boss', tone: 'coral', isChapterBoss: true, titleUnlock: '불독 사장 참교육자', desc: '"크하하! 99위 벼락치기 초짜가 감히 내 원룸 인테리어에 도전하겠다고?!"' },
-    95:  { name: '역전 상가 오리 최 소장',       badge: '95위 · 골목 상가주',      role: 'student',      tone: 'mint',  titleUnlock: '골목 상가 유망주',               desc: '역 앞 조그만 2층 상가주택을 알뜰하게 굴리는 소형 임대업자' },
-    98:  { name: '옥탑방 빌라 양 할머니',        badge: '98위 · 첫 추월 타깃!',    role: 'elderly',      tone: 'cream', titleUnlock: '98위 탈꼴찌 임대인',             desc: '포근한 다세대 빌라 한 채로 노후를 보내는 옆집 임대인 (첫 결투 추천!)' },
-    100: { name: '동네 고시원 박 총무',          badge: '100위 · 만년 꼴찌',       role: 'raccoon_manager', tone: 'cream', titleUnlock: '고시원 총무',                 desc: '보증금 없는 고시원 총무로 일하며 건물주의 꿈을 키우는 100위 막내' }
+    1:   { name: '갤럭시 만수르 라이온 대제',     badge: '1위 · 우주 절대성군',       role: 'char_30_cosmic_lion',      tone: 'gold',  titleUnlock: '세계관 최강 갤럭시 만수르 대제', desc: '은하 성운 갈기와 태양 왕관을 쓴 전 세계 부자 서열 1위 최종 보스!' },
+    2:   { name: '모나코 샹들리에 스완 여제',      badge: '2위 · 오페라 해운여제',     role: 'char_25_chandelier_swan',  tone: 'sky',   titleUnlock: '모나코 샹들리에 여제',           desc: '크리스탈 샹들리에 프리즘 날개를 펼친 유럽 오페라·마리나 재벌' },
+    3:   { name: '월스트리트 골드바 도마뱀 총수',  badge: '3위 · 글로벌 금융황제',     role: 'char_20_bullion_gecko',    tone: 'gold',  titleUnlock: '글로벌 월스트리트 지배자',        desc: '24K 골드바 꼬리로 뉴욕 증시를 움직이는 월스트리트 리츠 황제' },
+    5:   { name: '청담 홀로그램 프리즘 포니 회장', badge: '5위 · 럭셔리 주얼리 총수',  role: 'char_28_prism_pony',       tone: 'coral', titleUnlock: '청담 프리즘 주얼리 총수',         desc: '무지개 프리즘 유리 뿔과 갈기를 지닌 하이주얼리 빌딩 벨트 오너' },
+    10:  { name: '팬텀 젤리배트 강 회장 (본진)',   badge: '10위 · 숙명의 라이벌 보스!', role: 'char_11_phantom_bat',      tone: 'coral', isArchRival: true, titleUnlock: '팬텀 강 회장 참교육자 · TOP 10', desc: '금박 박힌 보라 젤리 날개와 초고층 블랙타워 본진을 거느린 최대 숙적!' },
+    15:  { name: '달항아리 금박 토끼령 대부호',    badge: '15위 · 고미술 경매 제왕',   role: 'char_23_moonjar_spirit',   tone: 'gold',  titleUnlock: '달항아리 고미술 대부호',          desc: '24K 킨츠기 금박 달항아리 몸체를 지닌 글로벌 경매장 대지주' },
+    20:  { name: '한남 용과 팝아트 카멜레온 관장', badge: '20위 · 현대미술 갤러리 재벌', role: 'char_18_pitaya_chameleon', tone: 'coral', titleUnlock: '한남 팝아트 컬렉터',             desc: '핫핑크 용과 피부와 24K 황금 꼬리를 지닌 현대미술 타워 컬렉터' },
+    25:  { name: '5성급 드림캐처 바쿠 호텔리어',   badge: '25위 · 부티크 호텔 그룹장', role: 'char_24_dream_tapir',      tone: 'sky',   titleUnlock: '드림 부티크 호텔 총수',           desc: '황금 꿈방울 랜턴으로 전 세계 VIP의 숙면을 책임지는 호텔 재벌' },
+    30:  { name: '알프스 눈꽃 크리스탈 리머 총재', badge: '30위 · 시크릿 해금 관문!',  role: 'char_17_frost_lemur',      tone: 'sky',   titleUnlock: '전국구 30대 부동산 거물',         desc: '30위 돌파 시 최상위 24K 시크릿 가구 & 갤러리 VIP가 해금됩니다!' },
+    40:  { name: '마리나 진주조개 물범 캡틴',      badge: '40위 · 1주일 마스터 목표',  role: 'char_21_pearl_seal',       tone: 'mint',  titleUnlock: '로열 하버 마리나 대주주',         desc: '핑크 진주 조개 모자를 쓴 슈퍼요트 마리나 클럽 대주주!' },
+    50:  { name: '스위스 스팀펑크 태엽 올빼미장',  badge: '50위 · 중견 부티크 재벌!',  role: 'char_16_clockwork_owl',    tone: 'gold',  titleUnlock: '50위 중견 부티크 재벌',           desc: '50위 돌파 시 T4 순금 피아노·아쿠아리움 및 하버 VIP 계약권이 해금됩니다!' },
+    60:  { name: '판교 레트로 아케이드 몽키 의장', badge: '60위 · 메타버스 게임 재벌', role: 'char_26_arcade_monkey',    tone: 'sky',   titleUnlock: '판교 메타버스 타워 의장',         desc: '반투명 퍼플 콘솔 헬멧과 황금 조이스틱으로 성공한 게임계 빌딩왕' },
+    65:  { name: '팬텀 젤리배트 강 회장 (지사장)', badge: '65위 · Ch.2 승급 관문!',   role: 'char_11_phantom_bat',      tone: 'coral', isSubRival: true, titleUnlock: '스트리트 상권 수호자', desc: '제1마을 상권을 호시탐탐 노리는 팬텀 젤리배트 회장의 지역 전초기지!' },
+    70:  { name: '온실 스테인드글라스 나비 사슴',  badge: '70위 · 보타니컬 플라워 오너', role: 'char_19_stainedglass_fawn', tone: 'mint', titleUnlock: '온실 스테인드글라스 오너',       desc: '황금 뿔 위 스테인드글라스 나비가 내려앉은 온실 가든 빌딩주' },
+    75:  { name: '성수 다육이 꽃 고슴도치 대표',   badge: '75위 · 보타니컬 가든 큰손', role: 'char_15_cactus_hedgie',    tone: 'mint',  titleUnlock: '성수 보타니컬 명인',              desc: '등에 크리스탈 핑크 꽃이 피어난 다육이 정원 상가 재벌' },
+    80:  { name: '압구정 마카롱 베레모 푸들 여사', badge: '80위 · 시크릿 1차 관문!',  role: 'char_14_macaron_poodle',   tone: 'coral', titleUnlock: '80위 신흥 부티크 오너',           desc: '80위 돌파 시 시크릿 에메랄드 소파 & 유튜버·IT대표 VIP가 해금됩니다!' },
+    85:  { name: '홍대 라바램프 글로우 베어 사장', badge: '85위 · Ch.1 졸업 관문',    role: 'char_22_lavalamp_bear',    tone: 'sky',   titleUnlock: '원룸촌 탈출 신예 건물주',         desc: '보라 유리 몸통 속 황금 라바램프가 빛나는 힙스터 라운지 건물주' },
+    90:  { name: '미슐랭 황금 트러플 멧돼지 황사장', badge: '90위 · Ch.1 첫 결투 보스!', role: 'char_27_truffle_boar',   tone: 'coral', isChapterBoss: true, titleUnlock: '트러플 황 사장 참교육자', desc: '"크하하! 99위 초짜가 감히 내 24K 황금 트러플 쇼룸에 도전하겠다고?!"' },
+    95:  { name: '유기농 골든 아보카도 디노 소장', badge: '95위 · 골목 마트 상가주',   role: 'char_12_avocado_dino',     tone: 'mint',  titleUnlock: '골목 상가 유망주',                desc: '배 속에 24K 순금 씨앗이 박힌 귀여운 유기농 마트 상가주' },
+    98:  { name: '아쿠아 오로라 해파리 정령',      badge: '98위 · 첫 추월 타깃!',     role: 'char_13_jellyfish_ghost',  tone: 'sky',   titleUnlock: '98위 탈꼴찌 임대인',              desc: '영롱한 해파리 돔 모자를 쓴 옆집 꼬마 아쿠아 빌라 임대인 (첫 결투 추천!)' },
+    100: { name: '동네 고시원 수습 분재거북 총무', badge: '100위 · 만년 꼴찌',        role: 'char_29_bonsai_tortoise',  tone: 'cream', titleUnlock: '고시원 총무',                     desc: '등껍질에 작은 분재를 키우며 건물주의 꿈을 꾸는 100위 막내' }
   };
 
   const regionPrefixes = [
@@ -2950,16 +3036,33 @@ function generateForbes100Rankers() {
     '연남', '망원', '이태원', '광교', '분당', '마포', '잠실', '압구정', '익선동', '가로수길'
   ];
   const animalTitles = [
-    { label: '불독 사장', role: 'bulldog_boss', tone: 'coral' },
-    { label: '여우 대표', role: 'it_ceo', tone: 'sky' },
-    { label: '폴드냥 원장', role: 'florist', tone: 'coral' },
-    { label: '테디 사장', role: 'barista', tone: 'gold' },
-    { label: '판다 건물주', role: 'streamer', tone: 'mint' },
-    { label: '비버 소장', role: 'beaver_chief', tone: 'sky' },
-    { label: '토끼 오너', role: 'baker', tone: 'coral' },
-    { label: '시바 지주', role: 'mart_clerk', tone: 'gold' },
-    { label: '양 여사', role: 'elderly', tone: 'cream' },
-    { label: '오리 투자자', role: 'student', tone: 'mint' }
+    { label: '버블티 해달 오너',     role: 'char_01_boba_otter',        tone: 'sky' },
+    { label: '네온 우파루파 대표',   role: 'char_02_jelly_axolotl',     tone: 'coral' },
+    { label: '유자 카피바라 원장',   role: 'char_03_yuzu_capybara',     tone: 'gold' },
+    { label: '딸기모찌 드래곤 여사', role: 'char_04_berry_dragon',      tone: 'coral' },
+    { label: '스타더스트 우주냥',    role: 'char_05_astro_neko',        tone: 'mint' },
+    { label: '바이닐 레서판다 DJ',   role: 'char_06_dj_redpanda',       tone: 'coral' },
+    { label: '우비 오리너구리 지주', role: 'char_07_rain_platypus',     tone: 'mint' },
+    { label: '솜사탕 구름 알파카',   role: 'char_08_cloud_alpaca',      tone: 'sky' },
+    { label: '사이버 포슬린 펭귄',   role: 'char_09_cyber_penguin',     tone: 'sky' },
+    { label: '자수정 사막여우 조향사', role: 'char_10_crystal_fennec',  tone: 'coral' },
+    { label: '아보카도 디노 사장',   role: 'char_12_avocado_dino',      tone: 'mint' },
+    { label: '해파리 정령 관장',     role: 'char_13_jellyfish_ghost',   tone: 'sky' },
+    { label: '마카롱 푸들 오너',     role: 'char_14_macaron_poodle',    tone: 'coral' },
+    { label: '다육이 고슴도치 대표', role: 'char_15_cactus_hedgie',     tone: 'mint' },
+    { label: '태엽 올빼미 은행장',   role: 'char_16_clockwork_owl',     tone: 'gold' },
+    { label: '눈꽃 크리스탈 리머',   role: 'char_17_frost_lemur',       tone: 'sky' },
+    { label: '용과 카멜레온 큐레이터', role: 'char_18_pitaya_chameleon', tone: 'coral' },
+    { label: '스테인드글라스 사슴',  role: 'char_19_stainedglass_fawn', tone: 'mint' },
+    { label: '골드바 도마뱀 파트너', role: 'char_20_bullion_gecko',     tone: 'gold' },
+    { label: '진주조개 물범 선주',   role: 'char_21_pearl_seal',        tone: 'sky' },
+    { label: '라바램프 베어 클럽장', role: 'char_22_lavalamp_bear',     tone: 'coral' },
+    { label: '달항아리 토끼령 원장', role: 'char_23_moonjar_spirit',    tone: 'gold' },
+    { label: '드림캐처 바쿠 대표',   role: 'char_24_dream_tapir',       tone: 'sky' },
+    { label: '샹들리에 스완 후원자', role: 'char_25_chandelier_swan',   tone: 'gold' },
+    { label: '아케이드 몽키 개발장', role: 'char_26_arcade_monkey',     tone: 'sky' },
+    { label: '황금트러플 멧돼지 셰프', role: 'char_27_truffle_boar',    tone: 'gold' },
+    { label: '프리즘 포니 컬렉터',   role: 'char_28_prism_pony',        tone: 'coral' }
   ];
   const lastNames = ['김', '이', '박', '최', '정', '황', '조', '윤', '장', '임', '한', '오', '서', '신', '권', '송'];
 
@@ -2974,7 +3077,7 @@ function generateForbes100Rankers() {
 
     const sp = specialNamed[r];
     const reg = regionPrefixes[(r * 7) % regionPrefixes.length];
-    const ani = animalTitles[(r * 3) % animalTitles.length];
+    const ani = animalTitles[r % animalTitles.length];
     const ln = lastNames[(r * 5) % lastNames.length];
 
     let tierBadge = '동네 원룸촌 리그';
@@ -3022,7 +3125,7 @@ function generateForbes100Rankers() {
       avatarRole: sp ? sp.role : ani.role,
       desc: sp
         ? sp.desc
-        : `${reg} 일대 수익형 부동산과 상가를 운영하는 글로벌 서열 ${r}위 자산가`
+        : `${reg} 일대 수익형 부동산과 상가를 운영하는 글로벌 서열 ${r}위 디자이너 아트토이 자산가`
     });
   }
   return list;
@@ -3038,8 +3141,8 @@ const EPISODE_CHAPTERS = [
     minRankTarget: 85,
     iconIdx: 0,
     title: '바닥부터 시작하는 원룸촌 임대업',
-    subtitle: '낡은 101호 수리 · 라쿤 관리소장 급여 인상 · 90위 불독 사장과의 첫 결투!',
-    storyQuote: '🦝 라쿤 김수습: "회장님! 지금은 우리가 100명 중 99위 벼락치기 초보지만, 제 월급 한도(Rent Cap)를 올리고 가구를 채우면 90위 불독 황 사장 코를 납작하게 해줄 수 있어요!"',
+    subtitle: '낡은 101호 수리 · 황금 분재 거북소장 급여 인상 · 90위 트러플 황 사장 첫 결투!',
+    storyQuote: '🪴 황금 분재 거북소장: "회장님! 지금은 100명 중 99위 초보지만, 제 월급 한도(Rent Cap)를 올리고 가구를 채우면 90위 트러플 황 사장 코를 납작하게 해줄 수 있어요!"',
     questIds: ['ep1_q1', 'ep1_q2', 'ep1_q3']
   },
   {
@@ -3049,8 +3152,8 @@ const EPISODE_CHAPTERS = [
     minRankTarget: 65,
     iconIdx: 1,
     title: '상권 부활과 상가 프랜차이즈 전쟁',
-    subtitle: '1층 마트·베이커리 골든벨 홍보 · Lv.5 정식 소장 승급 · 강 회장 방어전!',
-    storyQuote: '🐆 블랙타워 강 회장: "호오~ 원룸촌 흙수저가 감히 상가 상권에 발을 들여? 내 스카우트 공세와 쇼룸 결투를 버텨낼 수 있을까!"',
+    subtitle: '1층 마트·베이커리 골든벨 홍보 · Lv.5 정식 분재소장 승급 · 팬텀 강 회장 방어전!',
+    storyQuote: '🦇 팬텀 젤리배트 강 회장: "호오~ 원룸촌 흙수저가 감히 상가 상권에 발을 들여? 내 스카우트 공세와 쇼룸 결투를 버텨낼 수 있을까!"',
     questIds: ['ep2_q1', 'ep2_q2', 'ep2_q3']
   },
   {
@@ -3061,7 +3164,7 @@ const EPISODE_CHAPTERS = [
     iconIdx: 2,
     title: '로열 하버 게이트 개방과 중견 재벌 등극',
     subtitle: '해안 신도시 노을빛 대문 개방 · Lv.10 호텔 컨시어지 · 50위권 명성 리그 진입!',
-    storyQuote: '🦫 비버 박 팀장: "우측 끝 거대한 노을빛 대문이 열렸습니다! 트와일라잇 하버 호텔과 요트 마리나를 개발해 대망의 50위~40위 중견 재벌 리그로 도약합시다!"',
+    storyQuote: '⏱️ 태엽 올빼미 부소장: "우측 끝 거대한 노을빛 대문이 열렸습니다! 트와일라잇 하버 호텔과 요트 마리나를 개발해 50위~40위 중견 재벌 리그로 도약합시다!"',
     questIds: ['ep3_q1', 'ep3_q2', 'ep3_q3']
   },
   {
@@ -3070,9 +3173,9 @@ const EPISODE_CHAPTERS = [
     rankRange: '39위 ~ 1위 (최종 대관식)',
     minRankTarget: 1,
     iconIdx: 3,
-    title: '다이아몬드 리그 제패와 만수르 사자 왕 대관식',
-    subtitle: '30위 시크릿 명품 해금 · 10위 강 회장 본진 격파 · 글로벌 서열 1위 등극!',
-    storyQuote: '🦁 만수르 사자 왕: "99위 바닥에서 출발해 내 황금 왕좌 앞까지 올라오다니... 진정한 글로벌 제1의 성군 건물주가 누구인지 마지막 쇼룸에서 가려보자!"',
+    title: '다이아몬드 리그 제패와 갤럭시 만수르 대관식',
+    subtitle: '30위 시크릿 명품 해금 · 10위 팬텀 강 회장 본진 격파 · 글로벌 서열 1위 등극!',
+    storyQuote: '🌌 갤럭시 만수르 라이온: "99위 바닥에서 출발해 내 은하 왕좌 앞까지 올라오다니... 진정한 글로벌 제1의 성군 건물주가 누구인지 마지막 쇼룸에서 가려보자!"',
     questIds: ['ep4_q1', 'ep4_q2']
   }
 ];
@@ -3394,46 +3497,46 @@ const SHOWROOM_DUEL_OPPONENTS = [
   {
     id: 'duel_kang',
     modeTab: 'rival',
-    name: '블랙타워 강 회장',
-    badge: '숙명의 라이벌 · FORBES 4위',
-    avatarRole: 'rival_kang',
+    name: '팬텀 젤리배트 강 회장',
+    badge: '숙명의 라이벌 · FORBES 10위',
+    avatarRole: 'char_11_phantom_bat',
     stakePrize: 480,
     targetLuxuryRange: [950, 1850],
     aiBuildPool: ['bed_canopy', 'sofa_leather_l', 'app_winecellar', 'dec_lavender', 'bed_jacuzzi'],
-    taunt: '"흥! 내 블랙타워 럭셔리 쇼룸 앞에선 네 인테리어 따윈 초라해 보일걸?!"'
+    taunt: '"흥! 내 보라빛 팬텀 젤리배트 타워 앞에선 네 쇼룸 따윈 초라해 보일걸?!"'
   },
   {
     id: 'duel_pvp_cheongdam',
     modeTab: 'pvp',
-    name: '청담 갤러리 정 대표',
+    name: '청담 프리즘 포니 정 대표',
     badge: '온라인 랭커 매칭 · 다이아 티어',
-    avatarRole: 'movie_star',
+    avatarRole: 'char_28_prism_pony',
     stakePrize: 650,
     targetLuxuryRange: [1250, 2300],
     aiBuildPool: ['bed_jacuzzi', 'sofa_piano', 'app_winecellar', 'dec_harbor_royal'],
-    taunt: '"청담동 하이엔드 부티크 감각이 뭔지 제대로 보여드리죠!"'
+    taunt: '"청담동 홀로그램 프리즘 부티크 감각이 뭔지 제대로 보여드리죠!"'
   },
   {
     id: 'duel_pvp_pangyo',
     modeTab: 'pvp',
-    name: '판교 유니콘 송 의장',
+    name: '판교 아케이드 몽키 송 의장',
     badge: '온라인 랭커 매칭 · 마스터 티어',
-    avatarRole: 'it_ceo',
+    avatarRole: 'char_26_arcade_monkey',
     stakePrize: 920,
     targetLuxuryRange: [1800, 3200],
     aiBuildPool: ['bed_jacuzzi', 'sofa_gold_piano', 'app_rgb_desk', 'dec_harbor_royal'],
-    taunt: '"자본력과 스마트 하이엔드 설비의 정점을 겨뤄봅시다!"'
+    taunt: '"자본력과 메타버스 하이엔드 설비의 정점을 겨뤄봅시다!"'
   },
   {
     id: 'duel_pvp_hannam',
     modeTab: 'pvp',
-    name: '한남 더힐 박 컬렉터',
+    name: '한남 달항아리 박 컬렉터',
     badge: '온라인 랭커 매칭 · 그랜드마스터',
-    avatarRole: 'fund_manager',
+    avatarRole: 'char_23_moonjar_spirit',
     stakePrize: 1400,
     targetLuxuryRange: [2600, 4400],
     aiBuildPool: ['bed_golden_float', 'sofa_gold_piano', 'app_aquarium', 'dec_harbor_royal'],
-    taunt: '"24K 리미티드 명품 컬렉션이 없다면 제 쇼룸을 이기기 힘들 겁니다!"'
+    taunt: '"24K 킨츠기 달항아리 명품 컬렉션이 없다면 제 쇼룸을 이기기 힘들 겁니다!"'
   }
 ];
 
@@ -3447,160 +3550,407 @@ window.MANAGER_SALARY_TABLE = MANAGER_SALARY_TABLE;
 window.EPISODE_CHAPTERS = EPISODE_CHAPTERS;
 
 // =========================================================
-// 12. 팝마트 & 동물의 숲 감성 360도 3D 매트 클레이 피규어 캐릭터 로스터 & 초고화질 마스터 이미지 매니페스트
+// 12. 팝마트 하이브리드 디자이너 아트토이 30종 로스터 (벨벳 플로킹 + 투명 유리/젤리/크리스탈 + 24K 순금)
 // =========================================================
-const NPC_SPECIAL_CHARACTERS = [
-  {
-    id: 'char_11_raccoon',
-    emoji: '🦝',
-    name: '꼼꼼한 라쿤 관리소장',
-    imgPath: './assets/characters/char_11_raccoon_manager.png',
-    roles: ['raccoon_manager', 'manager']
-  },
-  {
-    id: 'char_12_beaver',
-    emoji: '🦫',
-    name: '베테랑 비버 시설팀장',
-    imgPath: './assets/characters/char_12_beaver_chief.png',
-    roles: ['beaver_chief']
-  },
-  {
-    id: 'char_13_bulldog',
-    emoji: '🐶',
-    name: '동네 졸부 불독 황 사장',
-    imgPath: './assets/characters/char_13_bulldog_boss.png',
-    roles: ['bulldog_boss']
-  },
-  {
-    id: 'char_14_lion',
-    emoji: '🦁',
-    name: '두바이 만수르 사자 왕',
-    imgPath: './assets/characters/char_14_lion_mansour.png',
-    roles: ['lion_mansour']
-  }
-];
+const NPC_SPECIAL_CHARACTERS = [];
 window.NPC_SPECIAL_CHARACTERS = NPC_SPECIAL_CHARACTERS;
+
 const ANIMAL_CHARACTER_ROSTER = [
+  // ==================== [WAVE 1: 스타 건물주 후보 & 코어 주민 01~10] ====================
   {
-    id: 'char_01_bunny',
+    id: 'char_01_boba_otter',
     num: 1,
-    emoji: '🐰',
-    name: '바닐라 토끼',
-    title: '상가 수익 +15%',
-    buffKey: 'shop_rev_15',
-    desc: '따끈한 크루아상을 굽는 파티시에 토끼 · 전 상가 매출 +15%',
-    accentHex: '#FB7185',
-    imgPath: './assets/characters/char_01_bunny.png',
-    roles: ['baker', 'newlywed']
-  },
-  {
-    id: 'char_02_sheep',
-    num: 2,
-    emoji: '🐑',
-    name: '파자마 양',
-    title: '세입자 행복도 +15%',
-    buffKey: 'happy_15',
-    desc: '몽글몽글 구름 양털과 물방울 파자마 양 · 전 세대 행복도 +15%',
-    accentHex: '#A78BFA',
-    imgPath: './assets/characters/char_02_sheep.png',
-    roles: ['elderly', 'wash_clerk']
-  },
-  {
-    id: 'char_03_shiba',
-    num: 3,
-    emoji: '🐕',
-    name: '해피 시바견',
-    title: '일괄 수금 보너스 +15%',
-    buffKey: 'collect_15',
-    desc: '하얀 눈썹 점과 도넛 꼬리가 매력적인 시바견 · 일괄 수금 +15%',
+    wave: 1,
+    emoji: '🧋',
+    name: '버블티 벨벳 해달',
+    title: '카페·상가 수익 +20%',
+    buffKey: 'shop_rev_20',
+    desc: '투명 버블티 돔 모자와 타피오카 컵을 든 해달 · 전 상가 매출 +20%',
     accentHex: '#38BDF8',
-    imgPath: './assets/characters/char_03_shiba.png',
-    roles: ['mart_clerk', 'manager']
+    imgPath: './assets/characters/char_01_boba_otter.png',
+    roles: ['barista', 'student']
   },
   {
-    id: 'char_04_duck',
-    num: 4,
-    emoji: '🐥',
-    name: '배낭 아기오리',
-    title: '슈퍼카 속도 & 가구 할인 +15%',
-    buffKey: 'speed_furn_15',
-    desc: '컬러 배낭과 침낭을 멘 아기오리 · 최고속도 +15% & 가구 15% 페이백',
-    accentHex: '#FACC15',
-    imgPath: './assets/characters/char_04_duck.png',
-    roles: ['student', 'family4', 'hikikomori']
+    id: 'char_02_jelly_axolotl',
+    num: 2,
+    wave: 1,
+    emoji: '🔮',
+    name: '네온 젤리 우파루파',
+    title: '월세 수금 보너스 +20%',
+    buffKey: 'collect_20',
+    desc: '핑크 젤리 아가미와 24K VIP 키카드를 든 영앤리치 · 일괄 수금 +20%',
+    accentHex: '#F472B6',
+    imgPath: './assets/characters/char_02_jelly_axolotl.png',
+    roles: ['streamer']
   },
   {
-    id: 'char_05_hamster',
-    num: 5,
-    emoji: '🐹',
-    name: '황금왕관 햄스터',
-    title: '월세 정산 속도 +15%',
-    buffKey: 'rent_speed_15',
-    desc: '24K 왕관과 황금 마스터키를 든 볼살 햄스터 · 월세 정산 속도 +15%',
+    id: 'char_03_yuzu_capybara',
+    num: 3,
+    wave: 1,
+    emoji: '🍊',
+    name: '온천 유자 카피바라',
+    title: '세입자 행복도 +25%',
+    buffKey: 'happy_25',
+    desc: '머리 위 투명 황금 유자가 빛나는 스파 재벌 · 전 호실 행복도 +25%',
     accentHex: '#F59E0B',
-    imgPath: './assets/characters/char_05_hamster.png',
-    roles: ['landlord_avatar', 'landlord', 'landlord_driver', 'cruise_captain']
+    imgPath: './assets/characters/char_03_yuzu_capybara.png',
+    roles: ['elderly']
   },
   {
-    id: 'char_06_panther',
+    id: 'char_04_berry_dragon',
+    num: 4,
+    wave: 1,
+    emoji: '🍓',
+    name: '딸기모찌 아기 드래곤',
+    title: '쇼룸 결투 매력도 +20%',
+    buffKey: 'duel_score_20',
+    desc: '휘핑크림 머리와 유리 딸기 뿔, 24K 황금 날개 · 쇼룸 결투 점수 +20%',
+    accentHex: '#FB7185',
+    imgPath: './assets/characters/char_04_berry_dragon.png',
+    roles: ['newlywed']
+  },
+  {
+    id: 'char_05_astro_neko',
+    num: 5,
+    wave: 1,
+    emoji: '🚀',
+    name: '스타더스트 우주냥이',
+    title: '해안도시 수익 +25% · 정산 +15%',
+    buffKey: 'harbor_rent_25',
+    desc: '별가루 유리 우주복 헬멧을 쓴 우주 고양이 · 해안도시 +25% & 정산 +15%',
+    accentHex: '#34D399',
+    imgPath: './assets/characters/char_05_astro_neko.png',
+    roles: ['landlord_avatar', 'landlord', 'landlord_driver']
+  },
+  {
+    id: 'char_06_dj_redpanda',
     num: 6,
-    emoji: '🐆',
-    name: '블랙팬서 강 회장',
-    title: '라이벌 보스 · 결투 상금 +20%',
-    buffKey: 'duel_prize_20',
-    desc: '보라 벨벳 더블 수트와 24K 금목걸이의 카리스마 라이벌 회장',
-    accentHex: '#7E22CE',
+    wave: 1,
+    emoji: '🎧',
+    name: '바이닐 레서판다 DJ',
+    title: '머니건 피버 시간 +30%',
+    buffKey: 'fever_dur_30',
+    desc: '로즈골드 헤드폰과 아크릴 젤리 스니커즈 DJ · 머니건 피버 시간 +30%',
+    accentHex: '#FB923C',
+    imgPath: './assets/characters/char_06_dj_redpanda.png',
+    roles: ['musician']
+  },
+  {
+    id: 'char_07_rain_platypus',
+    num: 7,
+    wave: 1,
+    emoji: '💎',
+    name: '크리스탈 우비 오리너구리',
+    title: '가구 페이백 +20% · 속도 +15%',
+    buffKey: 'furn_payback_20',
+    desc: '투명 민트 젤리 우비와 금화 브리프케이스 · 가구 20% 할인 & 차속도 +15%',
+    accentHex: '#2DD4BF',
+    imgPath: './assets/characters/char_07_rain_platypus.png',
+    roles: ['family4']
+  },
+  {
+    id: 'char_08_cloud_alpaca',
+    num: 8,
+    wave: 1,
+    emoji: '☁️',
+    name: '솜사탕 구름 알파카',
+    title: 'VIP·펜트하우스 월세 +25%',
+    buffKey: 'vip_rent_25',
+    desc: '금별 박힌 핑크·블루 솜사탕 구름털과 금테 모노클 · VIP 월세 +25%',
+    accentHex: '#C084FC',
+    imgPath: './assets/characters/char_08_cloud_alpaca.png',
+    roles: ['movie_star']
+  },
+  {
+    id: 'char_09_cyber_penguin',
+    num: 9,
+    wave: 1,
+    emoji: '🐧',
+    name: '사이버 포슬린 황제펭귄',
+    title: '건물·호실 수익 +20%',
+    buffKey: 'rent_speed_20',
+    desc: '24K 금장 도자기 바디와 픽셀 하트 고글 펭귄 · 월세 정산 속도 +20%',
+    accentHex: '#38BDF8',
+    imgPath: './assets/characters/char_09_cyber_penguin.png',
+    roles: ['it_ceo']
+  },
+  {
+    id: 'char_10_crystal_fennec',
+    num: 10,
+    wave: 1,
+    emoji: '🌸',
+    name: '자수정 크리스탈 사막여우',
+    title: '결투 명성도(Fame) 획득 +25%',
+    buffKey: 'fame_gain_25',
+    desc: '자수정 원석 크리스탈 귀와 향수병을 든 조향사 · 명성 획득량 +25%',
+    accentHex: '#A855F7',
+    imgPath: './assets/characters/char_10_crystal_fennec.png',
+    roles: ['perfumer_vip']
+  },
+
+  // ==================== [WAVE 2: 라이벌 보스 & 부티크 VIP 콜렉터 11~20] ====================
+  {
+    id: 'char_11_phantom_bat',
+    num: 11,
+    wave: 2,
+    emoji: '🦇',
+    name: '팬텀 젤리배트 회장',
+    title: '결투 상금·위자료 +30%',
+    buffKey: 'duel_prize_30',
     isRivalBoss: true,
-    imgPath: './assets/characters/char_06_panther_rival.png',
+    desc: '금박 보라 젤리 날개와 황금 지팡이를 든 숙명의 라이벌 회장 · 결투 상금 +30%',
+    accentHex: '#7E22CE',
+    imgPath: './assets/characters/char_11_phantom_bat.png',
     roles: ['rival_kang', 'chairman_kang']
   },
   {
-    id: 'char_07_cat',
-    num: 7,
-    emoji: '🐱',
-    name: '청담동 폴드 고양이',
-    title: '쇼룸 결투 미관 점수 +15%',
-    buffKey: 'duel_score_15',
-    desc: '트위드 재킷과 진주 목걸이의 영앤리치 폴드 냥이 · 쇼룸 점수 +15%',
+    id: 'char_12_avocado_dino',
+    num: 12,
+    wave: 2,
+    emoji: '🥑',
+    name: '골든 아보카도 디노',
+    title: '1층 마트·상가 수익 +22%',
+    buffKey: 'shop_rev_20',
+    desc: '배 속에 24K 순금 씨앗이 박힌 아보카도 아기공룡 · 전 상가 매출 +22%',
+    accentHex: '#4ADE80',
+    imgPath: './assets/characters/char_12_avocado_dino.png',
+    roles: ['mart_clerk']
+  },
+  {
+    id: 'char_13_jellyfish_ghost',
+    num: 13,
+    wave: 2,
+    emoji: '🪼',
+    name: '오로라 해파리 정령',
+    title: '해안 아쿠아·상가 수익 +22%',
+    buffKey: 'harbor_rent_25',
+    desc: '영롱한 투명 해파리 돔 모자와 진주를 든 바다 정령 · 해안도시 수익 +25%',
+    accentHex: '#22D3EE',
+    imgPath: './assets/characters/char_13_jellyfish_ghost.png',
+    roles: ['wash_clerk']
+  },
+  {
+    id: 'char_14_macaron_poodle',
+    num: 14,
+    wave: 2,
+    emoji: '🧁',
+    name: '마카롱 베레모 푸들',
+    title: '베이커리·카페 수익 +25%',
+    buffKey: 'shop_rev_20',
+    desc: '핑크·피스타치오 마카롱 귀와 황금 거품기를 든 파리 베이커리 귀족',
     accentHex: '#F472B6',
-    imgPath: './assets/characters/char_07_cat_rich.png',
-    roles: ['movie_star', 'florist']
+    imgPath: './assets/characters/char_14_macaron_poodle.png',
+    roles: ['baker']
   },
   {
-    id: 'char_08_bear',
-    num: 8,
-    emoji: '🐻',
-    name: '테디베어 바리스타',
-    title: '카페·베이커리 수익 +20%',
-    buffKey: 'cafe_bakery_20',
-    desc: '체크 조끼를 입은 따스한 테디베어 사장님 · 카페·빵집 수익 +20%',
-    accentHex: '#B45309',
-    imgPath: './assets/characters/char_08_bear_barista.png',
-    roles: ['barista', 'chef']
+    id: 'char_15_cactus_hedgie',
+    num: 15,
+    wave: 2,
+    emoji: '🌵',
+    name: '다육이 꽃 고슴도치',
+    title: '전 세대 행복도 +25%',
+    buffKey: 'happy_25',
+    desc: '등에 투명 핑크 크리스탈 꽃이 핀 다육이 고슴도치 · 세입자 행복도 +25%',
+    accentHex: '#34D399',
+    imgPath: './assets/characters/char_15_cactus_hedgie.png',
+    roles: ['botanist_couple']
   },
   {
-    id: 'char_09_fox',
-    num: 9,
-    emoji: '🦊',
-    name: '월스트리트 여우',
-    title: '머니건 피버 시간 +25%',
-    buffKey: 'fever_dur_25',
-    desc: '네이비 수트와 황금 머니건을 든 플렉스 여우 · 피버 지속시간 +25%',
-    accentHex: '#2563EB',
-    imgPath: './assets/characters/char_09_fox_flex.png',
-    roles: ['fund_manager', 'it_ceo', 'developer', 'mansour']
+    id: 'char_16_clockwork_owl',
+    num: 16,
+    wave: 2,
+    emoji: '⏱️',
+    name: '스팀펑크 태엽 올빼미',
+    title: '월세 정산 속도 +22%',
+    buffKey: 'rent_speed_20',
+    desc: '사파이어 유리 가슴창 속 24K 황금 태엽이 도는 스위스 시계 은행장',
+    accentHex: '#D97706',
+    imgPath: './assets/characters/char_16_clockwork_owl.png',
+    roles: ['beaver_chief']
   },
   {
-    id: 'char_10_panda',
-    num: 10,
-    emoji: '🐼',
-    name: '슈스 아기판다',
-    title: 'VIP 세입자 임대료 +20%',
-    buffKey: 'vip_rent_20',
-    desc: '민트 후디와 골드 헤드폰, 버블티를 든 셀럽 판다 · VIP 월세 +20%',
+    id: 'char_17_frost_lemur',
+    num: 17,
+    wave: 2,
+    emoji: '❄️',
+    name: '눈꽃 크리스탈 여우원숭이',
+    title: '드라이브·결투 점수 +20%',
+    buffKey: 'duel_score_20',
+    desc: '얼음 크리스탈 링 꼬리와 홀로그램 스키 파카를 입은 알프스 리조트 재벌',
+    accentHex: '#60A5FA',
+    imgPath: './assets/characters/char_17_frost_lemur.png',
+    roles: ['developer']
+  },
+  {
+    id: 'char_18_pitaya_chameleon',
+    num: 18,
+    wave: 2,
+    emoji: '🐉',
+    name: '용과 팝아트 카멜레온',
+    title: '쇼룸 예술 매력도 +22%',
+    buffKey: 'duel_score_20',
+    desc: '핫핑크 용과 피부와 24K 황금 꼬리를 지닌 현대미술 갤러리 관장',
+    accentHex: '#EC4899',
+    imgPath: './assets/characters/char_18_pitaya_chameleon.png',
+    roles: ['gallery_curator']
+  },
+  {
+    id: 'char_19_stainedglass_fawn',
+    num: 19,
+    wave: 2,
+    emoji: '🦋',
+    name: '스테인드글라스 나비 사슴',
+    title: '플라워샵·행복도 +25%',
+    buffKey: 'happy_25',
+    desc: '황금 사슴뿔 위에 스테인드글라스 나비가 앉은 온실 플라워샵 오너',
+    accentHex: '#86EFAC',
+    imgPath: './assets/characters/char_19_stainedglass_fawn.png',
+    roles: ['florist']
+  },
+  {
+    id: 'char_20_bullion_gecko',
+    num: 20,
+    wave: 2,
+    emoji: '🪙',
+    name: '골드바 꼬리 도마뱀',
+    title: '일괄 수금 보너스 +25%',
+    buffKey: 'collect_20',
+    desc: '24K 골드바 적층 꼬리와 증시 태블릿을 든 월스트리트 스타 트레이더',
+    accentHex: '#EAB308',
+    imgPath: './assets/characters/char_20_bullion_gecko.png',
+    roles: ['fund_manager']
+  },
+
+  // ==================== [WAVE 3: 전설의 거물 랭커 & 황금 분재 거북소장 21~30] ====================
+  {
+    id: 'char_21_pearl_seal',
+    num: 21,
+    wave: 3,
+    emoji: '🦪',
+    name: '진주조개 머메이드 물범',
+    title: '해안 요트·하버 수익 +25%',
+    buffKey: 'harbor_rent_25',
+    desc: '핑크 진주가 빛나는 조개껍데기 모자를 쓴 마리나 요트 클럽 선주',
+    accentHex: '#38BDF8',
+    imgPath: './assets/characters/char_21_pearl_seal.png',
+    roles: ['cruise_captain']
+  },
+  {
+    id: 'char_22_lavalamp_bear',
+    num: 22,
+    wave: 3,
+    emoji: '🧪',
+    name: '라바램프 글로우 베어',
+    title: '머니건 피버 시간 +30%',
+    buffKey: 'fever_dur_30',
+    desc: '보라 유리 몸통 속 황금 라바램프 방울이 떠오르는 네온 라운지 오너',
+    accentHex: '#A855F7',
+    imgPath: './assets/characters/char_22_lavalamp_bear.png',
+    roles: ['petlover']
+  },
+  {
+    id: 'char_23_moonjar_spirit',
+    num: 23,
+    wave: 3,
+    emoji: '🏺',
+    name: '달항아리 금박 토끼령',
+    title: '명성도(Fame) 획득 +25%',
+    buffKey: 'fame_gain_25',
+    desc: '24K 킨츠기 금박 라인이 흐르는 한국 달항아리 세라믹 고미술 대부호',
+    accentHex: '#F59E0B',
+    imgPath: './assets/characters/char_23_moonjar_spirit.png',
+    roles: ['collector']
+  },
+  {
+    id: 'char_24_dream_tapir',
+    num: 24,
+    wave: 3,
+    emoji: '🌙',
+    name: '드림캐처 벨벳 바쿠',
+    title: 'VIP 스위트 월세 +25%',
+    buffKey: 'vip_rent_25',
+    desc: '황금 초승달 나이트캡과 꿈방울 유리 랜턴을 든 5성급 부티크 호텔리어',
+    accentHex: '#818CF8',
+    imgPath: './assets/characters/char_24_dream_tapir.png',
+    roles: ['hotelier']
+  },
+  {
+    id: 'char_25_chandelier_swan',
+    num: 25,
+    wave: 3,
+    emoji: '🦢',
+    name: '크리스탈 샹들리에 스완',
+    title: '쇼룸 럭셔리 점수 +25%',
+    buffKey: 'duel_score_20',
+    desc: '날개 끝에 크리스탈 샹들리에 프리즘이 달린 로열 오페라 하우스 후원자',
+    accentHex: '#60A5FA',
+    imgPath: './assets/characters/char_25_chandelier_swan.png',
+    roles: ['opera_vip']
+  },
+  {
+    id: 'char_26_arcade_monkey',
+    num: 26,
+    wave: 3,
+    emoji: '🕹️',
+    name: '레트로 아케이드 몽키',
+    title: '가구 할인 +20% · 속도 +15%',
+    buffKey: 'furn_payback_20',
+    desc: '반투명 퍼플 게임기 헬멧과 황금 조이스틱을 든 메타버스 게임 재벌',
+    accentHex: '#8B5CF6',
+    imgPath: './assets/characters/char_26_arcade_monkey.png',
+    roles: ['hikikomori']
+  },
+  {
+    id: 'char_27_truffle_boar',
+    num: 27,
+    wave: 3,
+    emoji: '🍄',
+    name: '황금 트러플 아기멧돼지',
+    title: '파인다이닝·상가 수익 +25%',
+    buffKey: 'shop_rev_20',
+    desc: '셰프 모자 위 24K 황금 트러플 버섯이 빛나는 미슐랭 총괄셰프',
+    accentHex: '#D97706',
+    imgPath: './assets/characters/char_27_truffle_boar.png',
+    roles: ['chef', 'chef_michelin', 'bulldog_boss']
+  },
+  {
+    id: 'char_28_prism_pony',
+    num: 28,
+    wave: 3,
+    emoji: '🦄',
+    name: '홀로그램 프리즘 포니',
+    title: '결투 상금·명성 +25%',
+    buffKey: 'fame_gain_25',
+    desc: '무지개 다이크로익 프리즘 유리 뿔과 갈기를 지닌 럭셔리 주얼리 총수',
+    accentHex: '#F472B6',
+    imgPath: './assets/characters/char_28_prism_pony.png',
+    roles: ['jewelry_vip']
+  },
+  {
+    id: 'char_29_bonsai_tortoise',
+    num: 29,
+    wave: 3,
+    emoji: '🪴',
+    name: '황금 분재 거북소장',
+    title: '월세 상한선·시설 케어 +20%',
+    buffKey: 'collect_20',
+    desc: '등껍질 위 황금 소나무 분재가 자라는 1층 전담 베테랑 관리소장 아트토이',
     accentHex: '#10B981',
-    imgPath: './assets/characters/char_10_panda_celeb.png',
-    roles: ['streamer', 'musician', 'petlover']
+    imgPath: './assets/characters/char_29_bonsai_tortoise.png',
+    roles: ['manager', 'raccoon_manager', 'bonsai_manager']
+  },
+  {
+    id: 'char_30_cosmic_lion',
+    num: 30,
+    wave: 3,
+    emoji: '🌌',
+    name: '갤럭시 만수르 라이온',
+    title: '전 수익 +25% · 서열 1위 제왕',
+    buffKey: 'cosmic_emperor_25',
+    desc: '은하 성운 갈기와 황금 별자리, 태양 왕관을 쓴 100인 부자 서열 1위 황제!',
+    accentHex: '#F59E0B',
+    imgPath: './assets/characters/char_30_cosmic_lion.png',
+    roles: ['lion_mansour', 'mansour']
   }
 ];
 

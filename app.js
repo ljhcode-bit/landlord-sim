@@ -10,7 +10,25 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-const SAVE_KEY = 'god_landlord_bigbold_ui_2026_v5';
+const SAVE_KEY = 'god_landlord_30arttoys_2026_v6';
+
+function getActiveHeroDef() {
+  const roster = window.ANIMAL_CHARACTER_ROSTER || [];
+  const rawId = state?.selectedHeroCharId || 'char_01_boba_otter';
+  return roster.find((c) => c.id === rawId) || roster[0] || {
+    id: 'char_01_boba_otter',
+    num: 1,
+    wave: 1,
+    emoji: '🧋',
+    name: '버블티 벨벳 해달',
+    title: '카페·상가 수익 +20%',
+    buffKey: 'shop_rev_20'
+  };
+}
+
+function getActiveHeroBuffKey() {
+  return getActiveHeroDef().buffKey || 'shop_rev_20';
+}
 
 function formatWonBig(manAmount) {
   const man = Math.max(0, Math.round(Number(manAmount) || 0));
@@ -304,7 +322,7 @@ function createInitialState() {
     },
     furnitureInventory: {},
     duelTrophies: 0,
-    selectedHeroCharId: 'char_05_hamster',
+    selectedHeroCharId: 'char_01_boba_otter',
     hasChosenHeroAnimal: false,
     devUnlockAll: false,
     firstRentCollected: false,
@@ -9367,8 +9385,8 @@ function getManagerSalaryDef(lv = 1) {
   const safeLv = Math.min(20, Math.max(1, Math.round(Number(lv) || 1)));
   return table.find((m) => m.level === safeLv) || table[0] || {
     level: 1,
-    roleTitle: '수습 라쿤 관리인',
-    staffName: '라쿤 김수습',
+    roleTitle: '수습 황금분재 거북 관리인',
+    staffName: '거북 김수습',
     salary: 2,
     rentCap: 15,
     raiseCost: 0,
@@ -9423,8 +9441,12 @@ function calcRoomRentDetail(bState, room) {
     }
     const hTypeDef = HOUSEHOLD_TYPES[room.household.type];
     isVipHousehold = !!(hTypeDef?.isVipTenant || hTypeDef?.isHarborVip);
-    if (state?.selectedHeroCharId === 'char_10_panda' && isVipHousehold) {
-      base = Math.round(base * 1.2);
+    const heroBuff = getActiveHeroBuffKey();
+    if ((heroBuff === 'vip_rent_25' || heroBuff === 'cosmic_emperor_25') && (isVipHousehold || room.floor >= 3)) {
+      base = Math.round(base * 1.25);
+    }
+    if ((heroBuff === 'harbor_rent_25' || heroBuff === 'cosmic_emperor_25') && bState?.lotId === 'lot_harbor_main') {
+      base = Math.round(base * 1.25);
     }
   }
 
@@ -9481,7 +9503,8 @@ function calcFirstFloorShopStats(shopId) {
     }
   }
   const fameMult = 1 + calcFameRentBonusPct() / 100;
-  const heroShopBoost = state?.selectedHeroCharId === 'char_01_bunny' ? 1.15 : 1.0;
+  const heroBuff = getActiveHeroBuffKey();
+  const heroShopBoost = heroBuff === 'cosmic_emperor_25' ? 1.25 : heroBuff === 'shop_rev_20' ? 1.2 : 1.0;
   const strikeMult = state.buildings?.lot_main?.manager?.onStrike ? 0.65 : 1.0;
   const shopMult = fameMult * strikeMult * ((state.unlockedMilestones || []).includes(75) ? 1.2 : 1.0) * heroShopBoost * getFeverMultiplier() * getLegendaryTotalMultiplier();
   return {
@@ -9515,14 +9538,15 @@ function calcStandaloneShopStats(shopId) {
     }
   }
   const carDef = getCarDef(state.garage?.currentCar || 'car_scooter');
-  const heroBunnyPct = state?.selectedHeroCharId === 'char_01_bunny' ? 15 : 0;
-  const heroBearPct = (state?.selectedHeroCharId === 'char_08_bear' && (shopId === 'shop_bakery' || shopId === 'shop_roastery')) ? 20 : 0;
+  const heroBuff = getActiveHeroBuffKey();
+  const heroShopPct = heroBuff === 'cosmic_emperor_25' ? 25 : heroBuff === 'shop_rev_20' ? 22 : 0;
+  const heroHarborPct = (heroBuff === 'harbor_rent_25' && tpl.stage === 2) ? 25 : 0;
   const bonusPct =
     calcFameRentBonusPct() +
     (st.auctionBonusPct || 0) +
     (carDef.rentBonusPct || 0) +
-    heroBunnyPct +
-    heroBearPct +
+    heroShopPct +
+    heroHarborPct +
     ((state.unlockedMilestones || []).includes(75) ? 25 : 0);
   const mult = (1 + bonusPct / 100) * getFeverMultiplier() * getLegendaryTotalMultiplier();
   return {
@@ -9589,11 +9613,11 @@ function syncManagerAndEpisodeHUD() {
   const alertIco = document.getElementById('hud-mgr-alert-ico');
   if (alertPill) {
     const inSpecialFocus = !!(focusedRoomId || focusedShopId || focusedFirstFloorShopId || fpState?.active || driveState?.active || guidedTourState?.active);
-    // 평소 상한선 정보는 3D 라쿤 관리소장 머리 위 대형 배지([🦝 관리소장 (월세한도 15만)])로 표시하고, 파업 시에만 긴급 상단 배너 표시!
+    // 평소 상한선 정보는 3D 황금 분재 거북소장 머리 위 대형 배지([🪴 거북 관리소장 (월세한도 15만)])로 표시하고, 파업 시에만 긴급 상단 배너 표시!
     const hideAlert = !mgr.onStrike || !!titleScreenState.active || !!duelState.active || inSpecialFocus;
     alertPill.classList.toggle('hidden', hideAlert);
     if (!hideAlert && alertTxt) {
-      alertTxt.textContent = `💢 라쿤 소장 파업 중(월세 -50%)! 클릭해 월급 올리기`;
+      alertTxt.textContent = `💢 거북 소장 파업 중(월세 -50%)! 클릭해 월급 올리기`;
     }
     if (alertIco && POPMART_ASSETS?.mgrIconUrls?.length === 4) {
       const icoUrl = POPMART_ASSETS.mgrIconUrls[2];
@@ -9695,7 +9719,7 @@ function raiseManagerSalaryLevel(lotId = 'lot_main') {
   updateTopHUDTargets();
   if (focusedRoomId && focusRevealState.revealed) renderFocusedRoomInspector();
   if (!dom.notebookModal?.classList.contains('hidden')) renderNotebookUnifiedBody();
-  showToast(`🦝 [${nextDef.roleTitle}] 승급 완료! 호실 최대 월세 상한선 ${nextDef.rentCap.toLocaleString()}만 해금!`, 'mint');
+  showToast(`🪴 [${nextDef.roleTitle}] 승급 완료! 호실 최대 월세 상한선 ${nextDef.rentCap.toLocaleString()}만 해금!`, 'mint');
   saveGameState();
   return true;
 }
@@ -9767,9 +9791,10 @@ function calcAvgHappiness() {
     }
   }
   const ownedShopBonus = Object.values(state.standaloneShops || {}).filter((s) => s.owned).length * 4;
-  const heroSheepBonus = state?.selectedHeroCharId === 'char_02_sheep' ? 6 : 0;
+  const heroBuff = getActiveHeroBuffKey();
+  const heroHappyBonus = (heroBuff === 'happy_25' || heroBuff === 'cosmic_emperor_25') ? 12 : 0;
   const baseAvg = cnt === 0 ? 34 : total / cnt;
-  const raw = Math.round(baseAvg + carBonus + furnBonus + ownedShopBonus + heroSheepBonus + (state.townHappinessBoost || 0));
+  const raw = Math.round(baseAvg + carBonus + furnBonus + ownedShopBonus + heroHappyBonus + (state.townHappinessBoost || 0));
   return Math.min(100, Math.max(15, raw));
 }
 
@@ -10179,9 +10204,10 @@ function collectAllRentBubbles() {
   for (const b of copy) {
     collectRentBubble(b, 0);
   }
-  if (state?.selectedHeroCharId === 'char_03_shiba' && sumBase > 0) {
-    const shibaBonus = Math.max(1, Math.round(sumBase * 0.15));
-    addGold(shibaBonus);
+  const collectBuff = getActiveHeroBuffKey();
+  if ((collectBuff === 'collect_20' || collectBuff === 'cosmic_emperor_25') && sumBase > 0) {
+    const heroBonus = Math.max(1, Math.round(sumBase * (collectBuff === 'cosmic_emperor_25' ? 0.25 : 0.2)));
+    addGold(heroBonus);
   }
   if (typeof spawnPopMartSkillBurstVFX === 'function') {
     spawnPopMartSkillBurstVFX('rent_collect', { count: copy.length });
@@ -12205,7 +12231,7 @@ function tickDriveMode(dt, elapsed) {
   }
 
   const carDef = getCarDef(state.garage?.currentCar || 'car_scooter');
-  const heroDuckSpeedMult = state?.selectedHeroCharId === 'char_04_duck' ? 1.15 : 1.0;
+  const heroDuckSpeedMult = getActiveHeroBuffKey() === 'furn_payback_20' ? 1.15 : 1.0;
   const baseMaxSpd = (carDef.maxSpeed || 18.0) * heroDuckSpeedMult;
   const isBoosting = !!driveState.keys.boost;
   const effectiveMaxSpd = isBoosting ? Math.max(40.5, baseMaxSpd * 2.85) : baseMaxSpd;
@@ -13742,7 +13768,7 @@ function renderFocusedRoomInspector() {
             : `🔒 월세 한도(${rentDet.rentCap}만) 도달! (잠재 ${rentDet.uncappedRent}만)`}
         </div>
         <button type="button" id="btn-rf-open-mgr-cap" class="jelly-action-btn btn-coral-lip w-full py-2.5">
-          <span>🦝 라쿤 소장 월급 올리기 ➔</span>
+          <span>🪴 거북 소장 월급 올리기 ➔</span>
         </button>
       </div>
     `
@@ -13894,8 +13920,8 @@ function handleBuyOrEquipFurniture(rm, category, itemId, isBuy, useInventory = f
     state.furnitureInventory[itemId] -= 1;
     syncFlagshipInventoryBadge();
   } else if (isBuy) {
-    const effCost = state?.selectedHeroCharId === 'char_04_duck'
-      ? Math.max(1, Math.round(def.cost * 0.85))
+    const effCost = getActiveHeroBuffKey() === 'furn_payback_20'
+      ? Math.max(1, Math.round(def.cost * 0.8))
       : def.cost;
     if (!spendGold(effCost)) return;
   }
@@ -14582,7 +14608,7 @@ function renderNotebookUnifiedBody() {
   } else if (activeNotebookTab === 'tenants') {
     const activeLotId = (state.activeTownStage === 2 && state.harborUnlocked) ? 'lot_harbor_main' : 'lot_main';
     const b = state.buildings[activeLotId] || state.buildings.lot_main;
-    dom.notebookBody.innerHTML = b.rooms.map((rm) => {
+    const roomsHtml = b.rooms.map((rm) => {
       const meta = ROOM_TYPE_META[rm.layoutType] || ROOM_TYPE_META.studio;
       const hDef = rm.household ? HOUSEHOLD_TYPES[rm.household.type] : null;
       const det = calcRoomRentDetail(b, rm);
@@ -14613,14 +14639,46 @@ function renderNotebookUnifiedBody() {
       `;
     }).join('');
 
+    const curHeroId = getActiveHeroDef().id;
+    const roster30Html = `
+      <div class="diary-card space-y-2.5 !p-3.5">
+        <div class="flex items-center justify-between gap-2">
+          <div class="font-title text-[18px] text-[#1E1B18]">🎨 팝마트 하이브리드 아트토이 30종 도감</div>
+          <span class="kw-chip tone-gold">30 / 30</span>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          ${(window.ANIMAL_CHARACTER_ROSTER || []).map((ch) => {
+            const isPicked = ch.id === curHeroId;
+            return `
+              <button type="button" data-pick-arttoy="${ch.id}" class="rounded-2xl p-2 border-2 text-center transition-transform active:scale-95 flex flex-col items-center gap-1 ${isPicked ? 'bg-[#FFFBEB] border-[#F59E0B] shadow-md' : 'bg-[#FFFDF7] border-[#E8CCB0]'}">
+                ${createHouseholdAvatarSVG(ch.id, 52)}
+                <div class="font-title text-[14px] text-[#1E1B18] leading-tight line-clamp-1">${ch.name}</div>
+                <span class="px-2 py-0.5 rounded-full font-extrabold text-[12px] bg-[#FEF3C7] text-[#B45309] line-clamp-1">${ch.title}</span>
+              </button>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+
+    dom.notebookBody.innerHTML = roomsHtml + roster30Html;
+
     dom.notebookBody.querySelectorAll('[data-nb-room]').forEach((btn) => {
       btn.addEventListener('click', () => {
         dom.notebookModal?.classList.add('hidden');
         focusCameraOnRoom(btn.getAttribute('data-nb-room'));
       });
     });
+    dom.notebookBody.querySelectorAll('[data-pick-arttoy]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const cid = btn.getAttribute('data-pick-arttoy');
+        selectHeroAnimalId(cid);
+        dom.notebookModal?.classList.add('hidden');
+        openAnimalSelectModal(false);
+      });
+    });
   } else if (activeNotebookTab === 'manager') {
-    // 🦝 라쿤 관리소장 급여(Lv.1~Lv.20) & 호실 월세 상한선(Rent Cap) & 사기/태업 인사 관리 센터!
+    // 🪴 황금 분재 거북소장 급여(Lv.1~Lv.20) & 호실 월세 상한선(Rent Cap) & 사기/태업 인사 관리 센터!
     const b = state.buildings.lot_main;
     b.manager = ensureManagerSchema(b.manager);
     const mgr = b.manager;
@@ -15824,7 +15882,7 @@ function triggerMansourMakeItRain(customOpt = null) {
       }
     }
   }
-  const feverDurMult = state?.selectedHeroCharId === 'char_09_fox' ? 1.25 : 1.0;
+  const feverDurMult = getActiveHeroBuffKey() === 'fever_dur_30' ? 1.3 : 1.0;
   state.feverTimer = Math.round((opt.feverSec || 30) * feverDurMult);
   state.feverPower = opt.feverMult || 2.0;
 
@@ -16072,8 +16130,8 @@ function tickMakeItRain(dt, elapsed) {
       if (makeItRainState.avatarGroup) makeItRainState.avatarGroup.visible = false;
       if (heroState.mesh?.userData) {
         const hud = heroState.mesh.userData;
-        const heroId = state?.selectedHeroCharId || 'char_05_hamster';
-        if (hud.bossSunglassesGroup && heroId !== 'char_06_panther' && heroId !== 'char_09_fox') {
+        const heroId = getActiveHeroDef().id;
+        if (hud.bossSunglassesGroup && heroId !== 'char_03_yuzu_capybara' && heroId !== 'char_11_phantom_bat') {
           hud.bossSunglassesGroup.visible = false;
         }
         if (hud.dualMoneyGunsGroup) hud.dualMoneyGunsGroup.visible = false;
@@ -16769,7 +16827,7 @@ function tickSimulationEconomyAndCrises(dt) {
           state.gold = 0;
           hudAnim.targetGold = 0;
           mgr.morale = Math.max(0, (mgr.morale ?? 100) - 32);
-          showToast(`💸 관리인 월급(${wage}만) 체불로 라쿤 소장의 사기가 급락했습니다!`, 'coral');
+          showToast(`💸 관리인 월급(${wage}만) 체불로 분재 거북 소장의 사기가 급락했습니다!`, 'coral');
         }
       }
 
@@ -16807,7 +16865,7 @@ function tickSimulationEconomyAndCrises(dt) {
           4.2,
           true
         );
-        showToast('💢 라쿤 관리소장 태업 돌입! 급여를 인상하거나 특별 보너스를 지급하세요!', 'coral');
+        showToast('💢 황금 분재 거북소장 태업 돌입! 급여를 인상하거나 특별 보너스를 지급하세요!', 'coral');
         syncManagerAndEpisodeHUD();
       }
     }
@@ -16830,7 +16888,8 @@ function tickSimulationEconomyAndCrises(dt) {
       }
     }
 
-    const rentSpeedMult = state?.selectedHeroCharId === 'char_05_hamster' ? 1.15 : 1.0;
+    const rBuff = getActiveHeroBuffKey();
+    const rentSpeedMult = rBuff === 'cosmic_emperor_25' ? 1.25 : rBuff === 'rent_speed_20' ? 1.22 : rBuff === 'harbor_rent_25' ? 1.15 : 1.0;
     for (const rm of b.rooms) {
       if (!rm.unlocked || !rm.household) continue;
       if (mgr.onStrike && !titleScreenState.active) {
@@ -19019,7 +19078,7 @@ function computeActiveGoalStep() {
   if ((mgr.salaryLv || 1) < 2 || mgr.onStrike || anyRoomCapped) {
     return {
       step: 4,
-      text: `1층 '🦝 라쿤 소장' 클릭해 월급 올리고 월세 한도 뚫기`,
+      text: `1층 '🪴 거북 소장' 클릭해 월급 올리고 월세 한도 뚫기`,
       targetType: 'world',
       wx: mainLot.x + 2.55,
       wy: 4.5,
@@ -19156,7 +19215,7 @@ function ensureGoalArrowAndBadgesCreated() {
     const mgrBtn = document.createElement('button');
     mgrBtn.type = 'button';
     mgrBtn.className = 'world-float-action-pill tone-manager';
-    mgrBtn.textContent = '🦝 관리소장 (월세한도 15만)';
+    mgrBtn.textContent = '🪴 거북 소장 (월세한도 15만)';
     mgrBtn.style.display = 'none';
     mgrBtn.addEventListener('click', (ev) => {
       ev.stopPropagation();
@@ -19468,10 +19527,10 @@ function tickGoalNavigatorAndWorldActionBadges(dt) {
     }
     bigUiGuideState.mgrBadgeEl.classList.toggle('urgent', !!(mgr.onStrike || anyCapped));
     bigUiGuideState.mgrBadgeEl.textContent = mgr.onStrike
-      ? `💢 관리소장 파업 중! (월급 인상)`
+      ? `💢 거북 소장 파업 중! (월급 인상)`
       : anyCapped
-        ? `🦝 관리소장 (한도 ${mgrDef.rentCap}만 도달!)`
-        : `🦝 관리소장 (월세한도 ${mgrDef.rentCap.toLocaleString()}만)`;
+        ? `🪴 거북 소장 (한도 ${mgrDef.rentCap}만 도달!)`
+        : `🪴 거북 소장 (월세한도 ${mgrDef.rentCap.toLocaleString()}만)`;
   }
 
   const mainLot = state?.lots?.find((l) => l.lotId === 'lot_main') || { x: -4.2, z: -6.4 };
@@ -19971,8 +20030,8 @@ function buyFlagshipFurnitureToInventory(cat, itemId) {
     showToast(`🔒 100인 부자 서열 ${item.unlockRank}위 이내 달성 시 해금되는 시크릿 명품입니다!`, 'coral');
     return;
   }
-  const effCost = state?.selectedHeroCharId === 'char_04_duck'
-    ? Math.max(1, Math.round(item.cost * 0.85))
+  const effCost = getActiveHeroBuffKey() === 'furn_payback_20'
+    ? Math.max(1, Math.round(item.cost * 0.8))
     : item.cost;
   if (!spendGold(effCost)) return;
 
@@ -20126,7 +20185,8 @@ function calcShowroomScoreBreakdown(equippedMap) {
   const scoreLimited = limitedCount * 420;
   const rawTotal = scoreValue + scoreHarmony + scoreLimited;
   const isMyDeck = equippedMap === duelState?.myEquipped;
-  const catBoost = (isMyDeck && state?.selectedHeroCharId === 'char_07_cat') ? 1.15 : 1.0;
+  const duelBuff = getActiveHeroBuffKey();
+  const catBoost = (isMyDeck && (duelBuff === 'duel_score_20' || duelBuff === 'cosmic_emperor_25')) ? 1.2 : 1.0;
   const total = Math.round(rawTotal * catBoost);
 
   return {
@@ -20648,9 +20708,13 @@ function startShowroomDuelJudging() {
     const myBrk = calcShowroomScoreBreakdown(duelState.myEquipped);
     const oppBrk = calcShowroomScoreBreakdown(duelState.oppEquipped);
     const isWin = myBrk.total >= oppBrk.total;
-    const pantherPrizeMult = state?.selectedHeroCharId === 'char_06_panther' ? 1.2 : 1.0;
+    const hBuff = getActiveHeroBuffKey();
+    const pantherPrizeMult = hBuff === 'duel_prize_30' ? 1.3 : hBuff === 'cosmic_emperor_25' ? 1.25 : 1.0;
     const prize = Math.round((opp?.stakePrize || 20) * 2 * pantherPrizeMult);
-    const fameGain = opp?.fameGain || 18;
+    const rawFameGain = opp?.fameGain || 18;
+    const fameGain = (hBuff === 'fame_gain_25' || hBuff === 'cosmic_emperor_25')
+      ? Math.round(rawFameGain * 1.25)
+      : rawFameGain;
     const prevRankSnap = getForbesStandings().myRank;
 
     if (isWin) {
@@ -21102,127 +21166,277 @@ function loadRawImagePromise(src) {
   });
 }
 
+const LEGACY_CHAR_ID_MAP = {
+  char_01_bunny: 'char_14_macaron_poodle',
+  char_02_sheep: 'char_08_cloud_alpaca',
+  char_03_shiba: 'char_01_boba_otter',
+  char_04_duck: 'char_07_rain_platypus',
+  char_05_hamster: 'char_05_astro_neko',
+  char_06_panther: 'char_11_phantom_bat',
+  char_07_cat: 'char_10_crystal_fennec',
+  char_08_bear: 'char_03_yuzu_capybara',
+  char_09_fox: 'char_20_bullion_gecko',
+  char_10_panda: 'char_06_dj_redpanda',
+  char_11_raccoon: 'char_29_bonsai_tortoise',
+  char_12_beaver: 'char_16_clockwork_owl',
+  char_13_bulldog: 'char_27_truffle_boar',
+  char_14_lion: 'char_30_cosmic_lion'
+};
+
+const TOWN_PEDESTRIAN_ART_TOY_POOL = [
+  'char_01_boba_otter',
+  'char_02_jelly_axolotl',
+  'char_03_yuzu_capybara',
+  'char_04_berry_dragon',
+  'char_05_astro_neko',
+  'char_06_dj_redpanda',
+  'char_07_rain_platypus',
+  'char_08_cloud_alpaca',
+  'char_09_cyber_penguin',
+  'char_10_crystal_fennec',
+  'char_12_avocado_dino',
+  'char_13_jellyfish_ghost',
+  'char_14_macaron_poodle',
+  'char_15_cactus_hedgie',
+  'char_16_clockwork_owl',
+  'char_17_frost_lemur',
+  'char_18_pitaya_chameleon',
+  'char_19_stainedglass_fawn',
+  'char_20_bullion_gecko',
+  'char_21_pearl_seal',
+  'char_22_lavalamp_bear',
+  'char_23_moonjar_spirit',
+  'char_24_dream_tapir',
+  'char_25_chandelier_swan',
+  'char_26_arcade_monkey',
+  'char_27_truffle_boar',
+  'char_28_prism_pony'
+];
+
 function resolveAnimalIdForRole(role = 'student', vIdx = 0) {
-  if (role === 'golden_statue_hero') return null;
+  if (!role || role === 'golden_statue_hero') return null;
+  if (typeof role === 'string' && role.startsWith('char_')) {
+    if (ANIMAL_3D_STYLE_PRESETS[role]) return role;
+    if (LEGACY_CHAR_ID_MAP[role]) return LEGACY_CHAR_ID_MAP[role];
+  }
   if (role === 'landlord_avatar' || role === 'landlord' || role === 'landlord_driver') {
-    return state?.selectedHeroCharId || 'char_05_hamster';
+    return getActiveHeroDef().id;
   }
   if (role === 'rival_kang' || role === 'chairman_kang') {
-    return 'char_06_panther';
+    return 'char_11_phantom_bat';
   }
   const mapByRole = {
-    baker: 'char_01_bunny',
-    newlywed: 'char_01_bunny',
-    elderly: 'char_02_sheep',
-    wash_clerk: 'char_02_sheep',
-    mart_clerk: 'char_03_shiba',
-    manager: 'char_11_raccoon',
-    raccoon_manager: 'char_11_raccoon',
-    beaver_chief: 'char_12_beaver',
-    bulldog_boss: 'char_13_bulldog',
-    lion_mansour: 'char_14_lion',
-    student: 'char_04_duck',
-    family4: 'char_04_duck',
-    hikikomori: 'char_04_duck',
-    cruise_captain: 'char_05_hamster',
-    movie_star: 'char_07_cat',
-    florist: 'char_07_cat',
-    barista: 'char_08_bear',
-    chef: 'char_08_bear',
-    fund_manager: 'char_09_fox',
-    it_ceo: 'char_09_fox',
-    developer: 'char_09_fox',
-    mansour: 'char_14_lion',
-    streamer: 'char_10_panda',
-    musician: 'char_10_panda',
-    petlover: 'char_10_panda'
+    manager: 'char_29_bonsai_tortoise',
+    raccoon_manager: 'char_29_bonsai_tortoise',
+    bonsai_manager: 'char_29_bonsai_tortoise',
+    beaver_chief: 'char_16_clockwork_owl',
+    bulldog_boss: 'char_27_truffle_boar',
+    lion_mansour: 'char_30_cosmic_lion',
+    mansour: 'char_30_cosmic_lion',
+    baker: 'char_14_macaron_poodle',
+    barista: 'char_01_boba_otter',
+    florist: 'char_19_stainedglass_fawn',
+    mart_clerk: 'char_12_avocado_dino',
+    wash_clerk: 'char_13_jellyfish_ghost',
+    chef: 'char_27_truffle_boar',
+    chef_michelin: 'char_27_truffle_boar',
+    student: 'char_01_boba_otter',
+    newlywed: 'char_04_berry_dragon',
+    family4: 'char_07_rain_platypus',
+    elderly: 'char_03_yuzu_capybara',
+    hikikomori: 'char_26_arcade_monkey',
+    streamer: 'char_02_jelly_axolotl',
+    it_ceo: 'char_09_cyber_penguin',
+    movie_star: 'char_08_cloud_alpaca',
+    fund_manager: 'char_20_bullion_gecko',
+    cruise_captain: 'char_21_pearl_seal',
+    botanist_couple: 'char_15_cactus_hedgie',
+    perfumer_vip: 'char_10_crystal_fennec',
+    gallery_curator: 'char_18_pitaya_chameleon',
+    developer: 'char_17_frost_lemur',
+    musician: 'char_06_dj_redpanda',
+    petlover: 'char_22_lavalamp_bear',
+    collector: 'char_23_moonjar_spirit',
+    hotelier: 'char_24_dream_tapir',
+    opera_vip: 'char_25_chandelier_swan',
+    jewelry_vip: 'char_28_prism_pony'
   };
-  if (vIdx !== null && vIdx !== undefined && Number(vIdx) > 0 && (role === 'student' || role === 'pedestrian')) {
-    const townPool = [
-      'char_01_bunny',
-      'char_02_sheep',
-      'char_03_shiba',
-      'char_04_duck',
-      'char_05_hamster',
-      'char_07_cat',
-      'char_08_bear',
-      'char_09_fox',
-      'char_10_panda'
-    ];
-    return townPool[Math.abs(Number(vIdx)) % townPool.length];
+  if (vIdx !== null && vIdx !== undefined && Number(vIdx) > 0) {
+    if (role === 'student' || role === 'pedestrian') {
+      return TOWN_PEDESTRIAN_ART_TOY_POOL[Math.abs(Number(vIdx)) % TOWN_PEDESTRIAN_ART_TOY_POOL.length];
+    }
+    if (role === 'newlywed') {
+      return Number(vIdx) % 2 === 1 ? 'char_14_macaron_poodle' : 'char_04_berry_dragon';
+    }
+    if (role === 'family4') {
+      const famPool = ['char_07_rain_platypus', 'char_12_avocado_dino', 'char_05_astro_neko', 'char_13_jellyfish_ghost'];
+      return famPool[Math.abs(Number(vIdx)) % famPool.length];
+    }
+    if (role === 'elderly') {
+      return Number(vIdx) % 2 === 1 ? 'char_24_dream_tapir' : 'char_03_yuzu_capybara';
+    }
+    if (role === 'botanist_couple') {
+      return Number(vIdx) % 2 === 1 ? 'char_19_stainedglass_fawn' : 'char_15_cactus_hedgie';
+    }
+    if (role === 'movie_star') {
+      return Number(vIdx) % 2 === 1 ? 'char_25_chandelier_swan' : 'char_08_cloud_alpaca';
+    }
+    if (role === 'cruise_captain') {
+      return Number(vIdx) % 2 === 1 ? 'char_28_prism_pony' : 'char_21_pearl_seal';
+    }
   }
-  return mapByRole[role] || 'char_01_bunny';
+  return mapByRole[role] || 'char_01_boba_otter';
 }
 
 const ANIMAL_3D_STYLE_PRESETS = {
-  char_01_bunny: {
-    furHex: '#FFFDF9', innerEarHex: '#FFAEC0', snoutHex: '#FFFFFF', noseHex: '#FF8FA3',
-    outfitStyle: 'bunny_apron', baseClothHex: '#F9EFE0', accentClothHex: '#9C7355', pantHex: '#FFFDF9', shoeHex: '#F5ECE0',
-    propKind: 'croissant'
-  },
-  char_02_sheep: {
-    furHex: '#FFF5E6', woolHex: '#FFFDF8', innerEarHex: '#FBCFE8', snoutHex: '#FFF8EE', noseHex: '#E5989B',
-    outfitStyle: 'sheep_pajama', baseClothHex: '#E9D5FF', accentClothHex: '#FBCFE8', pantHex: '#E9D5FF', shoeHex: '#FFFDF7',
-    propKind: 'pillow'
-  },
-  char_03_shiba: {
-    furHex: '#E5984E', creamHex: '#FFF8EC', innerEarHex: '#FFF3E0', snoutHex: '#FFF8EC', noseHex: '#2B211E',
-    outfitStyle: 'shiba_mart', baseClothHex: '#38BDF8', accentClothHex: '#FFFFFF', pantHex: '#E5984E', shoeHex: '#FFFDF8',
-    propKind: null
-  },
-  char_04_duck: {
-    furHex: '#FFE156', beakHex: '#FF8C24', snoutHex: '#FF8C24', noseHex: '#E86F0C',
-    outfitStyle: 'duck_plush', baseClothHex: '#FFE156', accentClothHex: '#38BDF8', pantHex: '#FFE156', shoeHex: '#FF8C24',
-    propKind: null
-  },
-  char_05_hamster: {
-    furHex: '#F4A259', creamHex: '#FFF9EE', innerEarHex: '#FBCFE8', snoutHex: '#FFFDF9', noseHex: '#F472B6',
-    outfitStyle: 'hamster_vip', baseClothHex: '#FFF7E8', accentClothHex: '#EF4444', pantHex: '#FFF7E8', shoeHex: '#F4A259',
-    propKind: 'gold_key'
-  },
-  char_06_panther: {
-    furHex: '#26232C', innerEarHex: '#4A3E59', snoutHex: '#322E3A', noseHex: '#141218',
-    outfitStyle: 'panther_boss', baseClothHex: '#581C87', accentClothHex: '#FFD700', pantHex: '#3B0764', shoeHex: '#1E1B24',
-    propKind: null
-  },
-  char_07_cat: {
-    furHex: '#FCECD5', innerEarHex: '#F9A8D4', snoutHex: '#FFFDF9', noseHex: '#F472B6',
-    outfitStyle: 'cat_tweed', baseClothHex: '#F5D0DC', accentClothHex: '#FFFDF9', pantHex: '#FCECD5', shoeHex: '#FFFDF8',
-    propKind: 'luxury_bag'
-  },
-  char_08_bear: {
-    furHex: '#9C623E', creamHex: '#F5E1C8', innerEarHex: '#D8A47F', snoutHex: '#F5E1C8', noseHex: '#3A2316',
-    outfitStyle: 'bear_check', baseClothHex: '#78350F', accentClothHex: '#D97706', pantHex: '#6F4528', shoeHex: '#4A2C18',
-    propKind: 'coffee_cup'
-  },
-  char_09_fox: {
-    furHex: '#DF6433', creamHex: '#FFFDF9', innerEarHex: '#3A231A', snoutHex: '#FFFDF9', noseHex: '#1E1B18',
-    outfitStyle: 'fox_suit', baseClothHex: '#1E3A8A', accentClothHex: '#EF4444', pantHex: '#172554', shoeHex: '#1E293B',
-    propKind: 'money_gun'
-  },
-  char_10_panda: {
-    furHex: '#FFFDF9', blackHex: '#222228', snoutHex: '#FFFFFF', noseHex: '#1E1E24',
-    outfitStyle: 'panda_hoodie', baseClothHex: '#A7F3D0', accentClothHex: '#6EE7B7', pantHex: '#222228', shoeHex: '#222228',
+  char_01_boba_otter: {
+    furHex: '#C69268', creamHex: '#FFF6E8', innerEarHex: '#F3C8A8', snoutHex: '#FFF9F0', noseHex: '#3B2318',
+    jellyHex: '#BAE6FD', outfitStyle: 'puffer_vest', baseClothHex: '#7DD3FC', accentClothHex: '#FFFDF7', pantHex: '#A6754E', shoeHex: '#FFF8EE',
     propKind: 'boba_cup'
   },
-  char_11_raccoon: {
-    furHex: '#8E8379', creamHex: '#F7EFE5', innerEarHex: '#E5D5C5', snoutHex: '#FFFDF9', noseHex: '#26211F',
-    outfitStyle: 'fox_suit', baseClothHex: '#1E3A8A', accentClothHex: '#F59E0B', pantHex: '#1E293B', shoeHex: '#334155',
-    propKind: 'straw_broom'
+  char_02_jelly_axolotl: {
+    furHex: '#FFD6E7', creamHex: '#FFF0F6', innerEarHex: '#FF85B3', snoutHex: '#FFE4F0', noseHex: '#EC4899',
+    jellyHex: '#FF4DA6', outfitStyle: 'holo_vest', baseClothHex: '#C4B5FD', accentClothHex: '#67E8F9', pantHex: '#FFD6E7', shoeHex: '#F472B6',
+    propKind: 'vip_card'
   },
-  char_12_beaver: {
-    furHex: '#9A5B37', creamHex: '#F3DEC8', innerEarHex: '#D8A47F', snoutHex: '#F3DEC8', noseHex: '#2B1B12',
-    outfitStyle: 'shiba_mart', baseClothHex: '#F59E0B', accentClothHex: '#1E3A8A', pantHex: '#5C3A21', shoeHex: '#3A2316',
+  char_03_yuzu_capybara: {
+    furHex: '#B87B4B', creamHex: '#EED0B3', innerEarHex: '#8C5832', snoutHex: '#A3683C', noseHex: '#2B1B12',
+    jellyHex: '#FACC15', outfitStyle: 'spa_robe', baseClothHex: '#FFFDF9', accentClothHex: '#F59E0B', pantHex: '#FFFDF9', shoeHex: '#D97706',
+    propKind: 'yuzu_tea'
+  },
+  char_04_berry_dragon: {
+    furHex: '#FFC2D4', creamHex: '#FFF9FB', innerEarHex: '#FB7185', snoutHex: '#FFE5EC', noseHex: '#F43F5E',
+    jellyHex: '#FF2E55', outfitStyle: 'cat_tweed', baseClothHex: '#FDA4AF', accentClothHex: '#FFFDF9', pantHex: '#FFC2D4', shoeHex: '#FFF1F2',
+    propKind: 'luxury_bag'
+  },
+  char_05_astro_neko: {
+    furHex: '#FFF8F0', creamHex: '#FFFFFF', innerEarHex: '#F9A8D4', snoutHex: '#FFFFFF', noseHex: '#F472B6',
+    jellyHex: '#E0F2FE', outfitStyle: 'astro_suit', baseClothHex: '#E2E8F0', accentClothHex: '#34D399', pantHex: '#CBD5E1', shoeHex: '#34D399',
     propKind: 'gold_key'
   },
-  char_13_bulldog: {
-    furHex: '#D9A978', creamHex: '#FFF5E6', innerEarHex: '#F4A261', snoutHex: '#F5E1C8', noseHex: '#241B18',
-    outfitStyle: 'panther_boss', baseClothHex: '#B91C1C', accentClothHex: '#FFD700', pantHex: '#334155', shoeHex: '#1E293B',
+  char_06_dj_redpanda: {
+    furHex: '#D95D39', creamHex: '#FFF5EB', blackHex: '#3A231B', innerEarHex: '#FFF5EB', snoutHex: '#FFF5EB', noseHex: '#261712',
+    jellyHex: '#FDA4AF', outfitStyle: 'varsity_jacket', baseClothHex: '#FDBA74', accentClothHex: '#A7F3D0', pantHex: '#3A231B', shoeHex: '#FDA4AF',
+    propKind: 'vinyl_disc'
+  },
+  char_07_rain_platypus: {
+    furHex: '#9C7254', beakHex: '#FDE047', snoutHex: '#FDE047', noseHex: '#EAB308',
+    jellyHex: '#6EE7B7', outfitStyle: 'gold_tux', baseClothHex: '#FBBF24', accentClothHex: '#FFFDF7', pantHex: '#78533A', shoeHex: '#FDE047',
+    propKind: 'coin_case'
+  },
+  char_08_cloud_alpaca: {
+    furHex: '#FFF9FC', woolHex: '#FBCFE8', innerEarHex: '#BAE6FD', snoutHex: '#FFFFFF', noseHex: '#F472B6',
+    jellyHex: '#BAE6FD', outfitStyle: 'sheep_pajama', baseClothHex: '#DDD6FE', accentClothHex: '#FBCFE8', pantHex: '#FFF9FC', shoeHex: '#BAE6FD',
     propKind: null
   },
-  char_14_lion: {
+  char_09_cyber_penguin: {
+    furHex: '#F8FAFC', creamHex: '#FFFFFF', beakHex: '#F59E0B', snoutHex: '#F59E0B', noseHex: '#D97706',
+    porcelain: true, jellyHex: '#38BDF8', outfitStyle: 'royal_cape', baseClothHex: '#FFFDF9', accentClothHex: '#DC2626', pantHex: '#F8FAFC', shoeHex: '#F59E0B',
+    propKind: null
+  },
+  char_10_crystal_fennec: {
+    furHex: '#FDE6C4', creamHex: '#FFFDF9', innerEarHex: '#A855F7', snoutHex: '#FFFDF9', noseHex: '#3B231A',
+    jellyHex: '#A855F7', outfitStyle: 'panther_boss', baseClothHex: '#6B21A8', accentClothHex: '#FFD700', pantHex: '#FDE6C4', shoeHex: '#581C87',
+    propKind: 'perfume_bottle'
+  },
+  char_11_phantom_bat: {
+    furHex: '#2A2238', creamHex: '#3B2F4E', innerEarHex: '#7E22CE', snoutHex: '#352B47', noseHex: '#FFD700',
+    jellyHex: '#7E22CE', outfitStyle: 'panther_boss', baseClothHex: '#1E1B2E', accentClothHex: '#FFD700', pantHex: '#171424', shoeHex: '#FFD700',
+    propKind: 'gold_cane'
+  },
+  char_12_avocado_dino: {
+    furHex: '#86EFAC', creamHex: '#FEF9C3', innerEarHex: '#4ADE80', snoutHex: '#BBF7D0', noseHex: '#15803D',
+    jellyHex: '#4ADE80', outfitStyle: 'avocado_belly', baseClothHex: '#FEF9C3', accentClothHex: '#4ADE80', pantHex: '#86EFAC', shoeHex: '#FACC15',
+    propKind: null
+  },
+  char_13_jellyfish_ghost: {
+    furHex: '#E0F7FA', creamHex: '#FFFFFF', innerEarHex: '#67E8F9', snoutHex: '#F0FDFA', noseHex: '#38BDF8',
+    jellyHex: '#67E8F9', outfitStyle: 'sailor_cape', baseClothHex: '#0284C7', accentClothHex: '#FFFDF9', pantHex: '#E0F7FA', shoeHex: '#BAE6FD',
+    propKind: 'glow_pearl'
+  },
+  char_14_macaron_poodle: {
+    furHex: '#FFF5EB', woolHex: '#FBCFE8', innerEarHex: '#A7F3D0', snoutHex: '#FFFFFF', noseHex: '#EC4899',
+    jellyHex: '#F472B6', outfitStyle: 'cat_tweed', baseClothHex: '#FFFDF7', accentClothHex: '#F9A8D4', pantHex: '#FFF5EB', shoeHex: '#FBCFE8',
+    propKind: 'gold_whisk'
+  },
+  char_15_cactus_hedgie: {
+    furHex: '#F5DEC4', creamHex: '#FFF8F0', innerEarHex: '#FDBA74', snoutHex: '#FFF8F0', noseHex: '#3B2318',
+    jellyHex: '#F472B6', outfitStyle: 'shiba_mart', baseClothHex: '#3B82F6', accentClothHex: '#FFD700', pantHex: '#2563EB', shoeHex: '#D97706',
+    propKind: null
+  },
+  char_16_clockwork_owl: {
+    furHex: '#8C6245', creamHex: '#F5E6D3', beakHex: '#F59E0B', snoutHex: '#F59E0B', noseHex: '#B45309',
+    jellyHex: '#2563EB', outfitStyle: 'fox_suit', baseClothHex: '#1E293B', accentClothHex: '#F59E0B', pantHex: '#334155', shoeHex: '#D97706',
+    propKind: 'gold_key'
+  },
+  char_17_frost_lemur: {
+    furHex: '#E2E8F0', creamHex: '#FFFFFF', blackHex: '#334155', innerEarHex: '#BAE6FD', snoutHex: '#FFFFFF', noseHex: '#1E293B',
+    jellyHex: '#38BDF8', outfitStyle: 'holo_vest', baseClothHex: '#E0F2FE', accentClothHex: '#C4B5FD', pantHex: '#CBD5E1', shoeHex: '#38BDF8',
+    propKind: null
+  },
+  char_18_pitaya_chameleon: {
+    furHex: '#F43F5E', creamHex: '#FFFDF7', innerEarHex: '#86EFAC', snoutHex: '#FB7185', noseHex: '#BE123C',
+    jellyHex: '#FB7185', outfitStyle: 'pitaya_smock', baseClothHex: '#FFFDF7', accentClothHex: '#F43F5E', pantHex: '#F43F5E', shoeHex: '#FFD700',
+    propKind: null
+  },
+  char_19_stainedglass_fawn: {
+    furHex: '#E6AF7E', creamHex: '#FFF8EE', innerEarHex: '#FBCFE8', snoutHex: '#FFF8EE', noseHex: '#4A2C18',
+    jellyHex: '#60A5FA', outfitStyle: 'panda_hoodie', baseClothHex: '#A7F3D0', accentClothHex: '#FFFDF9', pantHex: '#E6AF7E', shoeHex: '#FEF3C7',
+    propKind: null
+  },
+  char_20_bullion_gecko: {
+    furHex: '#FDE047', creamHex: '#FEF9C3', innerEarHex: '#F59E0B', snoutHex: '#FEF08A', noseHex: '#B45309',
+    jellyHex: '#22C55E', outfitStyle: 'fox_suit', baseClothHex: '#1E3A8A', accentClothHex: '#FFD700', pantHex: '#1E293B', shoeHex: '#FFD700',
+    propKind: 'stock_tablet'
+  },
+  char_21_pearl_seal: {
+    furHex: '#F8FAFC', creamHex: '#FFFFFF', innerEarHex: '#FBCFE8', snoutHex: '#FFFFFF', noseHex: '#334155',
+    jellyHex: '#F9A8D4', outfitStyle: 'sailor_cape', baseClothHex: '#1E3A8A', accentClothHex: '#FFD700', pantHex: '#F8FAFC', shoeHex: '#E2E8F0',
+    propKind: 'glow_pearl'
+  },
+  char_22_lavalamp_bear: {
+    furHex: '#A855F7', creamHex: '#E9D5FF', innerEarHex: '#F0ABFC', snoutHex: '#E9D5FF', noseHex: '#581C87',
+    jellyTorso: true, jellyHex: '#9333EA', outfitStyle: 'holo_vest', baseClothHex: '#7E22CE', accentClothHex: '#FFD700', pantHex: '#9333EA', shoeHex: '#E9D5FF',
+    propKind: null
+  },
+  char_23_moonjar_spirit: {
+    furHex: '#FFFDF9', creamHex: '#FFFFFF', innerEarHex: '#A7F3D0', snoutHex: '#FFFFFF', noseHex: '#F59E0B',
+    porcelain: true, jellyHex: '#34D399', outfitStyle: 'kintsugi_jar', baseClothHex: '#FFFDF9', accentClothHex: '#FFD700', pantHex: '#FFFDF9', shoeHex: '#A7F3D0',
+    propKind: null
+  },
+  char_24_dream_tapir: {
+    furHex: '#C4B5FD', creamHex: '#312E81', innerEarHex: '#FDE68A', snoutHex: '#A78BFA', noseHex: '#1E1B4B',
+    jellyHex: '#FDE047', outfitStyle: 'sheep_pajama', baseClothHex: '#312E81', accentClothHex: '#FDE047', pantHex: '#312E81', shoeHex: '#FDE047',
+    propKind: 'dream_lantern'
+  },
+  char_25_chandelier_swan: {
+    furHex: '#FFFFFF', beakHex: '#FB923C', snoutHex: '#FB923C', noseHex: '#EA580C',
+    jellyHex: '#E0F2FE', outfitStyle: 'royal_cape', baseClothHex: '#1D4ED8', accentClothHex: '#FFFFFF', pantHex: '#FFFFFF', shoeHex: '#F59E0B',
+    propKind: null
+  },
+  char_26_arcade_monkey: {
+    furHex: '#9A6344', creamHex: '#F5DEC4', innerEarHex: '#FFD700', snoutHex: '#F5DEC4', noseHex: '#3B2318',
+    jellyHex: '#8B5CF6', outfitStyle: 'panda_hoodie', baseClothHex: '#4C1D95', accentClothHex: '#22D3EE', pantHex: '#311068', shoeHex: '#22D3EE',
+    propKind: 'gold_joystick'
+  },
+  char_27_truffle_boar: {
+    furHex: '#5C3A28', creamHex: '#E6CCB8', innerEarHex: '#D8A48F', snoutHex: '#D99B84', noseHex: '#2B1810',
+    jellyHex: '#F59E0B', outfitStyle: 'chef_coat', baseClothHex: '#FFFDF9', accentClothHex: '#FFD700', pantHex: '#3E271B', shoeHex: '#261710',
+    propKind: 'gold_whisk'
+  },
+  char_28_prism_pony: {
+    furHex: '#FFFDF9', creamHex: '#FFFFFF', innerEarHex: '#F9A8D4', snoutHex: '#FFFFFF', noseHex: '#F472B6',
+    jellyHex: '#EC4899', outfitStyle: 'cat_tweed', baseClothHex: '#FFFDF9', accentClothHex: '#FFD700', pantHex: '#FFFDF9', shoeHex: '#FFD700',
+    propKind: null
+  },
+  char_29_bonsai_tortoise: {
+    furHex: '#86C78E', creamHex: '#FEF3C7', innerEarHex: '#4ADE80', snoutHex: '#A7F3D0', noseHex: '#166534',
+    jellyHex: '#10B981', outfitStyle: 'fox_suit', baseClothHex: '#1E3A8A', accentClothHex: '#FFD700', pantHex: '#1E293B', shoeHex: '#B45309',
+    propKind: 'straw_broom'
+  },
+  char_30_cosmic_lion: {
     furHex: '#F59E0B', creamHex: '#FEF3C7', innerEarHex: '#FDE68A', snoutHex: '#FFFBEB', noseHex: '#451A03',
-    outfitStyle: 'panther_boss', baseClothHex: '#FFFDF7', accentClothHex: '#FFD700', pantHex: '#FDE68A', shoeHex: '#D97706',
+    jellyHex: '#1D4ED8', outfitStyle: 'panther_boss', baseClothHex: '#1E1B4B', accentClothHex: '#FFD700', pantHex: '#312E81', shoeHex: '#FFD700',
     propKind: 'money_gun'
   }
 };
@@ -21238,67 +21452,61 @@ function makeMattePlushMat(hexOrNum, extra = {}) {
   });
 }
 
+function makeTranslucentJellyMat(hexOrNum, opacity = 0.86, extra = {}) {
+  return new THREE.MeshPhysicalMaterial({
+    color: new THREE.Color(hexOrNum),
+    transmission: 0.85,
+    roughness: 0.1,
+    metalness: 0.02,
+    ior: 1.45,
+    thickness: 0.45,
+    transparent: true,
+    opacity,
+    ...extra
+  });
+}
+
 function createAnimalFaceDecalTexture(charId, isWink = false) {
-  const st = ANIMAL_3D_STYLE_PRESETS[charId] || ANIMAL_3D_STYLE_PRESETS.char_01_bunny;
+  const st = ANIMAL_3D_STYLE_PRESETS[charId] || ANIMAL_3D_STYLE_PRESETS.char_01_boba_otter;
   const cv = document.createElement('canvas');
   cv.width = 512;
   cv.height = 512;
   const ctx = cv.getContext('2d');
 
-  // 기본 보송한 털 색상 채우기 (SphereGeometry Equirectangular 정면 중심: x=256, y=264)
   ctx.fillStyle = st.furHex;
   ctx.fillRect(0, 0, 512, 512);
 
-  // 시바견·햄스터·여우 투톤 크림색 볼/하관 패치
-  if (charId === 'char_03_shiba' || charId === 'char_05_hamster' || charId === 'char_09_fox') {
+  if (charId === 'char_01_boba_otter' || charId === 'char_06_dj_redpanda' || charId === 'char_10_crystal_fennec' || charId === 'char_26_arcade_monkey') {
     ctx.fillStyle = st.creamHex || '#FFF8EC';
     ctx.beginPath();
-    ctx.ellipse(256, 326, 92, 86, 0, 0, Math.PI * 2);
+    ctx.ellipse(256, 320, 96, 84, 0, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  // 그라데이션 핑크 볼터치 (윙크 시 한층 더 화사하게 발그레!)
-  if (charId !== 'char_06_panther') {
-    for (const bx of [208, 304]) {
-      const rg = ctx.createRadialGradient(bx, 286, 2, bx, 286, isWink ? 26 : 23);
+  if (charId === 'char_17_frost_lemur') {
+    ctx.fillStyle = '#334155';
+    ctx.beginPath();
+    ctx.ellipse(226, 256, 22, 26, 0.15, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(286, 256, 22, 26, -0.15, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  if (charId !== 'char_11_phantom_bat') {
+    for (const bx of [206, 306]) {
+      const rg = ctx.createRadialGradient(bx, 286, 2, bx, 286, isWink ? 27 : 24);
       rg.addColorStop(0, isWink ? 'rgba(255, 92, 138, 0.88)' : 'rgba(255, 118, 152, 0.72)');
       rg.addColorStop(1, 'rgba(255, 118, 152, 0)');
       ctx.fillStyle = rg;
       ctx.beginPath();
-      ctx.arc(bx, 286, isWink ? 26 : 23, 0, Math.PI * 2);
+      ctx.arc(bx, 286, isWink ? 27 : 24, 0, Math.PI * 2);
       ctx.fill();
     }
   }
 
-  if (charId === 'char_03_shiba') {
-    ctx.fillStyle = '#FFFDF9';
-    for (const ex of [231, 281]) {
-      ctx.beginPath();
-      ctx.ellipse(ex, 226, 7.5, 5.5, ex < 256 ? -0.2 : 0.2, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
-
-  if (charId === 'char_10_panda') {
-    ctx.fillStyle = '#222228';
-    ctx.beginPath();
-    ctx.ellipse(227, 256, 18, 23, 0.25, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(285, 256, 18, 23, -0.25, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  if (charId === 'char_11_raccoon') {
-    ctx.fillStyle = '#3B322E';
-    ctx.beginPath();
-    ctx.ellipse(256, 258, 72, 26, 0, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // [요구사항 3] 정면 귀여운 윙크(> ◡ ◕) 표정 vs 기본 눈동자
   if (isWink) {
-    // 왼쪽 눈: 귀여운 '>' 윙크!
-    ctx.strokeStyle = charId === 'char_10_panda' || charId === 'char_06_panther' ? '#FFFDF9' : '#3B2822';
+    ctx.strokeStyle = charId === 'char_11_phantom_bat' ? '#FFD700' : '#3B2822';
     ctx.lineWidth = 6.2;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -21308,9 +21516,8 @@ function createAnimalFaceDecalTexture(charId, isWink = false) {
     ctx.lineTo(215, 266);
     ctx.stroke();
 
-    // 오른쪽 눈: 초롱초롱 열린 '◕' 눈동자!
     const ex = 285;
-    ctx.fillStyle = charId === 'char_10_panda' ? '#111115' : '#241917';
+    ctx.fillStyle = charId === 'char_11_phantom_bat' ? '#FFD700' : '#241917';
     ctx.beginPath();
     ctx.ellipse(ex, 256, 10.5, 12.5, 0, 0, Math.PI * 2);
     ctx.fill();
@@ -21318,49 +21525,41 @@ function createAnimalFaceDecalTexture(charId, isWink = false) {
     ctx.beginPath();
     ctx.arc(ex - 3, 251, 4.0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.beginPath();
-    ctx.arc(ex + 3, 259, 2.0, 0, Math.PI * 2);
-    ctx.fill();
-  } else if (charId === 'char_01_bunny' || charId === 'char_02_sheep') {
+  } else if (charId === 'char_03_yuzu_capybara') {
     ctx.strokeStyle = '#3B2822';
     ctx.lineWidth = 5.5;
     ctx.lineCap = 'round';
     for (const ex of [227, 285]) {
       ctx.beginPath();
-      if (charId === 'char_01_bunny') {
-        ctx.arc(ex, 260, 11.5, Math.PI * 1.12, Math.PI * 1.88, false);
-      } else {
-        ctx.arc(ex, 252, 11, Math.PI * 0.15, Math.PI * 0.85, false);
-      }
+      ctx.arc(ex, 254, 11, Math.PI * 0.12, Math.PI * 0.88, false);
       ctx.stroke();
     }
   } else {
     for (const ex of [227, 285]) {
-      ctx.fillStyle = charId === 'char_10_panda' ? '#111115' : '#241917';
+      ctx.fillStyle = charId === 'char_11_phantom_bat' ? '#FFD700' : '#201614';
       ctx.beginPath();
-      ctx.ellipse(ex, 256, 9.5, 11.5, 0, 0, Math.PI * 2);
+      ctx.ellipse(ex, 256, 10.2, 12.2, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = '#FFFFFF';
       ctx.beginPath();
-      ctx.arc(ex - 3, 251, 3.6, 0, Math.PI * 2);
+      ctx.arc(ex - 3.2, 250.5, 3.8, 0, Math.PI * 2);
       ctx.fill();
       ctx.beginPath();
-      ctx.arc(ex + 3, 259, 1.8, 0, Math.PI * 2);
+      ctx.arc(ex + 3, 259, 1.9, 0, Math.PI * 2);
       ctx.fill();
     }
   }
 
-  // ㅅ / ◡ 귀여운 입모양 및 수염
-  if (charId !== 'char_04_duck') {
-    ctx.strokeStyle = charId === 'char_06_panther' ? '#D4AF37' : '#4A3228';
+  if (charId !== 'char_07_rain_platypus' && charId !== 'char_09_cyber_penguin' && charId !== 'char_25_chandelier_swan') {
+    ctx.strokeStyle = charId === 'char_11_phantom_bat' ? '#FFD700' : '#4A3228';
     ctx.lineWidth = 4.0;
     ctx.lineCap = 'round';
     ctx.beginPath();
     if (isWink) {
       ctx.arc(256, 290, 12, 0.15, Math.PI - 0.15, false);
-    } else if (charId === 'char_06_panther' || charId === 'char_09_fox') {
-      ctx.moveTo(246, 294);
-      ctx.quadraticCurveTo(258, 301, 271, 290);
+    } else if (charId === 'char_11_phantom_bat') {
+      ctx.moveTo(245, 294);
+      ctx.quadraticCurveTo(258, 302, 272, 289);
     } else {
       ctx.moveTo(244, 291);
       ctx.quadraticCurveTo(250, 299, 256, 291);
@@ -21369,15 +21568,15 @@ function createAnimalFaceDecalTexture(charId, isWink = false) {
     ctx.stroke();
   }
 
-  if (charId === 'char_07_cat' || charId === 'char_01_bunny') {
+  if (charId === 'char_01_boba_otter' || charId === 'char_05_astro_neko' || charId === 'char_21_pearl_seal') {
     ctx.strokeStyle = 'rgba(92, 68, 56, 0.55)';
     ctx.lineWidth = 2.4;
     for (const wy of [-4, 4]) {
       ctx.beginPath();
       ctx.moveTo(198, 282 + wy);
-      ctx.lineTo(182, 280 + wy * 1.3);
+      ctx.lineTo(181, 280 + wy * 1.3);
       ctx.moveTo(314, 282 + wy);
-      ctx.lineTo(330, 280 + wy * 1.3);
+      ctx.lineTo(331, 280 + wy * 1.3);
       ctx.stroke();
     }
   }
@@ -21389,7 +21588,7 @@ function createAnimalFaceDecalTexture(charId, isWink = false) {
 }
 
 function createAnimalOutfitTexture(charId) {
-  const st = ANIMAL_3D_STYLE_PRESETS[charId] || ANIMAL_3D_STYLE_PRESETS.char_01_bunny;
+  const st = ANIMAL_3D_STYLE_PRESETS[charId] || ANIMAL_3D_STYLE_PRESETS.char_01_boba_otter;
   const cv = document.createElement('canvas');
   cv.width = 256;
   cv.height = 256;
@@ -21398,78 +21597,89 @@ function createAnimalOutfitTexture(charId) {
   ctx.fillStyle = st.baseClothHex;
   ctx.fillRect(0, 0, 256, 256);
 
-  if (st.outfitStyle === 'bunny_apron') {
-    // 크림 니트 결 + 정면 브라운 파티시에 에이프런
-    ctx.strokeStyle = 'rgba(180, 145, 110, 0.25)';
-    ctx.lineWidth = 3;
-    for (let x = 8; x < 256; x += 14) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 256); ctx.stroke();
-    }
+  if (st.outfitStyle === 'puffer_vest' || st.outfitStyle === 'holo_vest') {
     ctx.fillStyle = st.accentClothHex;
-    ctx.fillRect(86, 56, 84, 176);
-    ctx.fillRect(96, 10, 14, 52);
-    ctx.fillRect(146, 10, 14, 52);
-    ctx.fillRect(0, 130, 256, 18);
-  } else if (st.outfitStyle === 'sheep_pajama') {
-    // 파스텔 폴카도트 물방울 파자마
-    const dotCols = ['#FFFDF9', '#F9A8D4', '#FDE047', '#BAE6FD'];
-    for (let y = 16; y < 256; y += 32) {
-      for (let x = (y % 64 === 16 ? 16 : 32); x < 256; x += 32) {
-        ctx.fillStyle = dotCols[(x + y) % dotCols.length];
-        ctx.beginPath(); ctx.arc(x, y, 6.5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillRect(102, 0, 52, 256);
+    ctx.strokeStyle = '#FFD700';
+    ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.moveTo(128, 0); ctx.lineTo(128, 256); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+    ctx.lineWidth = 3;
+    for (const y of [64, 128, 192]) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(256, y); ctx.stroke();
+    }
+  } else if (st.outfitStyle === 'spa_robe' || st.outfitStyle === 'chef_coat') {
+    ctx.strokeStyle = '#FFD700';
+    ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.moveTo(98, 0); ctx.lineTo(128, 120); ctx.lineTo(158, 0); ctx.stroke();
+    ctx.fillStyle = '#FFD700';
+    ctx.fillRect(0, 144, 256, 18);
+    for (const by of [88, 132, 178]) {
+      ctx.beginPath(); ctx.arc(114, by, 5.5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(142, by, 5.5, 0, Math.PI * 2); ctx.fill();
+    }
+  } else if (st.outfitStyle === 'astro_suit') {
+    ctx.fillStyle = st.accentClothHex;
+    ctx.fillRect(0, 32, 256, 26);
+    ctx.fillRect(88, 92, 80, 68);
+    ctx.fillStyle = '#FFD700';
+    ctx.beginPath(); ctx.arc(128, 126, 18, 0, Math.PI * 2); ctx.fill();
+  } else if (st.outfitStyle === 'varsity_jacket') {
+    ctx.fillStyle = st.accentClothHex;
+    ctx.fillRect(0, 206, 256, 26);
+    ctx.fillStyle = '#FFFDF9';
+    ctx.fillRect(118, 0, 20, 256);
+  } else if (st.outfitStyle === 'kintsugi_jar') {
+    ctx.strokeStyle = '#FFD700';
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(64, 24); ctx.lineTo(116, 98); ctx.lineTo(94, 172); ctx.lineTo(148, 236);
+    ctx.moveTo(186, 42); ctx.lineTo(138, 118); ctx.lineTo(176, 194);
+    ctx.stroke();
+  } else if (st.outfitStyle === 'pitaya_smock') {
+    ctx.fillStyle = '#1E1B18';
+    for (let y = 28; y < 236; y += 34) {
+      for (let x = 28; x < 236; x += 36) {
+        ctx.beginPath(); ctx.ellipse(x, y, 3.5, 5.5, 0.3, 0, Math.PI * 2); ctx.fill();
       }
     }
-  } else if (st.outfitStyle === 'shiba_mart') {
-    // 편의점 블루&화이트 스트라이프 조끼
-    ctx.fillStyle = '#FFFFFF';
-    for (let x = 0; x < 256; x += 24) {
-      ctx.fillRect(x, 0, 12, 256);
+  } else if (st.outfitStyle === 'sheep_pajama') {
+    const dotCols = ['#FFFDF9', '#F9A8D4', '#FDE047', '#BAE6FD'];
+    for (let y = 18; y < 256; y += 34) {
+      for (let x = 18; x < 256; x += 34) {
+        ctx.fillStyle = dotCols[(x + y) % dotCols.length];
+        ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI * 2); ctx.fill();
+      }
     }
-    ctx.fillStyle = '#0284C7';
-    ctx.fillRect(0, 196, 256, 28);
-  } else if (st.outfitStyle === 'panther_boss') {
-    // 로열 퍼플 더블 브레스티드 벨벳 수트 + 24K 금단추
-    ctx.fillStyle = '#3B0764';
+  } else if (st.outfitStyle === 'panther_boss' || st.outfitStyle === 'royal_cape' || st.outfitStyle === 'sailor_cape') {
+    ctx.fillStyle = st.accentClothHex;
     ctx.beginPath();
-    ctx.moveTo(106, 0); ctx.lineTo(128, 78); ctx.lineTo(150, 0); ctx.fill();
+    ctx.moveTo(100, 0); ctx.lineTo(128, 84); ctx.lineTo(156, 0); ctx.fill();
     ctx.fillStyle = '#FFD700';
     for (const by of [96, 142, 188]) {
       ctx.beginPath(); ctx.arc(112, by, 6, 0, Math.PI * 2); ctx.fill();
       ctx.beginPath(); ctx.arc(144, by, 6, 0, Math.PI * 2); ctx.fill();
     }
   } else if (st.outfitStyle === 'cat_tweed') {
-    // 청담 트위드 재킷 위브 패턴 + 골드 버튼
-    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
     ctx.lineWidth = 2;
     for (let i = 0; i < 256; i += 14) {
       ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 256); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(256, i); ctx.stroke();
     }
-    ctx.fillStyle = '#FBBF24';
+    ctx.fillStyle = '#FFD700';
     for (const by of [76, 128, 180]) {
       ctx.beginPath(); ctx.arc(128, by, 5.5, 0, Math.PI * 2); ctx.fill();
     }
-  } else if (st.outfitStyle === 'bear_check') {
-    // 테디베어 바리스타 브라운 체크 조끼
-    ctx.fillStyle = 'rgba(245, 158, 11, 0.34)';
-    for (let i = 0; i < 256; i += 28) {
-      ctx.fillRect(i, 0, 12, 256);
-      ctx.fillRect(0, i, 256, 12);
-    }
-  } else if (st.outfitStyle === 'fox_suit') {
-    // 월스트리트 네이비 수트 + 화이트 셔츠 V존 + 레드 타이
+  } else if (st.outfitStyle === 'fox_suit' || st.outfitStyle === 'gold_tux') {
     ctx.fillStyle = '#FFFFFF';
     ctx.beginPath();
-    ctx.moveTo(108, 0); ctx.lineTo(128, 92); ctx.lineTo(148, 0); ctx.fill();
-    ctx.fillStyle = '#EF4444';
+    ctx.moveTo(106, 0); ctx.lineTo(128, 92); ctx.lineTo(150, 0); ctx.fill();
+    ctx.fillStyle = '#FFD700';
     ctx.fillRect(122, 16, 12, 74);
-  } else if (st.outfitStyle === 'panda_hoodie') {
-    // 파스텔 민트 후디 캥거루 포켓 & 화이트 스트링
-    ctx.fillStyle = '#6EE7B7';
+  } else {
+    ctx.fillStyle = st.accentClothHex;
     ctx.fillRect(92, 126, 72, 68);
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(114, 18, 5, 64);
-    ctx.fillRect(137, 18, 5, 64);
   }
 
   const tex = new THREE.CanvasTexture(cv);
@@ -21480,38 +21690,46 @@ function createAnimalOutfitTexture(charId) {
 
 function getAnimal3DSharedResources(charId) {
   if (ANIMAL_3D_RESOURCE_CACHE[charId]) return ANIMAL_3D_RESOURCE_CACHE[charId];
-  const st = ANIMAL_3D_STYLE_PRESETS[charId] || ANIMAL_3D_STYLE_PRESETS.char_01_bunny;
+  const st = ANIMAL_3D_STYLE_PRESETS[charId] || ANIMAL_3D_STYLE_PRESETS.char_01_boba_otter;
   const faceTex = createAnimalFaceDecalTexture(charId, false);
   const winkTex = createAnimalFaceDecalTexture(charId, true);
   const outfitTex = createAnimalOutfitTexture(charId);
+  const surfaceRough = st.porcelain ? 0.14 : 0.85;
+  const surfaceMetal = st.porcelain ? 0.12 : 0.05;
 
   const res = {
     st,
     headMat: new THREE.MeshStandardMaterial({
       map: faceTex,
-      roughness: 0.85,
-      metalness: 0.05
+      roughness: surfaceRough,
+      metalness: surfaceMetal
     }),
     headWinkMat: new THREE.MeshStandardMaterial({
       map: winkTex,
-      roughness: 0.85,
-      metalness: 0.05
+      roughness: surfaceRough,
+      metalness: surfaceMetal
     }),
-    furMat: makeMattePlushMat(st.furHex),
-    limbFurMat: makeMattePlushMat(st.blackHex || st.furHex),
+    furMat: makeMattePlushMat(st.furHex, { roughness: surfaceRough, metalness: surfaceMetal }),
+    limbFurMat: makeMattePlushMat(st.blackHex || st.furHex, { roughness: surfaceRough }),
     creamMat: makeMattePlushMat(st.creamHex || st.snoutHex || '#FFFDF9'),
     innerEarMat: makeMattePlushMat(st.innerEarHex || '#FFAEC0'),
     snoutMat: makeMattePlushMat(st.beakHex || st.snoutHex || '#FFFDF9'),
     noseMat: makeMattePlushMat(st.noseHex || '#3A2822'),
-    outfitMat: new THREE.MeshStandardMaterial({
-      map: outfitTex,
-      roughness: 0.85,
-      metalness: 0.05
-    }),
+    jellyMat: makeTranslucentJellyMat(st.jellyHex || '#7DD3FC', 0.86),
+    clearGlassMat: makeTranslucentJellyMat('#F0F9FF', 0.56),
+    outfitMat: st.jellyTorso
+      ? makeTranslucentJellyMat(st.jellyHex || '#9333EA', 0.84)
+      : new THREE.MeshStandardMaterial({
+          map: outfitTex,
+          roughness: st.porcelain ? 0.14 : 0.82,
+          metalness: st.porcelain ? 0.12 : 0.06
+        }),
     sleeveMat: makeMattePlushMat(st.baseClothHex),
     pantMat: makeMattePlushMat(st.pantHex || '#3A2E2B'),
-    shoeMat: makeMattePlushMat(st.shoeHex || '#FFFDF9'),
-    woolMat: makeMattePlushMat(st.woolHex || '#FFFDF8')
+    shoeMat: charId === 'char_06_dj_redpanda'
+      ? makeTranslucentJellyMat('#FDA4AF', 0.88)
+      : makeMattePlushMat(st.shoeHex || '#FFFDF9'),
+    woolMat: makeMattePlushMat(st.woolHex || '#FBCFE8')
   };
   ANIMAL_3D_RESOURCE_CACHE[charId] = res;
   return res;
@@ -21524,8 +21742,8 @@ function buildTrue3DAnimalClayRig(grp, charId, role = 'student') {
   const isHeroRole = (role === 'landlord_avatar' || role === 'landlord' || role === 'landlord_driver');
   const res = getAnimal3DSharedResources(charId);
   const st = res.st;
+  const goldMat = MAT.pureGold24k || makeMattePlushMat('#FFD700', { roughness: 0.22, metalness: 0.85 });
 
-  // 기존 휴머노이드 기본 메쉬 정리 (carryBag / phoneProp / cupProp / megaphoneProp 소품은 100% 보존!)
   const keepProps = new Set([ud.carryBag, ud.phoneProp, ud.cupProp, ud.megaphoneProp].filter(Boolean));
   for (let i = ud.bodyRig.children.length - 1; i >= 0; i--) {
     const ch = ud.bodyRig.children[i];
@@ -21538,7 +21756,6 @@ function buildTrue3DAnimalClayRig(grp, charId, role = 'student') {
   const oldHeroAura = grp.children.find((c) => c.userData?.isHeroGoldenAura);
   if (oldHeroAura) grp.remove(oldHeroAura);
 
-  // [요구사항 1] 내 주인공 동물 캐릭터 발밑 은은한 24K 황금 링 오라(Golden Ring Aura) 상시 점등!
   if (isHeroRole && role !== 'landlord_driver') {
     const auraGrp = new THREE.Group();
     auraGrp.userData.isHeroGoldenAura = true;
@@ -21570,7 +21787,7 @@ function buildTrue3DAnimalClayRig(grp, charId, role = 'student') {
     ud.heroGoldenAura = auraGrp;
   }
 
-  // 1) 통통한 2등신 다리 관절 그룹 (Left/Right Legs) + 오리 물갈퀴발 / 폭신한 발끝 조형
+  // 1) 통통한 2등신 다리 관절 그룹 (벨벳 플로킹 / 아크릴 젤리 스니커즈 / 오리너구리 물갈퀴)
   const makePlushLeg = (lx) => {
     const lg = new THREE.Group();
     const thigh = new THREE.Mesh(GEO.cyl, res.pantMat);
@@ -21578,7 +21795,7 @@ function buildTrue3DAnimalClayRig(grp, charId, role = 'student') {
     thigh.position.y = -0.13;
     lg.add(thigh);
 
-    if (charId === 'char_04_duck') {
+    if (charId === 'char_07_rain_platypus' || charId === 'char_09_cyber_penguin' || charId === 'char_25_chandelier_swan') {
       const foot = createRoundedToyMesh(0.26, 0.09, 0.32, res.shoeMat, 0, -0.29, 0.06, 0.04);
       lg.add(foot);
     } else {
@@ -21592,15 +21809,45 @@ function buildTrue3DAnimalClayRig(grp, charId, role = 'student') {
   const legR = makePlushLeg(0.16);
   ud.bodyRig.add(legL, legR);
 
-  // 2) 보송보송 통통한 상체 몸통 (Body) & 가슴 털 / 리본 / 목걸이 디테일
+  // 2) 하이브리드 아트토이 몸통 (벨벳 수트 / 투명 라바램프 유리 / 달항아리 도자기 / 24K 아보카도 씨앗 / 사파이어 태엽창)
   const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.38, 0.56, 24), res.outfitMat);
   torso.rotation.y = Math.PI;
   torso.position.y = 0.61;
   torso.castShadow = true;
-  addToonHullOutline(torso, 1.05);
+  if (!st.jellyTorso) addToonHullOutline(torso, 1.05);
   ud.bodyRig.add(torso);
 
-  // [요구사항 8] 눈(❄️) 날씨 전용 포근한 3D 빨강·크림 니트 목도리 (Winter Scarf)
+  if (charId === 'char_07_rain_platypus') {
+    const jellyCoat = new THREE.Mesh(new THREE.CylinderGeometry(0.33, 0.43, 0.54, 24, 1, true), res.jellyMat);
+    jellyCoat.position.y = 0.61;
+    ud.bodyRig.add(jellyCoat);
+  } else if (charId === 'char_12_avocado_dino') {
+    const goldPit = new THREE.Mesh(GEO.sphere, goldMat);
+    goldPit.scale.setScalar(0.19);
+    goldPit.position.set(0, 0.56, 0.31);
+    ud.bodyRig.add(goldPit);
+  } else if (charId === 'char_16_clockwork_owl') {
+    const gearWin = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.06, 20), res.jellyMat);
+    gearWin.rotation.x = Math.PI * 0.5;
+    gearWin.position.set(0, 0.64, 0.34);
+    const gearCore = new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.028, 8, 12), goldMat);
+    gearCore.position.set(0, 0.64, 0.35);
+    ud.bodyRig.add(gearWin, gearCore);
+  } else if (charId === 'char_22_lavalamp_bear') {
+    for (const [bx, by, bz, sc] of [[0, 0.56, 0.06, 0.12], [-0.09, 0.7, -0.04, 0.09], [0.1, 0.48, -0.05, 0.08]]) {
+      const blob = new THREE.Mesh(GEO.sphere, goldMat);
+      blob.scale.setScalar(sc);
+      blob.position.set(bx, by, bz);
+      ud.bodyRig.add(blob);
+    }
+  } else if (charId === 'char_23_moonjar_spirit') {
+    const jadeSash = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.045, 10, 24), res.jellyMat);
+    jadeSash.rotation.x = Math.PI * 0.5;
+    jadeSash.position.set(0, 0.62, 0);
+    ud.bodyRig.add(jadeSash);
+  }
+
+  // 눈(❄️) 날씨 전용 니트 목도리
   const winterScarfGroup = new THREE.Group();
   const scarfColors = ['#EF4444', '#F97316', '#EC4899', '#10B981', '#3B82F6'];
   const scarfMat = makeMattePlushMat(scarfColors[Math.abs(charId.charCodeAt(5) || 0) % scarfColors.length]);
@@ -21615,10 +21862,10 @@ function buildTrue3DAnimalClayRig(grp, charId, role = 'student') {
   winterScarfGroup.visible = false;
   ud.bodyRig.add(winterScarfGroup);
 
-  // 3) 왼팔 / 오른팔 관절 그룹 (Left/Right Arms) + 시그니처 3D 손 소품
+  // 3) 왼팔 / 오른팔 + 하이패션 이종재질 손 소품 (투명 버블티컵, VIP 키카드, 향수병, 황금 먼지떨이 등)
   const makePlushArm = (ax, rotZ) => {
     const ag = new THREE.Group();
-    const slv = new THREE.Mesh(GEO.cyl, charId === 'char_10_panda' ? res.limbFurMat : res.sleeveMat);
+    const slv = new THREE.Mesh(GEO.cyl, res.sleeveMat);
     slv.scale.set(0.16, 0.32, 0.16);
     slv.position.y = -0.11;
     const paw = new THREE.Mesh(GEO.sphere, res.limbFurMat);
@@ -21635,51 +21882,79 @@ function buildTrue3DAnimalClayRig(grp, charId, role = 'student') {
 
   const handPropGroup = new THREE.Group();
   handPropGroup.position.set(-0.04, -0.28, 0.16);
-  if (st.propKind === 'croissant') {
-    const cr = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.055, 10, 16, Math.PI * 1.25), MAT.realCroissant || MAT.butterOak);
-    cr.rotation.x = Math.PI * 0.35;
-    handPropGroup.add(cr);
-  } else if (st.propKind === 'pillow') {
-    handPropGroup.add(createRoundedToyMesh(0.26, 0.2, 0.12, makeMattePlushMat('#FDE68A'), 0, 0.02, 0.04, 0.05));
+  if (st.propKind === 'boba_cup') {
+    const bCup = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.072, 0.23, 16), res.clearGlassMat);
+    const pearl1 = new THREE.Mesh(GEO.sphere, goldMat);
+    pearl1.scale.setScalar(0.036);
+    pearl1.position.set(-0.02, -0.06, 0.02);
+    const pearl2 = new THREE.Mesh(GEO.sphere, makeMattePlushMat('#7E22CE'));
+    pearl2.scale.setScalar(0.036);
+    pearl2.position.set(0.03, -0.05, -0.01);
+    const straw = new THREE.Mesh(GEO.cyl, goldMat);
+    straw.scale.set(0.024, 0.18, 0.024);
+    straw.position.set(0.02, 0.14, 0);
+    bCup.add(pearl1, pearl2, straw);
+    handPropGroup.add(bCup);
+  } else if (st.propKind === 'vip_card') {
+    const card = createRoundedToyMesh(0.22, 0.15, 0.03, goldMat, 0, 0, 0.04, 0.01);
+    handPropGroup.add(card);
+  } else if (st.propKind === 'coin_case') {
+    const cBox = createRoundedToyMesh(0.25, 0.2, 0.1, res.clearGlassMat, 0, -0.04, 0.02, 0.02);
+    const cIn = createRoundedToyMesh(0.16, 0.11, 0.05, goldMat, 0, -0.05, 0.02, 0.01);
+    handPropGroup.add(cBox, cIn);
+  } else if (st.propKind === 'perfume_bottle' || st.propKind === 'dream_lantern') {
+    const bottle = new THREE.Mesh(new THREE.OctahedronGeometry(0.12, 0), res.jellyMat);
+    const cap = new THREE.Mesh(GEO.sphere, goldMat);
+    cap.scale.setScalar(0.048);
+    cap.position.y = 0.13;
+    handPropGroup.add(bottle, cap);
+  } else if (st.propKind === 'glow_pearl') {
+    const prl = new THREE.Mesh(GEO.sphere, makeTranslucentJellyMat('#FBCFE8', 0.92));
+    prl.scale.setScalar(0.11);
+    handPropGroup.add(prl);
+  } else if (st.propKind === 'gold_cane') {
+    const cane = new THREE.Mesh(GEO.cyl, goldMat);
+    cane.scale.set(0.034, 0.68, 0.034);
+    cane.position.set(0.03, -0.1, 0.05);
+    const knob = new THREE.Mesh(GEO.sphere, res.jellyMat);
+    knob.scale.setScalar(0.075);
+    knob.position.set(0.03, 0.24, 0.05);
+    handPropGroup.add(cane, knob);
+  } else if (st.propKind === 'gold_whisk' || st.propKind === 'gold_joystick') {
+    const stick = createRoundedToyMesh(0.06, 0.22, 0.06, goldMat, 0, 0.04, 0.04, 0.02);
+    const topBall = new THREE.Mesh(GEO.sphere, goldMat);
+    topBall.scale.setScalar(0.075);
+    topBall.position.set(0, 0.16, 0.04);
+    handPropGroup.add(stick, topBall);
+  } else if (st.propKind === 'stock_tablet') {
+    const tab = createRoundedToyMesh(0.24, 0.18, 0.035, res.jellyMat, 0, 0.02, 0.05, 0.01);
+    handPropGroup.add(tab);
   } else if (st.propKind === 'gold_key') {
-    const kRing = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.028, 10, 18), MAT.pureGold24k);
+    const kRing = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.028, 10, 18), goldMat);
     kRing.position.y = 0.12;
-    const kShaft = createRoundedToyMesh(0.045, 0.22, 0.045, MAT.pureGold24k, 0, -0.02, 0, 0.015);
+    const kShaft = createRoundedToyMesh(0.045, 0.22, 0.045, goldMat, 0, -0.02, 0, 0.015);
     handPropGroup.add(kRing, kShaft);
   } else if (st.propKind === 'luxury_bag') {
     handPropGroup.add(createRoundedToyMesh(0.22, 0.24, 0.12, makeMattePlushMat('#FFF1F2'), 0, -0.06, 0, 0.03));
-  } else if (st.propKind === 'coffee_cup') {
-    const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.065, 0.2, 14), MAT.white);
-    const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.088, 0.075, 0.09, 14), makeMattePlushMat('#B45309'));
-    cup.add(sleeve);
-    handPropGroup.add(cup);
   } else if (st.propKind === 'money_gun') {
-    const miniGun = createRoundedToyMesh(0.1, 0.12, 0.28, MAT.pureGold24k, 0, 0.02, 0.08, 0.02);
-    handPropGroup.add(miniGun);
-  } else if (st.propKind === 'boba_cup') {
-    const bCup = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.07, 0.22, 14), makeMattePlushMat('#FDEFD9'));
-    const straw = new THREE.Mesh(GEO.cyl, makeMattePlushMat('#FB7185'));
-    straw.scale.set(0.025, 0.16, 0.025);
-    straw.position.set(0.02, 0.14, 0);
-    bCup.add(straw);
-    handPropGroup.add(bCup);
+    handPropGroup.add(createRoundedToyMesh(0.1, 0.12, 0.28, goldMat, 0, 0.02, 0.08, 0.02));
   } else if (st.propKind === 'straw_broom') {
-    const handle = new THREE.Mesh(GEO.cyl, MAT.woodWarm);
-    handle.scale.set(0.036, 0.92, 0.036);
+    const handle = new THREE.Mesh(GEO.cyl, goldMat);
+    handle.scale.set(0.036, 0.88, 0.036);
     handle.position.set(0.04, 0.12, 0.06);
-    const brush = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.36, 12), makeMattePlushMat('#F59E0B'));
-    brush.position.set(0.04, -0.34, 0.06);
-    const keyRing = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.022, 8, 16), MAT.pureGold24k || MAT.gold);
-    keyRing.position.set(-0.08, 0.06, 0.08);
+    const brush = new THREE.Mesh(new THREE.ConeGeometry(0.17, 0.34, 12), goldMat);
+    brush.position.set(0.04, 0.42, 0.06);
+    const keyRing = new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.024, 8, 16), goldMat);
+    keyRing.position.set(-0.08, 0.04, 0.08);
     handPropGroup.add(handle, brush, keyRing);
   }
   armR.add(handPropGroup);
 
-  // [요구사항 8] 비(☔) 날씨 전용 앙증맞은 3D 파스텔 미니 우산(Pastel Dome Umbrella)
+  // 비(☔) 날씨 전용 파스텔 미니 우산
   const umbrellaPropGroup = new THREE.Group();
   const pastelUmbrellaPalette = [0xFF9EBB, 0x7DD3FC, 0xFDE047, 0xA7F3D0, 0xDDD6FE];
   const umbCol = pastelUmbrellaPalette[Math.abs((charId.charCodeAt(5) || 0) + (role.charCodeAt(0) || 0)) % pastelUmbrellaPalette.length];
-  const umbShaft = new THREE.Mesh(GEO.cyl, MAT.pureGold24k || MAT.woodWarm);
+  const umbShaft = new THREE.Mesh(GEO.cyl, goldMat);
   umbShaft.scale.set(0.032, 0.96, 0.032);
   umbShaft.position.set(0, 0.44, 0.08);
   const umbDome = new THREE.Mesh(
@@ -21687,18 +21962,14 @@ function buildTrue3DAnimalClayRig(grp, charId, role = 'student') {
     new THREE.MeshStandardMaterial({ color: umbCol, roughness: 0.35, metalness: 0.05, side: THREE.DoubleSide })
   );
   umbDome.position.set(0, 0.56, 0.08);
-  const umbFinial = new THREE.Mesh(GEO.sphere, MAT.pureGold24k || MAT.white);
+  const umbFinial = new THREE.Mesh(GEO.sphere, goldMat);
   umbFinial.scale.setScalar(0.065);
   umbFinial.position.set(0, 1.25, 0.08);
-  const umbHandle = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.022, 8, 14, Math.PI), MAT.coral);
-  umbHandle.rotation.z = Math.PI;
-  umbHandle.position.set(0.07, -0.03, 0.08);
-  umbrellaPropGroup.add(umbShaft, umbDome, umbFinial, umbHandle);
+  umbrellaPropGroup.add(umbShaft, umbDome, umbFinial);
   umbrellaPropGroup.position.set(-0.08, -0.22, 0.08);
   umbrellaPropGroup.visible = false;
   armR.add(umbrellaPropGroup);
 
-  // [요구사항 2] 이동형 머니건 플렉스 퍼레이드 전용 양손 24K 황금 머니건 (Dual 3D Money Guns)
   let dualMoneyGunsGroup = null;
   let goldenTelescopeGroup = null;
   if (isHeroRole) {
@@ -21721,29 +21992,26 @@ function buildTrue3DAnimalClayRig(grp, charId, role = 'student') {
       set visible(v) { gunLeft.visible = !!v; gunRight.visible = !!v; }
     };
 
-    // [요구사항 4] 방·상가 클릭 시 주인공이 두 손으로 들어 올리는 3D 24K 황금 투시 망원경!
     goldenTelescopeGroup = new THREE.Group();
     goldenTelescopeGroup.position.set(0, 1.22, 0.56);
-    const teleTube1 = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.14, 0.42, 18), MAT.pureGold24k);
+    const teleTube1 = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.14, 0.42, 18), goldMat);
     teleTube1.rotation.x = Math.PI * 0.5;
     teleTube1.position.z = 0.06;
-    const teleTube2 = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.19, 0.46, 18), MAT.pureGold24k);
+    const teleTube2 = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.19, 0.46, 18), goldMat);
     teleTube2.rotation.x = Math.PI * 0.5;
     teleTube2.position.z = 0.42;
-    const teleBand = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.032, 10, 20), makeMattePlushMat('#B45309'));
-    teleBand.position.z = 0.64;
     const teleLens = new THREE.Mesh(
       new THREE.CylinderGeometry(0.17, 0.17, 0.05, 18),
       new THREE.MeshBasicMaterial({ color: 0x38BDF8 })
     );
     teleLens.rotation.x = Math.PI * 0.5;
     teleLens.position.z = 0.66;
-    goldenTelescopeGroup.add(teleTube1, teleTube2, teleBand, teleLens);
+    goldenTelescopeGroup.add(teleTube1, teleTube2, teleLens);
     goldenTelescopeGroup.visible = false;
     ud.bodyRig.add(goldenTelescopeGroup);
   }
 
-  // 4) 찹쌀떡 2등신 볼살 헤드 그룹 (Head + 3D 입체 주둥이/부리 + Ears/Crown/Sunglasses)
+  // 4) 찹쌀떡 2등신 헤드 + 부리/코/멧돼지 엄니/바쿠 코 + 30종 시그니처 투명 젤리·유리·크리스탈·24K 헤드파츠!
   const headGroup = new THREE.Group();
   headGroup.position.set(0, 1.24, 0);
   ud.bodyRig.add(headGroup);
@@ -21755,151 +22023,313 @@ function buildTrue3DAnimalClayRig(grp, charId, role = 'student') {
   addToonHullOutline(headMesh, 1.045);
   headGroup.add(headMesh);
 
-  // 입체 볼록 주둥이 / 오리 주황 납작 부리 / 햄스터 빵빵 볼살
-  if (charId === 'char_04_duck') {
-    const upperBeak = new THREE.Mesh(GEO.sphere, res.snoutMat);
-    upperBeak.scale.set(0.34, 0.13, 0.28);
-    upperBeak.position.set(0, -0.06, 0.43);
-    const lowerBeak = new THREE.Mesh(GEO.sphere, res.snoutMat);
-    lowerBeak.scale.set(0.28, 0.09, 0.22);
-    lowerBeak.position.set(0, -0.11, 0.4);
-    headGroup.add(upperBeak, lowerBeak);
+  if (charId === 'char_07_rain_platypus' || charId === 'char_09_cyber_penguin' || charId === 'char_16_clockwork_owl' || charId === 'char_25_chandelier_swan') {
+    const beak = new THREE.Mesh(GEO.sphere, res.snoutMat);
+    beak.scale.set(charId === 'char_07_rain_platypus' ? 0.36 : 0.22, 0.12, 0.28);
+    beak.position.set(0, -0.06, 0.44);
+    headGroup.add(beak);
+  } else if (charId === 'char_24_dream_tapir') {
+    const trunk = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.068, 10, 16, Math.PI * 0.85), res.snoutMat);
+    trunk.rotation.y = Math.PI * 0.5;
+    trunk.position.set(0, -0.07, 0.42);
+    headGroup.add(trunk);
   } else {
     const muzzle = new THREE.Mesh(GEO.sphere, res.snoutMat);
-    muzzle.scale.set(0.26, 0.19, 0.2);
+    muzzle.scale.set(0.25, 0.18, 0.19);
     muzzle.position.set(0, -0.08, 0.41);
     const nose = new THREE.Mesh(GEO.sphere, res.noseMat);
-    nose.scale.set(0.1, 0.075, 0.09);
+    nose.scale.set(0.095, 0.072, 0.085);
     nose.position.set(0, -0.03, 0.49);
     headGroup.add(muzzle, nose);
-  }
-
-  if (charId === 'char_05_hamster') {
-    for (const cx of [-0.34, 0.34]) {
-      const cheekPouch = new THREE.Mesh(GEO.sphere, res.creamMat);
-      cheekPouch.scale.set(0.28, 0.24, 0.26);
-      cheekPouch.position.set(cx, -0.1, 0.2);
-      headGroup.add(cheekPouch);
-    }
-  }
-
-  // 동물 종별 3D 입체 귀 & 헤드기어 (EarsGroup)
-  const earsGroup = new THREE.Group();
-  headGroup.add(earsGroup);
-
-  if (charId === 'char_01_bunny') {
-    for (const side of [-1, 1]) {
-      const earOuter = new THREE.Mesh(GEO.sphere, res.furMat);
-      earOuter.scale.set(0.21, 0.56, 0.15);
-      earOuter.position.set(side * 0.19, 0.52, -0.02);
-      earOuter.rotation.z = side * -0.12;
-      const earInner = new THREE.Mesh(GEO.sphere, res.innerEarMat);
-      earInner.scale.set(0.12, 0.4, 0.08);
-      earInner.position.set(side * 0.19, 0.5, 0.04);
-      earInner.rotation.z = side * -0.12;
-      earsGroup.add(earOuter, earInner);
-    }
-  } else if (charId === 'char_02_sheep') {
-    // 몽글몽글 구름 양털 구체 클러스터 12개 (정수리·측면·뒤통수 360도 입체 감싸기!)
-    const woolCoords = [
-      [0, 0.39, 0.06, 0.28], [-0.22, 0.36, 0.08, 0.25], [0.22, 0.36, 0.08, 0.25],
-      [-0.36, 0.22, 0.0, 0.24], [0.36, 0.22, 0.0, 0.24],
-      [0, 0.36, -0.2, 0.28], [-0.24, 0.28, -0.24, 0.26], [0.24, 0.28, -0.24, 0.26],
-      [0, 0.16, -0.36, 0.29], [-0.26, 0.08, -0.31, 0.25], [0.26, 0.08, -0.31, 0.25],
-      [0, -0.06, -0.36, 0.26]
-    ];
-    for (const [wx, wy, wz, wr] of woolCoords) {
-      const puff = new THREE.Mesh(GEO.sphere, res.woolMat);
-      puff.scale.setScalar(wr * 1.45);
-      puff.position.set(wx, wy, wz);
-      earsGroup.add(puff);
-    }
-    for (const side of [-1, 1]) {
-      const droopEar = new THREE.Mesh(GEO.sphere, res.furMat);
-      droopEar.scale.set(0.24, 0.13, 0.14);
-      droopEar.position.set(side * 0.45, 0.04, 0.04);
-      droopEar.rotation.z = side * -0.45;
-      earsGroup.add(droopEar);
-    }
-  } else if (charId === 'char_03_shiba' || charId === 'char_09_fox') {
-    const earScale = charId === 'char_09_fox' ? 1.24 : 1.0;
-    for (const side of [-1, 1]) {
-      const triEar = new THREE.Mesh(new THREE.ConeGeometry(0.16 * earScale, 0.34 * earScale, 14), res.furMat);
-      triEar.position.set(side * 0.27, 0.38, -0.02);
-      triEar.rotation.z = side * -0.28;
-      const triIn = new THREE.Mesh(new THREE.ConeGeometry(0.09 * earScale, 0.22 * earScale, 12), res.innerEarMat);
-      triIn.position.set(side * 0.27, 0.36, 0.04);
-      triIn.rotation.z = side * -0.28;
-      earsGroup.add(triEar, triIn);
-    }
-  } else if (charId === 'char_04_duck') {
-    for (let t = -1; t <= 1; t++) {
-      const tuft = new THREE.Mesh(GEO.sphere, res.furMat);
-      tuft.scale.set(0.09, 0.19, 0.09);
-      tuft.position.set(t * 0.06, 0.41, 0.02);
-      tuft.rotation.z = t * -0.28;
-      earsGroup.add(tuft);
-    }
-  } else if (charId === 'char_07_cat') {
-    // 접힌 스코티시 폴드 귀
-    for (const side of [-1, 1]) {
-      const foldEar = new THREE.Mesh(GEO.sphere, res.furMat);
-      foldEar.scale.set(0.2, 0.14, 0.18);
-      foldEar.position.set(side * 0.31, 0.31, 0.08);
-      foldEar.rotation.set(0.45, 0, side * -0.42);
-      earsGroup.add(foldEar);
-    }
-  } else {
-    // 햄스터 · 블랙팬서 · 테디베어 · 아기판다 둥근 귀
-    const roundEarMat = charId === 'char_10_panda' ? res.limbFurMat : res.furMat;
-    for (const side of [-1, 1]) {
-      const rEar = new THREE.Mesh(GEO.sphere, roundEarMat);
-      rEar.scale.set(0.24, 0.24, 0.14);
-      rEar.position.set(side * 0.33, 0.34, -0.02);
-      earsGroup.add(rEar);
-      if (charId !== 'char_10_panda') {
-        const rIn = new THREE.Mesh(GEO.sphere, res.innerEarMat);
-        rIn.scale.set(0.13, 0.13, 0.08);
-        rIn.position.set(side * 0.33, 0.34, 0.04);
-        earsGroup.add(rIn);
+    if (charId === 'char_27_truffle_boar') {
+      for (const side of [-1, 1]) {
+        const tusk = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.11, 8), makeMattePlushMat('#FFFDF7'));
+        tusk.position.set(side * 0.14, -0.09, 0.44);
+        tusk.rotation.z = side * -0.35;
+        headGroup.add(tusk);
       }
     }
   }
 
-  // [요구사항 1] 내 주인공 동물 캐릭터(또는 황금 햄스터 · 만수르 사자 왕) 정수리 3D 24K 황금 왕관(👑) / 라쿤 네이비 관리모 / 비버 안전모 장착!
-  if (charId === 'char_11_raccoon') {
-    const capGrp = new THREE.Group();
-    const capDome = new THREE.Mesh(new THREE.SphereGeometry(0.28, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.5), makeMattePlushMat('#1E3A8A'));
-    capDome.position.set(0, 0.34, 0.02);
-    const capVisor = createRoundedToyMesh(0.36, 0.05, 0.22, MAT.pureGold24k || MAT.gold, 0, 0.35, 0.24, 0.02);
-    capGrp.add(capDome, capVisor);
-    earsGroup.add(capGrp);
-  } else if (charId === 'char_12_beaver') {
-    const hatDome = new THREE.Mesh(new THREE.SphereGeometry(0.31, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.52), makeMattePlushMat('#FACC15'));
-    hatDome.position.set(0, 0.33, 0.02);
-    const hatBrim = createRoundedToyMesh(0.46, 0.05, 0.48, makeMattePlushMat('#FACC15'), 0, 0.33, 0.05, 0.02);
-    earsGroup.add(hatDome, hatBrim);
-  } else if (charId === 'char_14_lion') {
-    const maneMat = makeMattePlushMat('#B45309');
+  const earsGroup = new THREE.Group();
+  headGroup.add(earsGroup);
+
+  // 30종 아트토이별 독창적 이종 재질(투명 아크릴/유리/젤리/크리스탈 + 24K 골드) 헤드 조형!
+  if (charId === 'char_01_boba_otter') {
+    for (const side of [-1, 1]) {
+      const ear = new THREE.Mesh(GEO.sphere, res.furMat);
+      ear.scale.set(0.16, 0.16, 0.12);
+      ear.position.set(side * 0.38, 0.18, 0);
+      earsGroup.add(ear);
+    }
+    const domeHat = new THREE.Mesh(new THREE.SphereGeometry(0.32, 22, 14, 0, Math.PI * 2, 0, Math.PI * 0.52), res.clearGlassMat);
+    domeHat.position.set(0, 0.31, 0.02);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.032, 10, 24), goldMat);
+    rim.rotation.x = Math.PI * 0.5;
+    rim.position.set(0, 0.32, 0.02);
+    const straw = new THREE.Mesh(GEO.cyl, makeMattePlushMat('#FB7185'));
+    straw.scale.set(0.045, 0.28, 0.045);
+    straw.position.set(0.1, 0.56, 0.04);
+    straw.rotation.z = -0.22;
+    earsGroup.add(domeHat, rim, straw);
+    for (const [px, pz, pCol] of [[-0.1, 0.08, '#451A03'], [0.09, -0.06, '#7E22CE'], [0.02, 0.12, '#FFD700']]) {
+      const prl = new THREE.Mesh(GEO.sphere, makeMattePlushMat(pCol));
+      prl.scale.setScalar(0.065);
+      prl.position.set(px, 0.39, pz);
+      earsGroup.add(prl);
+    }
+  } else if (charId === 'char_02_jelly_axolotl') {
+    for (const side of [-1, 1]) {
+      for (let g = 0; g < 3; g++) {
+        const gill = new THREE.Mesh(GEO.sphere, res.jellyMat);
+        gill.scale.set(0.24, 0.075, 0.08);
+        gill.position.set(side * 0.46, 0.22 - g * 0.14, -0.02);
+        gill.rotation.z = side * (0.35 - g * 0.28);
+        earsGroup.add(gill);
+      }
+    }
+  } else if (charId === 'char_03_yuzu_capybara') {
+    for (const side of [-1, 1]) {
+      const ear = new THREE.Mesh(GEO.sphere, res.innerEarMat);
+      ear.scale.set(0.14, 0.12, 0.1);
+      ear.position.set(side * 0.34, 0.3, -0.05);
+      earsGroup.add(ear);
+    }
+    const yuzu = new THREE.Mesh(GEO.sphere, res.jellyMat);
+    yuzu.scale.set(0.18, 0.15, 0.18);
+    yuzu.position.set(0, 0.45, 0.04);
+    const leaf = new THREE.Mesh(GEO.sphere, makeMattePlushMat('#16A34A'));
+    leaf.scale.set(0.09, 0.035, 0.05);
+    leaf.position.set(0.06, 0.58, 0.04);
+    earsGroup.add(yuzu, leaf);
+  } else if (charId === 'char_04_berry_dragon') {
+    const creamSwirl = new THREE.Mesh(new THREE.ConeGeometry(0.26, 0.26, 16), res.creamMat);
+    creamSwirl.position.set(0, 0.41, 0.02);
+    const berryHorn = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.28, 14), res.jellyMat);
+    berryHorn.position.set(0, 0.56, 0.12);
+    berryHorn.rotation.x = 0.22;
+    earsGroup.add(creamSwirl, berryHorn);
+  } else if (charId === 'char_05_astro_neko') {
+    for (const side of [-1, 1]) {
+      const cEar = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.3, 14), res.furMat);
+      cEar.position.set(side * 0.26, 0.36, -0.02);
+      cEar.rotation.z = side * -0.26;
+      earsGroup.add(cEar);
+    }
+    const astroDome = new THREE.Mesh(new THREE.SphereGeometry(0.56, 24, 20), res.clearGlassMat);
+    astroDome.position.set(0, 0.04, 0.02);
+    const neckCollar = new THREE.Mesh(new THREE.TorusGeometry(0.41, 0.042, 10, 26), goldMat);
+    neckCollar.rotation.x = Math.PI * 0.5;
+    neckCollar.position.set(0, -0.34, 0.02);
+    earsGroup.add(astroDome, neckCollar);
+    for (const [sx, sy, sz] of [[-0.32, 0.32, 0.28], [0.34, 0.26, 0.24], [0, 0.46, -0.18]]) {
+      const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.045, 0), goldMat);
+      star.position.set(sx, sy, sz);
+      earsGroup.add(star);
+    }
+  } else if (charId === 'char_06_dj_redpanda') {
+    const roseGold = makeMattePlushMat('#F4A28C', { roughness: 0.22, metalness: 0.78 });
+    for (const side of [-1, 1]) {
+      const ear = new THREE.Mesh(new THREE.ConeGeometry(0.17, 0.28, 12), res.furMat);
+      ear.position.set(side * 0.31, 0.36, -0.02);
+      ear.rotation.z = side * -0.35;
+      const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.09, 16), roseGold);
+      cup.rotation.z = Math.PI * 0.5;
+      cup.position.set(side * 0.45, 0.06, 0.02);
+      earsGroup.add(ear, cup);
+    }
+    const band = new THREE.Mesh(new THREE.TorusGeometry(0.44, 0.034, 10, 24, Math.PI), roseGold);
+    band.position.set(0, 0.06, 0.02);
+    earsGroup.add(band);
+  } else if (charId === 'char_08_cloud_alpaca') {
+    const cloudCols = ['#FBCFE8', '#BAE6FD', '#FFFDF9'];
+    const coords = [[0, 0.41, 0.05], [-0.24, 0.36, 0.06], [0.24, 0.36, 0.06], [-0.34, 0.2, -0.06], [0.34, 0.2, -0.06], [0, 0.34, -0.24]];
+    coords.forEach(([wx, wy, wz], idx) => {
+      const puff = new THREE.Mesh(GEO.sphere, makeMattePlushMat(cloudCols[idx % cloudCols.length]));
+      puff.scale.setScalar(0.29);
+      puff.position.set(wx, wy, wz);
+      earsGroup.add(puff);
+    });
+    const monocle = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.02, 8, 18), goldMat);
+    monocle.position.set(0.16, 0.05, 0.44);
+    earsGroup.add(monocle);
+  } else if (charId === 'char_09_cyber_penguin' || charId === 'char_17_frost_lemur' || charId === 'char_22_lavalamp_bear') {
+    const visor = createRoundedToyMesh(0.64, 0.18, 0.14, res.jellyMat, 0, 0.08, 0.39, 0.05);
+    const frame = createRoundedToyMesh(0.68, 0.04, 0.12, goldMat, 0, 0.17, 0.39, 0.01);
+    earsGroup.add(visor, frame);
+    if (charId !== 'char_09_cyber_penguin') {
+      for (const side of [-1, 1]) {
+        const rEar = new THREE.Mesh(GEO.sphere, res.furMat);
+        rEar.scale.set(0.2, 0.2, 0.12);
+        rEar.position.set(side * 0.33, 0.34, -0.02);
+        earsGroup.add(rEar);
+      }
+    }
+  } else if (charId === 'char_10_crystal_fennec') {
+    for (const side of [-1, 1]) {
+      const fEar = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.52, 12), res.furMat);
+      fEar.position.set(side * 0.34, 0.44, -0.02);
+      fEar.rotation.z = side * -0.38;
+      const crystalIn = new THREE.Mesh(new THREE.OctahedronGeometry(0.14, 0), res.jellyMat);
+      crystalIn.scale.set(0.8, 1.7, 0.5);
+      crystalIn.position.set(side * 0.33, 0.42, 0.06);
+      crystalIn.rotation.z = side * -0.38;
+      earsGroup.add(fEar, crystalIn);
+    }
+  } else if (charId === 'char_11_phantom_bat') {
+    for (const side of [-1, 1]) {
+      const bEar = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.42, 12), res.furMat);
+      bEar.position.set(side * 0.3, 0.42, -0.02);
+      bEar.rotation.z = side * -0.24;
+      earsGroup.add(bEar);
+    }
+  } else if (charId === 'char_12_avocado_dino') {
+    const strawHat = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.48, 0.14, 18), makeMattePlushMat('#FDE68A'));
+    strawHat.position.set(0, 0.38, 0.02);
+    earsGroup.add(strawHat);
+  } else if (charId === 'char_13_jellyfish_ghost') {
+    const jCap = new THREE.Mesh(new THREE.SphereGeometry(0.49, 22, 14, 0, Math.PI * 2, 0, Math.PI * 0.56), res.jellyMat);
+    jCap.position.set(0, 0.18, 0);
+    earsGroup.add(jCap);
+    for (const side of [-1, 1]) {
+      const tent = createRoundedToyMesh(0.08, 0.32, 0.08, res.jellyMat, side * 0.42, 0.02, 0.08, 0.03);
+      earsGroup.add(tent);
+    }
+  } else if (charId === 'char_14_macaron_poodle') {
+    for (const side of [-1, 1]) {
+      const macEar = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.12, 18), makeMattePlushMat(side < 0 ? '#F9A8D4' : '#A7F3D0'));
+      macEar.rotation.z = Math.PI * 0.5;
+      macEar.position.set(side * 0.43, 0.06, 0.02);
+      earsGroup.add(macEar);
+    }
+    const beret = new THREE.Mesh(GEO.sphere, makeMattePlushMat('#FB7185'));
+    beret.scale.set(0.32, 0.13, 0.32);
+    beret.position.set(0.06, 0.4, 0.02);
+    earsGroup.add(beret);
+  } else if (charId === 'char_15_cactus_hedgie') {
+    const potHat = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.16, 0.24, 16), makeMattePlushMat('#EA580C'));
+    potHat.position.set(0, 0.44, 0.02);
+    const flower = new THREE.Mesh(new THREE.OctahedronGeometry(0.11, 0), res.jellyMat);
+    flower.position.set(0, 0.6, 0.02);
+    earsGroup.add(potHat, flower);
+  } else if (charId === 'char_16_clockwork_owl') {
+    for (const side of [-1, 1]) {
+      const gog = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.032, 10, 18), goldMat);
+      gog.position.set(side * 0.16, 0.28, 0.36);
+      earsGroup.add(gog);
+    }
+  } else if (charId === 'char_18_pitaya_chameleon') {
+    const crest = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.32, 12), makeMattePlushMat('#4ADE80'));
+    crest.position.set(0, 0.42, -0.06);
+    earsGroup.add(crest);
+    for (const side of [-1, 1]) {
+      const spec = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.022, 8, 18), res.clearGlassMat);
+      spec.position.set(side * 0.16, 0.04, 0.43);
+      earsGroup.add(spec);
+    }
+  } else if (charId === 'char_19_stainedglass_fawn') {
+    for (const side of [-1, 1]) {
+      const antler = new THREE.Mesh(GEO.cyl, goldMat);
+      antler.scale.set(0.04, 0.28, 0.04);
+      antler.position.set(side * 0.22, 0.46, 0);
+      antler.rotation.z = side * -0.25;
+      const bWing = createRoundedToyMesh(0.2, 0.18, 0.03, res.jellyMat, side * 0.28, 0.58, 0.03, 0.01);
+      bWing.rotation.z = side * -0.35;
+      earsGroup.add(antler, bWing);
+    }
+  } else if (charId === 'char_21_pearl_seal') {
+    const shell = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 12, 0, Math.PI), makeMattePlushMat('#E0F2FE'));
+    shell.rotation.x = -0.35;
+    shell.position.set(0, 0.38, -0.02);
+    const pinkPearl = new THREE.Mesh(GEO.sphere, res.jellyMat);
+    pinkPearl.scale.setScalar(0.11);
+    pinkPearl.position.set(0, 0.42, 0.08);
+    earsGroup.add(shell, pinkPearl);
+  } else if (charId === 'char_23_moonjar_spirit') {
+    for (const side of [-1, 1]) {
+      const bEar = new THREE.Mesh(GEO.sphere, res.furMat);
+      bEar.scale.set(0.18, 0.5, 0.13);
+      bEar.position.set(side * 0.18, 0.5, -0.02);
+      bEar.rotation.z = side * -0.12;
+      earsGroup.add(bEar);
+    }
+  } else if (charId === 'char_24_dream_tapir') {
+    const capCone = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.38, 16), makeMattePlushMat('#312E81'));
+    capCone.position.set(0.06, 0.46, 0);
+    capCone.rotation.z = -0.35;
+    const moonTip = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.028, 8, 14, Math.PI * 1.3), goldMat);
+    moonTip.position.set(0.2, 0.62, 0.04);
+    earsGroup.add(capCone, moonTip);
+  } else if (charId === 'char_26_arcade_monkey') {
+    const helm = new THREE.Mesh(new THREE.SphereGeometry(0.52, 22, 18), res.jellyMat);
+    helm.position.set(0, 0.04, 0);
+    earsGroup.add(helm);
+    for (const side of [-1, 1]) {
+      const padBtn = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.08, 16), goldMat);
+      padBtn.rotation.z = Math.PI * 0.5;
+      padBtn.position.set(side * 0.49, 0.05, 0);
+      earsGroup.add(padBtn);
+    }
+  } else if (charId === 'char_27_truffle_boar') {
+    const chefHat = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.23, 0.34, 18), makeMattePlushMat('#FFFFFF'));
+    chefHat.position.set(0, 0.46, 0);
+    const truffle = new THREE.Mesh(GEO.sphere, goldMat);
+    truffle.scale.set(0.15, 0.12, 0.15);
+    truffle.position.set(0, 0.68, 0.02);
+    earsGroup.add(chefHat, truffle);
+  } else if (charId === 'char_28_prism_pony') {
+    const horn = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.38, 12), res.jellyMat);
+    horn.position.set(0, 0.52, 0.16);
+    horn.rotation.x = 0.28;
+    const mane1 = new THREE.Mesh(new THREE.OctahedronGeometry(0.16, 0), makeTranslucentJellyMat('#38BDF8', 0.86));
+    mane1.position.set(0, 0.42, -0.12);
+    const mane2 = new THREE.Mesh(new THREE.OctahedronGeometry(0.15, 0), makeTranslucentJellyMat('#FACC15', 0.86));
+    mane2.position.set(0, 0.24, -0.32);
+    earsGroup.add(horn, mane1, mane2);
+  } else if (charId === 'char_29_bonsai_tortoise') {
+    const capDome = new THREE.Mesh(new THREE.SphereGeometry(0.29, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.5), makeMattePlushMat('#1E3A8A'));
+    capDome.position.set(0, 0.33, 0.02);
+    const capVisor = createRoundedToyMesh(0.36, 0.05, 0.22, goldMat, 0, 0.34, 0.24, 0.02);
+    earsGroup.add(capDome, capVisor);
+    for (const side of [-1, 1]) {
+      const spec = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.02, 8, 18), goldMat);
+      spec.position.set(side * 0.15, 0.04, 0.43);
+      earsGroup.add(spec);
+    }
+  } else if (charId === 'char_30_cosmic_lion') {
+    // 은하 성운 투명 블루-퍼플 구름 갈기 + 황금 별자리!
     for (let m = 0; m < 12; m++) {
       const a = (m / 12) * Math.PI * 2;
-      const puff = new THREE.Mesh(GEO.sphere, maneMat);
-      puff.scale.setScalar(0.22);
-      puff.position.set(Math.cos(a) * 0.4, Math.sin(a) * 0.38 + 0.02, -0.06);
-      earsGroup.add(puff);
+      const neb = new THREE.Mesh(GEO.sphere, res.jellyMat);
+      neb.scale.setScalar(0.25);
+      neb.position.set(Math.cos(a) * 0.42, Math.sin(a) * 0.4 + 0.02, -0.06);
+      earsGroup.add(neb);
+      if (m % 2 === 0) {
+        const cStar = new THREE.Mesh(new THREE.OctahedronGeometry(0.055, 0), goldMat);
+        cStar.position.set(Math.cos(a) * 0.44, Math.sin(a) * 0.41 + 0.02, 0.08);
+        earsGroup.add(cStar);
+      }
+    }
+  } else {
+    for (const side of [-1, 1]) {
+      const rEar = new THREE.Mesh(GEO.sphere, res.furMat);
+      rEar.scale.set(0.22, 0.22, 0.13);
+      rEar.position.set(side * 0.33, 0.34, -0.02);
+      earsGroup.add(rEar);
     }
   }
-  if (charId === 'char_05_hamster' || charId === 'char_14_lion' || isHeroRole) {
-    const crownY = charId === 'char_02_sheep' ? 0.56 : 0.45;
-    const crownScale = isHeroRole ? 1.18 : 1.0;
+
+  // 왕관 착용 대상 (주인공 / 우파루파 / 팬텀배트 / 스완 / 갤럭시 만수르 라이온)
+  if (isHeroRole || charId === 'char_02_jelly_axolotl' || charId === 'char_11_phantom_bat' || charId === 'char_25_chandelier_swan' || charId === 'char_30_cosmic_lion') {
+    const crownY = (charId === 'char_05_astro_neko' || charId === 'char_27_truffle_boar') ? 0.68 : 0.48;
     const crownGrp = new THREE.Group();
     crownGrp.position.set(0, crownY, 0.02);
-    crownGrp.scale.setScalar(crownScale);
-    const crownBase = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.14, 0.15, 18), MAT.pureGold24k);
+    crownGrp.scale.setScalar(charId === 'char_30_cosmic_lion' ? 1.28 : 1.08);
+    const crownBase = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.14, 0.15, 18), goldMat);
     crownGrp.add(crownBase);
     for (let p = 0; p < 5; p++) {
       const ang = (p / 5) * Math.PI * 2;
-      const tip = new THREE.Mesh(GEO.sphere, p === 0 ? makeMattePlushMat('#EF4444') : MAT.pureGold24k);
+      const tip = new THREE.Mesh(GEO.sphere, p === 0 ? res.jellyMat : goldMat);
       tip.scale.setScalar(0.062);
       tip.position.set(Math.sin(ang) * 0.155, 0.095, Math.cos(ang) * 0.155);
       crownGrp.add(tip);
@@ -21907,17 +22337,16 @@ function buildTrue3DAnimalClayRig(grp, charId, role = 'student') {
     earsGroup.add(crownGrp);
   }
 
-  // [요구사항 2] 3D 보스 선글라스 (블랙팬서/여우는 상시 착용, 다른 동물 주인공은 머니건 퍼레이드 중 즉시 착용!)
+  // 보스 선글라스 & 머니건 하트 눈
   const bossSunglassesGroup = new THREE.Group();
   const glassMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.18, metalness: 0.55 });
   const lensL = createRoundedToyMesh(0.24, 0.14, 0.07, glassMat, -0.15, 0.04, 0.42, 0.03);
   const lensR = createRoundedToyMesh(0.24, 0.14, 0.07, glassMat, 0.15, 0.04, 0.42, 0.03);
-  const bridge = createRoundedToyMesh(0.14, 0.03, 0.05, MAT.pureGold24k, 0, 0.06, 0.43, 0.01);
+  const bridge = createRoundedToyMesh(0.14, 0.03, 0.05, goldMat, 0, 0.06, 0.43, 0.01);
   bossSunglassesGroup.add(lensL, lensR, bridge);
-  bossSunglassesGroup.visible = (charId === 'char_06_panther' || charId === 'char_09_fox');
+  bossSunglassesGroup.visible = (charId === 'char_03_yuzu_capybara');
   headGroup.add(bossSunglassesGroup);
 
-  // [요구사항 2] 머니건 퍼레이드 추종 동물들의 3D 핑크 하트 눈(😍) 이펙트!
   const heartEyesGroup = new THREE.Group();
   const heartPinkMat = new THREE.MeshStandardMaterial({ color: 0xFF2E7E, emissive: 0xEC4899, emissiveIntensity: 0.45, roughness: 0.25 });
   for (const hx of [-0.15, 0.15]) {
@@ -21937,103 +22366,93 @@ function buildTrue3DAnimalClayRig(grp, charId, role = 'student') {
   heartEyesGroup.visible = false;
   headGroup.add(heartEyesGroup);
 
-  // 5) 180도 뒷모습의 핵심! 3D 입체 꼬리(TailGroup) & 등 뒤 3D 백팩+침낭 / 목걸이 / 헤드폰 (BackGearGroup)
+  // 5) 360도 후면 하이브리드 꼬리 & 날개 & 황금 소나무 분재 등껍질(char_29_bonsai_tortoise)!
   const tailGroup = new THREE.Group();
   tailGroup.position.set(0, 0.42, -0.32);
   ud.bodyRig.add(tailGroup);
 
-  if (charId === 'char_03_shiba') {
-    const donutTail = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.065, 12, 18, Math.PI * 1.55), res.furMat);
-    donutTail.position.set(0, 0.12, -0.06);
-    donutTail.rotation.y = Math.PI * 0.5;
-    tailGroup.add(donutTail);
-  } else if (charId === 'char_04_duck') {
-    const duckTail = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.24, 12), res.furMat);
-    duckTail.rotation.x = -Math.PI * 0.62;
-    duckTail.position.set(0, 0.02, -0.06);
-    tailGroup.add(duckTail);
-  } else if (charId === 'char_09_fox') {
-    const foxTail = new THREE.Mesh(GEO.sphere, res.furMat);
-    foxTail.scale.set(0.2, 0.22, 0.44);
-    foxTail.position.set(0, 0.06, -0.14);
-    foxTail.rotation.x = 0.42;
-    const whiteTip = new THREE.Mesh(GEO.sphere, res.creamMat);
-    whiteTip.scale.set(0.15, 0.16, 0.18);
-    whiteTip.position.set(0, 0.14, -0.31);
-    tailGroup.add(foxTail, whiteTip);
-  } else if (charId === 'char_06_panther' || charId === 'char_07_cat') {
-    const longTail = new THREE.Mesh(GEO.cyl, res.furMat);
-    longTail.scale.set(0.08, 0.42, 0.08);
-    longTail.position.set(0, 0.14, -0.12);
-    longTail.rotation.x = -0.65;
-    const tailTip = new THREE.Mesh(GEO.sphere, res.furMat);
-    tailTip.scale.setScalar(0.1);
-    tailTip.position.set(0, 0.29, -0.24);
-    tailGroup.add(longTail, tailTip);
+  if (charId === 'char_06_dj_redpanda' || charId === 'char_17_frost_lemur') {
+    for (let s = 0; s < 5; s++) {
+      const segMat = charId === 'char_17_frost_lemur'
+        ? (s % 2 === 1 ? res.jellyMat : res.creamMat)
+        : (s % 2 === 1 ? res.limbFurMat : res.furMat);
+      const ringSeg = new THREE.Mesh(GEO.sphere, segMat);
+      ringSeg.scale.set(0.16, 0.15, 0.14);
+      ringSeg.position.set(0, 0.04 + s * 0.06, -0.06 - s * 0.09);
+      tailGroup.add(ringSeg);
+    }
+  } else if (charId === 'char_18_pitaya_chameleon') {
+    const goldCurl = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.05, 10, 18, Math.PI * 1.65), goldMat);
+    goldCurl.rotation.y = Math.PI * 0.5;
+    goldCurl.position.set(0, 0.12, -0.12);
+    tailGroup.add(goldCurl);
+  } else if (charId === 'char_20_bullion_gecko') {
+    for (let b = 0; b < 3; b++) {
+      const bar = createRoundedToyMesh(0.22 - b * 0.03, 0.09, 0.14, goldMat, 0, 0.02 + b * 0.08, -0.08 - b * 0.11, 0.02);
+      tailGroup.add(bar);
+    }
+  } else if (charId === 'char_28_prism_pony') {
+    const pTail = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.38, 10), res.jellyMat);
+    pTail.rotation.x = -0.8;
+    pTail.position.set(0, 0.12, -0.14);
+    tailGroup.add(pTail);
   } else {
-    const pomMat = charId === 'char_02_sheep' ? res.woolMat : res.furMat;
-    const pom = new THREE.Mesh(GEO.sphere, pomMat);
-    pom.scale.setScalar(charId === 'char_01_bunny' ? 0.23 : 0.18);
+    const pom = new THREE.Mesh(GEO.sphere, res.furMat);
+    pom.scale.setScalar(0.18);
     pom.position.set(0, 0.04, -0.04);
     tailGroup.add(pom);
   }
 
-  // 목걸이 · 보타이 · 헤드폰 · 오리 3D 컬러 백팩 + 롤 침낭 조립!
   const backGearGroup = new THREE.Group();
   ud.bodyRig.add(backGearGroup);
 
-  if (charId === 'char_04_duck') {
-    const packMain = createRoundedToyMesh(0.42, 0.44, 0.24, makeMattePlushMat('#38BDF8'), 0, 0.66, -0.34, 0.06);
-    const packFlap = createRoundedToyMesh(0.43, 0.14, 0.25, makeMattePlushMat('#FB923C'), 0, 0.82, -0.34, 0.04);
-    const packPocket = createRoundedToyMesh(0.3, 0.2, 0.1, makeMattePlushMat('#10B981'), 0, 0.56, -0.46, 0.03);
-    const sleepRoll = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.44, 16), makeMattePlushMat('#FACC15'));
-    sleepRoll.rotation.z = Math.PI * 0.5;
-    sleepRoll.position.set(0, 0.96, -0.34);
-    const rollBandL = new THREE.Mesh(new THREE.CylinderGeometry(0.106, 0.106, 0.05, 14), makeMattePlushMat('#EF4444'));
-    rollBandL.rotation.z = Math.PI * 0.5;
-    rollBandL.position.set(-0.12, 0.96, -0.34);
-    const rollBandR = rollBandL.clone();
-    rollBandR.position.x = 0.12;
-    backGearGroup.add(packMain, packFlap, packPocket, sleepRoll, rollBandL, rollBandR);
-  } else if (charId === 'char_06_panther' || charId === 'char_13_bulldog' || charId === 'char_14_lion') {
-    const chain = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.038, 10, 22), MAT.pureGold24k);
-    chain.rotation.x = Math.PI * 0.42;
-    chain.position.set(0, 0.85, 0.04);
-    const medal = new THREE.Mesh(GEO.coin, MAT.pureGold24k);
-    medal.scale.setScalar(0.45);
-    medal.position.set(0, 0.72, 0.34);
-    backGearGroup.add(chain, medal);
-  } else if (charId === 'char_07_cat') {
-    for (let p = 0; p < 12; p++) {
-      const a = (p / 12) * Math.PI * 2;
-      const pearl = new THREE.Mesh(GEO.sphere, makeMattePlushMat('#FFFFFF'));
-      pearl.scale.setScalar(0.068);
-      pearl.position.set(Math.sin(a) * 0.29, 0.87, Math.cos(a) * 0.29);
-      backGearGroup.add(pearl);
+  if (charId === 'char_04_berry_dragon') {
+    for (const side of [-1, 1]) {
+      const gWing = createRoundedToyMesh(0.28, 0.22, 0.05, goldMat, side * 0.34, 0.72, -0.32, 0.02);
+      gWing.rotation.z = side * -0.35;
+      backGearGroup.add(gWing);
     }
-  } else if (charId === 'char_05_hamster' || charId === 'char_08_bear') {
-    const bowHex = charId === 'char_05_hamster' ? '#EF4444' : '#B45309';
-    const bowMat = makeMattePlushMat(bowHex);
-    const bL = createRoundedToyMesh(0.12, 0.09, 0.06, bowMat, -0.07, 0.85, 0.32, 0.02);
-    const bR = createRoundedToyMesh(0.12, 0.09, 0.06, bowMat, 0.07, 0.85, 0.32, 0.02);
-    backGearGroup.add(bL, bR);
-  } else if (charId === 'char_10_panda') {
-    const hpRing = new THREE.Mesh(new THREE.TorusGeometry(0.31, 0.03, 10, 22), MAT.pureGold24k);
-    hpRing.rotation.x = Math.PI * 0.5;
-    hpRing.position.set(0, 0.89, 0);
-    const cupL = new THREE.Mesh(GEO.cyl, MAT.pureGold24k);
-    cupL.scale.set(0.14, 0.08, 0.14);
-    cupL.rotation.z = Math.PI * 0.5;
-    cupL.position.set(-0.31, 0.89, 0.1);
-    const cupR = cupL.clone();
-    cupR.position.x = 0.31;
-    const backHood = new THREE.Mesh(GEO.sphere, res.sleeveMat);
-    backHood.scale.set(0.38, 0.22, 0.24);
-    backHood.position.set(0, 0.86, -0.28);
-    backGearGroup.add(hpRing, cupL, cupR, backHood);
+  } else if (charId === 'char_11_phantom_bat') {
+    for (const side of [-1, 1]) {
+      const bWing = createRoundedToyMesh(0.42, 0.28, 0.04, res.jellyMat, side * 0.44, 0.72, -0.3, 0.02);
+      bWing.rotation.z = side * -0.28;
+      backGearGroup.add(bWing);
+    }
+  } else if (charId === 'char_15_cactus_hedgie') {
+    const succMat = makeMattePlushMat('#34D399');
+    for (const [sx, sy] of [[0, 0.72], [-0.18, 0.62], [0.18, 0.62], [0, 0.5]]) {
+      const rosette = new THREE.Mesh(GEO.sphere, succMat);
+      rosette.scale.set(0.16, 0.16, 0.14);
+      rosette.position.set(sx, sy, -0.34);
+      const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.065, 0), res.jellyMat);
+      gem.position.set(sx, sy + 0.04, -0.44);
+      backGearGroup.add(rosette, gem);
+    }
+  } else if (charId === 'char_25_chandelier_swan') {
+    for (const side of [-1, 1]) {
+      const cWing = createRoundedToyMesh(0.34, 0.24, 0.05, res.clearGlassMat, side * 0.38, 0.7, -0.28, 0.02);
+      const drop = new THREE.Mesh(new THREE.OctahedronGeometry(0.075, 0), res.jellyMat);
+      drop.position.set(side * 0.46, 0.52, -0.28);
+      backGearGroup.add(cWing, drop);
+    }
+  } else if (charId === 'char_29_bonsai_tortoise') {
+    // 1층 황금 분재 거북소장 시그니처: 반투명 비취 거북 등껍질 + 24K 황금 소나무 분재!
+    const shell = new THREE.Mesh(GEO.sphere, res.jellyMat);
+    shell.scale.set(0.38, 0.36, 0.26);
+    shell.position.set(0, 0.64, -0.32);
+    const trunk = new THREE.Mesh(GEO.cyl, goldMat);
+    trunk.scale.set(0.05, 0.26, 0.05);
+    trunk.position.set(0, 0.96, -0.34);
+    trunk.rotation.z = 0.18;
+    const canopy1 = new THREE.Mesh(GEO.sphere, goldMat);
+    canopy1.scale.set(0.22, 0.11, 0.18);
+    canopy1.position.set(0.04, 1.1, -0.34);
+    const canopy2 = new THREE.Mesh(GEO.sphere, makeMattePlushMat('#10B981'));
+    canopy2.scale.set(0.16, 0.09, 0.14);
+    canopy2.position.set(-0.08, 1.04, -0.34);
+    backGearGroup.add(shell, trunk, canopy1, canopy2);
   }
 
-  // 기존 AI 상태 머신 & 신규 인터랙션 소품 레퍼런스 완벽 동기화!
   ud.legL = legL;
   ud.legR = legR;
   ud.armL = armL;
@@ -22080,7 +22499,7 @@ function lerpAngleShortest(curRad, targetRad, alpha) {
 function applyLoadedSheetToActor(entry) {
   if (!entry || !entry.grp || entry.grp.userData?.isGoldenStatueHero) return;
   const charId = (entry.role === 'landlord_avatar' || entry.role === 'landlord' || entry.role === 'landlord_driver')
-    ? (state?.selectedHeroCharId || 'char_05_hamster')
+    ? getActiveHeroDef().id
     : entry.charId;
 
   if (entry.rigBuiltForId === charId && entry.rigParts) return;
@@ -22556,9 +22975,8 @@ function getPopMartCatalogThumbDataUrl(itemId) {
 }
 
 function syncHeroMiniHudAvatar() {
-  const heroId = state?.selectedHeroCharId || 'char_05_hamster';
-  const roster = window.ANIMAL_CHARACTER_ROSTER || [];
-  const def = roster.find((c) => c.id === heroId) || roster[4] || roster[0];
+  const def = getActiveHeroDef();
+  const heroId = def.id;
   const charAsset = POPMART_ASSETS.characters[heroId];
   const cv = document.getElementById('hud-hero-mini-canvas');
   if (cv) {
@@ -23100,8 +23518,8 @@ function openTurntableShowcaseModal(mode = 'animal', opt = {}) {
   const headerTitle = document.getElementById('tt-header-title');
   const headerSub = document.getElementById('tt-header-sub');
   if (mode === 'animal') {
-    if (modeBadge) modeBadge.textContent = '360° 쇼케이스';
-    if (headerTitle) headerTitle.textContent = '🐾 내 동물 건물주 선택';
+    if (modeBadge) modeBadge.textContent = '360° 아트토이 쇼케이스';
+    if (headerTitle) headerTitle.textContent = '🎨 30종 하이브리드 아트토이 주인공 선택';
   } else if (mode === 'flagship') {
     if (modeBadge) modeBadge.textContent = '360° 쇼케이스';
     if (headerTitle) headerTitle.textContent = '🛋️ 가구 백화점';
@@ -23117,7 +23535,7 @@ function openTurntableShowcaseModal(mode = 'animal', opt = {}) {
   turntableState.index = 0;
 
   if (mode === 'animal') {
-    const curHero = state?.selectedHeroCharId || 'char_05_hamster';
+    const curHero = getActiveHeroDef().id;
     const found = turntableState.items.findIndex((x) => x.id === curHero);
     if (found >= 0) turntableState.index = found;
   } else if (mode === 'garage') {
@@ -23301,10 +23719,10 @@ function syncTurntableInfoAndStripUI() {
   if (entry.kind === 'animal') {
     const ch = entry.data;
     if (tierPill) {
-      tierPill.textContent = `NO.${String(ch.num).padStart(2, '0')} · 동물 주인공`;
+      tierPill.textContent = `NO.${String(ch.num).padStart(2, '0')} · WAVE ${ch.wave || 1} 아트토이`;
       tierPill.className = 'tt-big-tier-badge';
     }
-    if (nameEl) nameEl.textContent = ch.name;
+    if (nameEl) nameEl.textContent = `${ch.emoji || ''} ${ch.name}`.trim();
     if (chipsRow) {
       chipsRow.innerHTML = `<span class="tt-big-stat-gold">👑 ${ch.title}</span>`;
     }
@@ -23321,7 +23739,7 @@ function syncTurntableInfoAndStripUI() {
     const tierMeta = (window.FURNITURE_TIER_META || {})[tNum] || { badge: `Tier ${tNum}` };
     const invQty = state.furnitureInventory?.[it.id] || 0;
     const rankUnlocked = isItemUnlockedByFameRank(it);
-    const effCost = state?.selectedHeroCharId === 'char_04_duck' ? Math.max(1, Math.round(it.cost * 0.85)) : it.cost;
+    const effCost = getActiveHeroBuffKey() === 'furn_payback_20' ? Math.max(1, Math.round(it.cost * 0.8)) : it.cost;
     const canAfford = (state.gold || 0) >= effCost && rankUnlocked;
 
     if (tierPill) {
@@ -23404,16 +23822,17 @@ function syncTurntableInfoAndStripUI() {
     }
   }
 
-  // 하단 고대비 퀵 스트립 칩 렌더링 (3D 아트토이 썸네일 적용, 평면 시스템 이모지 제거!)
+  // 하단 고대비 퀵 스트립 칩 렌더링 (3D 아트토이 썸네일 적용, 30종 좌우 스크롤 완벽 지원!)
   const stripEl = document.getElementById('tt-quick-strip');
   if (stripEl) {
+    stripEl.classList.toggle('justify-center', turntableState.items.length <= 6);
     stripEl.innerHTML = turntableState.items.map((it, idx) => {
       const active = idx === turntableState.index;
       let thumbUrl = null;
       let lbl = '';
       if (it.kind === 'animal') {
         thumbUrl = POPMART_ASSETS.characters[it.data.id]?.masterUrl || null;
-        lbl = it.data.name;
+        lbl = `${it.data.num}. ${it.data.name}`;
       } else if (it.kind === 'flagship') {
         thumbUrl = getPopMartCatalogThumbDataUrl(it.data.id) || POPMART_ASSETS.furniture.velvetSofaUrl || null;
         lbl = `${(it.data.tier || 1) >= 3 ? 'T' + it.data.tier + ' · ' : ''}${it.data.name}`;
@@ -23428,7 +23847,7 @@ function syncTurntableInfoAndStripUI() {
       const thumbHtml = thumbUrl
         ? `<img src="${thumbUrl}" alt="" class="toy-ico-img w-4 h-4 rounded-sm" />`
         : '';
-      return `<button type="button" data-tt-jump="${idx}" class="tt-quick-pill ${active ? 'active' : ''}">${thumbHtml}<span>${lbl}</span></button>`;
+      return `<button type="button" data-tt-jump="${idx}" class="tt-quick-pill shrink-0 ${active ? 'active' : ''}">${thumbHtml}<span>${lbl}</span></button>`;
     }).join('');
 
     stripEl.querySelectorAll('[data-tt-jump]').forEach((btn) => {
@@ -23437,6 +23856,11 @@ function syncTurntableInfoAndStripUI() {
         rebuildTurntableSubject3D();
       });
     });
+
+    const activeChip = stripEl.querySelector('.tt-quick-pill.active');
+    if (activeChip && typeof activeChip.scrollIntoView === 'function') {
+      activeChip.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+    }
   }
 }
 
@@ -23983,10 +24407,10 @@ function applyPopMartWorldDecorations() {
     injectToyIcon('rankup-banner-ico', POPMART_ASSETS.ui.duelTrophyCrownUrl, 'w-7 h-7');
   }
   if (POPMART_ASSETS.mgrIconUrls?.length === 4) {
-    injectToyIcon('hud-ico-raccoon-mgr', POPMART_ASSETS.characters.char_11_raccoon?.masterUrl || POPMART_ASSETS.mgrIconUrls[0], 'w-8 h-8');
+    injectToyIcon('hud-ico-raccoon-mgr', POPMART_ASSETS.characters.char_29_bonsai_tortoise?.masterUrl || POPMART_ASSETS.mgrIconUrls[0], 'w-8 h-8');
     injectToyIcon('hud-mgr-alert-ico', POPMART_ASSETS.mgrIconUrls[1], 'w-4 h-4');
-  } else if (POPMART_ASSETS.characters.char_11_raccoon?.masterUrl) {
-    injectToyIcon('hud-ico-raccoon-mgr', POPMART_ASSETS.characters.char_11_raccoon.masterUrl, 'w-8 h-8');
+  } else if (POPMART_ASSETS.characters.char_29_bonsai_tortoise?.masterUrl) {
+    injectToyIcon('hud-ico-raccoon-mgr', POPMART_ASSETS.characters.char_29_bonsai_tortoise.masterUrl, 'w-8 h-8');
   }
 
   // 날씨 3종 + 제1/제2마을 월드 탭 아이콘 (ui_weather_icons_sheet.png: 0 태양 / 1 우산 / 2 눈송이 / 3 하버 등대)
