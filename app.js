@@ -10014,10 +10014,63 @@ function spawnJackpotText3D(wx, wy, wz, text, icoKey = 'coin_stack') {
   setTimeout(() => el.remove(), 1180);
 }
 
+const _lodTmpVec = new THREE.Vector3();
+const lodBubbleFocusState = {
+  key: null,
+  timer: 0
+};
+
+function computeWorldCameraDist(wx, wy, wz) {
+  if (fpState?.active && fpCamera) {
+    return fpCamera.position.distanceTo(_lodTmpVec.set(wx, wy, wz));
+  }
+  if (driveState?.active && driveCamera) {
+    return driveCamera.position.distanceTo(_lodTmpVec.set(wx, wy, wz));
+  }
+  if (!camera || !controls) return 50.0;
+  // OrthographicCamera는 마우스 휠 확대 시 camera.zoom이 변화하므로 실효 가시 거리로 환산:
+  //  - 기본 타운 전체 조망(zoom ≈ 0.78~0.88) ➔ dist ≈ 41~46 (> 38: 1단계 완전 숨김)
+  //  - 중간 휠 줌인(zoom ≈ 1.05~1.95) ➔ dist ≈ 18.5~35 (18 < dist <= 38: 2단계 미니 "• • •" 힌트)
+  //  - 근접 클로즈업/망원경(zoom >= 2.05) ➔ dist <= 18 (3단계 전체 대사 오픈!)
+  const baseOrthoDist = 36.0 / Math.max(0.25, camera.zoom || 0.82);
+  const planarOffset = Math.hypot(wx - controls.target.x, wz - controls.target.z) * 0.22;
+  return baseOrthoDist + planarOffset;
+}
+
+function getWorldSpeechLodTier(wx, wy, wz, opt = {}) {
+  if (titleScreenState?.active || guidedTourState?.active || duelState?.active) return 1;
+  if (fpState?.active) {
+    const fpDist = computeWorldCameraDist(wx, wy, wz);
+    return fpDist <= 18 ? 3 : fpDist <= 38 ? 2 : 1;
+  }
+  if (opt.forceTier3) return 3;
+  if (opt.key && lodBubbleFocusState.key === opt.key && lodBubbleFocusState.timer > 0) {
+    return 3;
+  }
+  const dist = computeWorldCameraDist(wx, wy, wz);
+  if (dist > 38) return 1;
+  if (dist > 18) return 2;
+  return 3;
+}
+
+function buildMiniHintHtml(hintIcon = 'dots') {
+  if (!hintIcon || hintIcon === 'dots') {
+    return `<span class="lod-wave-dots" aria-hidden="true"><i></i><i></i><i></i></span>`;
+  }
+  return `<span class="lod-mini-emo" aria-hidden="true">${hintIcon}</span>`;
+}
+
+function inferHintIconFromText(text = '', isRivalLine = false) {
+  if (isRivalLine || text.includes('💢') || text.includes('파업')) return '💢';
+  if (text.includes('💤') || text.includes('꿀잠')) return '💤';
+  if (text.includes('🎵') || text.includes('노래') || text.includes('시원')) return '🎵';
+  if (text.includes('🏎️') || text.includes('드라이브')) return '🏎️';
+  return 'dots';
+}
+
 function isSpeechBubbleAllowedInCurrentView(forceShow = false) {
-  if (!forceShow) return false;
-  if (titleScreenState.active) return false;
-  return true;
+  if (titleScreenState.active || guidedTourState.active) return false;
+  return !!forceShow;
 }
 
 let lastAmbientSpeechAt = 0;
@@ -10055,19 +10108,36 @@ function showSpeechBubble3D(key, wx, wy, wz, text, duration = 2.4, forceShow = f
     lastAmbientSpeechAt = nowMs;
   }
 
-  // 도톰한 3D 마시멜로 말풍선 스킨(`skin_speech_bubble.png`)으로 둥실둥실 팝업!
+  // 3단계 스마트 LOD 마시멜로 말풍선(`skin_speech_bubble.png`): 원거리 숨김 / 중거리 미니 힌트 / 근거리 대사 오픈!
   clearTransientSpeechBubbles(null);
   const el = document.createElement('div');
-  el.className = isRivalLine ? 'speech-cloud rival-dark-glass' : 'speech-cloud';
-  el.textContent = text;
+  const hintIcon = inferHintIconFromText(text, isRivalLine);
+  el.className = isRivalLine ? 'speech-cloud lod-world-bubble rival-dark-glass lod-tier-1' : 'speech-cloud lod-world-bubble lod-tier-1';
+  el.innerHTML = `<span class="lod-mini-slot">${buildMiniHintHtml(hintIcon)}</span><span class="lod-full-slot"></span>`;
+  const fullSlot = el.querySelector('.lod-full-slot');
+  if (fullSlot) fullSlot.textContent = text;
+
+  el.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    lodBubbleFocusState.key = key;
+    lodBubbleFocusState.timer = 6.0;
+    if (!fpState.active && !driveState.active) {
+      const offset = CAM_OFFSETS[camAzimuth % 4];
+      const look = new THREE.Vector3(wx, Math.max(1.2, wy - 1.2), wz);
+      const pos = look.clone().add(offset.clone().multiplyScalar(0.55));
+      startSmoothCameraTween(pos, look, Math.max(2.35, camera.zoom), 0.42, null);
+    }
+  });
+
   dom.speechLayer.appendChild(el);
   speechEls[key] = {
     el,
     wx,
     wy,
     wz,
-    timer: Math.min(2.8, Math.max(1.8, duration)),
+    timer: Math.min(3.4, Math.max(2.0, duration)),
     forceShow: true,
+    forceTier3: !!(fpState.active || key.startsWith('fp_') || key.startsWith('dt_') || isRivalLine),
     moteEl: null
   };
 }
@@ -13653,32 +13723,28 @@ function buildInlineRoomFurnitureSectionHTML(rm) {
 
     let actionBtn = '';
     if (!rm.unlocked) {
-      actionBtn = `<button type="button" disabled class="diary-pill-badge opacity-55">개방 필요</button>`;
+      actionBtn = `<button type="button" disabled class="diary-pill-badge w-full justify-center opacity-55">개방 필요</button>`;
     } else if (isEquipped) {
-      actionBtn = `<span class="kw-chip tone-mint">✨ 배치됨</span>`;
+      actionBtn = `<span class="kw-chip tone-mint w-full justify-center">✨ 배치됨</span>`;
     } else if (isOwnedInRoom) {
-      actionBtn = `<button type="button" data-rf-equip="${item.id}" class="jelly-action-btn btn-mint-lip !py-2 !px-3.5">배치하기</button>`;
+      actionBtn = `<button type="button" data-rf-equip="${item.id}" class="jelly-action-btn btn-mint-lip w-full !min-h-[38px] !py-1.5 !px-2.5 !text-[15px]">배치하기</button>`;
     } else if (invCount > 0) {
-      actionBtn = `<button type="button" data-rf-inv-equip="${item.id}" class="jelly-action-btn btn-sky-lip !py-2 !px-3.5">✨ 창고배치 (${invCount})</button>`;
+      actionBtn = `<button type="button" data-rf-inv-equip="${item.id}" class="jelly-action-btn btn-sky-lip w-full !min-h-[38px] !py-1.5 !px-2.5 !text-[15px]">📦 창고배치(${invCount})</button>`;
     } else if (!rankUnlocked) {
-      actionBtn = `<button type="button" data-rf-locked-rank="${item.unlockRank}" class="kw-chip tone-coral cursor-pointer">🔒 ${item.unlockRank}위 해금</button>`;
+      actionBtn = `<button type="button" data-rf-locked-rank="${item.unlockRank}" class="kw-chip tone-coral w-full justify-center cursor-pointer">🔒 ${item.unlockRank}위 해금</button>`;
     } else {
-      actionBtn = `<button type="button" data-rf-buy-equip="${item.id}" class="jelly-action-btn btn-gold-lip !py-2 !px-3.5">💰 ${item.cost.toLocaleString()}만 배치</button>`;
+      actionBtn = `<button type="button" data-rf-buy-equip="${item.id}" class="jelly-action-btn btn-gold-lip w-full !min-h-[38px] !py-1.5 !px-2.5 !text-[15px]">${item.cost.toLocaleString()}만 배치</button>`;
     }
 
     return `
-      <div class="diary-subcard !p-3 flex items-center justify-between gap-2.5 ${isEquipped ? '!border-2 !border-[#10B981] !bg-[#ECFDF5]' : item.isSecretLuxury ? '!border-[#10B981] !bg-[#F0FDF4]' : ''}">
-        <div class="w-[74px] h-[54px] rounded-xl overflow-hidden bg-[#FFFDF9] border-2 border-[#E9D5C0] shrink-0 flex items-center justify-center">
-          ${getOrRender3DCatalogPreview(item.id, 148, 96)}
+      <div class="visual-showcase-card ${isEquipped ? 'equipped' : ''}">
+        <div class="visual-showcase-stage">
+          <span class="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full font-extrabold text-[12px] shadow-sm" style="background:${tInfo.bg};color:${tInfo.color};">${tInfo.short}</span>
+          <span class="absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full font-extrabold text-[12px] bg-[#ECFDF5] text-[#047857] border border-[#6EE7B7]">+${item.rentAdd}만</span>
+          ${getOrRender3DCatalogPreview(item.id, 210, 126)}
         </div>
-        <div class="min-w-0 flex-1">
-          <div class="flex items-center gap-1.5 flex-wrap">
-            <span class="px-2 py-0.5 rounded-full font-extrabold text-[16px]" style="background:${tInfo.bg};color:${tInfo.color};">${tInfo.short}</span>
-            <span class="font-title text-[20px] text-[#1E1B18] truncate">${item.name}</span>
-          </div>
-          <div class="font-title text-[18px] text-[#047857] mt-0.5">📈 월세 +${item.rentAdd}만 상승</div>
-        </div>
-        <div class="shrink-0">${actionBtn}</div>
+        <div class="font-title text-[16px] text-[#1E1B18] text-center truncate px-0.5">${item.name}</div>
+        <div>${actionBtn}</div>
       </div>
     `;
   }).join('');
@@ -13686,11 +13752,11 @@ function buildInlineRoomFurnitureSectionHTML(rm) {
   return `
     <div class="space-y-2.5 pt-2 border-t-2 border-[#EED6BE]">
       <div class="flex items-center justify-between gap-2">
-        <span class="font-title text-[22px] text-[#1E1B18]">🛋️ 방 가구 배치</span>
-        <button type="button" id="btn-rf-goto-flagship" class="kw-chip tone-coral cursor-pointer">3D 가구백화점 ➔</button>
+        <span class="font-title text-[19px] text-[#1E1B18]">🛋️ 방 가구 쇼케이스</span>
+        <button type="button" id="btn-rf-goto-flagship" class="kw-chip tone-coral cursor-pointer">3D 백화점 ➔</button>
       </div>
       <div class="grid grid-cols-4 gap-1.5">${catTabsHtml}</div>
-      <div class="space-y-2">${cardsHtml}</div>
+      <div class="grid grid-cols-2 gap-2.5">${cardsHtml}</div>
     </div>
   `;
 }
@@ -13804,27 +13870,25 @@ function renderFocusedRoomInspector() {
   const hDef = HOUSEHOLD_TYPES[rm.household.type] || HOUSEHOLD_TYPES.student;
 
   dom.rfBody.innerHTML = `
-    <div class="diary-subcard !p-3.5 space-y-3">
-      <div class="flex items-center justify-between gap-2.5">
-        <div class="flex items-center gap-2.5 min-w-0">
-          ${createHouseholdAvatarSVG(rm.household.type, 50)}
-          <div class="min-w-0">
-            <div class="font-title text-[22px] text-[#1E1B18] truncate">${rm.household.familyName}</div>
+    <div class="diary-subcard !p-3 space-y-2.5">
+      <div class="flex items-center gap-3">
+        ${createHouseholdAvatarSVG(rm.household.type, 84)}
+        <div class="min-w-0 flex-1 space-y-1">
+          <div class="flex items-center gap-1.5 flex-wrap">
             <span class="role-accent-badge" style="background:${hDef.accentHex};">${hDef.label}</span>
           </div>
-        </div>
-        <div class="text-right shrink-0">
-          <div class="font-num text-[26px] text-[#B45309]">+${formatWonBig(effRent)}</div>
+          <div class="font-title text-[19px] text-[#1E1B18] truncate">${rm.household.familyName}</div>
+          <div class="font-num text-[22px] text-[#B45309]">+${formatWonBig(effRent)}</div>
         </div>
       </div>
       ${rentCapWarningHtml}
       <div class="grid grid-cols-2 gap-2">
         ${rm.trashStage > 0 ? `
-          <button type="button" id="btn-rf-clean" class="jelly-action-btn btn-mint-lip py-2.5">🧹 청소 ${GAME_BALANCE.specialCleanCost}만</button>` : ''}
+          <button type="button" id="btn-rf-clean" class="jelly-action-btn btn-mint-lip !py-2 !text-[15.5px]">🧹 청소 ${GAME_BALANCE.specialCleanCost}만</button>` : ''}
         ${!rm.soundproofed ? `
-          <button type="button" id="btn-rf-sound" class="jelly-action-btn btn-sky-lip py-2.5">🔨 방음 ${GAME_BALANCE.soundproofCost}만</button>` : `
+          <button type="button" id="btn-rf-sound" class="jelly-action-btn btn-sky-lip !py-2 !text-[15.5px]">🔨 방음 ${GAME_BALANCE.soundproofCost}만</button>` : `
           <span class="kw-chip tone-mint justify-center py-2">✔ 방음 완료</span>`}
-        <button type="button" id="btn-rf-evict" class="jelly-action-btn btn-coral-lip py-2.5">퇴거시키기</button>
+        <button type="button" id="btn-rf-evict" class="jelly-action-btn btn-coral-lip !py-2 !text-[15.5px]">퇴거시키기</button>
       </div>
     </div>
     ${buildInlineRoomFurnitureSectionHTML(rm)}
@@ -15799,19 +15863,31 @@ function renderMoneyGunPopover() {
   const listEl = document.getElementById('moneygun-tiers-list') || document.getElementById('moneygun-tier-list');
   if (!listEl) return;
   const tiers = window.MONEYGUN_FLEX_TIERS || [];
-  listEl.innerHTML = tiers.map((t) => {
+  const tierIcons = [
+    POPMART_ASSETS?.ui?.quickMoneygunUrl || './assets/ui/ui_quick_moneygun.png',
+    POPMART_ASSETS?.actionIconUrls?.[0] || './assets/ui/ui_quick_moneygun.png',
+    POPMART_ASSETS?.ui?.quickTrophyUrl || './assets/ui/ui_quick_trophy.png',
+    POPMART_ASSETS?.ui?.duelTrophyCrownUrl || './assets/ui/ui_duel_trophy_crown.png'
+  ];
+  listEl.innerHTML = tiers.map((t, idx) => {
     const pct = t.pctOfGold ?? t.percentOfGold;
     const actualCost = calcMoneyGunTierCost(t);
     const canAfford = (state.gold || 0) >= actualCost;
     const costLabel = formatWonBig(actualCost);
     const isAllIn = !!pct;
+    const icoUrl = tierIcons[idx % tierIcons.length];
     return `
-      <button type="button" data-mg-tier="${t.id}" ${!canAfford ? 'disabled' : ''} class="w-full text-left rounded-2xl p-3.5 border-2 transition-transform active:scale-95 ${!canAfford ? 'opacity-45 cursor-not-allowed bg-[#F3EDE4] border-[#D6C5B5]' : isAllIn ? 'bg-gradient-to-r from-[#FFFBEB] to-[#FEF3C7] border-[#F59E0B] shadow-sm hover:scale-[1.01]' : 'bg-[#FFFDF9] border-[#E8CCB0] hover:border-[#F59E0B]'}">
-        <div class="flex items-center justify-between gap-2">
-          <span class="font-title text-[20px] text-[#1E1B18]">${t.emoji} ${t.title}</span>
-          <span class="px-3 py-1 rounded-full font-num text-[18px] ${canAfford ? 'bg-[#FEE2E2] text-[#B91C1C]' : 'bg-[#E5E7EB] text-[#4B5563]'}">${canAfford ? `-${costLabel}` : '잔액 부족'}</span>
+      <button type="button" data-mg-tier="${t.id}" ${!canAfford ? 'disabled' : ''} class="w-full text-left rounded-2xl p-2.5 border-2 flex items-center gap-3 transition-transform active:scale-95 ${!canAfford ? 'opacity-45 cursor-not-allowed bg-[#F3EDE4] border-[#D6C5B5]' : isAllIn ? 'bg-gradient-to-r from-[#FFFBEB] to-[#FEF3C7] border-[#F59E0B] shadow-sm hover:scale-[1.01]' : 'bg-[#FFFDF9] border-[#E8CCB0] hover:border-[#F59E0B]'}">
+        <span class="w-12 h-12 rounded-xl bg-[#FFFFFF] border border-[#F59E0B] flex items-center justify-center p-1 shrink-0 shadow-sm">
+          <img src="${icoUrl}" alt="" class="w-full h-full object-contain" />
+        </span>
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-title text-[18px] text-[#1E1B18] truncate">${t.title}</span>
+            <span class="px-2.5 py-0.5 rounded-full font-num text-[15px] shrink-0 ${canAfford ? 'bg-[#FEE2E2] text-[#B91C1C]' : 'bg-[#E5E7EB] text-[#4B5563]'}">${canAfford ? `-${costLabel}` : '부족'}</span>
+          </div>
+          <div class="font-body text-[14px] font-extrabold text-[#047857] mt-0.5">행복도 +${t.happyAdd || 15}% · 피버 ${t.feverMult || 2}배</div>
         </div>
-        <div class="font-body text-[16px] font-extrabold text-[#047857] mt-1">행복도 +${t.happyAdd || 15}% · 피버 ${t.feverMult || 2}배!</div>
       </button>
     `;
   }).join('');
@@ -17515,14 +17591,14 @@ function updateForbesRankAndHUD(allowCelebration = true) {
   }
   const fameTxtEl = document.getElementById('hud-fame-pts-text');
   if (fameTxtEl) {
-    fameTxtEl.textContent = `(명성 +${prestDef.bonusPct}%)`;
+    fameTxtEl.textContent = `명성 +${prestDef.bonusPct}%`;
   }
   const crestSlot = document.getElementById('hud-fame-crest-slot');
   if (crestSlot && POPMART_ASSETS?.fameCrestUrls?.length === 4) {
     const cUrl = POPMART_ASSETS.fameCrestUrls[prestDef.crestIdx || 0];
     if (cUrl && crestSlot.dataset.crestSrc !== cUrl) {
       crestSlot.dataset.crestSrc = cUrl;
-      crestSlot.innerHTML = `<img src="${cUrl}" alt="" class="toy-ico-img w-6 h-6" />`;
+      crestSlot.innerHTML = `<img src="${cUrl}" alt="" class="toy-ico-img w-7 h-7" />`;
     }
   }
   const subEl = document.getElementById('hud-forbes-worth-sub');
@@ -17636,28 +17712,35 @@ function renderForbesModal() {
   const titleEl = document.getElementById('forbes-vip-title');
   if (titleEl) titleEl.textContent = state.vipTitle || prestDef.title;
 
+  const myPortraitSlot = document.getElementById('forbes-my-hero-portrait');
+  if (myPortraitSlot) {
+    myPortraitSlot.innerHTML = createHouseholdAvatarSVG('landlord_avatar', 68);
+  }
+
   const aheadRival = entries.find((e) => !e.isMe && e.liveRank === Math.max(1, myRank - 1)) || entries.find((e) => !e.isMe);
   const kangBtn = document.getElementById('btn-forbes-challenge-kang');
   if (kangBtn && aheadRival) {
     const lblSpan = kangBtn.querySelector('span:last-child');
-    if (lblSpan) lblSpan.textContent = `⚔️ ${aheadRival.liveRank}위 부자와 쇼룸 결투하기!`;
+    if (lblSpan) lblSpan.textContent = `⚔️ ${aheadRival.liveRank}위 부자와 결투하기`;
   }
 
   const fameBox = document.getElementById('forbes-fame-summary-box');
   if (fameBox) {
     const crestImg = (POPMART_ASSETS?.fameCrestUrls?.[prestDef.crestIdx || 0])
-      ? `<img src="${POPMART_ASSETS.fameCrestUrls[prestDef.crestIdx || 0]}" alt="" class="toy-ico-img w-7 h-7 shrink-0" />`
+      ? `<img src="${POPMART_ASSETS.fameCrestUrls[prestDef.crestIdx || 0]}" alt="" class="toy-ico-img w-10 h-10 shrink-0" />`
       : '';
     fameBox.innerHTML = `
-      <div class="flex items-center justify-between gap-2 flex-wrap">
-        <div class="flex items-center gap-2 shrink-0">
+      <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2 min-w-0">
           ${crestImg}
-          <span class="font-title text-[20px] text-[#78350F] whitespace-nowrap">✨ 명성 ${fameNow.toLocaleString()}pt</span>
+          <div class="min-w-0">
+            <div class="font-title text-[17px] text-[#78350F] whitespace-nowrap">✨ 명성 ${fameNow.toLocaleString()}pt</div>
+            <div class="font-body text-[13.5px] font-extrabold text-[#047857] truncate">
+              ${nextPrest ? `승리 시 다음 배율 +${nextPrest.bonusPct}%` : '최고 명성 달성!'}
+            </div>
+          </div>
         </div>
-        <span class="kw-chip tone-mint shrink-0">👑 월세 영구 +${prestDef.bonusPct}%</span>
-      </div>
-      <div class="font-body text-[16px] font-extrabold text-[#047857]">
-        ${nextPrest ? `결투 승리 시 다음 배율: 영구 +${nextPrest.bonusPct}%!` : '최고 명성 등급(+500% MAX)!'}
+        <span class="kw-chip tone-mint shrink-0">월세 +${prestDef.bonusPct}%</span>
       </div>
     `;
   }
@@ -17686,7 +17769,6 @@ function renderForbesModal() {
     if (forbesFilterMode === 'top20') return rk.liveRank <= 20 || rk.isMe;
     if (forbesFilterMode === 'mid50') return (rk.liveRank >= 21 && rk.liveRank <= 60) || rk.isMe;
     if (forbesFilterMode === 'low100') return rk.liveRank >= 61 || rk.isMe;
-    // 'near': 내 앞뒤 순위 + 핵심 이정표 보스(1위 만수르 / 10위 강 회장 / 50위 / 80위 / 90위 불독 사장)
     const isNear = Math.abs(rk.liveRank - myRank) <= 5;
     const isLandmark = rk.baseRank === 1 || rk.baseRank === 10 || rk.baseRank === 50 || rk.baseRank === 80 || rk.baseRank === 90;
     return rk.isMe || isNear || isLandmark;
@@ -17710,20 +17792,22 @@ function renderForbesModal() {
       const isNextTarget = !rk.isMe && rk.liveRank === Math.max(1, myRank - 1);
 
       return `
-        <div class="${rowCls} !p-3 flex items-center justify-between gap-2.5">
+        <div class="${rowCls} !p-2.5 flex items-center justify-between gap-2.5">
           <div class="flex items-center gap-2.5 min-w-0 flex-1">
-            <div class="w-11 h-11 rounded-2xl border-2 border-[#1E1B18] font-num text-[17px] flex items-center justify-center shrink-0" style="${rankBadgeBg}">
-              ${rk.liveRank}위
+            <div class="relative shrink-0">
+              ${createHouseholdAvatarSVG(rk.avatarRole || 'manager', 66)}
+              <span class="absolute -top-1.5 -left-1.5 px-2 py-0.5 rounded-full border border-[#1E1B18] font-num text-[12.5px] leading-none shadow-sm" style="${rankBadgeBg}">
+                ${rk.liveRank}위
+              </span>
             </div>
-            ${createHouseholdAvatarSVG(rk.avatarRole || 'manager', 44)}
             <div class="min-w-0 flex-1">
-              <div class="font-title text-[19px] ${rk.isArchRival ? 'text-[#581C87]' : 'text-[#1E1B18]'} truncate">${rk.name}</div>
-              <div class="font-num text-[17px] text-[#B45309]">${rk.netWorth.toLocaleString()}점</div>
+              <div class="font-title text-[18px] ${rk.isArchRival ? 'text-[#581C87]' : 'text-[#1E1B18]'} truncate">${rk.name}</div>
+              <div class="font-num text-[19px] text-[#B45309]">${rk.netWorth.toLocaleString()}점</div>
             </div>
           </div>
           <div class="shrink-0">
             ${!rk.isMe ? `
-              <button type="button" data-forbes-duel-id="${rk.id}" class="jelly-action-btn ${isNextTarget ? 'btn-coral-lip' : 'btn-gold-lip'} !py-2 !px-3.5">
+              <button type="button" data-forbes-duel-id="${rk.id}" class="jelly-action-btn ${isNextTarget ? 'btn-coral-lip' : 'btn-gold-lip'} !min-h-[40px] !py-1.5 !px-3.5 !text-[15.5px]">
                 <span>⚔️ 결투</span>
               </button>
             ` : `<span class="kw-chip tone-mint">내 순위</span>`}
@@ -18939,7 +19023,12 @@ function updateAllProjectedOverlays(dt) {
     if (rb?.el) rb.el.style.display = 'none';
   }
 
-  // 결정적 순간 1개만 2초간 떴다 사라지는 반투명 글래스 한 줄 캡슐 토스트 투영
+  // 3단계 카메라 거리 연동 말풍선 투영 (1단계 원거리 숨김 / 2단계 36x28 미니 힌트 / 3단계 전체 대사 오픈)
+  if (lodBubbleFocusState.timer > 0) {
+    lodBubbleFocusState.timer = Math.max(0, lodBubbleFocusState.timer - dt);
+    if (lodBubbleFocusState.timer <= 0) lodBubbleFocusState.key = null;
+  }
+
   for (const key of Object.keys(speechEls)) {
     const sp = speechEls[key];
     sp.timer -= dt;
@@ -18949,16 +19038,29 @@ function updateAllProjectedOverlays(dt) {
       delete speechEls[key];
       continue;
     }
-    if (titleScreenState.active || guidedTourState.active) {
+    if (titleScreenState.active || guidedTourState.active || duelState.active) {
       sp.el.style.display = 'none';
       continue;
     }
+    const tier = getWorldSpeechLodTier(sp.wx, sp.wy, sp.wz, {
+      key,
+      forceTier3: !!sp.forceTier3
+    });
+    sp.el.classList.toggle('lod-tier-1', tier === 1);
+    sp.el.classList.toggle('lod-tier-2', tier === 2);
+    sp.el.classList.toggle('lod-tier-3', tier === 3);
+
+    if (tier === 1) {
+      sp.el.style.display = 'inline-flex';
+      continue;
+    }
+
     const pt = projectWorldToScreen(sp.wx, sp.wy, sp.wz);
-    const inBounds = pt.visible && pt.x >= 32 && pt.x <= vw - 32 && pt.y >= 64 && pt.y <= vh - 52;
+    const inBounds = pt.visible && pt.x >= 28 && pt.x <= vw - 28 && pt.y >= 72 && pt.y <= vh - 58;
     if (!inBounds || !isSpeechBubbleAllowedInCurrentView(sp.forceShow)) {
       sp.el.style.display = 'none';
     } else {
-      const halfW = Math.max(115, (sp.el.offsetWidth || 220) * 0.5 + 10);
+      const halfW = tier === 2 ? 22 : Math.min(116, Math.max(64, (sp.el.offsetWidth || 180) * 0.5 + 8));
       const clampedX = THREE.MathUtils.clamp(pt.x, halfW, Math.max(halfW, vw - halfW));
       sp.el.style.display = 'inline-flex';
       sp.el.style.left = `${clampedX}px`;
@@ -18970,10 +19072,10 @@ function updateAllProjectedOverlays(dt) {
 }
 
 // =========================================================
-// 16C-2. [빅 & 볼드 UI 전면 개편 핵심 엔진]
-//  - 상단 정중앙 『🎯 왕큼직 원클릭 현재 할 일 가이드 바』 & 3D 대형 황금 화살표(`▼ 여기를 클릭!`)
-//  - 3D 월드 직접 클릭 대형 배지 (`🏎️ 드라이브 타기` · `🦝 관리소장 (월세한도 15만)` · `🛋️ 가구 백화점`)
-//  - 수첩(`📒`) 3대 대형 액션 카드 실시간 동기화 & 원클릭 착공/완공/결투 연동
+// 16C-2. [3단계 스마트 말풍선 LOD & 비주얼 황금비율 UX 엔진]
+//  - 상단 슬림 가이드 바 (`44x44 목표 썸네일 + 핵심 한 줄 + 👆 이동`) & 텍스트 없는 3D 황금 화살표(`▼`)
+//  - 카메라 줌 거리 연동 3단계 말풍선 (`dist > 38` 숨김 ➔ `18 < dist <= 38` 미니 • • • ➔ `dist <= 18` 대사 오픈)
+//  - 수첩(`📒`) 3대 비주얼 쇼케이스 액션 카드 동기화
 // =========================================================
 const bigUiGuideState = {
   arrowGroup3D: null,
@@ -18983,6 +19085,7 @@ const bigUiGuideState = {
   carBadgeEl: null,
   mgrBadgeEl: null,
   shopBadgeEl: null,
+  smartLodMap: new Map(),
   elapsed: 0,
   pocketSyncAccum: 0
 };
@@ -19009,11 +19112,12 @@ function computeActiveGoalStep() {
   const mgr = ensureManagerSchema(b?.manager);
   const D = GAME_BALANCE.buildingDepth || 8.0;
 
-  // Step 1: 1층 가구 백화점에서 첫 침대 구매하기
+  // Step 1: 가구 백화점 첫 침대 구매
   if (!hasBoughtOrEquippedPaidBed()) {
     return {
       step: 1,
-      text: `1층 '🛋️ 가구 백화점'에서 침대 사기`,
+      text: `가구 백화점 첫 침대 구매`,
+      thumbUrl: POPMART_ASSETS?.furniture?.bedTier3Canopy || './assets/furniture/bed_tier3_canopy.png',
       targetType: 'world',
       wx: 25.2,
       wy: 9.2,
@@ -19030,14 +19134,15 @@ function computeActiveGoalStep() {
     };
   }
 
-  // Step 2: 201호 클릭해서 침대 놓고 세입자 받기
+  // Step 2: 201호 침대 배치 · 세입자 입주
   const rm201BedDef = rm201 ? getFurnitureItemDef('bed', rm201.equippedFurniture?.bed) : null;
   const hasInvBed = (FURNITURE_CATALOG.bed || []).some((it) => it.cost > 0 && (state?.furnitureInventory?.[it.id] || 0) > 0);
   const rm201NeedsSetup = rm201 && (!rm201.unlocked || !rm201.household || (hasInvBed && (!rm201BedDef || rm201BedDef.cost === 0)));
   if (rm201NeedsSetup) {
     return {
       step: 2,
-      text: `'201호' 클릭해서 침대 놓고 세입자 받기`,
+      text: `201호 침대 배치 · 세입자 받기`,
+      thumbUrl: POPMART_ASSETS?.characters?.char_01_boba_otter?.masterUrl || './assets/characters/char_01_boba_otter.png',
       targetType: 'world',
       wx: mainLot.x + (rm201.lx || 0),
       wy: (rm201.ly || 9.45) + 4.8,
@@ -19057,11 +19162,12 @@ function computeActiveGoalStep() {
     };
   }
 
-  // Step 3: 우측 하단 수첩에서 첫 월세 수금하기
+  // Step 3: 수첩에서 첫 월세 수금
   if (!state?.firstRentCollected) {
     return {
       step: 3,
-      text: `우측 하단 '📒 수첩'에서 첫 월세 수금하기`,
+      text: `수첩에서 첫 월세 수금하기`,
+      thumbUrl: POPMART_ASSETS?.actionIconUrls?.[0] || './assets/ui/ui_pocket_notebook.png',
       targetType: 'ui_notebook',
       execute: () => {
         const pop = document.getElementById('pocket-planner-popover');
@@ -19072,7 +19178,7 @@ function computeActiveGoalStep() {
     };
   }
 
-  // Step 4: 1층 라쿤 소장 클릭해 월급 올리고 월세 한도 뚫기
+  // Step 4: 1층 거북 소장 월급 올리기
   let anyRoomCapped = false;
   if (b) {
     for (const rm of (b.rooms || [])) {
@@ -19085,7 +19191,8 @@ function computeActiveGoalStep() {
   if ((mgr.salaryLv || 1) < 2 || mgr.onStrike || anyRoomCapped) {
     return {
       step: 4,
-      text: `1층 '🪴 거북 소장' 클릭해 월급 올리고 월세 한도 뚫기`,
+      text: `거북 소장 월급 올려 한도 돌파`,
+      thumbUrl: POPMART_ASSETS?.characters?.char_29_bonsai_tortoise?.masterUrl || './assets/characters/char_29_bonsai_tortoise.png',
       targetType: 'world',
       wx: mainLot.x + 2.55,
       wy: 4.5,
@@ -19094,7 +19201,7 @@ function computeActiveGoalStep() {
         startSmoothCameraTween(
           new THREE.Vector3(mainLot.x + 12.0, 10.5, mainLot.z + 20.5),
           new THREE.Vector3(mainLot.x + 2.55, 1.8, mainLot.z + D * 0.5 + 1.0),
-          1.35,
+          2.35,
           0.42,
           () => openNotebookModal('manager')
         );
@@ -19108,7 +19215,8 @@ function computeActiveGoalStep() {
     const site = constructionState.sites[activeSiteKeys[0]];
     return {
       step: 5,
-      text: `'📒 수첩'에서 공사 현장 [⚡ 즉시 완공] 하기`,
+      text: `공사 현장 즉시 완공하기`,
+      thumbUrl: './assets/buildings/prop_construction_crane.png',
       targetType: 'world',
       wx: site.wx,
       wy: site.wy + (site.spanH || 4.8) + 4.0,
@@ -19124,7 +19232,8 @@ function computeActiveGoalStep() {
     const totMan = calcCollectableRentTotalMan();
     return {
       step: 5,
-      text: `'📒 수첩'에서 월세 +${formatWonBig(totMan)} 일괄 수금하기`,
+      text: `월세 +${formatWonBig(totMan)} 일괄 수금`,
+      thumbUrl: POPMART_ASSETS?.actionIconUrls?.[0] || './assets/ui/ui_pocket_notebook.png',
       targetType: 'ui_notebook',
       execute: () => {
         const pop = document.getElementById('pocket-planner-popover');
@@ -19137,7 +19246,8 @@ function computeActiveGoalStep() {
   const nextRank = Math.max(1, (standings.myRank || 99) - 1);
   return {
     step: 5,
-    text: `'📒 수첩'에서 ${nextRank}위 부자와 쇼룸 결투하기`,
+    text: `${nextRank}위 부자와 쇼룸 결투`,
+    thumbUrl: POPMART_ASSETS?.ui?.duelTrophyCrownUrl || './assets/ui/ui_duel_trophy_crown.png',
     targetType: 'ui_notebook',
     execute: () => {
       const pop = document.getElementById('pocket-planner-popover');
@@ -19197,7 +19307,7 @@ function ensureGoalArrowAndBadgesCreated() {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'goal-3d-arrow-label';
-    btn.textContent = '▼ 여기를 클릭!';
+    btn.textContent = '▼';
     btn.style.display = 'none';
     btn.addEventListener('click', (ev) => {
       ev.stopPropagation();
@@ -19205,47 +19315,6 @@ function ensureGoalArrowAndBadgesCreated() {
     });
     arrowLayer.appendChild(btn);
     bigUiGuideState.arrowLabelEl = btn;
-  }
-
-  const worldLayer = document.getElementById('world-action-badges-layer');
-  if (worldLayer && !bigUiGuideState.carBadgeEl) {
-    const carBtn = document.createElement('button');
-    carBtn.type = 'button';
-    carBtn.className = 'world-float-action-pill tone-drive';
-    carBtn.textContent = '🏎️ 드라이브 타기';
-    carBtn.style.display = 'none';
-    carBtn.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      enterDriveMode();
-    });
-
-    const mgrBtn = document.createElement('button');
-    mgrBtn.type = 'button';
-    mgrBtn.className = 'world-float-action-pill tone-manager';
-    mgrBtn.textContent = '🪴 거북 소장 (월세한도 15만)';
-    mgrBtn.style.display = 'none';
-    mgrBtn.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      openNotebookModal('manager');
-    });
-
-    const shopBtn = document.createElement('button');
-    shopBtn.type = 'button';
-    shopBtn.className = 'world-float-action-pill';
-    shopBtn.textContent = '🛋️ 가구 백화점';
-    shopBtn.style.display = 'none';
-    shopBtn.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      openFurnitureFlagshipDrawer('bed');
-    });
-
-    worldLayer.appendChild(carBtn);
-    worldLayer.appendChild(mgrBtn);
-    worldLayer.appendChild(shopBtn);
-
-    bigUiGuideState.carBadgeEl = carBtn;
-    bigUiGuideState.mgrBadgeEl = mgrBtn;
-    bigUiGuideState.shopBadgeEl = shopBtn;
   }
 }
 
@@ -19263,11 +19332,11 @@ function getNextExpansionTargetInfo() {
       const rm = b.rooms.find((r) => r.subId === subId);
       if (rm && !rm.unlocked) {
         const meta = ROOM_TYPE_META[rm.layoutType] || { badge: '신규 호실' };
-        const floorTitle = rm.subId.startsWith('3') ? `3층 ${rm.name}호 펜트하우스` : `${rm.name}호 ${meta.badge}`;
+        const floorTitle = rm.subId.startsWith('3') ? `3층 ${rm.name}호` : `${rm.name}호 ${meta.badge}`;
         return {
           mode: 'room',
           room: rm,
-          label: `${floorTitle} 증축 (비용: ${rm.unlockCost.toLocaleString()}만)`,
+          label: `${floorTitle} · ${rm.unlockCost.toLocaleString()}만`,
           cost: rm.unlockCost
         };
       }
@@ -19280,7 +19349,7 @@ function getNextExpansionTargetInfo() {
       return {
         mode: 'shop',
         shopId: tpl.shopId,
-        label: `${tpl.name} 상가 인수 (비용: ${tpl.buyCost.toLocaleString()}만)`,
+        label: `${tpl.name} · ${tpl.buyCost.toLocaleString()}만`,
         cost: tpl.buyCost
       };
     }
@@ -19288,7 +19357,7 @@ function getNextExpansionTargetInfo() {
 
   return {
     mode: 'lot',
-    label: `신규 부지 건물 착공 (타워크레인)`,
+    label: `신규 빌딩 착공 · 220만`,
     cost: 220
   };
 }
@@ -19319,12 +19388,18 @@ function startRoomLiveConstructionFromPocket(rm) {
 function syncPocketBigCardsUI() {
   const collectAmtEl = document.getElementById('pocket-collect-amount');
   const collectBtnLbl = document.getElementById('pocket-collect-btn-label');
+  const collectArtBox = document.getElementById('pocket-art-collect');
   if (collectAmtEl) {
     const collectableMan = calcCollectableRentTotalMan();
-    collectAmtEl.textContent = `💰 +${formatWonBig(collectableMan)}`;
+    collectAmtEl.textContent = `+${formatWonBig(collectableMan)}`;
   }
   if (collectBtnLbl) {
-    collectBtnLbl.textContent = '지금 일괄 수금하기';
+    collectBtnLbl.textContent = '일괄 수금하기';
+  }
+  if (collectArtBox) {
+    const chestUrl = POPMART_ASSETS?.actionIconUrls?.[0] || './assets/ui/ui_pocket_notebook.png';
+    const img = collectArtBox.querySelector('img');
+    if (img && img.getAttribute('src') !== chestUrl) img.setAttribute('src', chestUrl);
   }
 
   const buildSub = document.getElementById('pocket-build-subtext');
@@ -19333,16 +19408,25 @@ function syncPocketBigCardsUI() {
   const gaugeLbl = document.getElementById('pocket-build-gauge-label');
   const buildBtnLbl = document.getElementById('pocket-build-btn-label');
   const buildBadge = document.getElementById('stamp-build-badge');
+  const buildArtBox = document.getElementById('pocket-art-build');
 
   const expInfo = getNextExpansionTargetInfo();
   const unlockedStep1 = hasAnyPaidFurnitureOrSecondRoom();
 
+  if (buildArtBox) {
+    const buildImgUrl = expInfo.mode === 'shop'
+      ? './assets/buildings/sign_bakery_croissant.png'
+      : './assets/buildings/prop_construction_crane.png';
+    const img = buildArtBox.querySelector('img');
+    if (img && img.getAttribute('src') !== buildImgUrl) img.setAttribute('src', buildImgUrl);
+  }
+
   if (expInfo.mode === 'active_site' && expInfo.site) {
     const pct = Math.min(99, Math.max(1, Math.round(expInfo.site.progress || 10)));
-    if (buildSub) buildSub.textContent = `🏗️ ${expInfo.site.title} 진행 중!`;
+    if (buildSub) buildSub.textContent = `${expInfo.site.title} 시공 중`;
     gaugeBox?.classList.remove('hidden');
     if (gaugeFill) gaugeFill.style.width = `${pct}%`;
-    if (gaugeLbl) gaugeLbl.textContent = `🚧 ${pct}% 시공 중...`;
+    if (gaugeLbl) gaugeLbl.textContent = `🚧 ${pct}%`;
     if (buildBtnLbl) buildBtnLbl.textContent = '⚡ 즉시 완공';
     buildBadge?.classList.remove('hidden');
   } else {
@@ -19351,32 +19435,41 @@ function syncPocketBigCardsUI() {
     if (buildSub) buildSub.textContent = expInfo.label;
     if (buildBtnLbl) {
       buildBtnLbl.textContent = !unlockedStep1
-        ? '🔒 첫 침대 구매 후 열림'
+        ? '🔒 첫 침대 구매 후'
         : expInfo.mode === 'room'
-          ? `🏗️ ${expInfo.room.name}호 지금 착공하기`
-          : '🏗️ 새 층 · 상가 착공하기';
+          ? `${expInfo.room.name}호 착공하기`
+          : '새 층 · 상가 착공';
     }
   }
 
   const duelTitleEl = document.getElementById('pocket-duel-card-title');
   const duelSubEl = document.getElementById('pocket-duel-subtext');
   const duelBtnLbl = document.getElementById('pocket-duel-btn-label');
+  const duelArtBox = document.getElementById('pocket-art-duel');
   const standings = getForbesStandings();
   const nextRank = Math.max(1, (standings.myRank || 99) - 1);
+  const aheadEntry = standings.entries.find((e) => !e.isMe && e.liveRank === nextRank) || standings.entries.find((e) => !e.isMe);
   const nextPrest = getNextFamePrestigeDef();
   const curPrest = getFamePrestigeDef();
   const targetBonusPct = nextPrest ? nextPrest.bonusPct : curPrest.bonusPct;
 
+  if (duelArtBox) {
+    const oppCid = aheadEntry ? resolveAnimalIdForRole(aheadEntry.avatarRole || 'rival_kang', nextRank) : 'char_11_phantom_bat';
+    const oppUrl = (oppCid && POPMART_ASSETS?.characters?.[oppCid]?.masterUrl) || POPMART_ASSETS?.ui?.duelTrophyCrownUrl || './assets/ui/ui_duel_trophy_crown.png';
+    const img = duelArtBox.querySelector('img');
+    if (img && img.getAttribute('src') !== oppUrl) img.setAttribute('src', oppUrl);
+  }
+
   if (duelTitleEl) {
-    duelTitleEl.textContent = `🦹‍♂️ ${nextRank}위 부자와 쇼룸 결투`;
+    duelTitleEl.textContent = `${nextRank}위 부자와 결투`;
   }
   if (duelSubEl) {
-    duelSubEl.textContent = `승리 보상: 🏆 ${nextRank}위 등극 + 월세 영구 +${targetBonusPct}%`;
+    duelSubEl.textContent = `🏆 승리 시 월세 영구 +${targetBonusPct}%`;
   }
   if (duelBtnLbl) {
     duelBtnLbl.textContent = !unlockedStep1
-      ? '🔒 첫 침대 구매 후 열림'
-      : '⚔️ 결투장 입장하기';
+      ? '🔒 첫 침대 구매 후'
+      : '⚔️ 결투장 입장';
   }
 }
 
@@ -19416,6 +19509,338 @@ function handlePocketBuildCardAction() {
   }
   closePocketPlanner();
   openLotDevModal(null);
+}
+
+function getOrCreateSmartLodBubbleEntry(key, onActionClick) {
+  let entry = bigUiGuideState.smartLodMap.get(key);
+  if (entry) {
+    entry.onActionClick = onActionClick;
+    return entry;
+  }
+  const worldLayer = document.getElementById('world-action-badges-layer') || dom.speechLayer;
+  const el = document.createElement('button');
+  el.type = 'button';
+  el.className = 'lod-world-bubble lod-tier-1';
+  el.innerHTML = `<span class="lod-mini-slot">${buildMiniHintHtml('dots')}</span><span class="lod-full-slot"></span>`;
+  el.style.display = 'none';
+
+  entry = {
+    key,
+    el,
+    miniSig: 'dots',
+    fullSig: '',
+    currentTier: 1,
+    wx: 0,
+    wy: 0,
+    wz: 0,
+    onActionClick
+  };
+
+  el.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    if (entry.currentTier === 2) {
+      // 2단계 미니 말풍선 클릭 시 카메라를 부드럽게 근접 줌인하여 3단계 대사를 스르륵 오픈!
+      lodBubbleFocusState.key = key;
+      lodBubbleFocusState.timer = 7.5;
+      if (typeof entry.onZoomFocus === 'function') {
+        entry.onZoomFocus();
+      } else if (!fpState.active && !driveState.active) {
+        const offset = CAM_OFFSETS[camAzimuth % 4];
+        const look = new THREE.Vector3(entry.wx, Math.max(1.2, entry.wy - 1.1), entry.wz);
+        const pos = look.clone().add(offset.clone().multiplyScalar(0.54));
+        startSmoothCameraTween(pos, look, Math.max(2.35, camera.zoom), 0.42, null);
+      }
+      playSynthTone(880, 'sine', 0.09, 0.04, 0);
+      return;
+    }
+    if (typeof entry.onActionClick === 'function') {
+      entry.onActionClick();
+    }
+  });
+
+  worldLayer?.appendChild(el);
+  bigUiGuideState.smartLodMap.set(key, entry);
+  return entry;
+}
+
+function syncSmartWorldLodBubbles(anyModalOpen) {
+  const hideAll =
+    anyModalOpen ||
+    titleScreenState.active ||
+    guidedTourState.active ||
+    duelState.active ||
+    fpState.active ||
+    driveState.active;
+
+  const activeKeys = new Set();
+  const candidates = [];
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const inStage2 = state.activeTownStage === 2 && !!state.harborUnlocked;
+
+  if (!hideAll) {
+    const mainLot = state?.lots?.find((l) => l.lotId === 'lot_main') || { x: -4.2, z: -6.4 };
+    const b = state?.buildings?.lot_main;
+    const mgr = ensureManagerSchema(b?.manager);
+    const D = GAME_BALANCE.buildingDepth || 8.0;
+
+    if (!inStage2) {
+      // 1) 1층 분재 거북 관리소장 NPC
+      let anyCapped = false;
+      if (b) {
+        for (const rm of (b.rooms || [])) {
+          if (rm.unlocked && calcRoomRentDetail(b, rm).isCapped) {
+            anyCapped = true;
+            break;
+          }
+        }
+      }
+      candidates.push({
+        key: 'lod_npc_mgr',
+        wx: mainLot.x + 2.55,
+        wy: 3.15,
+        wz: mainLot.z + D * 0.5 + 1.1,
+        hint: mgr.onStrike ? '💢' : 'dots',
+        urgent: !!mgr.onStrike,
+        text: mgr.onStrike
+          ? '사기가 바닥이에요! 성과급이나 월급 인상 부탁드려요! 💢'
+          : anyCapped
+            ? '월급 조금만 올려주시면 월세 한도를 뚫어드릴게요! 🪴'
+            : '회장님! 오늘도 빌딩 광택 관리 완벽합니다! 🪴',
+        priority: 95,
+        forceTier3: false,
+        onAction: () => openNotebookModal('manager')
+      });
+
+      // 2) VIP 주차장 슈퍼카
+      const carPos = driveState.carRootGroup ? driveState.carRootGroup.position : VIP_PARKING_POS;
+      candidates.push({
+        key: 'lod_npc_car',
+        wx: carPos.x,
+        wy: 2.35,
+        wz: carPos.z,
+        hint: '🏎️',
+        urgent: false,
+        text: '엔진 예열 완료! 해안 도로 드라이브 가실까요? 🏎️',
+        priority: 82,
+        forceTier3: false,
+        onAction: () => enterDriveMode()
+      });
+
+      // 3) 1층 가구 백화점 쇼룸
+      candidates.push({
+        key: 'lod_npc_flagship',
+        wx: 25.2,
+        wy: 5.2,
+        wz: -3.5,
+        hint: '💬',
+        urgent: false,
+        text: '신상 명품 침대 입고됐어요! 구경 오세요 🛋️',
+        priority: 80,
+        forceTier3: false,
+        onAction: () => openFurnitureFlagshipDrawer('bed')
+      });
+
+      // 4) 단독 상가 & 1층 상가 매니저 대사
+      const bakeryTpl = STANDALONE_SHOPS_TEMPLATE.find((s) => s.shopId === 'shop_bakery');
+      if (bakeryTpl) {
+        candidates.push({
+          key: 'lod_shop_bakery',
+          wx: bakeryTpl.x,
+          wy: 3.1,
+          wz: bakeryTpl.z + 1.4,
+          hint: 'dots',
+          urgent: false,
+          text: '회장님! 오늘 크루아상 완판이에요! 🥐',
+          priority: focusedShopId === 'shop_bakery' ? 120 : 88,
+          forceTier3: focusedShopId === 'shop_bakery',
+          onZoomFocus: () => focusCameraOnShop('shop_bakery'),
+          onAction: () => focusCameraOnShop('shop_bakery')
+        });
+      }
+      const roastTpl = STANDALONE_SHOPS_TEMPLATE.find((s) => s.shopId === 'shop_roastery');
+      if (roastTpl) {
+        candidates.push({
+          key: 'lod_shop_roastery',
+          wx: roastTpl.x,
+          wy: 3.1,
+          wz: roastTpl.z + 1.4,
+          hint: '🎵',
+          urgent: false,
+          text: '갓 내린 스페셜티 라떼 향기 최고예요! ☕',
+          priority: focusedShopId === 'shop_roastery' ? 120 : 78,
+          forceTier3: focusedShopId === 'shop_roastery',
+          onZoomFocus: () => focusCameraOnShop('shop_roastery'),
+          onAction: () => focusCameraOnShop('shop_roastery')
+        });
+      }
+      candidates.push({
+        key: 'lod_shop_mart1f',
+        wx: mainLot.x - 7.15,
+        wy: 2.85,
+        wz: mainLot.z + 3.4,
+        hint: '💬',
+        urgent: false,
+        text: '딸기샌드위치랑 컵라면 재고 꽉 채웠어요! 🏪',
+        priority: focusedFirstFloorShopId === 'shop_mart1f' ? 120 : 76,
+        forceTier3: focusedFirstFloorShopId === 'shop_mart1f',
+        onZoomFocus: () => focusCameraOnFirstFloorShop('shop_mart1f'),
+        onAction: () => focusCameraOnFirstFloorShop('shop_mart1f')
+      });
+    }
+
+    // 5) 실내 입주 세입자 캐릭터 (호실별 대표 아트토이)
+    const activeLots = state?.lots?.filter((l) => (inStage2 ? l.stage === 2 : (l.stage || 1) === 1)) || [];
+    for (const lot of activeLots) {
+      const bld = state?.buildings?.[lot.lotId];
+      if (!bld) continue;
+      for (const rm of (bld.rooms || [])) {
+        if (!rm.unlocked || !rm.household) continue;
+        const actors = residentActors[rm.id];
+        if (!actors || actors.length === 0 || !actors[0]?.mesh) continue;
+        const wp = new THREE.Vector3();
+        actors[0].mesh.getWorldPosition(wp);
+        const isFocusedRm = focusedRoomId === rm.id;
+        const isResting = (actors[0].state || '').includes('bed') || (actors[0].state || '').includes('sleep');
+        const tenantLines = [
+          `${rm.name}호 새 인테리어 너무 아늑해요! ✨`,
+          '푹신한 침대에서 꿀잠 자는 중이에요~ 💤',
+          '회장님 건물에 살아서 매일 행복해요! 💕',
+          '햇살 잘 드는 우리 집 뷰 최고예요! 🎵'
+        ];
+        const lineIdx = Math.abs(rm.id.charCodeAt(rm.id.length - 1)) % tenantLines.length;
+        candidates.push({
+          key: `lod_rm_${rm.id}`,
+          wx: wp.x,
+          wy: wp.y + 1.85,
+          wz: wp.z,
+          hint: isResting ? '💤' : (lineIdx % 2 === 0 ? 'dots' : '🎵'),
+          urgent: false,
+          text: isResting ? tenantLines[1] : tenantLines[lineIdx],
+          priority: isFocusedRm ? 130 : 86,
+          forceTier3: isFocusedRm,
+          onZoomFocus: () => focusCameraOnRoom(rm.id),
+          onAction: () => {
+            if (!isFocusedRm) focusCameraOnRoom(rm.id);
+            else toggleFocusedManualDrawer();
+          }
+        });
+      }
+    }
+
+    // 6) 거리 산책 아트토이 주민들 (최대 5명)
+    const walkers = (inStage2 ? harborWalkerActors : streetOutingActors)
+      .filter((a) => a?.mesh && a.mesh.visible)
+      .slice(0, 5);
+    walkers.forEach((ac, idx) => {
+      const mx = ac.mesh.position.x;
+      const my = ac.mesh.position.y + 1.92;
+      const mz = ac.mesh.position.z;
+      const hints = ['dots', '🎵', '💬', 'dots', '🎵'];
+      const phaseText = ac.phase === 'dining'
+        ? '파라솔 아래 커피랑 케이크 꿀맛이에요! 🍰'
+        : ac.phase === 'go_home'
+          ? '양손 가득 쇼핑 완료! 집으로 총총~ 🛍️'
+          : idx % 2 === 0
+            ? '분수대 바람 솔솔~ 산책하기 딱 좋다! 🎵'
+            : '오늘 베이커리 크루아상 냄새 대박이에요! 🥐';
+      candidates.push({
+        key: `lod_walker_${ac.id || idx}`,
+        wx: mx,
+        wy: my,
+        wz: mz,
+        hint: hints[idx % hints.length],
+        urgent: false,
+        text: phaseText,
+        priority: 72 - idx,
+        forceTier3: false,
+        onAction: null
+      });
+    });
+  }
+
+  // 우선순위 정렬 및 화면 공간 겹침 방지 배치
+  candidates.sort((a, b) => b.priority - a.priority);
+  const placedBoxes = [];
+
+  for (const cand of candidates) {
+    activeKeys.add(cand.key);
+    const entry = getOrCreateSmartLodBubbleEntry(cand.key, cand.onAction);
+    entry.onZoomFocus = cand.onZoomFocus || null;
+    entry.wx = cand.wx;
+    entry.wy = cand.wy;
+    entry.wz = cand.wz;
+
+    if (entry.miniSig !== cand.hint) {
+      entry.miniSig = cand.hint;
+      const mSlot = entry.el.querySelector('.lod-mini-slot');
+      if (mSlot) mSlot.innerHTML = buildMiniHintHtml(cand.hint);
+    }
+    if (entry.fullSig !== cand.text) {
+      entry.fullSig = cand.text;
+      const fSlot = entry.el.querySelector('.lod-full-slot');
+      if (fSlot) fSlot.textContent = cand.text;
+    }
+    entry.el.classList.toggle('urgent', !!cand.urgent);
+
+    const tier = getWorldSpeechLodTier(cand.wx, cand.wy, cand.wz, {
+      key: cand.key,
+      forceTier3: !!cand.forceTier3
+    });
+    entry.currentTier = tier;
+
+    if (tier === 1) {
+      entry.el.classList.add('lod-tier-1');
+      entry.el.classList.remove('lod-tier-2', 'lod-tier-3');
+      entry.el.style.display = 'inline-flex';
+      continue;
+    }
+
+    const pt = projectWorldToScreen(cand.wx, cand.wy, cand.wz);
+    const inScreen = pt.visible && pt.x >= 34 && pt.x <= vw - 34 && pt.y >= 118 && pt.y <= vh - 96;
+    if (!inScreen) {
+      entry.el.style.display = 'none';
+      continue;
+    }
+
+    const boxHalfW = tier === 2 ? 22 : 108;
+    const boxH = tier === 2 ? 32 : 62;
+    const cx = THREE.MathUtils.clamp(pt.x, boxHalfW + 8, Math.max(boxHalfW + 8, vw - boxHalfW - 8));
+    const cy = pt.y;
+
+    let collides = false;
+    for (const pb of placedBoxes) {
+      if (Math.abs(cx - pb.cx) < (boxHalfW + pb.hw) && Math.abs(cy - pb.cy) < (boxH * 0.5 + pb.hh)) {
+        collides = true;
+        break;
+      }
+    }
+    if (collides) {
+      entry.el.classList.add('lod-tier-1');
+      entry.el.classList.remove('lod-tier-2', 'lod-tier-3');
+      entry.el.style.display = 'inline-flex';
+      continue;
+    }
+
+    placedBoxes.push({ cx, cy, hw: boxHalfW, hh: boxH * 0.5 });
+    entry.el.classList.toggle('lod-tier-1', false);
+    entry.el.classList.toggle('lod-tier-2', tier === 2);
+    entry.el.classList.toggle('lod-tier-3', tier === 3);
+    entry.el.style.display = 'inline-flex';
+    entry.el.style.left = `${cx}px`;
+    entry.el.style.top = `${cy}px`;
+  }
+
+  for (const [k, entry] of bigUiGuideState.smartLodMap.entries()) {
+    if (!activeKeys.has(k)) {
+      if (k.startsWith('lod_walker_')) {
+        entry.el.remove();
+        bigUiGuideState.smartLodMap.delete(k);
+      } else {
+        entry.el.style.display = 'none';
+      }
+    }
+  }
 }
 
 function tickGoalNavigatorAndWorldActionBadges(dt) {
@@ -19461,9 +19886,12 @@ function tickGoalNavigatorAndWorldActionBadges(dt) {
   if (goalTextEl && goal) {
     goalTextEl.textContent = goal.text;
   }
+  const goalThumbImg = document.getElementById('goal-nav-thumb-img');
+  if (goalThumbImg && goal?.thumbUrl && goalThumbImg.getAttribute('src') !== goal.thumbUrl) {
+    goalThumbImg.setAttribute('src', goal.thumbUrl);
+  }
 
   const vw = window.innerWidth;
-  const vh = window.innerHeight;
 
   if (bigUiGuideState.arrowGroup3D && bigUiGuideState.arrowLabelEl) {
     const showWorldArrow = inCleanTownStage1 && !anyModalOpen && goal?.targetType === 'world';
@@ -19478,22 +19906,16 @@ function tickGoalNavigatorAndWorldActionBadges(dt) {
         const pulse = 1.0 + Math.sin(bigUiGuideState.elapsed * 5.2) * 0.16;
         bigUiGuideState.arrowRing.scale.setScalar(pulse);
       }
-
-      const pt = projectWorldToScreen(goal.wx, goal.wy + 3.6 + hop * 0.4, goal.wz);
-      if (pt.visible && pt.x > 70 && pt.x < vw - 70 && pt.y > 175 && pt.y < vh - 90) {
-        bigUiGuideState.arrowLabelEl.style.display = 'inline-flex';
-        bigUiGuideState.arrowLabelEl.style.left = `${pt.x}px`;
-        bigUiGuideState.arrowLabelEl.style.top = `${pt.y}px`;
-      } else {
-        bigUiGuideState.arrowLabelEl.style.display = 'none';
-      }
+      // 3D 월드 목표는 텍스트 없이 오직 순금 3D 화살표(▼) 아이콘만 깔끔하게 둥실 유지!
+      bigUiGuideState.arrowLabelEl.style.display = 'none';
     } else if (showUiArrow) {
       const fabEl = document.getElementById('fab-notebook');
       const rect = fabEl?.getBoundingClientRect();
       if (rect && rect.width > 0) {
+        bigUiGuideState.arrowLabelEl.textContent = '▼';
         bigUiGuideState.arrowLabelEl.style.display = 'inline-flex';
-        bigUiGuideState.arrowLabelEl.style.left = `${Math.min(vw - 110, rect.left + rect.width * 0.5)}px`;
-        bigUiGuideState.arrowLabelEl.style.top = `${rect.top - 10}px`;
+        bigUiGuideState.arrowLabelEl.style.left = `${Math.min(vw - 44, rect.left + rect.width * 0.5)}px`;
+        bigUiGuideState.arrowLabelEl.style.top = `${rect.top - 6}px`;
       } else {
         bigUiGuideState.arrowLabelEl.style.display = 'none';
       }
@@ -19502,51 +19924,7 @@ function tickGoalNavigatorAndWorldActionBadges(dt) {
     }
   }
 
-  const showWorldPills = inCleanTownStage1 && !anyModalOpen;
-  const placeWorldPill = (el, wx, wy, wz) => {
-    if (!el) return;
-    if (!showWorldPills) {
-      el.style.display = 'none';
-      return;
-    }
-    const pt = projectWorldToScreen(wx, wy, wz);
-    if (!pt.visible || pt.x < 75 || pt.x > vw - 75 || pt.y < 175 || pt.y > vh - 125) {
-      el.style.display = 'none';
-      return;
-    }
-    el.style.display = 'inline-flex';
-    el.style.left = `${pt.x}px`;
-    el.style.top = `${pt.y}px`;
-  };
-
-  if (bigUiGuideState.mgrBadgeEl) {
-    const b = state?.buildings?.lot_main;
-    const mgr = ensureManagerSchema(b?.manager);
-    const mgrDef = getManagerSalaryDef(mgr.salaryLv);
-    let anyCapped = false;
-    if (b) {
-      for (const rm of (b.rooms || [])) {
-        if (rm.unlocked && calcRoomRentDetail(b, rm).isCapped) {
-          anyCapped = true;
-          break;
-        }
-      }
-    }
-    bigUiGuideState.mgrBadgeEl.classList.toggle('urgent', !!(mgr.onStrike || anyCapped));
-    bigUiGuideState.mgrBadgeEl.textContent = mgr.onStrike
-      ? `💢 거북 소장 파업 중! (월급 인상)`
-      : anyCapped
-        ? `🪴 거북 소장 (한도 ${mgrDef.rentCap}만 도달!)`
-        : `🪴 거북 소장 (월세한도 ${mgrDef.rentCap.toLocaleString()}만)`;
-  }
-
-  const mainLot = state?.lots?.find((l) => l.lotId === 'lot_main') || { x: -4.2, z: -6.4 };
-  const D = GAME_BALANCE.buildingDepth || 8.0;
-  const carPos = driveState.carRootGroup ? driveState.carRootGroup.position : VIP_PARKING_POS;
-
-  placeWorldPill(bigUiGuideState.carBadgeEl, carPos.x, 2.75, carPos.z);
-  placeWorldPill(bigUiGuideState.mgrBadgeEl, mainLot.x + 2.55, 3.85, mainLot.z + D * 0.5 + 1.1);
-  placeWorldPill(bigUiGuideState.shopBadgeEl, 25.2, goal?.step === 1 ? 6.2 : 7.6, -3.5);
+  syncSmartWorldLodBubbles(anyModalOpen);
 }
 
 // =========================================================
@@ -19989,34 +20367,24 @@ function renderFurnitureFlagshipDrawer() {
     ? rawItems
     : rawItems.filter((it) => String(it.tier || 1) === String(flagshipTierFilter));
 
+  listEl.className = 'grid grid-cols-2 gap-2.5';
   listEl.innerHTML = filtered.map((it) => {
     const tNum = it.tier || 1;
-    const tInfo = tierMeta[tNum] || { badge: `Tier ${tNum}`, bg: '#FEF3C7', color: '#92400E', border: '#F59E0B' };
+    const tInfo = tierMeta[tNum] || { short: `T${tNum}`, badge: `Tier ${tNum}`, bg: '#FEF3C7', color: '#92400E', border: '#F59E0B' };
     const invQty = state.furnitureInventory?.[it.id] || 0;
     const rankUnlocked = isItemUnlockedByFameRank(it);
     const canAfford = (state.gold || 0) >= it.cost && rankUnlocked;
 
     return `
-      <div class="diary-subcard !p-2.5 space-y-2 border-2" style="border-color:${it.isSecretLuxury ? '#10B981' : tNum >= 4 ? '#F59E0B' : '#E8CCB0'};background:${it.isSecretLuxury ? '#F0FDF4' : tNum >= 4 ? '#FFFDF2' : '#FFFDF9'};">
-        <div class="flex items-center gap-2.5">
-          <div class="w-16 h-14 rounded-xl bg-[#FFFDF7] border border-[#E8CCB0] flex items-center justify-center shrink-0 overflow-hidden">
-            ${getOrRender3DCatalogPreview(it.id, 96, 68)}
-          </div>
-          <div class="min-w-0 flex-1 space-y-0.5">
-            <div class="flex items-center justify-between gap-1">
-              <span class="px-2 py-0.5 rounded-full font-extrabold text-[9.5px]" style="background:${tInfo.bg};color:${tInfo.color};">${tInfo.badge}${it.isSecretLuxury ? ' · SECRET' : ''}</span>
-              ${invQty > 0 ? `<span class="kw-chip tone-mint !text-[9.5px] !py-0.5 !px-1.5">📦 보유 ${invQty}</span>` : ''}
-            </div>
-            <div class="font-title text-[13px] text-[#3A2E2B] truncate">${it.name}</div>
-            <div class="flex items-center gap-1.5 flex-wrap">
-              <span class="font-body text-[10.5px] font-bold text-[#15803D]">${it.chip}</span>
-              <span class="font-body text-[10.5px] font-bold text-[#7E22CE]">· 럭셔리 +${it.luxuryPts ?? it.luxuryScore ?? (tNum * 100)}점</span>
-            </div>
-          </div>
+      <div class="visual-showcase-card" style="border-color:${it.isSecretLuxury ? '#10B981' : tNum >= 4 ? '#F59E0B' : '#DFC3A4'};">
+        <div class="visual-showcase-stage">
+          <span class="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full font-extrabold text-[12px] shadow-sm" style="background:${tInfo.bg};color:${tInfo.color};">${tInfo.short || `T${tNum}`}</span>
+          ${invQty > 0 ? `<span class="absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full font-extrabold text-[12px] bg-[#ECFDF5] text-[#047857] border border-[#6EE7B7]">보유 ${invQty}</span>` : `<span class="absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full font-extrabold text-[12px] bg-[#FEF3C7] text-[#92400E]">+${it.rentAdd || (tNum * 12)}만</span>`}
+          ${getOrRender3DCatalogPreview(it.id, 216, 132)}
         </div>
-        <button type="button" data-buy-flagship="${it.id}" ${!canAfford ? 'disabled' : ''} class="jelly-action-btn ${tNum >= 4 ? 'btn-gold-lip' : 'btn-coral-lip'} w-full py-1.5 !text-[11.5px] ${!canAfford ? 'opacity-50 cursor-not-allowed' : ''}">
-          ${createCustomSVGIcon('coin_stack', 14)}
-          <span>${!rankUnlocked ? `🔒 부자 서열 ${it.unlockRank}위 해금 (${it.cost.toLocaleString()}만)` : canAfford ? `${it.cost.toLocaleString()}만 구매 · 창고 보관` : `${it.cost.toLocaleString()}만 (자산 부족)`}</span>
+        <div class="font-title text-[16px] text-[#1E1B18] text-center truncate px-0.5">${it.name}</div>
+        <button type="button" data-buy-flagship="${it.id}" ${!canAfford ? 'disabled' : ''} class="jelly-action-btn ${tNum >= 4 ? 'btn-gold-lip' : 'btn-coral-lip'} w-full !min-h-[38px] !py-1.5 !px-2.5 !text-[15px] ${!canAfford ? 'opacity-50 cursor-not-allowed' : ''}">
+          <span>${!rankUnlocked ? `🔒 ${it.unlockRank}위 해금` : `${it.cost.toLocaleString()}만 구매`}</span>
         </button>
       </div>
     `;
@@ -24395,20 +24763,21 @@ function applyPopMartWorldDecorations() {
     }
   };
 
-  // 1) 전체 UI 평면 시스템 이모지 0%화 -> 초고화질 3D 아트토이 이미지 아이콘 일괄 주입!
+  // 1) 전체 UI 평면 시스템 이모지 0%화 -> 초고화질 3D 아트토이 이미지 아이콘 일괄 주입! (우측 하단 2대 퀵 버튼 56x56 대형 아이콘 적용)
   const notebookUrl = POPMART_ASSETS.ui.notebookIconUrl || POPMART_ASSETS.ui.pocketNotebookUrl;
-  injectToyIcon('fab-svg-slot', notebookUrl, 'w-10 h-10');
-  injectToyIcon('pocket-header-mini-ico', notebookUrl, 'w-5 h-5');
+  injectToyIcon('fab-svg-slot', notebookUrl, 'w-[56px] h-[56px]');
+  injectToyIcon('pocket-header-mini-ico', notebookUrl, 'w-7 h-7');
 
   const moneygunIco = POPMART_ASSETS.ui.quickMoneygunUrl || POPMART_ASSETS.quickIconUrls[0];
   const supercarIco = POPMART_ASSETS.ui.quickSupercarUrl || POPMART_ASSETS.quickIconUrls[1];
   const trophyIco = POPMART_ASSETS.ui.quickTrophyUrl || POPMART_ASSETS.quickIconUrls[2];
   const gearIco = POPMART_ASSETS.quickIconUrls[3];
 
-  injectToyIcon('hud-ico-moneygun', moneygunIco, 'w-8 h-8');
+  injectToyIcon('hud-ico-moneygun', moneygunIco, 'w-[56px] h-[56px]');
+  injectToyIcon('hud-money-bag-slot', POPMART_ASSETS.actionIconUrls[0] || moneygunIco, 'w-7 h-7');
   injectToyIcon('hud-ico-drive', supercarIco, 'w-8 h-8');
   injectToyIcon('hud-ico-forbes', trophyIco, 'w-8 h-8');
-  injectToyIcon('hud-ico-top-settings', gearIco, 'w-6 h-6');
+  injectToyIcon('hud-ico-top-settings', gearIco, 'w-7 h-7');
   if (POPMART_ASSETS.ui.duelTrophyCrownUrl) {
     injectToyIcon('forbes-modal-ico', POPMART_ASSETS.ui.duelTrophyCrownUrl, 'w-6 h-6');
     injectToyIcon('rankup-banner-ico', POPMART_ASSETS.ui.duelTrophyCrownUrl, 'w-7 h-7');

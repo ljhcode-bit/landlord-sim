@@ -3578,29 +3578,29 @@ button:hover .toy-ico-img,
    ========================================================================== */
 
 body.big-bold-ui {
-  font-size: 17px;
+  font-size: 15.5px;
   color: #1E1B18;
 }
 
-/* 깨알 글씨 원천 차단: 9px ~ 15px 유틸리티 클래스를 최소 16px ~ 18px 고대비 굵은 글씨로 강제 상향 */
+/* 황금비율 타이포그래피 보정: 보조 태그는 13.5~15px로 단정하게 정돈하여 3D 그림 에셋이 돋보이게 유도 */
 body.big-bold-ui [class*="text-[8"],
 body.big-bold-ui [class*="text-[9"],
 body.big-bold-ui [class*="text-[10"],
 body.big-bold-ui [class*="text-[11"],
 body.big-bold-ui [class*="text-[12"],
 body.big-bold-ui .text-xs {
-  font-size: 16px !important;
+  font-size: 13.5px !important;
   font-weight: 700 !important;
-  line-height: 1.35 !important;
+  line-height: 1.32 !important;
 }
 
 body.big-bold-ui [class*="text-[13"],
 body.big-bold-ui [class*="text-[14"],
 body.big-bold-ui [class*="text-[15"],
 body.big-bold-ui .text-sm {
-  font-size: 18px !important;
+  font-size: 15px !important;
   font-weight: 800 !important;
-  line-height: 1.35 !important;
+  line-height: 1.32 !important;
 }
 
 /* -------------------- 1. 좌측 상단: 왕큼직 통합 자산 & 서열 캡슐 -------------------- */
@@ -4391,43 +4391,72 @@ body:has(#shop-focus-panel:not(.hidden)) #focus-clean-capsule {
 }
 
 .hud-big-unified-capsule {
-  min-height: 82px !important;
-  padding: 23px 38px 17px 32px !important;
-  gap: 12px !important;
+  min-height: 74px !important;
+  padding: 19px 28px 14px 22px !important;
+  gap: 10px !important;
 }
 
 .hud-big-money-num {
-  font-size: 30px !important;
+  font-size: 23px !important;
   font-weight: 900 !important;
   color: #2C1E18 !important;
-  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.92) !important;
+  text-shadow: 0 1.5px 0 rgba(255, 255, 255, 0.94) !important;
+  white-space: nowrap !important;
+}
+
+.hud-big-rank-num {
+  font-size: 16px !important;
+  font-weight: 900 !important;
+  white-space: nowrap !important;
+}
+
+.hud-big-fame-tag {
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  white-space: nowrap !important;
 }
 
 .hud-big-divider {
+  height: 24px !important;
   background: rgba(146, 98, 54, 0.35) !important;
 }
 
 #top-goal-navigator {
-  top: 118px !important;
+  top: 108px !important;
 }
 
 body:has(#hud-manager-alert-pill:not(.hidden)) #top-goal-navigator {
-  top: 198px !important;
+  top: 184px !important;
 }
 
-@media (min-width: 1580px) {
+@media (min-width: 1220px) {
   #top-goal-navigator,
   body:has(#hud-manager-alert-pill:not(.hidden)) #top-goal-navigator {
-    top: 16px !important;
-    left: 55% !important;
+    top: 18px !important;
+    left: 60% !important;
   }
 }
 
 .goal-navigator-capsule {
-  min-height: 82px !important;
-  padding: 23px 34px 17px 38px !important;
-  gap: 12px !important;
+  min-height: 70px !important;
+  padding: 16px 24px 12px 24px !important;
+  gap: 10px !important;
   transition: transform 0.18s var(--spring-ease), filter 0.16s ease !important;
+}
+
+.goal-nav-thumb-box {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 13px !important;
+  background: linear-gradient(180deg, #FFFDF9 0%, #FEF3C7 100%) !important;
+  border: 2px solid #F59E0B !important;
+  box-shadow: 0 3px 8px rgba(146, 64, 14, 0.22) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 3px !important;
+  flex-shrink: 0 !important;
+  overflow: hidden !important;
 }
 
 .goal-navigator-capsule:hover {
@@ -4440,41 +4469,43 @@ body:has(#hud-manager-alert-pill:not(.hidden)) #top-goal-navigator {
 }
 
 .goal-nav-label {
-  font-size: 21px !important;
-  font-weight: 900 !important;
+  font-size: 17.5px !important;
+  font-weight: 800 !important;
   color: #2C1E18 !important;
   text-shadow: 0 1.5px 0 rgba(255, 255, 255, 0.9);
+  white-space: nowrap !important;
 }
 
 .focus-manual-capsule {
-  min-height: 76px !important;
-  padding: 20px 36px 16px 36px !important;
-  gap: 10px !important;
+  min-height: 68px !important;
+  padding: 17px 30px 13px 30px !important;
+  gap: 8px !important;
 }
 
 .turntable-top-pill {
-  min-height: 84px !important;
-  padding: 22px 42px 16px 42px !important;
+  min-height: 74px !important;
+  padding: 19px 34px 14px 34px !important;
 }
 
 #tt-header-title {
   color: #2C1E18 !important;
+  font-size: 20px !important;
   font-weight: 900 !important;
   text-shadow: 0 1.5px 0 rgba(255, 255, 255, 0.9);
 }
 
 .town-stage-switch-pill {
-  min-height: 68px !important;
-  padding: 18px 28px 14px 28px !important;
+  min-height: 64px !important;
+  padding: 16px 24px 12px 24px !important;
   gap: 6px !important;
 }
 
 .cinematic-tour-capsule {
-  min-height: 82px !important;
-  padding: 24px 42px 18px 42px !important;
+  min-height: 76px !important;
+  padding: 20px 36px 15px 36px !important;
 }
 
-/* -------------------- ② 3D 캐릭터 대사 · 거북 소장 · 드라이브 · 목표 화살표 입체 마시멜로 말풍선 스킨 (`skin_speech_bubble.png`) -------------------- */
+/* -------------------- ② 3단계 스마트 말풍선 & 월드 라벨 LOD 시스템 (`skin_speech_bubble.png`) -------------------- */
 @keyframes toyBubbleSpringPop {
   0% {
     opacity: 0;
@@ -4499,18 +4530,29 @@ body:has(#hud-manager-alert-pill:not(.hidden)) #top-goal-navigator {
     transform: translate(-50%, -100%) scale(1);
   }
   100% {
-    transform: translate(-50%, -109%) scale(1.03);
+    transform: translate(-50%, -107%) scale(1.02);
+  }
+}
+
+@keyframes lodDotWave {
+  0%, 65%, 100% {
+    transform: translateY(0);
+    opacity: 0.52;
+  }
+  32% {
+    transform: translateY(-3.5px);
+    opacity: 1;
   }
 }
 
 .cloud-speech-bubble,
 .speech-cloud,
 .speech-cloud.rival-dark-glass,
+.lod-world-bubble,
 .world-float-action-pill,
 .world-float-action-pill.tone-drive,
 .world-float-action-pill.tone-manager,
 .world-float-action-pill.tone-manager.urgent,
-.goal-3d-arrow-label,
 .rent-coin-bubble,
 .shop-float-badge,
 .shop-float-badge.owned-shop,
@@ -4528,46 +4570,174 @@ body:has(#hud-manager-alert-pill:not(.hidden)) #top-goal-navigator {
   box-shadow: none !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
-  min-height: 70px !important;
-  padding: 20px 36px 28px 36px !important;
   color: #2C1E18 !important;
   font-family: 'Jua', 'Pretendard', sans-serif !important;
-  font-size: 19px !important;
-  font-weight: 900 !important;
-  text-shadow: 0 1.5px 0 rgba(255, 255, 255, 0.92) !important;
-  filter: drop-shadow(0 8px 16px rgba(44, 26, 14, 0.25));
+  font-weight: 800 !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.92) !important;
+  filter: drop-shadow(0 6px 12px rgba(44, 26, 14, 0.24));
+}
+
+/* [3단계 스마트 LOD 말풍선 공통 베이스] */
+.lod-world-bubble {
+  position: fixed;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transform: translate(-50%, -100%);
+  z-index: 25;
+  cursor: pointer;
+  user-select: none;
+  overflow: hidden;
+  transition:
+    opacity 0.22s ease,
+    width 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
+    max-width 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
+    min-height 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
+    padding 0.24s ease,
+    transform 0.26s cubic-bezier(0.34, 1.56, 0.64, 1),
+    filter 0.16s ease !important;
+}
+
+/* 1단계 (원거리 / 전체 타운 뷰 `dist > 38`): 완전 숨김 Clean Diorama View */
+.lod-world-bubble.lod-tier-1,
+.speech-cloud.lod-tier-1 {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translate(-50%, -84%) scale(0.58) !important;
+}
+
+/* 2단계 (중간 줌인 `18 < dist <= 38`): 앙증맞은 36px x 28px 미니 "..." / 단축 아이콘 힌트 */
+.lod-world-bubble.lod-tier-2,
+.speech-cloud.lod-tier-2 {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  width: 36px !important;
+  min-width: 36px !important;
+  max-width: 36px !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  padding: 2px 3px 7px 3px !important;
+  font-size: 13.5px !important;
+  line-height: 1 !important;
+  transform: translate(-50%, -100%) scale(1) !important;
+  animation: toyBubbleGentleFloat 2.1s ease-in-out infinite alternate !important;
+}
+
+.lod-world-bubble.lod-tier-2:hover {
+  transform: translate(-50%, -108%) scale(1.14) !important;
+  filter: brightness(1.05) drop-shadow(0 8px 14px rgba(44, 26, 14, 0.34)) !important;
+}
+
+.lod-world-bubble.lod-tier-2 .lod-mini-slot,
+.speech-cloud.lod-tier-2 .lod-mini-slot {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+.lod-world-bubble.lod-tier-2 .lod-full-slot,
+.speech-cloud.lod-tier-2 .lod-full-slot {
+  display: none !important;
+}
+
+/* 3단계 (근접 클로즈업 / 망원경 / 캐릭터 클릭 `dist <= 18`): 전체 대사 스르륵 오픈! */
+.lod-world-bubble.lod-tier-3,
+.speech-cloud.lod-tier-3,
+.speech-cloud:not(.lod-tier-1):not(.lod-tier-2) {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  width: max-content !important;
+  min-width: 96px !important;
+  max-width: 220px !important;
+  height: auto !important;
+  min-height: 54px !important;
+  padding: 13px 20px 21px 20px !important;
+  font-size: 16.5px !important;
+  font-weight: 800 !important;
+  line-height: 1.32 !important;
+  text-align: center !important;
+  white-space: normal !important;
+  word-break: keep-all !important;
+  transform: translate(-50%, -100%) scale(1) !important;
+  animation: toyBubbleGentleFloat 2.3s ease-in-out infinite alternate !important;
+}
+
+.lod-world-bubble.lod-tier-3:hover {
+  transform: translate(-50%, -106%) scale(1.04) !important;
+  filter: brightness(1.04) drop-shadow(0 10px 18px rgba(44, 26, 14, 0.32)) !important;
+}
+
+.lod-world-bubble.lod-tier-3 .lod-mini-slot,
+.speech-cloud.lod-tier-3 .lod-mini-slot {
+  display: none !important;
+}
+
+.lod-world-bubble.lod-tier-3 .lod-full-slot,
+.speech-cloud.lod-tier-3 .lod-full-slot {
+  display: inline-block !important;
+  max-width: 184px;
+}
+
+/* 물결치듯 움직이는 미니 점 3개(`• • •`) 애니메이션 */
+.lod-wave-dots {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 12px;
+}
+
+.lod-wave-dots i {
+  display: block;
+  width: 4.5px;
+  height: 4.5px;
+  border-radius: 999px;
+  background: #3B2316;
+  animation: lodDotWave 1.15s ease-in-out infinite;
+}
+
+.lod-wave-dots i:nth-child(2) {
+  animation-delay: 0.16s;
+}
+
+.lod-wave-dots i:nth-child(3) {
+  animation-delay: 0.32s;
+}
+
+.lod-mini-emo {
+  font-size: 13.5px;
+  line-height: 1;
+  display: inline-block;
 }
 
 .speech-cloud.rival-dark-glass,
+.lod-world-bubble.urgent,
 .world-float-action-pill.tone-manager.urgent {
   color: #9F1239 !important;
-  filter: drop-shadow(0 9px 18px rgba(159, 18, 57, 0.34));
+  filter: drop-shadow(0 8px 16px rgba(159, 18, 57, 0.32));
 }
 
-.cloud-speech-bubble,
-.speech-cloud {
-  max-width: min(440px, 90vw) !important;
-  animation:
-    toyBubbleSpringPop 0.36s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
-    toyBubbleGentleFloat 2.0s ease-in-out 0.36s infinite alternate !important;
-}
-
-.world-float-action-pill {
-  animation: toyBubbleGentleFloat 2.2s ease-in-out infinite alternate !important;
-  transition: filter 0.16s ease !important;
-}
-
-.world-float-action-pill:hover {
-  animation-play-state: paused !important;
-  transform: translate(-50%, -108%) scale(1.07) !important;
-  filter: brightness(1.04) drop-shadow(0 12px 22px rgba(44, 26, 14, 0.34));
-}
-
+/* 텍스트 없는 심플 24K 황금 화살표 핀 (`▼` 아이콘 전용 - UI 버튼 포인팅 시에만 사용) */
 .goal-3d-arrow-label {
-  font-size: 22px !important;
-  padding: 22px 40px 30px 40px !important;
-  color: #92400E !important;
-  animation: toyBubbleGentleFloat 0.95s ease-in-out infinite alternate !important;
+  background: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  min-height: 0 !important;
+  font-size: 28px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  color: #FFD700 !important;
+  text-shadow:
+    0 2px 0 #92400E,
+    0 4px 12px rgba(180, 83, 9, 0.55) !important;
+  animation: goalArrowIconBob 0.85s ease-in-out infinite alternate !important;
+}
+
+@keyframes goalArrowIconBob {
+  0% { transform: translate(-50%, -95%) scale(1); }
+  100% { transform: translate(-50%, -125%) scale(1.12); }
 }
 
 /* -------------------- ③ 시스템 토스트 · 해안 대문 잠금 안내 · 알림 보드 스킨 (`skin_system_alert_modal.png`) -------------------- */
@@ -4598,10 +4768,10 @@ body:has(#hud-manager-alert-pill:not(.hidden)) #top-goal-navigator {
 }
 
 .pastel-toast {
-  min-height: 92px !important;
-  padding: 36px 56px 24px 56px !important;
-  font-size: 20px !important;
-  font-weight: 900 !important;
+  min-height: 82px !important;
+  padding: 32px 48px 20px 48px !important;
+  font-size: 17.5px !important;
+  font-weight: 800 !important;
   color: #2C1E18 !important;
   animation: harborPopIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
@@ -4612,44 +4782,74 @@ body:has(#hud-manager-alert-pill:not(.hidden)) #top-goal-navigator {
 }
 
 .gate-lock-glass-card {
-  padding: 78px 86px 44px 86px !important;
+  padding: 74px 82px 40px 82px !important;
   opacity: 1 !important;
 }
 
 .gate-capsule-close {
-  top: 60px !important;
-  right: 68px !important;
+  top: 58px !important;
+  right: 66px !important;
 }
 
 .hud-manager-alert-pill,
 .hq-dividend-mini-toast,
 .hud-minimal-fever-pill {
-  min-height: 78px !important;
-  padding: 30px 48px 20px 48px !important;
-  font-size: 19px !important;
-  font-weight: 900 !important;
+  min-height: 70px !important;
+  padding: 26px 40px 16px 40px !important;
+  font-size: 16.5px !important;
+  font-weight: 800 !important;
 }
 
 .turntable-info-dock {
-  padding: 56px 72px 36px 72px !important;
+  padding: 46px 64px 28px 64px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+}
+
+.tt-big-item-name {
+  font-size: 20px !important;
+}
+
+.tt-big-stat-gold,
+.tt-big-stat-emerald {
+  font-size: 17px !important;
+}
+
+.tt-big-tier-badge {
+  font-size: 14px !important;
+  padding: 3px 11px !important;
+}
+
+.tt-big-primary-cta {
+  min-height: 50px !important;
+  padding: 11px 24px !important;
+  font-size: 17px !important;
+  white-space: nowrap !important;
+}
+
+.tt-master-art-card {
+  width: 92px !important;
+  height: 92px !important;
 }
 
 .moneygun-popover-card {
-  width: min(470px, calc(100vw - 24px)) !important;
-  max-height: calc(100vh - 215px) !important;
-  bottom: 122px !important;
-  padding: 82px 58px 38px 58px !important;
+  width: min(460px, calc(100vw - 24px)) !important;
+  max-height: calc(100vh - 185px) !important;
+  bottom: 118px !important;
+  padding: 74px 52px 32px 52px !important;
   overflow-y: auto !important;
   z-index: 65 !important;
 }
 
 .title-floating-card {
-  width: min(500px, 94vw) !important;
-  padding: 96px 60px 48px 60px !important;
+  width: min(490px, 94vw) !important;
+  padding: 102px 58px 46px 58px !important;
 }
 
 .title-brand-display {
-  font-size: 46px !important;
+  font-size: 42px !important;
   color: #2C1E18 !important;
   text-shadow:
     0 2px 0 #FFFDF7,
@@ -4657,15 +4857,15 @@ body:has(#hud-manager-alert-pill:not(.hidden)) #top-goal-navigator {
 }
 
 .construction-prog-pin {
-  min-width: 300px !important;
-  padding: 40px 40px 26px 40px !important;
+  min-width: 260px !important;
+  padding: 36px 36px 22px 36px !important;
 }
 
 .duel-vs-card {
-  padding: 44px 52px 28px 52px !important;
+  padding: 40px 48px 24px 48px !important;
 }
 
-/* -------------------- ④ `[📒]` 건물주 수첩 & 상세 장부 입체 가죽·스프링 다이어리 보드 스킨 (`skin_notebook_board.png`) -------------------- */
+/* -------------------- ④ `[📒]` 건물주 수첩 & 상세 장부 황금비율 ('글자 ↓ 그림 ↑') 보드 스킨 (`skin_notebook_board.png`) -------------------- */
 body:has(#pocket-planner-popover:not(.hidden)) #top-right-action-cluster,
 body:has(#moneygun-flex-popover:not(.hidden)) #top-right-action-cluster {
   opacity: 0 !important;
@@ -4673,9 +4873,9 @@ body:has(#moneygun-flex-popover:not(.hidden)) #top-right-action-cluster {
 }
 
 .pocket-planner-card {
-  width: min(600px, calc(100vw - 24px)) !important;
-  max-height: calc(100vh - 140px) !important;
-  bottom: 120px !important;
+  width: min(596px, calc(100vw - 24px)) !important;
+  max-height: calc(100vh - 136px) !important;
+  bottom: 116px !important;
   right: 0 !important;
   overflow: visible !important;
   z-index: 65 !important;
@@ -4692,7 +4892,7 @@ body:has(#moneygun-flex-popover:not(.hidden)) #top-right-action-cluster {
   border-radius: 0 !important;
   box-shadow: none !important;
   filter: drop-shadow(0 18px 34px rgba(36, 20, 10, 0.38));
-  padding: 28px 74px 30px 160px !important;
+  padding: 26px 72px 28px 158px !important;
 }
 
 .pocket-paper-sheet {
@@ -4701,48 +4901,94 @@ body:has(#moneygun-flex-popover:not(.hidden)) #top-right-action-cluster {
   border: none !important;
   box-shadow: none !important;
   padding: 0 !important;
-  max-height: calc(100vh - 198px) !important;
+  max-height: calc(100vh - 190px) !important;
   overflow-y: auto !important;
 }
 
 .pocket-paper-sheet span.font-title {
   white-space: nowrap !important;
-  font-size: 24px !important;
+  font-size: 20px !important;
 }
 
 .pocket-giant-action-card,
 .pocket-giant-action-card.tone-gold,
 .pocket-giant-action-card.tone-sky,
 .pocket-giant-action-card.tone-lavender {
-  background: rgba(255, 248, 232, 0.56) !important;
-  border: none !important;
-  border-bottom: 2px dashed rgba(180, 140, 96, 0.38) !important;
-  border-radius: 14px !important;
-  box-shadow: none !important;
-  padding: 6px 10px 8px !important;
-  gap: 3px !important;
+  background: rgba(255, 250, 238, 0.68) !important;
+  border: 1.5px solid rgba(212, 175, 130, 0.42) !important;
+  border-radius: 16px !important;
+  box-shadow: inset 0 1.5px 0 rgba(255, 255, 255, 0.85) !important;
+  padding: 8px 10px !important;
+}
+
+.pocket-visual-card-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.pocket-art-showcase-box {
+  width: 78px !important;
+  height: 78px !important;
+  border-radius: 16px !important;
+  background: radial-gradient(circle at 50% 38%, #FFFFFF 0%, #FEF3C7 100%) !important;
+  border: 2px solid #F59E0B !important;
+  box-shadow: 0 4px 10px rgba(146, 64, 14, 0.16) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 5px !important;
+  flex-shrink: 0 !important;
+  overflow: hidden !important;
+}
+
+.pocket-visual-card-meta {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .pocket-giant-card-title {
-  font-size: 21px !important;
+  font-size: 18px !important;
+  font-weight: 800 !important;
+  line-height: 1.18 !important;
+  white-space: nowrap !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .pocket-giant-hero-number {
-  font-size: 28px !important;
+  font-size: 22.5px !important;
+  font-weight: 900 !important;
+  line-height: 1.12 !important;
+  white-space: nowrap !important;
 }
 
 .pocket-giant-sub-highlight {
-  font-size: 17px !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  line-height: 1.25 !important;
+  white-space: nowrap !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pocket-giant-count-pill {
+  font-size: 13px !important;
+  padding: 2px 8px !important;
 }
 
 .pocket-giant-cta-btn {
-  min-height: 46px !important;
-  padding: 8px 20px !important;
-  font-size: 19px !important;
+  min-height: 40px !important;
+  padding: 6px 16px !important;
+  font-size: 16.5px !important;
+  white-space: nowrap !important;
 }
 
 #notebook-modal .cozy-planner-shell {
-  width: min(580px, calc(100vw - 24px)) !important;
+  width: min(586px, calc(100vw - 24px)) !important;
   background: transparent !important;
   background-color: transparent !important;
   background-image: var(--skin-notebook-board) !important;
@@ -4753,7 +4999,7 @@ body:has(#moneygun-flex-popover:not(.hidden)) #top-right-action-cluster {
   border-radius: 0 !important;
   box-shadow: none !important;
   filter: drop-shadow(-10px 18px 34px rgba(36, 20, 10, 0.36));
-  padding: 38px 72px 42px 152px !important;
+  padding: 36px 70px 40px 150px !important;
 }
 
 #notebook-modal .cozy-planner-inner,
@@ -4785,13 +5031,15 @@ body:has(#moneygun-flex-popover:not(.hidden)) #top-right-action-cluster {
   border: none !important;
   border-radius: 0 !important;
   box-shadow: none !important;
-  min-height: 56px !important;
-  padding: 14px 30px !important;
+  min-height: 46px !important;
+  padding: 10px 22px !important;
+  font-size: 16.5px !important;
+  white-space: nowrap !important;
   color: #FFFFFF !important;
   font-family: 'Jua', 'Pretendard', sans-serif !important;
-  font-weight: 900 !important;
+  font-weight: 800 !important;
   text-shadow: 0 2px 0 rgba(92, 34, 6, 0.92), 0 3px 8px rgba(38, 12, 2, 0.6) !important;
-  filter: drop-shadow(0 6px 12px rgba(68, 34, 8, 0.28));
+  filter: drop-shadow(0 6px 12px rgba(68, 34, 8, 0.26));
   transition: transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.14s ease !important;
 }
 
@@ -4820,22 +5068,40 @@ body:has(#moneygun-flex-popover:not(.hidden)) #top-right-action-cluster {
   border: none !important;
   border-radius: 0 !important;
   box-shadow: none !important;
-  min-height: 56px !important;
-  padding: 14px 30px !important;
+  min-height: 46px !important;
+  padding: 10px 22px !important;
+  font-size: 16.5px !important;
+  white-space: nowrap !important;
   color: #FFFFFF !important;
   font-family: 'Jua', 'Pretendard', sans-serif !important;
-  font-weight: 900 !important;
+  font-weight: 800 !important;
   text-shadow: 0 2px 0 rgba(124, 18, 34, 0.92), 0 3px 8px rgba(48, 8, 16, 0.58) !important;
-  filter: drop-shadow(0 6px 12px rgba(120, 24, 38, 0.28));
+  filter: drop-shadow(0 6px 12px rgba(120, 24, 38, 0.26));
   transition: transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.14s ease !important;
 }
 
+.title-coral-start-btn {
+  min-height: 58px !important;
+  font-size: 22px !important;
+  padding: 12px 34px !important;
+}
+
 /* 캡슐 내부 서브 액션 버튼 콤팩트 높이 보정 */
-.hud-big-rank-btn,
-.goal-nav-cta-pill,
+.hud-big-rank-btn {
+  min-height: 42px !important;
+  padding: 7px 18px !important;
+}
+
+.goal-nav-cta-pill {
+  min-height: 38px !important;
+  padding: 6px 16px !important;
+  font-size: 15.5px !important;
+}
+
 .pocket-ledger-big-pill {
-  min-height: 48px !important;
-  padding: 10px 24px !important;
+  min-height: 38px !important;
+  padding: 6px 15px !important;
+  font-size: 15px !important;
 }
 
 /* 토이 버튼 쫀득 타격감: hover scale(1.06) / active scale(0.94) */
@@ -4871,7 +5137,7 @@ body:has(#moneygun-flex-popover:not(.hidden)) #top-right-action-cluster {
   filter: brightness(0.96) drop-shadow(0 3px 6px rgba(44, 20, 10, 0.24)) !important;
 }
 
-/* -------------------- ⑥ 우측 하단 2대 대형 버튼 · 날씨 · 설정 · 닫기 원형 메달 스킨 (`skin_round_badge_frame.png`) -------------------- */
+/* -------------------- ⑥ 우측 하단 2대 장난감 버튼(56x56 대형 아이콘 + 14.5px 라벨) · 메달 스킨 (`skin_round_badge_frame.png`) -------------------- */
 .giant-bottom-fab .giant-fab-icon-box,
 .giant-bottom-fab.tone-money .giant-fab-icon-box,
 .giant-bottom-fab.tone-diary .giant-fab-icon-box,
@@ -4899,9 +5165,21 @@ body:has(#moneygun-flex-popover:not(.hidden)) #top-right-action-cluster {
   transition: transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.14s ease !important;
 }
 
+.giant-bottom-fab {
+  gap: 3px !important;
+}
+
 .giant-bottom-fab .giant-fab-icon-box {
-  width: 86px !important;
-  height: 86px !important;
+  width: 84px !important;
+  height: 84px !important;
+}
+
+.giant-bottom-fab .giant-fab-icon-box img,
+#hud-ico-moneygun img,
+#fab-svg-slot img {
+  width: 56px !important;
+  height: 56px !important;
+  object-fit: contain !important;
 }
 
 .giant-fab-label {
@@ -4911,22 +5189,23 @@ body:has(#moneygun-flex-popover:not(.hidden)) #top-right-action-cluster {
   background-repeat: no-repeat !important;
   border: none !important;
   box-shadow: none !important;
-  padding: 10px 22px 8px 22px !important;
-  font-size: 18px !important;
-  font-weight: 900 !important;
+  padding: 7px 16px 5px 16px !important;
+  font-size: 14.5px !important;
+  font-weight: 800 !important;
   color: #2C1E18 !important;
+  white-space: nowrap !important;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.9);
-  filter: drop-shadow(0 5px 10px rgba(40, 24, 12, 0.26));
+  filter: drop-shadow(0 4px 8px rgba(40, 24, 12, 0.24));
 }
 
 .big-corner-square-btn {
-  width: 64px !important;
-  height: 64px !important;
+  width: 58px !important;
+  height: 58px !important;
 }
 
 .hud-big-avatar-chip {
-  width: 52px !important;
-  height: 52px !important;
+  width: 50px !important;
+  height: 50px !important;
 }
 
 .giant-bottom-fab:hover {
@@ -4953,7 +5232,7 @@ body:has(#moneygun-flex-popover:not(.hidden)) #top-right-action-cluster {
   transform: scale(0.92) !important;
 }
 
-/* -------------------- ⑦ 방 관리 · 가구 백화점 · 100인 서열표 세로형 3D 디스플레이 보드 스킨 (`skin_drawer_side_panel.png`) -------------------- */
+/* -------------------- ⑦ 방 관리 · 가구 백화점 · 100인 서열표 비주얼 쇼케이스 보드 (`skin_drawer_side_panel.png`) -------------------- */
 #room-focus-panel,
 #shop-focus-panel,
 #flagship-shop-drawer,
@@ -4980,18 +5259,85 @@ body:has(#moneygun-flex-popover:not(.hidden)) #top-right-action-cluster {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   filter: drop-shadow(-10px 16px 32px rgba(36, 22, 12, 0.32));
-  padding: 54px 46px 52px 46px !important;
+  padding: 50px 44px 48px 44px !important;
 }
 
 #room-focus-panel,
 #shop-focus-panel,
 .slim-drawer-shell {
-  width: min(520px, calc(100vw - 24px)) !important;
+  width: min(516px, calc(100vw - 24px)) !important;
+}
+
+.diary-modal-title {
+  font-size: 20px !important;
+  font-weight: 900 !important;
+  white-space: nowrap !important;
+}
+
+.kw-chip,
+.diary-pill-badge,
+.role-accent-badge,
+.tier-filter-pill,
+.forbes-filter-pill,
+.fcat-tab-btn,
+.diary-index-tab,
+.focus-mini-icon-pill,
+.room-switch-chip,
+.duel-mode-pill {
+  font-size: 14.5px !important;
+  font-weight: 800 !important;
+  padding: 5px 10px !important;
+  white-space: nowrap !important;
+}
+
+.hotel-num-tag {
+  font-size: 18px !important;
+  font-weight: 900 !important;
 }
 
 .forbes-filter-pill {
   white-space: nowrap !important;
   padding: 6px 8px !important;
+}
+
+/* [글자 ↓ 그림 ↑] 가구·캐릭터 카드 내 65~70% 대형 쇼케이스 이미지 프레임 */
+.visual-showcase-card {
+  background: rgba(255, 251, 242, 0.86) !important;
+  border: 2px solid rgba(212, 175, 130, 0.5) !important;
+  border-radius: 18px !important;
+  padding: 8px !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 6px;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.9) !important;
+}
+
+.visual-showcase-card.equipped {
+  background: rgba(236, 253, 245, 0.92) !important;
+  border-color: #10B981 !important;
+}
+
+.visual-showcase-stage {
+  position: relative;
+  width: 100%;
+  height: 118px;
+  border-radius: 14px;
+  background: radial-gradient(circle at 50% 42%, #FFFFFF 0%, #FFF6E5 100%);
+  border: 1.5px solid #EBD7BE;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 4px;
+}
+
+.visual-showcase-stage img,
+.visual-showcase-stage svg,
+.visual-showcase-stage canvas {
+  width: 94% !important;
+  height: 94% !important;
+  object-fit: contain !important;
 }
 
 #room-focus-panel > div:first-child,
