@@ -201,10 +201,39 @@ function createInitialFirstFloorShops() {
   return map;
 }
 
+const FIRST_START_TS_KEY = 'god_landlord_first_start_ts_v1';
+
+function getOrInitFirstStartTimestamp() {
+  try {
+    const saved = Number(localStorage.getItem(FIRST_START_TS_KEY));
+    if (saved && saved > 1700000000000) return saved;
+    const now = Date.now();
+    localStorage.setItem(FIRST_START_TS_KEY, String(now));
+    return now;
+  } catch (e) {
+    return Date.now();
+  }
+}
+
 function createInitialState() {
   const lots = JSON.parse(JSON.stringify(INITIAL_ISLAND_LOTS));
+  const harborHotel = makeResidentialBuilding('lot_harbor_main', 'harbor_hotel', '하버 부티크 호텔 & 펜트하우스', false);
+  // 하버 호텔 101호 오션뷰 스위트 초기 개방 & 글로벌 영화배우 VIP 입주 셋업
+  const h101 = harborHotel.rooms.find((r) => r.subId === '101');
+  if (h101) {
+    h101.unlocked = true;
+    h101.household = {
+      type: 'movie_star',
+      familyName: '오드리 한 VIP',
+      maxBudget: 960,
+      happiness: 78
+    };
+    h101.rentTimer = 5.5;
+  }
+
   const buildings = {
-    lot_main: makeResidentialBuilding('lot_main', 'mixed_1', '해피 미니미 타운 1차', true)
+    lot_main: makeResidentialBuilding('lot_main', 'mixed_1', '해피 미니미 타운 1차', true),
+    lot_harbor_main: harborHotel
   };
   const developments = {};
   const standaloneShops = createInitialStandaloneShops();
@@ -214,6 +243,11 @@ function createInitialState() {
     gold: 1350,
     day: 1,
     gameMinutes: 9 * 60,
+    firstStartedAt: getOrInitFirstStartTimestamp(),
+    day2BonusClaimed: false,
+    harborUnlocked: false,
+    day3SkipForced: false,
+    activeTownStage: 1,
     feverTimer: 0,
     feverPower: 2.5,
     townHappinessBoost: 0,
@@ -263,6 +297,17 @@ let studioFillLight;
 let studioRimLight;
 let studioStageDisc;
 let islandRootGroup;
+let harborRootGroup;
+let harborBridgeGateL = null;
+let harborBridgeGateR = null;
+let harborVipMegaYacht = null;
+const harborYachtActors = [];
+const harborWalkerActors = [];
+const harborPointLights = [];
+let hqDividendTimer = 0;
+let hqDividendAccum = 0;
+let hqDividendToastTimeout = null;
+let coronationBannerTimeout = null;
 
 function getActiveCamera() {
   if (fpState.active) return fpCamera;
@@ -276,6 +321,7 @@ const tempVec = new THREE.Vector3();
 const camDirVec = new THREE.Vector3();
 
 const OVERVIEW_LOOK = new THREE.Vector3(0.0, 5.8, 7.5);
+const HARBOR_OVERVIEW_LOOK = new THREE.Vector3(0.0, 6.4, 118.0);
 const CAM_OFFSETS = [
   new THREE.Vector3(44, 34, 52),
   new THREE.Vector3(-44, 34, 52),
@@ -1056,6 +1102,33 @@ function createShopSignboardTexture(shopType = 'mart') {
     ctx.fillStyle = '#BE185D'; ctx.fillText('FLORES & CO. · 플라워샵', w * 0.5, 92);
     ctx.font = '700 25px "Pretendard", sans-serif'; ctx.fillStyle = '#6D28D9';
     ctx.fillText('FLOWER & VINTAGE BOUTIQUE', w * 0.5, 154);
+  } else if (shopType === 'lobster') {
+    ctx.fillStyle = '#7F1D1D'; ctx.beginPath(); ctx.roundRect(6, 6, w - 12, h - 12, 34); ctx.fill();
+    ctx.fillStyle = '#FFFBEB'; ctx.beginPath(); ctx.roundRect(20, 18, w - 40, h - 36, 26); ctx.fill();
+    ctx.strokeStyle = '#F59E0B'; ctx.lineWidth = 7; ctx.stroke();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = '800 46px "Pretendard", sans-serif';
+    ctx.fillStyle = '#B91C1C'; ctx.fillText('ROYAL LOBSTER · 파인다이닝', w * 0.5, 92);
+    ctx.font = '700 24px "Pretendard", sans-serif'; ctx.fillStyle = '#92400E';
+    ctx.fillText('OCEAN VIEW LOBSTER & TOMAHAWK STEAK', w * 0.5, 154);
+  } else if (shopType === 'winelounge') {
+    ctx.fillStyle = '#2E1065'; ctx.beginPath(); ctx.roundRect(6, 6, w - 12, h - 12, 34); ctx.fill();
+    ctx.fillStyle = '#FAF5FF'; ctx.beginPath(); ctx.roundRect(20, 18, w - 40, h - 36, 26); ctx.fill();
+    ctx.strokeStyle = '#FBBF24'; ctx.lineWidth = 7; ctx.stroke();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = '800 46px "Pretendard", sans-serif';
+    ctx.fillStyle = '#581C87'; ctx.fillText('SUNSET WINE & JAZZ 라운지', w * 0.5, 92);
+    ctx.font = '700 24px "Pretendard", sans-serif'; ctx.fillStyle = '#B45309';
+    ctx.fillText('GRAND PIANO LIVE · VINTAGE CELLAR', w * 0.5, 154);
+  } else if (shopType === 'marina') {
+    ctx.fillStyle = '#0F172A'; ctx.beginPath(); ctx.roundRect(6, 6, w - 12, h - 12, 34); ctx.fill();
+    ctx.fillStyle = '#F0F9FF'; ctx.beginPath(); ctx.roundRect(20, 18, w - 40, h - 36, 26); ctx.fill();
+    ctx.strokeStyle = '#F59E0B'; ctx.lineWidth = 7; ctx.stroke();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = '800 46px "Pretendard", sans-serif';
+    ctx.fillStyle = '#0369A1'; ctx.fillText('VIP YACHT MARINA 클럽', w * 0.5, 92);
+    ctx.font = '700 24px "Pretendard", sans-serif'; ctx.fillStyle = '#92400E';
+    ctx.fillText('PRIVATE SUPERYACHT & CHAMPAGNE PIER', w * 0.5, 154);
   } else {
     ctx.fillStyle = '#6F3B1B'; ctx.beginPath(); ctx.roundRect(6, 6, w - 12, h - 12, 34); ctx.fill();
     ctx.fillStyle = '#FFF9EE'; ctx.beginPath(); ctx.roundRect(22, 20, w - 44, h - 40, 26); ctx.fill();
@@ -1635,8 +1708,47 @@ class TextureGenerator {
   }
 }
 
+function createTwilightSkyBackdropTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 1024;
+  const ctx = canvas.getContext('2d');
+  const grad = ctx.createLinearGradient(0, 0, 0, 1024);
+  grad.addColorStop(0.0, '#141236');
+  grad.addColorStop(0.28, '#3B1C63');
+  grad.addColorStop(0.54, '#9D2A63');
+  grad.addColorStop(0.78, '#EA6A47');
+  grad.addColorStop(1.0, '#FBBF24');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 1024, 1024);
+
+  // 상단 황혼 별빛 은하 디테일
+  for (let i = 0; i < 95; i++) {
+    const sx = (Math.sin(i * 91.7) * 0.5 + 0.5) * 1024;
+    const sy = (Math.cos(i * 53.3) * 0.5 + 0.5) * 430;
+    const sr = 0.8 + (i % 3) * 0.9;
+    ctx.fillStyle = `rgba(255, 248, 220, ${0.35 + (i % 5) * 0.12})`;
+    ctx.beginPath();
+    ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // 수평선 노을 태양 후광
+  const sunGlow = ctx.createRadialGradient(512, 820, 20, 512, 820, 380);
+  sunGlow.addColorStop(0, 'rgba(255, 236, 179, 0.55)');
+  sunGlow.addColorStop(0.5, 'rgba(251, 146, 60, 0.22)');
+  sunGlow.addColorStop(1, 'rgba(251, 146, 60, 0)');
+  ctx.fillStyle = sunGlow;
+  ctx.fillRect(0, 420, 1024, 604);
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
 function initSharedResources() {
   TEX.skyBackdrop = TextureGenerator.pastelSkyBackdrop();
+  TEX.twilightSkyBackdrop = createTwilightSkyBackdropTexture();
   TEX.studioBackdrop = TextureGenerator.studioFocusBackdrop();
   TEX.shadow = TextureGenerator.softContactShadow();
   TEX.buildingAO = TextureGenerator.buildingGroundAO();
@@ -1690,6 +1802,9 @@ function initSharedResources() {
   TEX.patisserieSign = createShopSignboardTexture('patisserie');
   TEX.roasterySign = createShopSignboardTexture('roastery');
   TEX.floresSign = createShopSignboardTexture('flores');
+  TEX.lobsterSign = createShopSignboardTexture('lobster');
+  TEX.wineloungeSign = createShopSignboardTexture('winelounge');
+  TEX.marinaSign = createShopSignboardTexture('marina');
   TEX.blade24 = createBladeNeon24Texture();
 
   GEO.sphere = new THREE.SphereGeometry(0.5, 20, 16);
@@ -1739,6 +1854,14 @@ function initSharedResources() {
   MAT.pendantBulbWarm = makeClayMat(0xFFE8A3, { emissive: 0xFFB703, emissiveIntensity: 1.15, roughness: 0.25 });
   MAT.julietIron = makeClayMat(0x3A2E2B, { roughness: 0.56, metalness: 0.2 });
   MAT.mullionGlowPane = makeClayMat(0xFFF3D1, { emissive: 0xFFD98E, emissiveIntensity: 0.48, roughness: 0.32 });
+  MAT.slateRoofCharcoal = makeClayMat(0x2B3140, { roughness: 0.58, metalness: 0.08, coolShadow: true });
+  MAT.terracottaRoof = makeClayMat(0xC85A3B, { roughness: 0.58 });
+  MAT.amberWindowGlow = makeClayMat(0xFFD27D, { emissive: 0xFF9F1C, emissiveIntensity: 1.15, roughness: 0.22 });
+  MAT.stringBulbAmber = makeClayMat(0xFFE8A3, { emissive: 0xFFB703, emissiveIntensity: 1.4, roughness: 0.18 });
+  MAT.yachtHullWhite = makeClayMat(0xFFFFFF, { roughness: 0.24, metalness: 0.12 });
+  MAT.yachtTeakDeck = makeClayMat(0xBA7A44, { roughness: 0.52 });
+  MAT.lobsterCoral = makeClayMat(0xE63946, { roughness: 0.28, emissive: 0x991B1B, emissiveIntensity: 0.22 });
+  MAT.steakSeared = makeClayMat(0x7F2F1D, { roughness: 0.38 });
   MAT.basePadCream = makeClayMat(0xF6EFE6, { roughness: 0.68 });
   MAT.woodLight = makeClayMat(0xEBB986);
   MAT.woodWarm = makeClayMat(0xC6834B);
@@ -2107,7 +2230,10 @@ function createFramedSignboard3D(width, height, kind) {
     cafe: TEX.cafeSign,
     patisserie: TEX.patisserieSign,
     roastery: TEX.roasterySign,
-    flores: TEX.floresSign
+    flores: TEX.floresSign,
+    lobster: TEX.lobsterSign,
+    winelounge: TEX.wineloungeSign,
+    marina: TEX.marinaSign
   };
   const faceMat = new THREE.MeshStandardMaterial({
     map: texLookup[kind] || TEX.martSign,
@@ -3439,6 +3565,524 @@ function buildOuterScenicDrivingZone3D(roadHMat, roadVMat, roadCornerMat, cwMat)
 }
 
 // =========================================================
+// 5C. [제2마을 확장] 트와일라잇 하버 리조트 타운 (유럽풍 박공지붕·도머창·호박색 창문·스트링 라이트·3D 요트 선착장)
+// =========================================================
+function createAmberLatticeWindow3D(w = 1.9, h = 2.2) {
+  const grp = new THREE.Group();
+  const trim = MAT.dollhouseWarmTrim || MAT.walnutTrim;
+  const cutaway = MAT.dollhouseCutaway || MAT.cream;
+  const glow = MAT.amberWindowGlow || MAT.pendantBulbWarm;
+
+  grp.add(createRoundedToyMesh(w + 0.24, h + 0.24, 0.16, trim, 0, 0, 0, 0.04));
+  grp.add(createRoundedToyMesh(w, h, 0.18, glow, 0, 0, 0.02, 0.02, false, false, false));
+  // 유럽풍 십자 + 격자 창살
+  grp.add(createRoundedToyMesh(0.09, h + 0.04, 0.22, cutaway, 0, 0, 0.04, 0.02));
+  grp.add(createRoundedToyMesh(w + 0.04, 0.09, 0.22, cutaway, 0, h * 0.14, 0.04, 0.02));
+  grp.add(createRoundedToyMesh(w + 0.04, 0.08, 0.22, cutaway, 0, -h * 0.22, 0.04, 0.02));
+  grp.add(createRoundedToyMesh(w + 0.42, 0.16, 0.34, trim, 0, -h * 0.5 - 0.1, 0.08, 0.04));
+  return grp;
+}
+
+function createEuropeanGableRoofWithDormers3D(width, depth, roofMat, dormerCount = 2) {
+  const grp = new THREE.Group();
+  const ridgeH = Math.min(3.4, Math.max(2.1, depth * 0.36));
+  const halfD = depth * 0.5 + 0.48;
+  const slopeLen = Math.hypot(halfD, ridgeH) + 0.28;
+  const slopeAng = Math.atan2(ridgeH, halfD);
+  const cutawayMat = MAT.dollhouseCutaway || MAT.cream;
+  const trimMat = MAT.dollhouseWarmTrim || MAT.walnutTrim;
+
+  // 앞·뒤 경사 박공 지붕면
+  const frontSlope = createRoundedToyMesh(width + 0.85, 0.26, slopeLen, roofMat, 0, ridgeH * 0.5, halfD * 0.5, 0.07);
+  frontSlope.rotation.x = slopeAng;
+  const backSlope = createRoundedToyMesh(width + 0.85, 0.26, slopeLen, roofMat, 0, ridgeH * 0.5, -halfD * 0.5, 0.07);
+  backSlope.rotation.x = -slopeAng;
+  const ridgeBeam = createRoundedToyMesh(width + 1.0, 0.32, 0.42, trimMat, 0, ridgeH + 0.06, 0, 0.08);
+  grp.add(frontSlope, backSlope, ridgeBeam);
+
+  // 좌·우 박공 삼각 벽체 스텝 마감
+  for (const sideX of [-width * 0.5 + 0.08, width * 0.5 - 0.08]) {
+    grp.add(createRoundedToyMesh(0.32, ridgeH * 0.46, depth * 0.68, cutawayMat, sideX, ridgeH * 0.25, 0, 0.05));
+    grp.add(createRoundedToyMesh(0.32, ridgeH * 0.38, depth * 0.36, cutawayMat, sideX, ridgeH * 0.64, 0, 0.05));
+  }
+
+  // 다락방 도머 창문 (Attic Dormer Windows + 호박색 불빛)
+  if (dormerCount > 0) {
+    const stepX = width / (dormerCount + 1);
+    for (let i = 1; i <= dormerCount; i++) {
+      const dx = -width * 0.5 + stepX * i;
+      const dormer = new THREE.Group();
+      dormer.position.set(dx, ridgeH * 0.46, halfD * 0.48);
+      dormer.add(createRoundedToyMesh(1.85, 1.48, 1.55, cutawayMat, 0, 0, 0, 0.06));
+      const dRoofL = createRoundedToyMesh(1.18, 0.18, 1.72, roofMat, -0.45, 0.92, 0.04, 0.04);
+      dRoofL.rotation.z = 0.48;
+      const dRoofR = createRoundedToyMesh(1.18, 0.18, 1.72, roofMat, 0.45, 0.92, 0.04, 0.04);
+      dRoofR.rotation.z = -0.48;
+      const dWin = createAmberLatticeWindow3D(1.12, 1.02);
+      dWin.position.set(0, -0.02, 0.78);
+      dormer.add(dRoofL, dRoofR, dWin);
+      grp.add(dormer);
+    }
+  }
+  return grp;
+}
+
+function createHarborStringLightsSpan3D(x1, y1, z1, x2, y2, z2, bulbCount = 9, sag = 0.65) {
+  const grp = new THREE.Group();
+  const wireMat = MAT.julietIron || MAT.castIron;
+  const bulbMat = MAT.stringBulbAmber || MAT.neonYellow;
+
+  for (let i = 0; i < bulbCount; i++) {
+    const t0 = i / bulbCount;
+    const t1 = (i + 1) / bulbCount;
+    const tm = (t0 + t1) * 0.5;
+    const p0x = THREE.MathUtils.lerp(x1, x2, t0);
+    const p0z = THREE.MathUtils.lerp(z1, z2, t0);
+    const p0y = THREE.MathUtils.lerp(y1, y2, t0) - Math.sin(t0 * Math.PI) * sag;
+    const p1x = THREE.MathUtils.lerp(x1, x2, t1);
+    const p1z = THREE.MathUtils.lerp(z1, z2, t1);
+    const p1y = THREE.MathUtils.lerp(y1, y2, t1) - Math.sin(t1 * Math.PI) * sag;
+
+    const segLen = Math.hypot(p1x - p0x, p1y - p0y, p1z - p0z);
+    const wire = new THREE.Mesh(GEO.cyl, wireMat);
+    wire.scale.set(0.035, segLen, 0.035);
+    wire.position.set((p0x + p1x) * 0.5, (p0y + p1y) * 0.5, (p0z + p1z) * 0.5);
+    wire.quaternion.setFromUnitVectors(
+      new THREE.Vector3(0, 1, 0),
+      new THREE.Vector3(p1x - p0x, p1y - p0y, p1z - p0z).normalize()
+    );
+    grp.add(wire);
+
+    const bx = THREE.MathUtils.lerp(x1, x2, tm);
+    const bz = THREE.MathUtils.lerp(z1, z2, tm);
+    const by = THREE.MathUtils.lerp(y1, y2, tm) - Math.sin(tm * Math.PI) * sag - 0.14;
+    const bulb = new THREE.Mesh(GEO.sphere, bulbMat);
+    bulb.scale.set(0.2, 0.24, 0.2);
+    bulb.position.set(bx, by, bz);
+    grp.add(bulb);
+  }
+  return grp;
+}
+
+function createLuxuryYacht3D(isGoldenVip = false) {
+  const grp = new THREE.Group();
+  const hullMat = isGoldenVip ? MAT.pureGold24k : (MAT.yachtHullWhite || MAT.white);
+  const stripeMat = isGoldenVip ? MAT.supercarRed : MAT.roofRoyalNavy;
+  const teakMat = MAT.yachtTeakDeck || MAT.woodWarm;
+  const glassMat = makeClayMat(0x1E293B, { roughness: 0.15, metalness: 0.5, emissive: 0x38BDF8, emissiveIntensity: 0.22 });
+  const glowMat = MAT.amberWindowGlow || MAT.neonYellow;
+
+  // 유선형 선체(Hull) & 선수(Bow) + 티크 원목 애프터 데크
+  grp.add(createRoundedToyMesh(3.2, 1.15, 7.6, hullMat, 0, 0.62, -0.2, 0.28));
+  const bowCone = new THREE.Mesh(new THREE.ConeGeometry(1.62, 2.8, 18), hullMat);
+  bowCone.rotation.x = Math.PI * 0.5;
+  bowCone.scale.set(1.0, 1.0, 0.68);
+  bowCone.position.set(0, 0.72, 4.65);
+  grp.add(bowCone);
+
+  grp.add(createRoundedToyMesh(3.28, 0.16, 7.7, stripeMat, 0, 0.92, -0.15, 0.04));
+  grp.add(createRoundedToyMesh(2.85, 0.12, 7.2, teakMat, 0, 1.22, -0.1, 0.05));
+
+  // 1층 메인 살롱 캐빈 & 호박빛 선실 포트홀 창문
+  grp.add(createRoundedToyMesh(2.35, 1.05, 4.2, hullMat, 0, 1.76, -0.35, 0.18));
+  const windshield = createRoundedToyMesh(2.22, 0.72, 0.95, glassMat, 0, 1.82, 1.55, 0.08);
+  windshield.rotation.x = -0.38;
+  grp.add(windshield);
+  for (const sideX of [-1.2, 1.2]) {
+    for (const pz of [-1.4, -0.3, 0.8]) {
+      const porthole = new THREE.Mesh(GEO.sphere, glowMat);
+      porthole.scale.set(0.08, 0.26, 0.44);
+      porthole.position.set(sideX, 1.78, pz);
+      grp.add(porthole);
+    }
+  }
+
+  // 2층 플라이브릿지 선데크 & 레이더 아치 마스트 + 후미 선베드 라운지
+  grp.add(createRoundedToyMesh(1.95, 0.22, 2.8, hullMat, 0, 2.38, -0.55, 0.08));
+  grp.add(createRoundedToyMesh(1.82, 0.68, 0.28, hullMat, 0, 2.78, -1.55, 0.06));
+  grp.add(createRoundedToyMesh(2.1, 0.14, 0.52, stripeMat, 0, 3.16, -1.55, 0.04));
+  const beacon = new THREE.Mesh(GEO.sphere, glowMat);
+  beacon.scale.setScalar(0.22);
+  beacon.position.set(0, 3.36, -1.55);
+  grp.add(beacon);
+
+  // 선수 일광욕 쿠션 & 후미 티크 스윔 플랫폼
+  grp.add(createRoundedToyMesh(1.55, 0.18, 1.85, MAT.cream, 0, 1.34, 2.55, 0.06));
+  grp.add(createRoundedToyMesh(2.75, 0.18, 1.15, teakMat, 0, 0.36, -4.35, 0.06));
+  return grp;
+}
+
+function create3DLobsterPlatterMesh() {
+  const grp = new THREE.Group();
+  const plate = new THREE.Mesh(GEO.cyl, MAT.white);
+  plate.scale.set(1.15, 0.08, 0.82);
+  plate.position.y = 0.04;
+  const lobsterMat = MAT.lobsterCoral || MAT.coral;
+  const body = new THREE.Mesh(GEO.sphere, lobsterMat);
+  body.scale.set(0.28, 0.18, 0.56);
+  body.position.set(0, 0.16, 0.04);
+  const tail = new THREE.Mesh(GEO.sphere, lobsterMat);
+  tail.scale.set(0.24, 0.1, 0.28);
+  tail.position.set(0, 0.13, -0.32);
+  const clawL = new THREE.Mesh(GEO.sphere, lobsterMat);
+  clawL.scale.set(0.18, 0.12, 0.28);
+  clawL.position.set(-0.24, 0.15, 0.32);
+  const clawR = clawL.clone();
+  clawR.position.x = 0.24;
+  const lemon = new THREE.Mesh(GEO.sphere, MAT.duckYellow);
+  lemon.scale.set(0.14, 0.1, 0.14);
+  lemon.position.set(0.32, 0.13, -0.14);
+  grp.add(plate, body, tail, clawL, clawR, lemon);
+  return grp;
+}
+
+function create3DTomahawkSteakMesh() {
+  const grp = new THREE.Group();
+  const board = createRoundedToyMesh(1.08, 0.08, 0.72, MAT.woodWarm, 0, 0.04, 0, 0.03);
+  const meat = createRoundedToyMesh(0.58, 0.16, 0.44, MAT.steakSeared || MAT.woodDark, -0.1, 0.14, 0, 0.06);
+  const bone = createRoundedToyMesh(0.52, 0.06, 0.08, MAT.cream, 0.34, 0.13, 0.08, 0.02);
+  bone.rotation.y = 0.22;
+  const herb = createRoundedToyMesh(0.34, 0.05, 0.08, MAT.leafGreen, -0.1, 0.23, 0, 0.02);
+  grp.add(board, meat, bone, herb);
+  return grp;
+}
+
+function create3DChampagneBucketMesh() {
+  const grp = new THREE.Group();
+  const bucket = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.18, 0.38, 16), MAT.pureGold24k || MAT.gold);
+  bucket.position.y = 0.19;
+  const bottle = new THREE.Mesh(GEO.cyl, MAT.parasolGreen);
+  bottle.scale.set(0.14, 0.52, 0.14);
+  bottle.position.set(0, 0.38, 0);
+  bottle.rotation.z = 0.16;
+  const foil = new THREE.Mesh(GEO.cyl, MAT.pureGold24k || MAT.gold);
+  foil.scale.set(0.145, 0.16, 0.145);
+  foil.position.set(-0.03, 0.56, 0);
+  foil.rotation.z = 0.16;
+  grp.add(bucket, bottle, foil);
+  return grp;
+}
+
+function create3DGrandPianoMesh() {
+  const grp = new THREE.Group();
+  const blackGloss = makeClayMat(0x18181B, { roughness: 0.16, metalness: 0.32 });
+  const goldMat = MAT.pureGold24k || MAT.gold;
+
+  // 그랜드 피아노 곡선 바디 & 건반부
+  grp.add(createRoundedToyMesh(1.95, 0.28, 1.55, blackGloss, 0, 0.92, -0.15, 0.1));
+  const curveBack = new THREE.Mesh(GEO.cyl, blackGloss);
+  curveBack.scale.set(1.75, 0.28, 1.45);
+  curveBack.position.set(-0.08, 0.92, -0.58);
+  grp.add(curveBack);
+  // 황금 내부 하프 프레임 & 비스듬히 열린 상판 리드
+  const harp = new THREE.Mesh(GEO.cyl, goldMat);
+  harp.scale.set(1.48, 0.05, 1.25);
+  harp.position.set(-0.05, 1.08, -0.45);
+  const lid = createRoundedToyMesh(1.88, 0.06, 1.52, blackGloss, 0.12, 1.48, -0.28, 0.04);
+  lid.rotation.z = 0.42;
+  const propStick = new THREE.Mesh(GEO.cyl, goldMat);
+  propStick.scale.set(0.04, 0.72, 0.04);
+  propStick.position.set(0.76, 1.32, -0.15);
+  propStick.rotation.z = -0.18;
+  // 피아노 흰 건반 + 3개 다리 + 벨벳 벤치
+  grp.add(harp, lid, propStick);
+  grp.add(createRoundedToyMesh(1.62, 0.09, 0.28, MAT.white, 0, 0.88, 0.68, 0.02));
+  for (const [lx, lz] of [[-0.78, 0.48], [0.78, 0.48], [-0.1, -1.05]]) {
+    const leg = new THREE.Mesh(GEO.cyl, blackGloss);
+    leg.scale.set(0.12, 0.78, 0.12);
+    leg.position.set(lx, 0.4, lz);
+    grp.add(leg);
+  }
+  grp.add(createRoundedToyMesh(1.12, 0.44, 0.46, MAT.supercarRed, 0, 0.24, 1.18, 0.06));
+  return grp;
+}
+
+function create3DOceanJacuzziMesh() {
+  const grp = new THREE.Group();
+  const teakMat = MAT.yachtTeakDeck || MAT.woodWarm;
+  const waterMat = makeClayMat(0x38BDF8, { emissive: 0x0EA5E9, emissiveIntensity: 0.62, roughness: 0.12 });
+
+  // 티크 원목 스파 데크 + 월풀 자쿠지 수조 + 거품 + 리조트 선베드
+  grp.add(createRoundedToyMesh(3.25, 0.24, 2.55, teakMat, 0, 0.12, 0, 0.08));
+  grp.add(createRoundedToyMesh(2.55, 0.68, 1.95, MAT.white, -0.2, 0.52, 0, 0.14));
+  grp.add(createRoundedToyMesh(2.15, 0.12, 1.55, waterMat, -0.2, 0.82, 0, 0.08));
+  for (let b = 0; b < 7; b++) {
+    const foam = new THREE.Mesh(GEO.sphere, MAT.white);
+    foam.scale.setScalar(0.16 + (b % 3) * 0.05);
+    foam.position.set(-0.85 + b * 0.22, 0.89, (b % 2 === 0 ? -0.35 : 0.32));
+    grp.add(foam);
+  }
+  const champ = create3DChampagneBucketMesh();
+  champ.scale.setScalar(0.85);
+  champ.position.set(1.22, 0.24, 0.55);
+  grp.add(champ);
+  return grp;
+}
+
+function create3DWineCellarAndChandelierMesh(rh = 4.2, rd = 7.2) {
+  const grp = new THREE.Group();
+  const rackX = -2.2;
+  const rackZ = -rd * 0.5 + 0.48;
+  // 호박색 간접조명 오크 와인 셀러 월
+  grp.add(createRoundedToyMesh(2.85, 2.65, 0.52, MAT.walnutTrim, rackX, 1.48, rackZ, 0.06));
+  grp.add(createRoundedToyMesh(2.55, 2.35, 0.14, MAT.amberWindowGlow || MAT.gold, rackX, 1.48, rackZ - 0.12, 0.03, false, false, false));
+  for (const sy of [0.68, 1.22, 1.76, 2.28]) {
+    grp.add(createRoundedToyMesh(2.6, 0.07, 0.48, MAT.woodWarm, rackX, sy, rackZ + 0.04, 0.02));
+    for (let bx = -1.0; bx <= 1.0; bx += 0.4) {
+      const btl = new THREE.Mesh(GEO.cyl, bx > 0 ? MAT.parasolGreen : MAT.roofPlum);
+      btl.scale.set(0.11, 0.36, 0.11);
+      btl.rotation.x = Math.PI * 0.5;
+      btl.position.set(rackX + bx, sy + 0.12, rackZ + 0.08);
+      grp.add(btl);
+    }
+  }
+
+  // 천장 크리스탈 골드 샹들리에
+  const chY = rh - 0.88;
+  const chain = new THREE.Mesh(GEO.cyl, MAT.pureGold24k || MAT.gold);
+  chain.scale.set(0.06, 0.65, 0.06);
+  chain.position.set(0, rh - 0.42, 0.2);
+  const ring1 = new THREE.Mesh(new THREE.TorusGeometry(0.68, 0.06, 10, 24), MAT.pureGold24k || MAT.gold);
+  ring1.rotation.x = Math.PI * 0.5;
+  ring1.position.set(0, chY, 0.2);
+  grp.add(chain, ring1);
+  for (let c = 0; c < 8; c++) {
+    const ang = (c / 8) * Math.PI * 2;
+    const candle = new THREE.Mesh(GEO.sphere, MAT.stringBulbAmber || MAT.neonYellow);
+    candle.scale.set(0.16, 0.24, 0.16);
+    candle.position.set(Math.cos(ang) * 0.68, chY + 0.14, 0.2 + Math.sin(ang) * 0.68);
+    grp.add(candle);
+  }
+  return grp;
+}
+
+function buildTwilightHarborTown3D() {
+  harborRootGroup = new THREE.Group();
+  scene.add(harborRootGroup);
+  harborYachtActors.length = 0;
+  harborWalkerActors.length = 0;
+  harborPointLights.length = 0;
+
+  const cobbleMat = makeClayMat(0xFFFFFF, { map: TEX.plazaCobble, roughness: 0.66 });
+  const quayStoneMat = MAT.dollhouseCutaway || MAT.fountainStone;
+  const trimStoneMat = MAT.dollhouseWarmTrim || MAT.podiumStone;
+  const roadVMat = makeClayMat(0xFFFFFF, { map: TEX.asphaltV, roughness: 0.74 });
+  const roadHMat = makeClayMat(0xFFFFFF, { map: TEX.asphaltH, roughness: 0.74 });
+  const teakMat = MAT.yachtTeakDeck || MAT.woodWarm;
+
+  // 1) 제1마을 해안 도로(z=50.2)와 제2마을 하버(z=88)를 잇는 초대형 '해안 연결 빨간 철제 아치 대교'
+  const straitSea = new THREE.Mesh(
+    new THREE.PlaneGeometry(156, 132),
+    new THREE.MeshPhysicalMaterial({
+      color: 0x0B4F6C,
+      map: TEX.water,
+      roughness: 0.14,
+      metalness: 0.18,
+      clearcoat: 0.92,
+      emissive: 0x1E3A8A,
+      emissiveIntensity: 0.25
+    })
+  );
+  straitSea.rotation.x = -Math.PI * 0.5;
+  straitSea.position.set(0, -0.08, 114.0);
+  harborRootGroup.add(straitSea);
+
+  const causewayBridge = new THREE.Group();
+  causewayBridge.position.set(2.0, 0.18, 70.5);
+  const spanLen = 36.5;
+  causewayBridge.add(createRoundedToyMesh(6.6, 0.38, spanLen, roadVMat, 0, 0.16, 0, 0.08));
+  for (const pz of [-11.5, 0, 11.5]) {
+    causewayBridge.add(createRoundedToyMesh(7.2, 2.2, 1.8, MAT.fountainStone, 0, -0.9, pz, 0.1));
+  }
+  for (const bx of [-3.15, 3.15]) {
+    causewayBridge.add(createRoundedToyMesh(0.32, 0.45, spanLen, MAT.bridgeSteelRed, bx, 0.56, 0, 0.05));
+    const segs = 14;
+    for (let s = 0; s < segs; s++) {
+      const t0 = s / segs;
+      const t1 = (s + 1) / segs;
+      const z0 = THREE.MathUtils.lerp(-16.5, 16.5, t0);
+      const z1 = THREE.MathUtils.lerp(-16.5, 16.5, t1);
+      const y0 = 0.65 + Math.sin(t0 * Math.PI) * 6.6;
+      const y1 = 0.65 + Math.sin(t1 * Math.PI) * 6.6;
+      const ribLen = Math.hypot(z1 - z0, y1 - y0) + 0.2;
+      const rib = createRoundedToyMesh(0.36, 0.36, ribLen, MAT.bridgeSteelRed, bx, (y0 + y1) * 0.5, (z0 + z1) * 0.5, 0.05, false, false, false);
+      rib.rotation.x = -Math.atan2(y1 - y0, z1 - z0);
+      causewayBridge.add(rib);
+      if (s > 0 && s < segs) {
+        const cabH = y0 - 0.55;
+        const cab = new THREE.Mesh(GEO.cyl, MAT.silver);
+        cab.scale.set(0.08, cabH, 0.08);
+        cab.position.set(bx, 0.55 + cabH * 0.5, z0);
+        causewayBridge.add(cab);
+      }
+    }
+  }
+  for (const bz of [-8.0, 0, 8.0]) {
+    const hY = 0.65 + Math.sin(((bz + 16.5) / 33.0) * Math.PI) * 6.6;
+    causewayBridge.add(createRoundedToyMesh(6.5, 0.28, 0.34, MAT.bridgeSteelRed, 0, hY - 0.1, bz, 0.04));
+    const orb = new THREE.Mesh(GEO.sphere, MAT.stringBulbAmber || MAT.neonYellow);
+    orb.scale.setScalar(0.42);
+    orb.position.set(0, hY - 0.38, bz);
+    causewayBridge.add(orb);
+  }
+
+  // 3일 차 해금 전 차단기 & 해금 후 상향 개방 게이트
+  harborBridgeGateL = new THREE.Group();
+  harborBridgeGateL.position.set(-2.9, 1.05, -15.5);
+  harborBridgeGateL.add(createRoundedToyMesh(2.85, 0.18, 0.18, MAT.pureGold24k || MAT.gold, 1.42, 0, 0, 0.04));
+  harborBridgeGateR = new THREE.Group();
+  harborBridgeGateR.position.set(2.9, 1.05, -15.5);
+  harborBridgeGateR.add(createRoundedToyMesh(2.85, 0.18, 0.18, MAT.pureGold24k || MAT.gold, -1.42, 0, 0, 0.04));
+  causewayBridge.add(harborBridgeGateL, harborBridgeGateR);
+  harborRootGroup.add(causewayBridge);
+
+  // 2) 트와일라잇 하버 석조 해안 방파제 지반 & 코블스톤 해안 광장 (z = 88 .. 140)
+  harborRootGroup.add(createRoundedToyMesh(76.0, 2.4, 52.0, trimStoneMat, 0, -1.05, 114.0, 0.22));
+  const harborDeck = createRoundedToyMesh(73.5, 0.26, 49.5, cobbleMat, 0, 0.13, 114.0, 0.14, false, true, false);
+  harborRootGroup.add(harborDeck);
+
+  // 해안 순환 도로
+  const hRoad = new THREE.Mesh(new THREE.BoxGeometry(64.0, 0.17, 5.6), roadHMat);
+  hRoad.position.set(0, 0.19, 112.5);
+  harborRootGroup.add(hRoad);
+  const hEntryRoad = new THREE.Mesh(new THREE.BoxGeometry(6.0, 0.17, 22.0), roadVMat);
+  hEntryRoad.position.set(2.0, 0.19, 99.0);
+  harborRootGroup.add(hEntryRoad);
+
+  // 중앙 황금 닻(Golden Anchor) 노을 분수 광장 (x = 0, z = 121.5)
+  const hPlaza = new THREE.Mesh(new THREE.CylinderGeometry(6.6, 6.8, 0.1, 42), quayStoneMat);
+  hPlaza.position.set(0, 0.28, 121.5);
+  harborRootGroup.add(hPlaza);
+  const fPool = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.65, 0.56, 32), trimStoneMat);
+  fPool.position.set(0, 0.56, 121.5);
+  const fWater = new THREE.Mesh(
+    new THREE.CylinderGeometry(2.25, 2.25, 0.12, 32),
+    makeClayMat(0x38BDF8, { emissive: 0xF59E0B, emissiveIntensity: 0.38, roughness: 0.12 })
+  );
+  fWater.position.set(0, 0.82, 121.5);
+  const anchorPillar = new THREE.Mesh(GEO.cyl, MAT.pureGold24k || MAT.gold);
+  anchorPillar.scale.set(0.45, 2.1, 0.45);
+  anchorPillar.position.set(0, 1.65, 121.5);
+  const anchorRing = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.14, 12, 24), MAT.pureGold24k || MAT.gold);
+  anchorRing.position.set(0, 2.35, 121.5);
+  harborRootGroup.add(fPool, fWater, anchorPillar, anchorRing);
+
+  // 3) 바다 위 티크 원목 요트 선착장(Marina Pier) & 정박 중인 3D 럭셔리 요트 선단!
+  const mainPier = createRoundedToyMesh(38.0, 0.34, 4.2, teakMat, 0, 0.28, 142.0, 0.08);
+  harborRootGroup.add(mainPier);
+  for (const slipX of [-14.0, 0.0, 14.0]) {
+    harborRootGroup.add(createRoundedToyMesh(2.8, 0.32, 11.5, teakMat, slipX, 0.26, 149.2, 0.06));
+    for (const postZ of [144.5, 149.5, 154.2]) {
+      const bollard = new THREE.Mesh(GEO.cyl, MAT.woodDark);
+      bollard.scale.set(0.32, 1.15, 0.32);
+      bollard.position.set(slipX - 1.25, 0.58, postZ);
+      const bollardLamp = new THREE.Mesh(GEO.sphere, MAT.stringBulbAmber || MAT.neonYellow);
+      bollardLamp.scale.setScalar(0.22);
+      bollardLamp.position.set(slipX - 1.25, 1.22, postZ);
+      harborRootGroup.add(bollard, bollardLamp);
+    }
+  }
+
+  const yachtPlacements = [
+    { x: -18.8, z: 150.5, rotY: 0.08, phase: 0.0 },
+    { x: -6.2,  z: 151.2, rotY: -0.05, phase: 1.7 },
+    { x: 18.8,  z: 150.2, rotY: -0.1, phase: 3.1 }
+  ];
+  for (const yp of yachtPlacements) {
+    const yacht = createLuxuryYacht3D(false);
+    yacht.position.set(yp.x, 0.08, yp.z);
+    yacht.rotation.y = yp.rotY;
+    harborRootGroup.add(yacht);
+    harborYachtActors.push({ mesh: yacht, baseY: 0.08, baseRotY: yp.rotY, phase: yp.phase });
+  }
+
+  // 마리나 클럽 프라이빗 슈퍼요트 업그레이드 시 추가 정박되는 24K 골드 VIP 메가요트
+  harborVipMegaYacht = createLuxuryYacht3D(true);
+  harborVipMegaYacht.scale.setScalar(1.22);
+  harborVipMegaYacht.position.set(6.8, 0.1, 152.0);
+  harborVipMegaYacht.visible = !!state.standaloneShops?.shop_marina?.upgrades?.upg_crate;
+  harborRootGroup.add(harborVipMegaYacht);
+  harborYachtActors.push({ mesh: harborVipMegaYacht, baseY: 0.1, baseRotY: 0.04, phase: 2.4 });
+
+  // 4) 항구 알전구 스트링 라이트(Harbor Festoon String Lights) & 주철 가로등 & 야자수
+  const poleSpots = [
+    [-26, 115], [-10, 115], [10, 115], [26, 115],
+    [-26, 128], [-10, 128], [10, 128], [26, 128],
+    [-16, 140.5], [0, 140.5], [16, 140.5]
+  ];
+  for (const [px, pz] of poleSpots) {
+    const pole = new THREE.Mesh(GEO.cyl, MAT.julietIron || MAT.castIron);
+    pole.scale.set(0.18, 4.6, 0.18);
+    pole.position.set(px, 2.45, pz);
+    const lantern = new THREE.Mesh(GEO.sphere, MAT.stringBulbAmber || MAT.neonYellow);
+    lantern.scale.setScalar(0.34);
+    lantern.position.set(px, 4.82, pz);
+    harborRootGroup.add(pole, lantern);
+  }
+
+  const stringSpans = [
+    [-26, 4.75, 115, -10, 4.75, 115],
+    [-10, 4.75, 115, 10, 4.75, 115],
+    [10, 4.75, 115, 26, 4.75, 115],
+    [-26, 4.75, 128, -10, 4.75, 128],
+    [-10, 4.75, 128, 10, 4.75, 128],
+    [10, 4.75, 128, 26, 4.75, 128],
+    [-16, 4.75, 140.5, 0, 4.75, 140.5],
+    [0, 4.75, 140.5, 16, 4.75, 140.5],
+    [-10, 4.75, 115, -10, 4.75, 128],
+    [10, 4.75, 115, 10, 4.75, 128]
+  ];
+  for (const [x1, y1, z1, x2, y2, z2] of stringSpans) {
+    harborRootGroup.add(createHarborStringLightsSpan3D(x1, y1, z1, x2, y2, z2, 10, 0.68));
+  }
+
+  // 트와일라잇 하버 따뜻한 호박빛 포인트 라이트 2기
+  const hLightL = new THREE.PointLight(0xFFA94D, 1.8, 42);
+  hLightL.position.set(-14, 7.5, 120);
+  const hLightR = new THREE.PointLight(0xFFB703, 1.8, 42);
+  hLightR.position.set(14, 7.5, 126);
+  harborRootGroup.add(hLightL, hLightR);
+  harborPointLights.push(hLightL, hLightR);
+
+  for (const [tx, tz] of [[-31, 104], [31, 104], [-32, 124], [32, 124], [-24, 138], [24, 138]]) {
+    const pm = createPalmTree3D(1.08);
+    pm.position.set(tx, 0.24, tz);
+    harborRootGroup.add(pm);
+  }
+
+  // 5) 하버 프롬나드를 산책하고 요트를 감상하는 VIP 주민(글로벌 영화배우·월스트리트 펀드매니저·크루즈 선장) 액터 배치
+  const vipRoles = ['movie_star', 'fund_manager', 'cruise_captain', 'streamer', 'newlywed'];
+  for (let i = 0; i < 5; i++) {
+    const vip = createChibiPerson3D(vipRoles[i], null, i + 7);
+    const startX = -18 + i * 9;
+    const startZ = i % 2 === 0 ? 117.5 : 139.5;
+    vip.position.set(startX, 0.28, startZ);
+    vip.userData.auraTimer = 5.0;
+    vip.userData.auraHex = i % 2 === 0 ? 0xFBBF24 : 0x34D399;
+    harborRootGroup.add(vip);
+    harborWalkerActors.push({
+      mesh: vip,
+      centerX: startX,
+      baseZ: startZ,
+      range: 5.5 + (i % 3) * 1.8,
+      speed: 1.15 + i * 0.16,
+      phase: i * 1.4
+    });
+  }
+
+  syncHarborBridgeGate3D();
+}
+
+function syncHarborBridgeGate3D() {
+  const open = !!state.harborUnlocked;
+  if (harborBridgeGateL) harborBridgeGateL.rotation.z = open ? 1.32 : 0;
+  if (harborBridgeGateR) harborBridgeGateR.rotation.z = open ? -1.32 : 0;
+  if (harborVipMegaYacht) {
+    harborVipMegaYacht.visible = !!state.standaloneShops?.shop_marina?.upgrades?.upg_crate;
+  }
+}
+
+// =========================================================
 // 6. 팝마트 · 동물의 숲 아트토이 2.5~3등신 치비 캐릭터 (12종 얼굴 PNG · 15종 의상 PNG · 12종 3D 헤어)
 // =========================================================
 let chibiVariantCounter = 0;
@@ -3608,6 +4252,22 @@ function addVolumetricArtToyHair3D(parent, styleName, hairMat, role) {
     medallion.scale.setScalar(0.56);
     medallion.position.set(0, 0.69, 0.34);
     parent.add(brim, fedoraTop, goldBand, shades, goldBridge, goldChain, medallion);
+  } else if (role === 'cruise_captain') {
+    const capBase = new THREE.Mesh(GEO.cyl, MAT.white);
+    capBase.scale.set(0.68, 0.2, 0.68);
+    capBase.position.y = 1.58;
+    const navyBand = new THREE.Mesh(GEO.cyl, MAT.roofRoyalNavy);
+    navyBand.scale.set(0.66, 0.07, 0.66);
+    navyBand.position.y = 1.5;
+    const visor = createRoundedToyMesh(0.5, 0.05, 0.26, MAT.carbonFiber, 0, 1.46, 0.31, 0.02);
+    const badge = new THREE.Mesh(GEO.sphere, MAT.pureGold24k);
+    badge.scale.setScalar(0.12);
+    badge.position.set(0, 1.56, 0.34);
+    parent.add(capBase, navyBand, visor, badge);
+  } else if (role === 'movie_star') {
+    const shades = createRoundedToyMesh(0.56, 0.15, 0.09, MAT.carbonFiber, 0, 1.25, 0.39, 0.03);
+    const goldBridge = createRoundedToyMesh(0.6, 0.03, 0.04, MAT.pureGold24k, 0, 1.3, 0.41, 0.01);
+    parent.add(shades, goldBridge);
   }
 }
 
@@ -3656,6 +4316,9 @@ function createChibiPerson3D(role = 'student', customShirtHex = null, variantOve
   else if (role === 'elderly') { outfitNum = 7; hairStyle = 'fluffy_curl'; faceNum = 7; hairColor = 0xE5E7EB; }
   else if (role === 'streamer') { outfitNum = 6; hairStyle = 'cat_headset'; faceNum = 5; hairColor = 0xC084FC; }
   else if (role === 'rival_kang') { outfitNum = 13; hairStyle = 'parted_perm'; faceNum = 11; hairColor = 0x1E1B24; }
+  else if (role === 'movie_star') { outfitNum = 14; hairStyle = 'wavy_perm'; faceNum = 8; hairColor = 0xF59E0B; }
+  else if (role === 'fund_manager') { outfitNum = 13; hairStyle = 'parted_perm'; faceNum = 12; hairColor = 0x1E293B; }
+  else if (role === 'cruise_captain') { outfitNum = 10; hairStyle = 'parted_perm'; faceNum = 6; hairColor = 0x334155; }
 
   const outfitTex = REAL_TEX.outfits[(outfitNum - 1) % Math.max(1, REAL_TEX.outfits.length)] || null;
   const faceTex = REAL_TEX.faces[(faceNum - 1) % Math.max(1, REAL_TEX.faces.length)] || null;
@@ -4254,28 +4917,53 @@ function rebuildStandaloneShop3D(shopId) {
   grp.add(createRoundedToyMesh(0.42, wallH + 0.16, 0.38, cutawayMat, w * 0.5 - 0.2, 0.22 + wallH * 0.5, d * 0.5 - 0.1, 0.08));
   grp.add(createRoundedToyMesh(w + 0.24, 0.32, 0.42, cutawayMat, 0, wallH + 0.28, d * 0.5 - 0.08, 0.08));
 
+  // 제2마을(트와일라잇 하버) 단독 상가는 양측 벽면에 호박색 불빛이 새어 나오는 유럽풍 격자 창문 장착!
+  if (tpl.stage === 2) {
+    for (const sideDir of [-1, 1]) {
+      const sideWin = createAmberLatticeWindow3D(1.65, 1.85);
+      sideWin.rotation.y = sideDir * Math.PI * 0.5;
+      sideWin.position.set(sideDir * (w * 0.5 + 0.08), 2.15, -0.15);
+      grp.add(sideWin);
+    }
+  }
+
   if (!isFocused) {
     const awningStyle = tpl.kind === 'bakery' ? 'coral' : tpl.awningStyle;
     const awning = createScallopedAwning3D(w - 0.36, awningStyle);
     awning.position.set(0, h * 0.82, d * 0.5 + 0.02);
     grp.add(awning);
 
-    const signKind = tpl.kind === 'bakery' ? 'patisserie' : tpl.kind === 'roastery' ? 'roastery' : 'flores';
-    const signboard = createFramedSignboard3D(w * 0.76, 1.12, signKind);
-    signboard.position.set(0, h + 0.34, d * 0.5 + 0.08);
+    const signKindMap = {
+      bakery: 'patisserie',
+      roastery: 'roastery',
+      flower: 'flores',
+      lobster: 'lobster',
+      winelounge: 'winelounge',
+      marina: 'marina'
+    };
+    const signKind = signKindMap[tpl.kind] || 'flores';
+    const signboard = createFramedSignboard3D(w * 0.8, 1.14, signKind);
+    signboard.position.set(0, h + 0.36, d * 0.5 + 0.1);
     grp.add(signboard);
 
-    const roofMat = makeClayMat(tpl.kind === 'bakery' ? 0xF28B66 : tpl.roofColor, { roughness: 0.56 });
-    grp.add(createRoundedToyMesh(w + 0.48, 0.44, d * 0.6, roofMat, 0, h + 0.46, -d * 0.18, 0.1));
+    if (tpl.stage === 2) {
+      const gableMat = tpl.kind === 'lobster' ? (MAT.terracottaRoof || MAT.coral) : (MAT.slateRoofCharcoal || MAT.roofRoyalNavy);
+      const gableRoof = createEuropeanGableRoofWithDormers3D(w, d, gableMat, 2);
+      gableRoof.position.set(0, h + 0.22, -0.08);
+      grp.add(gableRoof);
+    } else {
+      const roofMat = makeClayMat(tpl.kind === 'bakery' ? 0xF28B66 : tpl.roofColor, { roughness: 0.56 });
+      grp.add(createRoundedToyMesh(w + 0.48, 0.44, d * 0.6, roofMat, 0, h + 0.46, -d * 0.18, 0.1));
 
-    const mascot = create3DStoreMascot(tpl.kind);
-    mascot.scale.setScalar(1.35);
-    mascot.position.set(-w * 0.34, h + 0.68, -d * 0.12);
-    grp.add(mascot);
+      const mascot = create3DStoreMascot(tpl.kind);
+      mascot.scale.setScalar(1.35);
+      mascot.position.set(-w * 0.34, h + 0.68, -d * 0.12);
+      grp.add(mascot);
+    }
 
     if (shopState?.owned) {
       const ownerCrown = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.38, 0.44, 6), MAT.pureGold24k);
-      ownerCrown.position.set(w * 0.34, h + 0.92, -d * 0.12);
+      ownerCrown.position.set(w * 0.36, h + (tpl.stage === 2 ? 2.15 : 0.92), -d * 0.12);
       addToonHullOutline(ownerCrown, 1.07);
       grp.add(ownerCrown);
     }
@@ -4456,6 +5144,74 @@ function rebuildStandaloneShop3D(shopId) {
         occupiedBy: null
       });
     }
+  } else if (tpl.kind === 'lobster') {
+    // 오션뷰 랍스터 파인다이닝: 실사 활랍스터 플래터 · 토마호크 스테이크 · 크리스탈 샹들리에 · 화이트 리넨 다이닝 테이블
+    const cellarChand = create3DWineCellarAndChandelierMesh(h, d);
+    grp.add(cellarChand);
+
+    for (const tx of [-2.35, 2.55]) {
+      const fineTable = new THREE.Mesh(GEO.cyl, MAT.white);
+      fineTable.scale.set(1.38, 0.1, 1.38);
+      fineTable.position.set(tx, 0.88, 1.05);
+      const tBase = new THREE.Mesh(GEO.cyl, MAT.pureGold24k || MAT.gold);
+      tBase.scale.set(0.18, 0.68, 0.18);
+      tBase.position.set(tx, 0.52, 1.05);
+      grp.add(fineTable, tBase);
+
+      const lob = create3DLobsterPlatterMesh();
+      lob.scale.setScalar(0.88);
+      lob.position.set(tx - 0.2, 0.94, 1.02);
+      grp.add(lob);
+
+      if (hasOvenUpg || tx > 0) {
+        const steak = create3DTomahawkSteakMesh();
+        steak.scale.setScalar(0.75);
+        steak.position.set(tx + 0.25, 0.94, 1.18);
+        grp.add(steak);
+      }
+    }
+    if (hasTerraceUpg) {
+      const champ = create3DChampagneBucketMesh();
+      champ.position.set(0.4, 1.4, -0.32);
+      grp.add(champ);
+    }
+  } else if (tpl.kind === 'winelounge') {
+    // 선셋 와인 & 재즈 라운지: 콘서트 그랜드 피아노 · 호박빛 오크 와인 셀러 · 빈티지 샴페인
+    const cellarChand = create3DWineCellarAndChandelierMesh(h, d);
+    grp.add(cellarChand);
+
+    const grandPiano = create3DGrandPianoMesh();
+    grandPiano.scale.setScalar(0.95);
+    grandPiano.position.set(-2.35, 0.26, 0.95);
+    grandPiano.rotation.y = 0.35;
+    grp.add(grandPiano);
+
+    const champ = create3DChampagneBucketMesh();
+    champ.position.set(2.55, 0.28, 1.15);
+    grp.add(champ);
+
+    if (hasOvenUpg) {
+      const lob = create3DLobsterPlatterMesh();
+      lob.scale.setScalar(0.85);
+      lob.position.set(0.35, 1.42, -0.35);
+      grp.add(lob);
+    }
+  } else if (tpl.kind === 'marina') {
+    // VIP 요트 마리나 클럽: 오션뷰 월풀 스파 자쿠지 · 샴페인 바 · 프라이빗 요트 차터 데크
+    const jacuzzi = create3DOceanJacuzziMesh();
+    jacuzzi.scale.setScalar(0.92);
+    jacuzzi.position.set(-2.45, 0.26, 0.85);
+    grp.add(jacuzzi);
+
+    const cellarChand = create3DWineCellarAndChandelierMesh(h, d);
+    grp.add(cellarChand);
+
+    const champ = create3DChampagneBucketMesh();
+    champ.scale.setScalar(1.15);
+    champ.position.set(2.65, 0.28, 1.05);
+    grp.add(champ);
+
+    syncHarborBridgeGate3D();
   } else {
     // FLORES & CO. 플라워 & 빈티지 부티크 샵
     // 가게 앞 알록달록한 꽃화분 계단식 진열대
@@ -4708,16 +5464,27 @@ function buildResidentialComplex3D(lot) {
     createRoundedToyMesh(0.52, f1H + 0.1, 0.44, cutawayMat, W * 0.5 - 0.14, f1CenterY, D * 0.5 + 0.04, 0.08)
   );
 
-  // ---------------- 좌측 1층 매장: MINIMI MART (코럴&화이트 스트라이프 어닝 · 원목 쇼케이스 · 입간판 · 야외 원목 테이블) ----------------
+  const isHarborHotel = lot.devType === 'harbor_hotel';
+
+  // ---------------- 좌측 1층 매장: 본점 MINIMI MART / 하버 호텔 그랜드 피아노 라운지 ----------------
   const martGrp = new THREE.Group();
   martGrp.position.set(-7.15, 0.45, 0);
   root.add(martGrp);
-  build1FMinimiMartInterior3D(martGrp, lot.lotId);
+  if (isHarborHotel) {
+    martGrp.add(createRoundedToyMesh(9.2, 0.1, D - 0.5, makeClayMat(0xFFFFFF, { map: TEX.floor3, roughness: 0.48 }), 0, 0.06, 0, 0.04));
+    const piano = create3DGrandPianoMesh();
+    piano.position.set(-1.5, 0.1, 0.45);
+    piano.rotation.y = 0.35;
+    const cellar = create3DWineCellarAndChandelierMesh(3.9, D - 0.6);
+    martGrp.add(piano, cellar);
+  } else {
+    build1FMinimiMartInterior3D(martGrp, lot.lotId);
+  }
 
-  const martAwning = createScallopedAwning3D(9.2, 'coral');
+  const martAwning = createScallopedAwning3D(9.2, isHarborHotel ? 'brown' : 'coral');
   martAwning.position.set(-7.15, 3.88, D * 0.5 + 0.12);
   structGroup.add(martAwning);
-  const martSign = createFramedSignboard3D(7.6, 0.92, 'mart');
+  const martSign = createFramedSignboard3D(7.6, 0.92, isHarborHotel ? 'winelounge' : 'mart');
   martSign.position.set(-7.15, 4.4, D * 0.5 + 0.22);
   structGroup.add(martSign);
 
@@ -4725,8 +5492,8 @@ function buildResidentialComplex3D(lot) {
   const martShowcase = new THREE.Group();
   martShowcase.add(createRoundedToyMesh(2.4, 0.76, 0.72, MAT.woodWarm, -9.6, 0.82, D * 0.5 + 0.42, 0.06));
   martShowcase.add(createRoundedToyMesh(2.46, 0.1, 0.78, MAT.woodLight, -9.6, 1.24, D * 0.5 + 0.42, 0.03));
-  const scCake = create3DGiftPropMesh('item_croissant', false);
-  scCake.scale.setScalar(0.95);
+  const scCake = isHarborHotel ? create3DLobsterPlatterMesh() : create3DGiftPropMesh('item_croissant', false);
+  scCake.scale.setScalar(isHarborHotel ? 0.8 : 0.95);
   scCake.position.set(-9.6, 1.32, D * 0.5 + 0.42);
   martShowcase.add(scCake);
   const martBoard = createAFrameMenuBoard3D();
@@ -4746,7 +5513,9 @@ function buildResidentialComplex3D(lot) {
     new THREE.MeshBasicMaterial({ visible: false })
   );
   martHit.position.set(-7.15, 2.45, 0.1);
-  martHit.userData = { kind: 'firstFloorShop', shopId: 'shop_mart1f', lotId: lot.lotId };
+  martHit.userData = isHarborHotel
+    ? { kind: 'room', lotId: lot.lotId, roomId: `${lot.lotId}_101` }
+    : { kind: 'firstFloorShop', shopId: 'shop_mart1f', lotId: lot.lotId };
   root.add(martHit);
   registerPick(martHit);
 
@@ -4762,16 +5531,25 @@ function buildResidentialComplex3D(lot) {
   brassPlate.position.set(0, 4.3, D * 0.5 + 0.3);
   upperStructGroup.add(brassPlate);
 
-  // ---------------- 우측 1층 매장: BUBBLE LAUNDRY (코럴&화이트 스트라이프 어닝 통일 · 야외 원목 테이블) ----------------
+  // ---------------- 우측 1층 매장: 본점 BUBBLE LAUNDRY / 하버 호텔 오션 스파 컨시어지 ----------------
   const washGrp = new THREE.Group();
   washGrp.position.set(7.15, 0.45, 0);
   root.add(washGrp);
-  build1FBubbleLaundryInterior3D(washGrp, lot.lotId);
+  if (isHarborHotel) {
+    washGrp.add(createRoundedToyMesh(9.2, 0.1, D - 0.5, makeClayMat(0xFFFFFF, { map: TEX.floor2, roughness: 0.48 }), 0, 0.06, 0, 0.04));
+    const spa = create3DOceanJacuzziMesh();
+    spa.position.set(-0.6, 0.1, 0.35);
+    const champ = create3DChampagneBucketMesh();
+    champ.position.set(2.4, 0.12, 0.85);
+    washGrp.add(spa, champ);
+  } else {
+    build1FBubbleLaundryInterior3D(washGrp, lot.lotId);
+  }
 
   const washAwning = createScallopedAwning3D(9.2, 'coral');
   washAwning.position.set(7.15, 3.88, D * 0.5 + 0.12);
   structGroup.add(washAwning);
-  const washSign = createFramedSignboard3D(7.6, 0.92, 'wash');
+  const washSign = createFramedSignboard3D(7.6, 0.92, isHarborHotel ? 'marina' : 'wash');
   washSign.position.set(7.15, 4.4, D * 0.5 + 0.22);
   structGroup.add(washSign);
 
@@ -4790,7 +5568,9 @@ function buildResidentialComplex3D(lot) {
     new THREE.MeshBasicMaterial({ visible: false })
   );
   washHit.position.set(7.15, 2.45, 0.1);
-  washHit.userData = { kind: 'firstFloorShop', shopId: 'shop_wash1f', lotId: lot.lotId };
+  washHit.userData = isHarborHotel
+    ? { kind: 'room', lotId: lot.lotId, roomId: `${lot.lotId}_102` }
+    : { kind: 'firstFloorShop', shopId: 'shop_wash1f', lotId: lot.lotId };
   root.add(washHit);
   registerPick(washHit);
 
@@ -4839,7 +5619,9 @@ function buildResidentialComplex3D(lot) {
 
   // 건물 좌·우 측면 격자 창문(Mullion Windows) & 철제 미니 발코니 난간(Juliet Iron Balcony)
   const ironMat = MAT.julietIron || MAT.castIron;
-  const paneGlowMat = MAT.mullionGlowPane || MAT.cream;
+  const paneGlowMat = isHarborHotel
+    ? (MAT.amberWindowGlow || MAT.mullionGlowPane || MAT.cream)
+    : (MAT.mullionGlowPane || MAT.cream);
   for (const sideDir of [-1, 1]) {
     const sx = sideDir * (W * 0.5 + 0.22);
     for (const wy of [7.05, 11.75, 17.6]) {
@@ -4867,16 +5649,28 @@ function buildResidentialComplex3D(lot) {
     }
   }
 
-  // 지붕 코니스 & 옥상 현판 (Sky Signboard)
-  const roofCapMat = makeClayMat(0xF28B66, { roughness: 0.62 });
-  upperStructGroup.add(createRoundedToyMesh(W + 1.0, 0.64, D + 0.96, roofCapMat, 0, 22.58, 0, 0.14));
-
-  const skySignFrame = createRoundedToyMesh(11.6, 2.25, 0.36, warmTrimMat, 0, 23.98, D * 0.32, 0.14);
+  // 지붕 코니스(제2마을 하버 호텔은 유럽풍 차콜 슬레이트 경사 박공지붕 + 다락방 도머 창문 3개!) & 옥상 현판 (Sky Signboard)
   const skySignMat = new THREE.MeshBasicMaterial({ map: createBuildingSkySignTexture(bState.title) });
-  const skySignFace = new THREE.Mesh(GEO.quad, skySignMat);
-  skySignFace.scale.set(11.1, 1.92, 1);
-  skySignFace.position.set(0, 23.98, D * 0.32 + 0.2);
-  upperStructGroup.add(skySignFrame, skySignFace);
+  if (isHarborHotel) {
+    const harborGableRoof = createEuropeanGableRoofWithDormers3D(W + 0.6, D + 0.4, MAT.slateRoofCharcoal || MAT.charcoal, 3);
+    harborGableRoof.position.set(0, 22.38, 0);
+    upperStructGroup.add(harborGableRoof);
+
+    const skySignFrame = createRoundedToyMesh(12.2, 2.25, 0.36, warmTrimMat, 0, 26.45, 0.2, 0.14);
+    const skySignFace = new THREE.Mesh(GEO.quad, skySignMat);
+    skySignFace.scale.set(11.7, 1.92, 1);
+    skySignFace.position.set(0, 26.45, 0.4);
+    upperStructGroup.add(skySignFrame, skySignFace);
+  } else {
+    const roofCapMat = makeClayMat(0xF28B66, { roughness: 0.62 });
+    upperStructGroup.add(createRoundedToyMesh(W + 1.0, 0.64, D + 0.96, roofCapMat, 0, 22.58, 0, 0.14));
+
+    const skySignFrame = createRoundedToyMesh(11.6, 2.25, 0.36, warmTrimMat, 0, 23.98, D * 0.32, 0.14);
+    const skySignFace = new THREE.Mesh(GEO.quad, skySignMat);
+    skySignFace.scale.set(11.1, 1.92, 1);
+    skySignFace.position.set(0, 23.98, D * 0.32 + 0.2);
+    upperStructGroup.add(skySignFrame, skySignFace);
+  }
 
   // ==================== 전면 완전 개방형 인형의 집 호실 단면 기둥 & 호수 명패 (불투명 전면 벽 0%!) ====================
   const frontShellGroup = new THREE.Group();
@@ -5303,6 +6097,9 @@ function build1FBubbleLaundryInterior3D(washGrp, lotId) {
 
 // --------------------- 16종 고디테일 다중 파츠 인테리어 가구 & 방음 패드 타일 3D ---------------------
 function createCatalogBed3D(bedId) {
+  if (bedId === 'bed_jacuzzi') {
+    return create3DOceanJacuzziMesh();
+  }
   const grp = new THREE.Group();
   const addLegs = (w, d, mat) => {
     for (const [lx, lz] of [[-w * 0.45, -d * 0.45], [w * 0.45, -d * 0.45], [-w * 0.45, d * 0.45], [w * 0.45, d * 0.45]]) {
@@ -5381,6 +6178,9 @@ function createCatalogBed3D(bedId) {
 }
 
 function createCatalogSofa3D(sofaId) {
+  if (sofaId === 'sofa_piano') {
+    return create3DGrandPianoMesh();
+  }
   const grp = new THREE.Group();
   if (sofaId === 'sofa_beanbag') {
     const rug = new THREE.Mesh(GEO.cyl, MAT.mintSoft);
@@ -5439,6 +6239,9 @@ function createCatalogSofa3D(sofaId) {
 }
 
 function createCatalogAppliance3D(appId, rw = 8.5, rd = 7.2, rh = 4.2) {
+  if (appId === 'app_winecellar') {
+    return create3DWineCellarAndChandelierMesh(rh, rd);
+  }
   const grp = new THREE.Group();
   if (appId === 'app_fan') {
     const fx = rw * 0.26;
@@ -5777,6 +6580,35 @@ function rebuildRoom3D(lotId, room) {
   leaf2.scale.set(0.28, 0.26, 0.28);
   leaf2.position.set(plantX - 0.16, 0.82, plantZ + 0.1);
   rGrp.add(plantPot, plantStem, leaf1, leaf2);
+
+  // [제2마을 하버 부티크 호텔 & 로열 마리나 스위트] 호박색 무드 조명 + 실사 랍스터·토마호크·샴페인 VIP 다이닝 테이블!
+  if (room.lotId === 'lot_harbor_main' || room.equippedFurniture.decor === 'dec_harbor_royal') {
+    const suiteGlow = new THREE.PointLight(0xFFB703, 1.35, 13.5);
+    suiteGlow.position.set(0, rh - 0.95, 0.35);
+    rGrp.add(suiteGlow);
+
+    const vipTable = new THREE.Group();
+    const tblX = room.layoutType === 'tworoom' ? -0.85 : room.layoutType === 'threeroom' ? 2.1 : 0.05;
+    const tblZ = room.layoutType === 'threeroom' ? -0.65 : 1.05;
+    if (room.layoutType !== 'threeroom') {
+      vipTable.add(createRoundedToyMesh(1.68, 0.09, 0.95, MAT.white, 0, 0.62, 0, 0.04));
+      vipTable.add(createRoundedToyMesh(0.14, 0.58, 0.14, MAT.pureGold24k || MAT.gold, -0.58, 0.31, 0, 0.03));
+      vipTable.add(createRoundedToyMesh(0.14, 0.58, 0.14, MAT.pureGold24k || MAT.gold, 0.58, 0.31, 0, 0.03));
+    }
+    const baseTblY = room.layoutType === 'threeroom' ? 0.84 : 0.67;
+    const lob = create3DLobsterPlatterMesh();
+    lob.scale.setScalar(0.58);
+    lob.position.set(-0.42, baseTblY, 0);
+    const stk = create3DTomahawkSteakMesh();
+    stk.scale.setScalar(0.58);
+    stk.position.set(0.12, baseTblY, 0.05);
+    const chp = create3DChampagneBucketMesh();
+    chp.scale.setScalar(0.62);
+    chp.position.set(0.55, baseTblY, -0.06);
+    vipTable.add(lob, stk, chp);
+    vipTable.position.set(tblX, 0.14, tblZ);
+    rGrp.add(vipTable);
+  }
 
   // [시각 피드백 5] 세입자 입주 호실 전면 창틀 황금빛 LED 간접조명 프레임 (Room Border Glow)
   if (room.household) {
@@ -6968,8 +7800,13 @@ function updateXRayAndFocusHighlights(dt) {
   const inShopFocus = !!focusedShopId && !driveState.active && !fpState.active;
   const in1FShopFocus = !!focusedFirstFloorShopId && !driveState.active && !fpState.active;
 
-  // 스튜디오 배경 전환
-  scene.background = (inRoomFocus || inShopFocus || in1FShopFocus || inFpShop) ? TEX.studioBackdrop : TEX.skyBackdrop;
+  // 스튜디오 배경 전환 (제2마을 타운 뷰에서는 노을빛 트와일라잇 황혼 배경 적용!)
+  const townSkyTex = state.activeTownStage === 2
+    ? (TEX.twilightSkyBackdrop || TEX.skyBackdrop)
+    : TEX.skyBackdrop;
+  scene.background = (inRoomFocus || inShopFocus || in1FShopFocus || inFpShop)
+    ? TEX.studioBackdrop
+    : townSkyTex;
   if (studioStageDisc) {
     if (inRoomFocus && targetRoomObj) {
       const lot = state.lots.find((l) => l.lotId === targetRoomObj.lotId);
@@ -6997,8 +7834,9 @@ function updateXRayAndFocusHighlights(dt) {
     studioRimLight.intensity = THREE.MathUtils.lerp(studioRimLight.intensity, targetInt * 0.52, Math.min(1, dt * 8));
   }
 
-  // 아일랜드/단독상가/차량/거리 입주민/구름/마일스톤 가시성 제어
-  if (islandRootGroup) islandRootGroup.visible = !inRoomFocus && !in1FShopFocus && !inFpShop;
+  // 아일랜드/트와일라잇 하버/단독상가/차량/거리 입주민/구름/마일스톤 가시성 제어
+  if (islandRootGroup) islandRootGroup.visible = !inRoomFocus && !inShopFocus && !in1FShopFocus && !inFpShop;
+  if (harborRootGroup) harborRootGroup.visible = !inRoomFocus && !inShopFocus && !in1FShopFocus && !inFpShop;
   if (milestoneState.group) milestoneState.group.visible = !inRoomFocus && !inShopFocus && !in1FShopFocus && !inFpShop;
   if (driveState.carRootGroup) driveState.carRootGroup.visible = !inRoomFocus && !inShopFocus && !in1FShopFocus && !inFpShop;
   if (driveState.vehicleMesh?.userData?.driverRef) {
@@ -7197,6 +8035,13 @@ function calcFirstFloorShopStats(shopId) {
   };
 }
 
+function getShopUpgradeCatalogFor(tpl) {
+  if (tpl && tpl.stage === 2 && Array.isArray(window.HARBOR_SHOP_UPGRADE_CATALOG)) {
+    return window.HARBOR_SHOP_UPGRADE_CATALOG;
+  }
+  return SHOP_UPGRADE_CATALOG;
+}
+
 function calcStandaloneShopStats(shopId) {
   const tpl = STANDALONE_SHOPS_TEMPLATE.find((s) => s.shopId === shopId);
   const st = state.standaloneShops?.[shopId];
@@ -7206,7 +8051,7 @@ function calcStandaloneShopStats(shopId) {
   let cycleRev = tpl.passiveCycleProfit;
   let upgCount = 0;
 
-  for (const upg of SHOP_UPGRADE_CATALOG) {
+  for (const upg of getShopUpgradeCatalogFor(tpl)) {
     if (st.upgrades?.[upg.id]) {
       visitRev += upg.visitBonus;
       cycleRev += upg.cycleBonus;
@@ -7233,6 +8078,7 @@ function calcCycleNetIncome() {
   sum += calcFirstFloorShopStats('shop_wash1f').cycleRev;
 
   for (const b of Object.values(state.buildings)) {
+    if (b.lotId === 'lot_harbor_main' && !state.harborUnlocked) continue;
     for (const rm of b.rooms) {
       if (rm.unlocked && rm.household) {
         sum += calcRoomEffectiveRent(b, rm);
@@ -7243,11 +8089,13 @@ function calcCycleNetIncome() {
     }
   }
   for (const lot of state.lots) {
+    if (lot.stage === 2 && !state.harborUnlocked) continue;
     if (lot.owned && lot.devType && !DEVELOPMENT_CATALOG[lot.devType]?.isResidential) {
       sum += Math.round((DEVELOPMENT_CATALOG[lot.devType]?.cycleProfit || 0) * fMult);
     }
   }
   for (const tpl of STANDALONE_SHOPS_TEMPLATE) {
+    if (tpl.stage === 2 && !state.harborUnlocked) continue;
     const st = state.standaloneShops?.[tpl.shopId];
     if (st?.owned) {
       sum += calcStandaloneShopStats(tpl.shopId).cycleRev;
@@ -7680,6 +8528,7 @@ function spawnStreetOutingWalker(initialSeated = false) {
 
   const occupiedRooms = [];
   for (const b of Object.values(state.buildings)) {
+    if (b.lotId === 'lot_harbor_main') continue;
     for (const rm of b.rooms) {
       if (rm.unlocked && rm.household) occupiedRooms.push(rm);
     }
@@ -7692,7 +8541,7 @@ function spawnStreetOutingWalker(initialSeated = false) {
   const role = pickedRoom ? pickedRoom.household.type : rolePool[Math.floor(Math.random() * rolePool.length)];
   const displayName = pickedRoom ? pickedRoom.household.familyName : '이웃 미니미';
 
-  const shopIds = STANDALONE_SHOPS_TEMPLATE.map((s) => s.shopId);
+  const shopIds = STANDALONE_SHOPS_TEMPLATE.filter((s) => (s.stage || 1) === 1).map((s) => s.shopId);
   const targetShopId = shopIds[Math.floor(Math.random() * shopIds.length)];
   const shopEntry = standaloneShop3D[targetShopId];
   if (!shopEntry) return;
@@ -7818,13 +8667,26 @@ function tickStreetOutingAndDiningAI(dt, elapsed) {
   }
 
   for (const tpl of STANDALONE_SHOPS_TEMPLATE) {
+    if (tpl.stage === 2 && !state.harborUnlocked) continue;
     const st = state.standaloneShops?.[tpl.shopId];
     if (!st || !st.owned) continue;
     st.cycleTimer -= dt;
     if (st.cycleTimer <= 0) {
       st.cycleTimer = 11.5;
       const { cycleRev } = calcStandaloneShopStats(tpl.shopId);
-      spawnRentBubble(`shop_cycle_${tpl.shopId}`, tpl.x - 1.6, 1.95, tpl.z + 3.6, cycleRev, tpl.name);
+      const shopStage = tpl.stage || 1;
+      const activeStage = state.activeTownStage === 2 && state.harborUnlocked ? 2 : 1;
+      if (shopStage === 1 && activeStage === 2) {
+        addGold(cycleRev);
+        hqDividendAccum += cycleRev;
+      } else if (shopStage === 2 && activeStage === 1) {
+        addGold(cycleRev);
+      } else if (shopStage === 2) {
+        addGold(cycleRev);
+        spawnRisingGroundCoins3D(tpl.x, 0.35, tpl.z + 3.4, 2);
+      } else {
+        spawnRentBubble(`shop_cycle_${tpl.shopId}`, tpl.x - 1.6, 1.95, tpl.z + 3.6, cycleRev, tpl.name);
+      }
     }
   }
 
@@ -8043,6 +8905,7 @@ function closeAllModalsImmediate() {
   document.getElementById('happiness-milestone-modal')?.classList.add('hidden');
   document.getElementById('rival-battle-hub-modal')?.classList.add('hidden');
   document.getElementById('forbes-modal')?.classList.add('hidden');
+  document.getElementById('harbor-chronicle-modal')?.classList.add('hidden');
 }
 
 function triggerDockSlideUpAnimation(el) {
@@ -8115,6 +8978,9 @@ function syncTopBarsByMode() {
   dom.isolationVignette?.classList.toggle('hidden', !(inRoom || inShop));
 
   updateCollectAllButtonVisibility();
+  if (typeof syncChronicleAndStageUI === 'function') {
+    syncChronicleAndStageUI();
+  }
 }
 
 function startSmoothCameraTween(targetPos, targetLook, targetZoom, duration = 0.6, onArrive = null) {
@@ -8155,9 +9021,17 @@ function setOverviewCamera(animate = true) {
 
   const isMobilePortrait = window.innerWidth < 640 && window.innerHeight > window.innerWidth;
   const offset = CAM_OFFSETS[camAzimuth % 4];
-  const targetLook = isMobilePortrait ? new THREE.Vector3(-1.2, 4.4, 8.2) : OVERVIEW_LOOK.clone();
+  const inHarbor = state.activeTownStage === 2 && !!state.harborUnlocked;
+  const baseLook = inHarbor ? HARBOR_OVERVIEW_LOOK : OVERVIEW_LOOK;
+  const targetLook = isMobilePortrait
+    ? new THREE.Vector3(inHarbor ? 0.0 : -1.2, inHarbor ? 6.0 : 4.4, inHarbor ? 120.0 : 8.2)
+    : baseLook.clone();
   const targetPos = targetLook.clone().add(offset);
-  const targetZoom = isMobilePortrait ? 0.45 : 0.78;
+  const targetZoom = isMobilePortrait ? (inHarbor ? 0.42 : 0.45) : (inHarbor ? 0.72 : 0.78);
+
+  if (typeof applyTownAtmosphere === 'function') {
+    applyTownAtmosphere(inHarbor ? 2 : 1);
+  }
 
   if (animate) {
     startSmoothCameraTween(targetPos, targetLook, targetZoom, 0.58, null);
@@ -8217,6 +9091,11 @@ function focusCameraOnRoom(roomId) {
   const lot = state.lots.find((l) => l.lotId === rm.lotId);
   if (!lot) return;
 
+  if (lot.stage === 2 && state.harborUnlocked) {
+    state.activeTownStage = 2;
+  } else if (lot.stage === 1) {
+    state.activeTownStage = 1;
+  }
   focusedRoomId = rm.id;
   ensureCatalogSheetExpanded();
   renderRoomSwitcherChips(rm.lotId);
@@ -8260,12 +9139,16 @@ function focusCameraOnShop(shopId) {
 
   const prevShop = focusedShopId;
   focusedShopId = shopId;
+  const tpl = STANDALONE_SHOPS_TEMPLATE.find((s) => s.shopId === shopId);
+  if (!tpl) return;
+  if (tpl.stage === 2 && state.harborUnlocked) {
+    state.activeTownStage = 2;
+  } else if (tpl.stage === 1) {
+    state.activeTownStage = 1;
+  }
   if (prevShop && prevShop !== shopId) rebuildStandaloneShop3D(prevShop);
   rebuildStandaloneShop3D(shopId);
   renderShopSwitcherChips();
-
-  const tpl = STANDALONE_SHOPS_TEMPLATE.find((s) => s.shopId === shopId);
-  if (!tpl) return;
 
   const aspect = window.innerWidth / Math.max(1, window.innerHeight);
   const frustumH = 38;
@@ -8373,7 +9256,21 @@ function buildPreviewSubject3D(itemId) {
     dg.rotation.y = Math.PI * 0.18;
     return dg;
   }
+  const focusedTpl = focusedShopId ? STANDALONE_SHOPS_TEMPLATE.find((s) => s.shopId === focusedShopId) : null;
+  const isHarborShopPreview = focusedTpl?.stage === 2;
+
   if (itemId === 'upg_oven') {
+    if (isHarborShopPreview) {
+      const hg = new THREE.Group();
+      hg.add(createRoundedToyMesh(2.2, 0.9, 1.1, MAT.white, 0, 0.46, 0, 0.08));
+      const lob = create3DLobsterPlatterMesh();
+      lob.position.set(-0.45, 0.92, 0);
+      const stk = create3DTomahawkSteakMesh();
+      stk.position.set(0.45, 0.92, 0.05);
+      hg.add(lob, stk);
+      hg.rotation.y = Math.PI * 0.18;
+      return hg;
+    }
     const og = new THREE.Group();
     og.add(createRoundedToyMesh(2.2, 2.15, 1.0, MAT.pureGold24k, 0, 1.08, 0, 0.1));
     og.add(createRoundedToyMesh(1.3, 0.44, 0.14, MAT.ovenFire, 0, 0.95, 0.5, 0.04));
@@ -8382,11 +9279,30 @@ function buildPreviewSubject3D(itemId) {
     return og;
   }
   if (itemId === 'upg_terrace') {
+    if (isHarborShopPreview) {
+      const wg = new THREE.Group();
+      const chp = create3DChampagneBucketMesh();
+      chp.scale.setScalar(1.45);
+      chp.position.set(0.55, 0.12, 0.25);
+      const pno = create3DGrandPianoMesh();
+      pno.scale.setScalar(0.62);
+      pno.position.set(-0.45, 0, -0.1);
+      wg.add(chp, pno);
+      wg.rotation.y = Math.PI * 0.18;
+      return wg;
+    }
     const tg = createGreenParasolTableSet3D(true);
     tg.scale.setScalar(0.84);
     return tg;
   }
   if (itemId === 'upg_crate') {
+    if (isHarborShopPreview) {
+      const yg = createLuxuryYacht3D(true);
+      yg.scale.setScalar(0.34);
+      yg.position.set(0, 0.32, 0);
+      yg.rotation.y = Math.PI * 0.28;
+      return yg;
+    }
     const cg = createFruitWoodenCrate3D('mix');
     cg.scale.setScalar(1.65);
     cg.rotation.y = Math.PI * 0.18;
@@ -8440,7 +9356,9 @@ function buildPreviewSubject3D(itemId) {
 
 function getOrRender3DCatalogPreview(itemId, width = 220, height = 128) {
   if (!renderer) return createCatalogThumbnailSVG(itemId, width, height);
-  const cacheKey = `${itemId}_${width}x${height}`;
+  const focusedTpl = focusedShopId ? STANDALONE_SHOPS_TEMPLATE.find((s) => s.shopId === focusedShopId) : null;
+  const stageSuffix = (focusedTpl?.stage === 2 && itemId.startsWith('upg_')) ? '_harbor' : '';
+  const cacheKey = `${itemId}${stageSuffix}_${width}x${height}`;
   if (catalog3DPreviewCache.has(cacheKey)) {
     return `<img src="${catalog3DPreviewCache.get(cacheKey)}" alt="${itemId}" class="catalog-3d-preview-img" />`;
   }
@@ -9607,7 +10525,21 @@ function enterFirstPersonShop(shopId = 'shop_bakery', rememberDrive = null) {
   fpState.doorHinge = doorHinge;
 
   // 뒷벽 업종별 시그니처 설비 & 간판 보드
-  const signKind = dest.id === 'shop_roastery' ? 'roastery' : dest.id === 'shop_flower' ? 'flores' : dest.id === 'shop_mart1f' ? 'mart' : dest.id === 'shop_wash1f' ? 'wash' : 'patisserie';
+  const signKind = dest.id === 'shop_roastery'
+    ? 'roastery'
+    : dest.id === 'shop_flower'
+      ? 'flores'
+      : dest.id === 'shop_mart1f'
+        ? 'mart'
+        : dest.id === 'shop_wash1f'
+          ? 'wash'
+          : dest.id === 'shop_lobster'
+            ? 'lobster'
+            : dest.id === 'shop_winelounge'
+              ? 'winelounge'
+              : dest.id === 'shop_marina'
+                ? 'marina'
+                : 'patisserie';
   const backSign = createFramedSignboard3D(5.8, 1.05, signKind);
   backSign.position.set(0, 3.55, -D * 0.5 + 0.24);
   stg.add(backSign);
@@ -9615,6 +10547,20 @@ function enterFirstPersonShop(shopId = 'shop_bakery', rememberDrive = null) {
   if (dest.id === 'shop_bakery') {
     stg.add(createRoundedToyMesh(2.6, 2.3, 0.95, MAT.gold, -3.4, 1.2, -D * 0.5 + 0.75, 0.1));
     stg.add(createRoundedToyMesh(1.4, 0.5, 0.14, MAT.ovenFire, -3.4, 1.25, -D * 0.5 + 1.25, 0.04));
+  } else if (dest.id === 'shop_lobster') {
+    const lob = create3DLobsterPlatterMesh();
+    lob.scale.setScalar(1.35);
+    lob.position.set(-3.5, 0.95, -D * 0.5 + 1.25);
+    stg.add(createRoundedToyMesh(2.6, 0.92, 1.1, MAT.white, -3.5, 0.46, -D * 0.5 + 1.25, 0.08), lob);
+  } else if (dest.id === 'shop_winelounge') {
+    const pno = create3DGrandPianoMesh();
+    pno.position.set(-3.4, 0.02, -D * 0.5 + 1.85);
+    stg.add(pno);
+  } else if (dest.id === 'shop_marina') {
+    const yModel = createLuxuryYacht3D(false);
+    yModel.scale.setScalar(0.32);
+    yModel.position.set(-3.4, 1.08, -D * 0.5 + 1.45);
+    stg.add(createRoundedToyMesh(2.6, 0.92, 1.2, MAT.yachtTeakDeck || MAT.woodWarm, -3.4, 0.46, -D * 0.5 + 1.45, 0.08), yModel);
   } else if (dest.id === 'shop_roastery') {
     stg.add(createRoundedToyMesh(2.2, 2.2, 0.9, MAT.walnutTrim, -3.4, 1.15, -D * 0.5 + 0.75, 0.1));
     const cr = createFruitWoodenCrate3D('mix');
@@ -10565,7 +11511,10 @@ function renderFurnitureCatalogSheet() {
     btn.classList.toggle('active', btn.getAttribute('data-fcat') === activeFurnitureCategory);
   });
 
-  const list = FURNITURE_CATALOG[activeFurnitureCategory] || [];
+  const rawList = FURNITURE_CATALOG[activeFurnitureCategory] || [];
+  const showHarborItems = rm.lotId === 'lot_harbor_main' || !!state.harborUnlocked;
+  const list = rawList.filter((item) => !item.harborTier || showHarborItems);
+  dom.fcatItemsGrid.classList.toggle('cols-5', list.length >= 5);
   const ownedArr = rm.ownedFurniture?.[activeFurnitureCategory] || [];
   const equippedId = rm.equippedFurniture?.[activeFurnitureCategory];
 
@@ -10749,28 +11698,33 @@ function evictRoomTenantAction(rm) {
 // --------------------- 1층 상가(편의점·세탁소) + 단독 상가(빵집·로스터리·플라워샵) 통합 인스펙터 & 3D 설비 카탈로그 ---------------------
 function renderShopSwitcherChips() {
   if (!dom.shopSwitcherChips) return;
-  const f1Chips = (window.FIRST_FLOOR_SHOPS_TEMPLATE || []).map((ft) => {
-    const isAct = ft.shopId === focusedFirstFloorShopId;
-    return `
-      <button type="button" data-switch-1fshop="${ft.shopId}" class="room-switch-chip ${isAct ? 'active' : ''}">
-        ${createCustomSVGIcon(ft.svgIcon, 16)}
-        <span>${ft.name}</span>
-        ${createCustomSVGIcon('crown_badge', 13)}
-      </button>
-    `;
-  }).join('');
+  const activeStage = state.activeTownStage === 2 && state.harborUnlocked ? 2 : 1;
+  const f1Chips = activeStage === 1
+    ? (window.FIRST_FLOOR_SHOPS_TEMPLATE || []).map((ft) => {
+      const isAct = ft.shopId === focusedFirstFloorShopId;
+      return `
+        <button type="button" data-switch-1fshop="${ft.shopId}" class="room-switch-chip ${isAct ? 'active' : ''}">
+          ${createCustomSVGIcon(ft.svgIcon, 16)}
+          <span>${ft.name}</span>
+          ${createCustomSVGIcon('crown_badge', 13)}
+        </button>
+      `;
+    }).join('')
+    : '';
 
-  const standaloneChips = STANDALONE_SHOPS_TEMPLATE.map((tpl) => {
-    const st = state.standaloneShops?.[tpl.shopId];
-    const isAct = tpl.shopId === focusedShopId;
-    return `
-      <button type="button" data-switch-shop="${tpl.shopId}" class="room-switch-chip ${isAct ? 'active' : ''}">
-        ${createCustomSVGIcon(tpl.svgIcon, 16)}
-        <span>${tpl.name}</span>
-        ${st?.owned ? createCustomSVGIcon('crown_badge', 14) : ''}
-      </button>
-    `;
-  }).join('');
+  const standaloneChips = STANDALONE_SHOPS_TEMPLATE
+    .filter((tpl) => (tpl.stage || 1) === activeStage)
+    .map((tpl) => {
+      const st = state.standaloneShops?.[tpl.shopId];
+      const isAct = tpl.shopId === focusedShopId;
+      return `
+        <button type="button" data-switch-shop="${tpl.shopId}" class="room-switch-chip ${isAct ? 'active' : ''}">
+          ${createCustomSVGIcon(tpl.svgIcon, 16)}
+          <span>${tpl.name}</span>
+          ${st?.owned ? createCustomSVGIcon('crown_badge', 14) : ''}
+        </button>
+      `;
+    }).join('');
 
   dom.shopSwitcherChips.innerHTML = f1Chips + standaloneChips;
 
@@ -10851,6 +11805,7 @@ function renderFirstFloorShopUpgradeCatalog() {
   if (dom.fcatBonusBadge) dom.fcatBonusBadge.textContent = `방문 +${visitRev}만 · 주기 +${cycleRev}만`;
 
   dom.fcatTabsRow?.classList.add('hidden');
+  dom.fcatItemsGrid.classList.remove('cols-5');
   dom.fcatItemsGrid.classList.add('cols-3');
 
   dom.fcatItemsGrid.innerHTML = tpl.upgradesCatalog.map((upg) => {
@@ -11014,9 +11969,11 @@ function renderShopUpgradeCatalog() {
   if (dom.fcatBonusBadge) dom.fcatBonusBadge.textContent = `방문 +${visitRev}만 · 주기 +${cycleRev}만`;
 
   dom.fcatTabsRow?.classList.add('hidden');
+  dom.fcatItemsGrid.classList.remove('cols-5');
   dom.fcatItemsGrid.classList.add('cols-3');
 
-  dom.fcatItemsGrid.innerHTML = SHOP_UPGRADE_CATALOG.map((upg) => {
+  const upgCatalog = getShopUpgradeCatalogFor(tpl);
+  dom.fcatItemsGrid.innerHTML = upgCatalog.map((upg) => {
     const installed = !!st.upgrades?.[upg.id];
     let btnHtml = '';
     if (!st.owned) {
@@ -11082,11 +12039,12 @@ function acquireStandaloneShopAction(shopId) {
 function buyShopUpgradeAction(shopId, upgId) {
   const tpl = STANDALONE_SHOPS_TEMPLATE.find((s) => s.shopId === shopId);
   const st = state.standaloneShops?.[shopId];
-  const upg = SHOP_UPGRADE_CATALOG.find((u) => u.id === upgId);
+  const upg = getShopUpgradeCatalogFor(tpl).find((u) => u.id === upgId);
   if (!tpl || !st || !upg || !st.owned || st.upgrades[upgId]) return;
   if (!spendGold(upg.cost)) return;
 
   st.upgrades[upgId] = true;
+  syncHarborBridgeGate3D();
   state.townHappinessBoost = Math.min(65, (state.townHappinessBoost || 0) + 6);
   tuckFocusDockTemporarily(1.25);
   rebuildStandaloneShop3D(shopId);
@@ -11198,7 +12156,8 @@ function renderNotebookUnifiedBody() {
       });
     });
   } else if (activeNotebookTab === 'tenants') {
-    const b = state.buildings.lot_main;
+    const activeLotId = (state.activeTownStage === 2 && state.harborUnlocked) ? 'lot_harbor_main' : 'lot_main';
+    const b = state.buildings[activeLotId] || state.buildings.lot_main;
     dom.notebookBody.innerHTML = b.rooms.map((rm) => {
       const meta = ROOM_TYPE_META[rm.layoutType] || ROOM_TYPE_META.studio;
       const hDef = rm.household ? HOUSEHOLD_TYPES[rm.household.type] : null;
@@ -11236,7 +12195,8 @@ function renderNotebookUnifiedBody() {
     });
   } else if (activeNotebookTab === 'manager') {
     // 3섹션 구성으로 빈 공간 없이 꽉 찬 VIP 지배인 관제 센터!
-    const b = state.buildings.lot_main;
+    const activeLotId = (state.activeTownStage === 2 && state.harborUnlocked) ? 'lot_harbor_main' : 'lot_main';
+    const b = state.buildings[activeLotId] || state.buildings.lot_main;
     const isHired = !!b.manager.hired;
     const floorVal = b.manager.minRentFloor || 80;
     const netCycle = calcCycleNetIncome();
@@ -11311,7 +12271,7 @@ function renderNotebookUnifiedBody() {
     dom.notebookBody.querySelector('#btn-hire-mgr')?.addEventListener('click', () => {
       if (!spendGold(GAME_BALANCE.managerHireFee)) return;
       b.manager.hired = true;
-      rebuildPublicInfraAndManager3D('lot_main');
+      rebuildPublicInfraAndManager3D(b.lotId);
       renderNotebookUnifiedBody();
       updateTopHUDTargets();
       showToast('총괄 지배인을 선임했습니다! 모든 월세를 자동 수금합니다!', 'mint');
@@ -11325,7 +12285,8 @@ function renderNotebookUnifiedBody() {
       if (lbl) lbl.textContent = `희망 월세 ${b.manager.minRentFloor}만+`;
     });
   } else {
-    const b = state.buildings.lot_main;
+    const activeLotId = (state.activeTownStage === 2 && state.harborUnlocked) ? 'lot_harbor_main' : 'lot_main';
+    const b = state.buildings[activeLotId] || state.buildings.lot_main;
     const infraCards = Object.values(PUBLIC_INFRA_CATALOG).map((inf) => {
       const owned = !!b.infra[inf.key];
       return `
@@ -11347,7 +12308,8 @@ function renderNotebookUnifiedBody() {
       `;
     }).join('');
 
-    const shopCards = STANDALONE_SHOPS_TEMPLATE.map((tpl) => {
+    const visibleShops = STANDALONE_SHOPS_TEMPLATE.filter((tpl) => tpl.stage !== 2 || state.harborUnlocked);
+    const shopCards = visibleShops.map((tpl) => {
       const st = state.standaloneShops?.[tpl.shopId];
       const { visitRev, cycleRev } = calcStandaloneShopStats(tpl.shopId);
       return `
@@ -11376,7 +12338,7 @@ function renderNotebookUnifiedBody() {
         const inf = PUBLIC_INFRA_CATALOG[key];
         if (!inf || b.infra[key] || !spendGold(inf.cost)) return;
         b.infra[key] = true;
-        rebuildPublicInfraAndManager3D('lot_main');
+        rebuildPublicInfraAndManager3D(b.lotId);
         updateTopHUDTargets();
         renderNotebookUnifiedBody();
         showToast(`[${inf.name}] 공용 인프라 시공 완료!`, 'mint');
@@ -11404,14 +12366,25 @@ function openRecruitModal(room) {
 }
 
 function rollRecruitCandidates(room) {
-  const keys = Object.keys(HOUSEHOLD_TYPES);
+  const isHarborSuite = room?.lotId === 'lot_harbor_main';
+  const vipKeys = Object.keys(HOUSEHOLD_TYPES).filter((k) => HOUSEHOLD_TYPES[k]?.isHarborVip);
+  const stage1Keys = Object.keys(HOUSEHOLD_TYPES).filter((k) => !HOUSEHOLD_TYPES[k]?.isHarborVip);
+  const poolKeys = isHarborSuite && vipKeys.length > 0 ? vipKeys : stage1Keys;
   const meta = ROOM_TYPE_META[room.layoutType] || ROOM_TYPE_META.studio;
   recruitCandidates = [];
 
   for (let i = 0; i < 3; i++) {
-    const tKey = (i === 0 && meta.preferredBy.length > 0)
-      ? meta.preferredBy[Math.floor(Math.random() * meta.preferredBy.length)]
-      : keys[Math.floor(Math.random() * keys.length)];
+    let tKey = poolKeys[i % poolKeys.length];
+    if (isHarborSuite) {
+      tKey = vipKeys[i % vipKeys.length] || poolKeys[0];
+    } else if (i === 0 && meta.preferredBy.length > 0) {
+      const stage1Pref = meta.preferredBy.filter((k) => !HOUSEHOLD_TYPES[k]?.isHarborVip);
+      tKey = stage1Pref.length > 0
+        ? stage1Pref[Math.floor(Math.random() * stage1Pref.length)]
+        : poolKeys[Math.floor(Math.random() * poolKeys.length)];
+    } else {
+      tKey = poolKeys[Math.floor(Math.random() * poolKeys.length)];
+    }
     const hDef = HOUSEHOLD_TYPES[tKey];
     const fam = `${FAMILY_LAST_NAMES[Math.floor(Math.random() * FAMILY_LAST_NAMES.length)]}${GIVEN_NAMES[Math.floor(Math.random() * GIVEN_NAMES.length)]} 세대`;
     const budget = Math.round(hDef.minRent + Math.random() * (hDef.maxRent - hDef.minRent));
@@ -12667,9 +13640,13 @@ function tickSimulationEconomyAndCrises(dt) {
     dom.hudTimeText.textContent = `${state.day}일차 ${hh}:${mm}`;
   }
 
+  const activeStageNow = state.activeTownStage === 2 && state.harborUnlocked ? 2 : 1;
+
   for (const b of Object.values(state.buildings)) {
+    if (b.lotId === 'lot_harbor_main' && !state.harborUnlocked) continue;
     const lot = state.lots.find((l) => l.lotId === b.lotId);
     if (!lot) continue;
+    const lotStage = lot.stage || 1;
 
     b.shopCycleTimer = (b.shopCycleTimer || 9.0) - dt;
     if (b.shopCycleTimer <= 0) {
@@ -12677,7 +13654,12 @@ function tickSimulationEconomyAndCrises(dt) {
       const shopProfit = b.lotId === 'lot_main'
         ? (calcFirstFloorShopStats('shop_mart1f').cycleRev + calcFirstFloorShopStats('shop_wash1f').cycleRev)
         : Math.round(((b.shopsLv.mart || 1) * 15 + (b.shopsLv.wash || 1) * 13) * getFeverMultiplier() * getLegendaryTotalMultiplier());
-      if (b.manager.hired) {
+      if (lotStage === 1 && activeStageNow === 2) {
+        addGold(shopProfit);
+        hqDividendAccum += shopProfit;
+      } else if (lotStage === 2 && activeStageNow === 1) {
+        addGold(shopProfit);
+      } else if (b.manager.hired || lotStage === 2) {
         addGold(shopProfit);
       } else {
         spawnRentBubble(`bshop_${b.lotId}`, lot.x - 6.5, 4.6, lot.z + 4.8, shopProfit, '1층 상가');
@@ -12690,9 +13672,18 @@ function tickSimulationEconomyAndCrises(dt) {
       if (rm.rentTimer <= 0) {
         rm.rentTimer = rm.cycleSec || 10.0;
         const rent = calcRoomEffectiveRent(b, rm);
-        if (b.manager.hired) {
+        if (lotStage === 1 && activeStageNow === 2) {
           addGold(rent);
-          spawnJackpotText3D(lot.x + rm.lx, rm.ly + 2.2, lot.z + rm.lz + 3.5, `자동수금 +${rent}만`, 'manager_cap');
+          hqDividendAccum += rent;
+        } else if (lotStage === 2 && activeStageNow === 1) {
+          addGold(rent);
+        } else if (b.manager.hired || lotStage === 2) {
+          addGold(rent);
+          if (lotStage === 2) {
+            spawnRisingGroundCoins3D(lot.x + rm.lx, rm.ly + 0.35, lot.z + rm.lz + 3.8, 2);
+          } else {
+            spawnJackpotText3D(lot.x + rm.lx, rm.ly + 2.2, lot.z + rm.lz + 3.5, `자동수금 +${rent}만`, 'manager_cap');
+          }
         } else {
           spawnRentBubble(`rent_${rm.id}`, lot.x + rm.lx, rm.ly + 2.2, lot.z + rm.lz + 4.1, rent, `${rm.name}호`);
         }
@@ -12718,8 +13709,34 @@ function tickSimulationEconomyAndCrises(dt) {
     dev.timer -= dt;
     if (dev.timer <= 0) {
       dev.timer = cat.cycleSec || 10;
-      spawnRentBubble(`dev_${dev.lotId}`, lot.x, 3.2, lot.z, cat.cycleProfit, cat.name);
+      if ((lot.stage || 1) === 1 && activeStageNow === 2) {
+        addGold(cat.cycleProfit);
+        hqDividendAccum += cat.cycleProfit;
+      } else {
+        spawnRentBubble(`dev_${dev.lotId}`, lot.x, 3.2, lot.z, cat.cycleProfit, cat.name);
+      }
     }
+  }
+
+  // 제2마을(트와일라잇 하버) 체류 중: 제1마을 본점 빌딩·편의점·빵집 자동 배당금 실시간 입금 & 상단 미니 토스트 피드백!
+  if (activeStageNow === 2 && !titleScreenState.active && !guidedTourState.active) {
+    hqDividendTimer += dt;
+    if (hqDividendTimer >= 6.8) {
+      hqDividendTimer = 0;
+      const payout = Math.max(36, Math.round(hqDividendAccum));
+      if (hqDividendAccum < 1) {
+        addGold(payout);
+      }
+      hqDividendAccum = 0;
+      if (typeof showHqDividendToast === 'function') {
+        showHqDividendToast(payout);
+      }
+    }
+  }
+
+  // 현실 시간(Real-Time) 일차 갱신 주기 체크 (2일 차 보너스 & 3일 차 자연 달성 자동 감지)
+  if (!titleScreenState.active && typeof checkRealtimeChronicleAutoUnlock === 'function') {
+    checkRealtimeChronicleAutoUnlock(dt);
   }
 }
 
@@ -12754,6 +13771,31 @@ function tickAnimationsAndEffects(dt, elapsed, uiDt = dt) {
   for (const sw of scenicWaveMeshes) {
     sw.mesh.position.z = sw.baseZ + Math.sin(elapsed * 1.8 + sw.phase) * 0.55;
     sw.mesh.scale.x = 1.0 + Math.cos(elapsed * 2.1 + sw.phase) * 0.08;
+  }
+
+  // 제2마을 트와일라잇 하버 3D 럭셔리 요트 잔물결 흔들림 & VIP 주민 프롬나드 산책 애니메이션
+  for (const ya of harborYachtActors) {
+    if (!ya.mesh) continue;
+    ya.mesh.position.y = ya.baseY + Math.sin(elapsed * 1.55 + ya.phase) * 0.14;
+    ya.mesh.rotation.z = Math.sin(elapsed * 1.25 + ya.phase) * 0.032;
+    ya.mesh.rotation.x = Math.cos(elapsed * 1.05 + ya.phase) * 0.022;
+  }
+  for (const hw of harborWalkerActors) {
+    const ud = hw.mesh?.userData;
+    if (!ud) continue;
+    const prevX = hw.mesh.position.x;
+    const nextX = hw.centerX + Math.sin(elapsed * 0.45 * hw.speed + hw.phase) * hw.range;
+    const dx = nextX - prevX;
+    hw.mesh.position.x = nextX;
+    hw.mesh.position.y = 0.28 + Math.abs(Math.sin(elapsed * 9.5 + hw.phase)) * 0.05;
+    if (Math.abs(dx) > 0.0005) {
+      hw.mesh.rotation.y = dx >= 0 ? Math.PI * 0.5 : -Math.PI * 0.5;
+    }
+    const swing = Math.sin(elapsed * 9.5 + hw.phase) * 0.38;
+    ud.legL.rotation.x = swing;
+    ud.legR.rotation.x = -swing;
+    ud.armL.rotation.x = -swing * 0.65;
+    ud.armR.rotation.x = swing * 0.65;
   }
 
   // 캐릭터 발밑 땅바닥 3D 컬러 파동 링 업데이트 (행복/만족 = 골드·민트 링, 라이벌 = 보라·레드 경고 링)
@@ -13053,71 +14095,111 @@ let forbesRankBannerTimeout = null;
 function calcPlayerNetWorthBreakdown() {
   const cash = Math.max(0, Math.round(state.gold || 0));
 
-  // 1) 부동산(빌딩·호실·가구·방음·공용인프라·추가개발부지) 감정가
-  let realEstate = 360;
+  // 1) 제1마을 본점 부동산 & 상권 가치 (본점 빌딩·호실·가구·방음·공용인프라·추가부지 + 1층/단독상가)
+  let stage1Estate = 650;
   for (const b of Object.values(state.buildings || {})) {
+    if (b.lotId === 'lot_harbor_main') continue;
     for (const rm of (b.rooms || [])) {
       if (rm.unlocked) {
-        realEstate += 110 + (rm.interiorLv || 0) * 85;
-        if (rm.soundproofed) realEstate += 95;
-        if ((rm.giftBonusPct || 0) > 0) realEstate += 120;
-        if ((rm.poachDefenseBonusPct || 0) > 0) realEstate += 260;
+        stage1Estate += 110 + (rm.interiorLv || 0) * 85;
+        if (rm.soundproofed) stage1Estate += 95;
+        if ((rm.giftBonusPct || 0) > 0) stage1Estate += 120;
+        if ((rm.poachDefenseBonusPct || 0) > 0) stage1Estate += 260;
         for (const cat of ['bed', 'sofa', 'appliance', 'decor']) {
           const eqId = rm.equippedFurniture?.[cat];
           const fDef = getFurnitureItemDef(cat, eqId);
-          if (fDef && fDef.cost > 0) realEstate += Math.round(fDef.cost * 1.15);
+          if (fDef && fDef.cost > 0) stage1Estate += Math.round(fDef.cost * 1.15);
         }
       }
     }
     for (const [infKey, installed] of Object.entries(b.infra || {})) {
       if (installed && PUBLIC_INFRA_CATALOG[infKey]) {
-        realEstate += Math.round(PUBLIC_INFRA_CATALOG[infKey].cost * 1.2);
+        stage1Estate += Math.round(PUBLIC_INFRA_CATALOG[infKey].cost * 1.2);
       }
     }
   }
   for (const lot of (state.lots || [])) {
-    if (lot.lotId !== 'lot_main' && lot.owned) {
-      realEstate += lot.landPrice || 450;
+    if (lot.lotId !== 'lot_main' && lot.stage !== 2 && lot.owned) {
+      stage1Estate += lot.landPrice || 450;
       if (lot.devType && DEVELOPMENT_CATALOG[lot.devType]) {
-        realEstate += Math.round(DEVELOPMENT_CATALOG[lot.devType].buildCost * 1.25);
+        stage1Estate += Math.round(DEVELOPMENT_CATALOG[lot.devType].buildCost * 1.25);
       }
     }
   }
-
-  // 2) 상업시설(1층 직영점 + 부티크 단독상가 + 설비 + 경매 프리미엄) 감정가
-  let commercial = 290;
   for (const tpl of (window.FIRST_FLOOR_SHOPS_TEMPLATE || [])) {
     const fst = state.firstFloorShops?.[tpl.shopId];
     for (const upg of (tpl.upgradesCatalog || [])) {
-      if (fst?.upgrades?.[upg.id]) commercial += Math.round(upg.cost * 1.25);
+      if (fst?.upgrades?.[upg.id]) stage1Estate += Math.round(upg.cost * 1.25);
     }
   }
   for (const tpl of STANDALONE_SHOPS_TEMPLATE) {
+    if ((tpl.stage || 1) !== 1) continue;
     const sst = state.standaloneShops?.[tpl.shopId];
     if (sst?.owned) {
-      commercial += Math.round(tpl.buyCost * 1.35);
-      if ((sst.auctionBonusPct || 0) > 0) commercial += 420;
-      for (const upg of SHOP_UPGRADE_CATALOG) {
-        if (sst.upgrades?.[upg.id]) commercial += Math.round(upg.cost * 1.25);
+      stage1Estate += Math.round(tpl.buyCost * 1.35);
+      if ((sst.auctionBonusPct || 0) > 0) stage1Estate += 420;
+      for (const upg of getShopUpgradeCatalogFor(tpl)) {
+        if (sst.upgrades?.[upg.id]) stage1Estate += Math.round(upg.cost * 1.25);
       }
     }
   }
 
-  // 3) VIP 차량 컬렉션 감정가
+  // 2) 제2마을 트와일라잇 하버 해안 리조트 가치 (부티크 호텔·펜트하우스·VIP 인테리어·해안 플래그십 상가 3종)
+  let harborResort = 0;
+  if (state.harborUnlocked) {
+    harborResort += 4200; // 로열 하버 개발권 & 부티크 호텔 본관 감정가
+    const hb = state.buildings?.lot_harbor_main;
+    if (hb) {
+      for (const rm of (hb.rooms || [])) {
+        if (rm.unlocked) {
+          harborResort += 750 + (rm.interiorLv || 0) * 180;
+          if (rm.soundproofed) harborResort += 180;
+          for (const cat of ['bed', 'sofa', 'appliance', 'decor']) {
+            const eqId = rm.equippedFurniture?.[cat];
+            const fDef = getFurnitureItemDef(cat, eqId);
+            if (fDef && fDef.cost > 0) {
+              harborResort += Math.round(fDef.cost * (fDef.harborTier ? 2.4 : 1.35));
+            }
+          }
+        }
+      }
+    }
+    for (const tpl of STANDALONE_SHOPS_TEMPLATE) {
+      if (tpl.stage !== 2) continue;
+      const sst = state.standaloneShops?.[tpl.shopId];
+      if (sst?.owned) {
+        harborResort += Math.round(tpl.buyCost * 3.8);
+        if ((sst.auctionBonusPct || 0) > 0) harborResort += 850;
+        for (const upg of getShopUpgradeCatalogFor(tpl)) {
+          if (sst.upgrades?.[upg.id]) harborResort += Math.round(upg.cost * 2.8);
+        }
+      }
+    }
+  }
+
+  // 3) 슈퍼카 차고 & 마리나 3D 럭셔리 요트 선단 감정가
   let vehicles = 45;
   for (const cid of (state.garage?.ownedCars || ['car_scooter'])) {
     const cDef = CAR_CATALOG.find((c) => c.id === cid);
     if (cDef && cDef.cost > 0) vehicles += Math.round(cDef.cost * 1.15);
   }
+  if (state.harborUnlocked) {
+    vehicles += 1850; // 하버 마리나 요트 계류권 & 기본 크루저 지분
+    if (state.standaloneShops?.shop_marina?.owned) vehicles += 1600;
+    if (state.standaloneShops?.shop_marina?.upgrades?.upg_crate) vehicles += 3400; // 24K VIP 메가요트
+  }
 
-  // 4) 갓물주 명성 프리미엄 (마일스톤 · 라이벌 참교육 승수 · 황금열쇠)
+  // 4) 갓물주 명성·칭호 프리미엄 (마일스톤 · 라이벌 참교육 승수 · 3일 차 총독 작위)
   const prestige =
     (state.unlockedMilestones?.length || 0) * 520 +
     (state.rivalWins || 0) * 760 +
-    (state.goldenKeys || 0) * 140;
+    (state.goldenKeys || 0) * 140 +
+    (state.harborUnlocked ? 1200 : 0);
 
-  const total = Math.round(cash + realEstate + commercial + vehicles + prestige);
-  return { cash, realEstate, commercial, vehicles, prestige, total };
+  const realEstate = stage1Estate;
+  const commercial = harborResort;
+  const total = Math.round(cash + stage1Estate + harborResort + vehicles + prestige);
+  return { cash, realEstate, commercial, stage1Estate, harborResort, vehicles, prestige, total };
 }
 
 function getForbesStandings() {
@@ -13272,10 +14354,10 @@ function renderForbesModal() {
   if (portGrid) {
     const items = [
       { label: '보유 현금', val: breakdown.cash, col: '#B45309', bg: '#FEF3C7' },
-      { label: '빌딩·인테리어', val: breakdown.realEstate, col: '#1D4ED8', bg: '#DBEAFE' },
-      { label: '1층·단독상가', val: breakdown.commercial, col: '#15803D', bg: '#DCFCE7' },
-      { label: '슈퍼카 차고', val: breakdown.vehicles, col: '#BE123C', bg: '#FFE4E6' },
-      { label: '명성·참교육', val: breakdown.prestige, col: '#6B21A8', bg: '#F3E8FF' }
+      { label: '제1마을 본점', val: breakdown.stage1Estate ?? breakdown.realEstate, col: '#1D4ED8', bg: '#DBEAFE' },
+      { label: '제2마을 리조트', val: breakdown.harborResort ?? breakdown.commercial, col: '#15803D', bg: '#DCFCE7' },
+      { label: '슈퍼카·요트', val: breakdown.vehicles, col: '#BE123C', bg: '#FFE4E6' },
+      { label: '명성·칭호', val: breakdown.prestige, col: '#6B21A8', bg: '#F3E8FF' }
     ];
     portGrid.innerHTML = items.map((it) => `
       <div class="rounded-2xl py-2 px-1.5 border border-[#EED6BE]" style="background:${it.bg};">
@@ -14230,11 +15312,20 @@ function enterTownFromTitleScreen(runOnboardingTour = false) {
   updateForbesRankAndHUD(false);
 
   if (runOnboardingTour) {
+    state.activeTownStage = 1;
+    applyTownAtmosphere(1);
+    syncChronicleAndStageUI();
     setTimeout(() => {
       startGuidedSimulationTour();
     }, 420);
   } else {
-    startSmoothCameraTween(targetPos, targetLook, targetZoom, 0.9, null);
+    const startStage = state.activeTownStage === 2 && state.harborUnlocked ? 2 : 1;
+    state.activeTownStage = startStage;
+    applyTownAtmosphere(startStage);
+    syncChronicleAndStageUI();
+    const destLook = startStage === 2 ? HARBOR_OVERVIEW_LOOK.clone() : targetLook;
+    const destPos = destLook.clone().add(offset);
+    startSmoothCameraTween(destPos, destLook, startStage === 2 ? 0.72 : targetZoom, 0.9, null);
   }
 }
 
@@ -14590,6 +15681,360 @@ function updateAllProjectedOverlays(dt) {
 }
 
 // =========================================================
+// 16D. [핵심 확장 콘텐츠]
+//  - 현실 시간(Real-Time) 3일 차 칭호 각성 시스템 ('3일간의 갓물주 연대기' & 빨간 해안 다리 개통)
+//  - 제2마을 '트와일라잇 하버 리조트 타운(Twilight Harbor Resort Town)' 노을빛 황혼~야경 무드 전환
+//  - 제1마을(본점) ⇄ 제2마을(하버) 1초 양방향 왕래 & 본점 자동 배당금 토스트 피드백
+// =========================================================
+let chronicleCheckAccum = 0;
+
+function getChronicleProgress() {
+  const tiers = window.CHRONICLE_DAY_TIERS || [
+    { day: 1, requiredHours: 0, emoji: '🌱', title: '코지 타운 명예 동장', fullBadge: 'DAY 1 · 🌱 코지 타운 명예 동장', bonusGold: 0, desc: '본점 빌딩 및 1층 상가 집중 육성 기간', rewardLabel: '기본 자격 부여' },
+    { day: 2, requiredHours: 24, emoji: '🏢', title: '스트리트 상권 지배자', fullBadge: 'DAY 2 · 🏢 스트리트 상권 지배자', bonusGold: 50, desc: '최초 접속 후 현실 24시간 경과 승급', rewardLabel: '출석 보너스 +50만' },
+    { day: 3, requiredHours: 48, emoji: '👑', title: '로열 하버 개발 총독', fullBadge: 'DAY 3 · 👑 로열 하버 개발 총독', bonusGold: 300, desc: '최초 접속 후 현실 48시간 경과 마스터 각성', rewardLabel: '제2마을 영구 해금 +300만' }
+  ];
+
+  const startTs = Number(state.firstStartedAt) || Date.now();
+  const rawElapsedHours = Math.max(0, (Date.now() - startTs) / (1000 * 60 * 60));
+  const effectiveHours = (state.day3SkipForced || state.harborUnlocked)
+    ? Math.max(48.0, rawElapsedHours)
+    : rawElapsedHours;
+
+  const realDay = effectiveHours >= 48 ? 3 : effectiveHours >= 24 ? 2 : 1;
+  const activeTier = tiers.find((t) => t.day === realDay) || tiers[0];
+  const hoursToDay2 = Math.max(0, 24 - effectiveHours);
+  const hoursToDay3 = Math.max(0, 48 - effectiveHours);
+
+  return {
+    tiers,
+    realDay,
+    effectiveHours,
+    hoursToDay2,
+    hoursToDay3,
+    activeTier,
+    harborReady: realDay >= 3 || !!state.harborUnlocked
+  };
+}
+
+function checkRealtimeChronicleAutoUnlock(dt) {
+  chronicleCheckAccum += dt;
+  if (chronicleCheckAccum < 2.0) return;
+  chronicleCheckAccum = 0;
+
+  const prog = getChronicleProgress();
+  if (prog.realDay >= 2 && !state.day2BonusClaimed) {
+    state.day2BonusClaimed = true;
+    addGold(50);
+    if (!state.harborUnlocked) {
+      state.vipTitle = '🏢 스트리트 상권 지배자';
+    }
+    syncChronicleAndStageUI();
+    showToast('[2일 차 출석 승급!] 🏢 스트리트 상권 지배자 달성 · 출석 보너스 +50만 지급!', 'gold');
+    saveGameState();
+  }
+  if (prog.realDay >= 3 && !state.harborUnlocked) {
+    triggerDay3CoronationAndOpenBridge(false);
+  }
+}
+
+function syncChronicleAndStageUI() {
+  const prog = getChronicleProgress();
+  const inTitle = !!titleScreenState.active;
+  const inTour = !!guidedTourState.active;
+  const inHarbor = state.activeTownStage === 2 && !!state.harborUnlocked;
+
+  const headerTitleEl = document.getElementById('pocket-day-title-text');
+  if (headerTitleEl) {
+    headerTitleEl.textContent = prog.activeTier.badgeLabel || prog.activeTier.fullBadge || `DAY ${prog.realDay} · ${prog.activeTier.emoji} ${prog.activeTier.title}`;
+  }
+
+  const stampDot = document.getElementById('stamp-harbor-dot');
+  if (stampDot) {
+    if (state.harborUnlocked) {
+      stampDot.textContent = inHarbor ? '1마을로' : 'OPEN';
+      stampDot.classList.add('unlocked');
+    } else {
+      stampDot.textContent = prog.realDay === 2 ? 'D-1' : 'D-2';
+      stampDot.classList.remove('unlocked');
+    }
+  }
+
+  const stampLbl = document.getElementById('stamp-harbor-label');
+  if (stampLbl) {
+    stampLbl.textContent = (state.harborUnlocked && inHarbor) ? '본점복귀' : '해안타운';
+  }
+
+  const switchPill = document.getElementById('town-stage-switch-pill');
+  if (switchPill) {
+    const hideSwitch = !state.harborUnlocked || inTitle || inTour;
+    switchPill.classList.toggle('hidden', hideSwitch);
+  }
+  document.getElementById('btn-switch-stage-1')?.classList.toggle('active', !inHarbor);
+  const btnS2 = document.getElementById('btn-switch-stage-2');
+  if (btnS2) {
+    btnS2.classList.toggle('active', false);
+    btnS2.classList.toggle('active-harbor', inHarbor);
+  }
+}
+
+function applyTownAtmosphere(stage = 1) {
+  if (!scene || !hemiLight || !dirLight) return;
+  const isHarbor = stage === 2 && !!state.harborUnlocked;
+
+  if (isHarbor) {
+    if (!focusedRoomId && !focusedShopId && !focusedFirstFloorShopId && !(fpState.active && fpState.mode === 'shop')) {
+      scene.background = TEX.twilightSkyBackdrop || TEX.skyBackdrop;
+    }
+    scene.fog = new THREE.FogExp2(0x2B1947, 0.00135);
+    hemiLight.color.setHex(0xFFB38A);
+    hemiLight.groundColor.setHex(0x2E1A47);
+    hemiLight.intensity = 1.02;
+
+    dirLight.color.setHex(0xFF9654);
+    dirLight.intensity = 1.24;
+    dirLight.position.set(-34, 42, 152);
+    dirLight.target.position.set(0, 0, 118);
+    dirLight.target.updateMatrixWorld();
+
+    if (shadowFillLight) {
+      shadowFillLight.color.setHex(0x818CF8);
+      shadowFillLight.intensity = 0.54;
+      shadowFillLight.position.set(32, 26, 92);
+    }
+    if (renderer) renderer.toneMappingExposure = 1.15;
+    for (const pl of harborPointLights) {
+      if (pl) pl.intensity = 2.05;
+    }
+  } else {
+    if (!focusedRoomId && !focusedShopId && !focusedFirstFloorShopId && !(fpState.active && fpState.mode === 'shop')) {
+      scene.background = TEX.skyBackdrop;
+    }
+    scene.fog = new THREE.FogExp2(0xE8F9FD, 0.0019);
+    hemiLight.color.setHex(0xFFFDF9);
+    hemiLight.groundColor.setHex(0xF5D0B5);
+    hemiLight.intensity = 1.18;
+
+    dirLight.color.setHex(0xFFF8EB);
+    dirLight.intensity = 1.38;
+    dirLight.position.set(36, 54, 38);
+    dirLight.target.position.set(0, 0, 0);
+    dirLight.target.updateMatrixWorld();
+
+    if (shadowFillLight) {
+      shadowFillLight.color.setHex(0xBAE6FD);
+      shadowFillLight.intensity = 0.42;
+      shadowFillLight.position.set(-32, 24, -22);
+    }
+    if (renderer) renderer.toneMappingExposure = 1.08;
+    for (const pl of harborPointLights) {
+      if (pl) pl.intensity = 1.35;
+    }
+  }
+}
+
+function showHqDividendToast(amount) {
+  const pill = document.getElementById('hq-dividend-pill');
+  const txt = document.getElementById('hq-dividend-text');
+  if (!pill || !txt) return;
+  txt.textContent = `+ 본점(1마을) 자동 배당금 +${Math.round(amount).toLocaleString()}만 입금!`;
+  pill.classList.remove('hidden');
+  if (hqDividendToastTimeout) clearTimeout(hqDividendToastTimeout);
+  hqDividendToastTimeout = setTimeout(() => {
+    pill.classList.add('hidden');
+  }, 2900);
+}
+
+function travelToTownStage(targetStage = 2) {
+  if (targetStage === 2 && !state.harborUnlocked) {
+    openHarborChronicleModal();
+    return;
+  }
+
+  closePocketPlanner();
+  closeAllModalsImmediate();
+
+  if (fpState.active) exitFirstPersonMode(false);
+  if (driveState.active) exitDriveMode();
+
+  const prevShop = focusedShopId;
+  focusedRoomId = null;
+  focusedShopId = null;
+  focusedFirstFloorShopId = null;
+  focusRevealState.pending = false;
+  focusRevealState.revealed = false;
+  focusRevealState.holdTimer = 0;
+  if (prevShop) rebuildStandaloneShop3D(prevShop);
+
+  state.activeTownStage = targetStage === 2 ? 2 : 1;
+  hqDividendTimer = 3.6;
+
+  controls.enabled = true;
+  controls.enablePan = true;
+  controls.minPolarAngle = 0.35;
+  controls.maxPolarAngle = Math.PI * 0.44;
+
+  applyTownAtmosphere(state.activeTownStage);
+  syncChronicleAndStageUI();
+  syncTopBarsByMode();
+
+  const isMobilePortrait = window.innerWidth < 640 && window.innerHeight > window.innerWidth;
+  const offset = CAM_OFFSETS[camAzimuth % 4];
+  const bridgeMidLook = new THREE.Vector3(2.0, 4.8, 70.5);
+  const bridgeMidPos = bridgeMidLook.clone().add(offset);
+
+  const finalLook = state.activeTownStage === 2
+    ? (isMobilePortrait ? new THREE.Vector3(0.0, 6.0, 120.0) : HARBOR_OVERVIEW_LOOK.clone())
+    : (isMobilePortrait ? new THREE.Vector3(-1.2, 4.4, 8.2) : OVERVIEW_LOOK.clone());
+  const finalPos = finalLook.clone().add(offset);
+  const finalZoom = state.activeTownStage === 2
+    ? (isMobilePortrait ? 0.42 : 0.72)
+    : (isMobilePortrait ? 0.45 : 0.78);
+
+  // 빨간 철제 아치형 해안 대교 위를 스치듯 건너가는 2단 시네마틱 카메라 글라이드 (총 ~0.95초!)
+  startSmoothCameraTween(bridgeMidPos, bridgeMidLook, 0.68, 0.42, () => {
+    startSmoothCameraTween(finalPos, finalLook, finalZoom, 0.52, null);
+  });
+
+  if (state.activeTownStage === 2) {
+    showToast('🌅 빨간 해안 아치교를 건너 [제2마을: 트와일라잇 하버]에 도착했습니다!', 'gold');
+  } else {
+    showToast('☀️ 화사한 낮 조명의 [제1마을: 코지 본점 타운]으로 복귀했습니다!', 'mint');
+  }
+  saveGameState();
+}
+
+function openHarborChronicleModal() {
+  closePocketPlanner();
+  renderHarborChronicleModal();
+  document.getElementById('harbor-chronicle-modal')?.classList.remove('hidden');
+}
+
+function renderHarborChronicleModal() {
+  const prog = getChronicleProgress();
+  const badgeEl = document.getElementById('chronicle-elapsed-badge');
+  if (badgeEl) {
+    badgeEl.textContent = prog.harborReady
+      ? `실시간 ${Math.floor(prog.effectiveHours)}시간 달성 · 개통 완료`
+      : `실시간 ${prog.effectiveHours.toFixed(1)}h 경과 · D-${Math.max(1, 3 - prog.realDay)}`;
+  }
+
+  const bannerEl = document.getElementById('chronicle-current-banner');
+  if (bannerEl) {
+    const nextHint = prog.harborReady
+      ? '축하합니다! 빨간 철제 아치형 해안 다리가 영구 개통되어 언제든 1초 만에 제1마을 ⇄ 제2마을을 오갈 수 있습니다.'
+      : `제2마을 개통 자격(3일 차 · 48시간)까지 남은 현실 시간: 약 ${Math.ceil(prog.hoursToDay3)}시간 (자산 규모 무관 · 출석 연대기 기준)`;
+    bannerEl.innerHTML = `
+      <div class="flex items-center justify-between gap-2 flex-wrap">
+        <span class="kw-chip tone-gold !text-[11px]">현재 작위 · REAL-TIME DAY ${prog.realDay}</span>
+        <span class="font-title text-[12px] text-[#92400E]">${state.harborUnlocked ? '🌅 트와일라잇 하버 개통됨' : '🌉 해안 대교 개통 대기'}</span>
+      </div>
+      <div class="font-title text-[19px] sm:text-[21px] text-[#3A2E2B] mt-1.5">${prog.activeTier.emoji} ${prog.activeTier.title}</div>
+      <p class="font-body text-[12px] font-semibold text-[#5C4942] mt-1 leading-snug">${nextHint}</p>
+    `;
+  }
+
+  const listEl = document.getElementById('chronicle-days-list');
+  if (listEl) {
+    listEl.innerHTML = prog.tiers.map((t) => {
+      const achieved = prog.realDay >= t.day || (t.day === 3 && state.harborUnlocked);
+      const isCurrent = prog.realDay === t.day;
+      const reqHours = t.hoursRequired ?? t.requiredHours ?? 0;
+      const rewardTxt = t.rewardText || t.rewardLabel || '자격 부여';
+      return `
+        <div class="diary-subcard flex items-center justify-between gap-3 ${isCurrent ? '!border-2 !border-[#F59E0B] !bg-[#FFFBEB]' : ''}">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-11 h-11 rounded-2xl border-2 border-[#3A2E2B] flex items-center justify-center text-[22px] shrink-0" style="background:${achieved ? 'linear-gradient(180deg,#FFE869,#F59E0B)' : '#F3EDE4'};">
+              ${t.emoji}
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="font-title text-[14px] text-[#3A2E2B]">${t.day}일 차 · [${t.emoji} ${t.title}]</span>
+                <span class="kw-chip ${achieved ? 'tone-mint' : 'tone-cream'} !text-[10px] !py-0.5 !px-2">${achieved ? '달성 완료' : `${reqHours}시간 경과 시`}</span>
+              </div>
+              <div class="font-body text-[11.5px] font-semibold text-[#69544C] mt-0.5">${t.desc}</div>
+            </div>
+          </div>
+          <div class="shrink-0 text-right">
+            <span class="kw-chip tone-gold !text-[10.5px] !py-1 !px-2.5">${rewardTxt}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  const travelBtn = document.getElementById('btn-chronicle-travel-harbor');
+  const skipBtn = document.getElementById('btn-skip-day3-test');
+  if (travelBtn) {
+    travelBtn.classList.toggle('hidden', !state.harborUnlocked);
+    const destText = state.activeTownStage === 2
+      ? '☀️ 빨간 해안 다리 건너 제1마을(본점)로 이동 ➔'
+      : '🌅 빨간 해안 다리 건너 제2마을(트와일라잇 하버) 이동 ➔';
+    const spanEl = travelBtn.querySelector('span');
+    if (spanEl) spanEl.textContent = destText;
+  }
+  if (skipBtn) {
+    skipBtn.classList.toggle('hidden', !!state.harborUnlocked);
+  }
+}
+
+function triggerDay3CoronationAndOpenBridge(autoTravel = true) {
+  const wasUnlocked = !!state.harborUnlocked;
+  if (!state.day2BonusClaimed) {
+    state.day2BonusClaimed = true;
+    state.gold += 50;
+  }
+  state.harborUnlocked = true;
+  state.vipTitle = '👑 로열 하버 개발 총독';
+
+  if (!wasUnlocked) {
+    state.gold += 300;
+    state.stats.totalEarned = (state.stats.totalEarned || 0) + 350;
+    hudAnim.targetGold = state.gold;
+  }
+
+  syncHarborBridgeGate3D();
+  syncChronicleAndStageUI();
+  updateTopHUDTargets();
+  updateForbesRankAndHUD(false);
+
+  playGoldenBellSound();
+  const fwCols = [0xFFD93D, 0xFF6B6B, 0x38BDF8, 0xA855F7, 0x34D399];
+  for (let i = 0; i < 7; i++) {
+    spawnPoofParticles3D(-12 + i * 4, 8.5 + (i % 2) * 2.5, 72.0, fwCols[i % fwCols.length], 16);
+    spawnPoofParticles3D(-14 + i * 4.5, 9.5 + (i % 2) * 2.5, 118.0, fwCols[(i + 2) % fwCols.length], 18);
+  }
+
+  const corBanner = document.getElementById('day3-coronation-banner');
+  if (corBanner) {
+    corBanner.classList.remove('hidden');
+    if (coronationBannerTimeout) clearTimeout(coronationBannerTimeout);
+    coronationBannerTimeout = setTimeout(() => {
+      corBanner.classList.add('hidden');
+    }, 4800);
+  }
+
+  saveGameState();
+  if (autoTravel) {
+    travelToTownStage(2);
+  } else {
+    renderHarborChronicleModal();
+  }
+}
+
+function triggerDay3InstantSkip() {
+  state.day3SkipForced = true;
+  state.firstStartedAt = Date.now() - 49 * 60 * 60 * 1000;
+  try {
+    localStorage.setItem(FIRST_START_TS_KEY, String(state.firstStartedAt));
+  } catch (e) {
+    // ignore storage quota errors
+  }
+  document.getElementById('harbor-chronicle-modal')?.classList.add('hidden');
+  triggerDay3CoronationAndOpenBridge(true);
+}
+
+// =========================================================
 // 17. LocalStorage 자동 저장/불러오기 & Three.js 씬 초기화 & 입력 바인딩
 // =========================================================
 function saveGameState() {
@@ -14609,9 +16054,23 @@ function loadGameState() {
     if (!parsed || typeof parsed !== 'object') return;
 
     const fresh = createInitialState();
+    const mergedLots = fresh.lots.map((fl) => {
+      const savedLot = Array.isArray(parsed.lots) ? parsed.lots.find((pl) => pl.lotId === fl.lotId) : null;
+      return savedLot ? { ...fl, ...savedLot, stage: fl.stage } : fl;
+    });
+    const mergedBuildings = {
+      ...fresh.buildings,
+      ...(parsed.buildings || {})
+    };
+    if (!mergedBuildings.lot_harbor_main) {
+      mergedBuildings.lot_harbor_main = fresh.buildings.lot_harbor_main;
+    }
+
     state = {
       ...fresh,
       ...parsed,
+      lots: mergedLots,
+      buildings: mergedBuildings,
       standaloneShops: {
         ...fresh.standaloneShops,
         ...(parsed.standaloneShops || {})
@@ -14630,6 +16089,11 @@ function loadGameState() {
         left: parsed.heldGifts?.left || null,
         right: parsed.heldGifts?.right || null
       },
+      firstStartedAt: Number(parsed.firstStartedAt) || fresh.firstStartedAt,
+      day2BonusClaimed: !!parsed.day2BonusClaimed,
+      harborUnlocked: !!parsed.harborUnlocked,
+      day3SkipForced: !!parsed.day3SkipForced,
+      activeTownStage: parsed.activeTownStage === 2 && parsed.harborUnlocked ? 2 : 1,
       feverTimer: Number(parsed.feverTimer) > 0 ? Number(parsed.feverTimer) : 0,
       feverPower: Number(parsed.feverPower) > 0 ? Number(parsed.feverPower) : 2.5,
       townHappinessBoost: Number(parsed.townHappinessBoost) || 0,
@@ -14638,7 +16102,7 @@ function loadGameState() {
       rivalWins: Number(parsed.rivalWins) || 0,
       rivalKangPenalty: Number(parsed.rivalKangPenalty) || 0,
       bestForbesRank: typeof parsed.bestForbesRank === 'number' ? parsed.bestForbesRank : 10,
-      vipTitle: parsed.vipTitle || '미니미 타운 신예 갓물주',
+      vipTitle: parsed.vipTitle || '🌱 코지 타운 명예 동장',
       stats: { ...fresh.stats, ...(parsed.stats || {}) }
     };
 
@@ -14673,6 +16137,7 @@ function loadGameState() {
 
 function resetGameState() {
   localStorage.removeItem(SAVE_KEY);
+  localStorage.removeItem(FIRST_START_TS_KEY);
   window.location.reload();
 }
 
@@ -14731,6 +16196,7 @@ function initThreeScene() {
   dirLight.shadow.camera.far = 160;
   dirLight.shadow.bias = -0.0005;
   scene.add(dirLight);
+  scene.add(dirLight.target);
 
   shadowFillLight = new THREE.DirectionalLight(0xBAE6FD, 0.42);
   shadowFillLight.position.set(-32, 24, -22);
@@ -14916,7 +16382,9 @@ function cacheDOMElements() {
   setSvg('hud-ico-collect', 'coin_stack', 22);
   setSvg('hud-ico-tour', 'tour_clapper', 22);
   setSvg('hud-ico-ledger', 'contract_scroll', 22);
-  setSvg('hud-ico-settings', 'settings_gear', 22);
+  setSvg('hud-ico-settings', 'settings_gear', 18);
+  setSvg('hud-ico-harbor', 'harbor_map', 22);
+  setSvg('chronicle-ico-header', 'crown_badge', 24);
 
   setSvg('ico-exit-room', 'back_return', 17);
   setSvg('ico-exit-shop', 'back_return', 17);
@@ -15165,6 +16633,35 @@ function bindAllUIEvents() {
     openNotebookModal();
   });
 
+  // 3일간의 갓물주 연대기 & 제2마을(트와일라잇 하버) 왕래 스위치 바인딩
+  document.getElementById('btn-open-chronicle-header')?.addEventListener('click', () => {
+    openHarborChronicleModal();
+  });
+  document.getElementById('btn-harbor-town')?.addEventListener('click', () => {
+    closePocketPlanner();
+    if (state.harborUnlocked) {
+      travelToTownStage(state.activeTownStage === 2 ? 1 : 2);
+    } else {
+      openHarborChronicleModal();
+    }
+  });
+  document.getElementById('btn-close-chronicle')?.addEventListener('click', () => {
+    document.getElementById('harbor-chronicle-modal')?.classList.add('hidden');
+  });
+  document.getElementById('btn-skip-day3-test')?.addEventListener('click', () => {
+    triggerDay3InstantSkip();
+  });
+  document.getElementById('btn-chronicle-travel-harbor')?.addEventListener('click', () => {
+    document.getElementById('harbor-chronicle-modal')?.classList.add('hidden');
+    travelToTownStage(state.activeTownStage === 2 ? 1 : 2);
+  });
+  document.getElementById('btn-switch-stage-1')?.addEventListener('click', () => {
+    travelToTownStage(1);
+  });
+  document.getElementById('btn-switch-stage-2')?.addEventListener('click', () => {
+    travelToTownStage(2);
+  });
+
   document.getElementById('hud-badge-forbes')?.addEventListener('click', () => openForbesModal());
   document.getElementById('btn-close-forbes')?.addEventListener('click', () => {
     document.getElementById('forbes-modal')?.classList.add('hidden');
@@ -15205,7 +16702,7 @@ function bindAllUIEvents() {
   dom.btnEnterDrive?.addEventListener('click', () => enterDriveMode());
   dom.btnOpenGarage?.addEventListener('click', () => openGarageModal());
   dom.btnQuickExpand?.addEventListener('click', () => {
-    const nextLot = state.lots.find((l) => l.lotId !== 'lot_main' && (!l.owned || !l.devType)) || state.lots[1];
+    const nextLot = state.lots.find((l) => l.lotId !== 'lot_main' && l.stage !== 2 && (!l.owned || !l.devType)) || state.lots[1];
     if (nextLot) openLotDevModal(nextLot.lotId);
   });
   dom.btnCollectAll?.addEventListener('click', () => collectAllRentBubbles());
@@ -15344,6 +16841,7 @@ function bindAllUIEvents() {
         return;
       }
       const anyOpenModal = [
+        document.getElementById('harbor-chronicle-modal'),
         document.getElementById('settings-modal'),
         document.getElementById('forbes-modal'),
         document.getElementById('rival-battle-hub-modal'),
@@ -15456,6 +16954,7 @@ window.addEventListener('DOMContentLoaded', () => {
   initThreeScene();
 
   buildCozyFloatingIsland();
+  buildTwilightHarborTown3D();
   buildAllStandaloneShops3D();
   buildAllLots3D();
   rebuildHappinessMilestones3D();
@@ -15463,6 +16962,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
   hudAnim.shownGold = state.gold;
   hudAnim.shownHappy = calcAvgHappiness();
+  syncChronicleAndStageUI();
+  applyTownAtmosphere(1);
   updateTopHUDTargets();
   setOverviewCamera(false);
   initTitleScreenUI();

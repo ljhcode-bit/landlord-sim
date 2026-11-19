@@ -529,6 +529,49 @@ function createCustomSVGIcon(name, size = 24) {
         </g>`;
       break;
 
+    case 'harbor_map':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <polygon points="3.5,8 11.5,5 20.5,8.5 28.5,5.5 28.5,24 20.5,27 11.5,23.5 3.5,26.5" fill="url(#${uid}_sky)" stroke="#3A2E2B" stroke-width="1.7" stroke-linejoin="round"/>
+          <path d="M11.5 5V23.5M20.5 8.5V27" stroke="#3A2E2B" stroke-width="1.3" stroke-dasharray="2 2"/>
+          <path d="M6.5 19.5C10.5 13 18.5 13 24.5 19.5" fill="none" stroke="url(#${uid}_coral)" stroke-width="2.8" stroke-linecap="round"/>
+          <circle cx="23.5" cy="11.5" r="3.1" fill="url(#${uid}_gold)" stroke="#3A2E2B" stroke-width="1.3"/>
+        </g>`;
+      break;
+
+    case 'yacht_ico':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <path d="M3.5 20.5H28.5L25 25.5H7.5Z" fill="#FFFDF9" stroke="#3A2E2B" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M9.5 20.5L12.5 13.5H22.5L24.5 20.5Z" fill="url(#${uid}_sky)" stroke="#3A2E2B" stroke-width="1.5" stroke-linejoin="round"/>
+          <path d="M15 8.5H20.5L21.5 13.5H13.5Z" fill="url(#${uid}_gold)" stroke="#3A2E2B" stroke-width="1.4"/>
+          <path d="M3 26.8C7.5 25 11.5 28.2 16 26.5C20.5 24.8 24.5 28 29 26.5" fill="none" stroke="#38BDF8" stroke-width="2.2" stroke-linecap="round"/>
+        </g>`;
+      break;
+
+    case 'lobster_ico':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <circle cx="16" cy="16.5" r="10.5" fill="#FFFDF9" stroke="#3A2E2B" stroke-width="1.6"/>
+          <ellipse cx="16" cy="16.5" rx="4.2" ry="6.5" fill="url(#${uid}_coral)" stroke="#3A2E2B" stroke-width="1.4"/>
+          <circle cx="10.2" cy="12" r="2.6" fill="url(#${uid}_coral)" stroke="#3A2E2B" stroke-width="1.3"/>
+          <circle cx="21.8" cy="12" r="2.6" fill="url(#${uid}_coral)" stroke="#3A2E2B" stroke-width="1.3"/>
+          <circle cx="21.2" cy="20.5" r="2.1" fill="url(#${uid}_gold)"/>
+        </g>`;
+      break;
+
+    case 'wine_ico':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <rect x="7" y="6" width="7.2" height="19.5" rx="2.5" fill="#4C1D95" stroke="#3A2E2B" stroke-width="1.6"/>
+          <rect x="8.8" y="3.5" width="3.6" height="3.5" rx="1" fill="url(#${uid}_gold)" stroke="#3A2E2B" stroke-width="1.3"/>
+          <rect x="8.2" y="13" width="4.8" height="5.5" rx="1" fill="#FFFDF7"/>
+          <path d="M18.2 12.5H25.8L24.8 18.2C24.4 20.2 19.6 20.2 19.2 18.2Z" fill="url(#${uid}_coral)" stroke="#3A2E2B" stroke-width="1.5" stroke-linejoin="round"/>
+          <line x1="22" y1="19.8" x2="22" y2="25.2" stroke="#3A2E2B" stroke-width="1.8"/>
+          <line x1="19" y1="25.5" x2="25" y2="25.5" stroke="#3A2E2B" stroke-width="1.8" stroke-linecap="round"/>
+        </g>`;
+      break;
+
     case 'fever_flame':
       body = `
         <g filter="url(#${uid}_sh)">
@@ -1102,7 +1145,10 @@ function createNotebookArtworkSVG(kind, size = 48) {
       barista: ['#EFE6DD', '#DFCBB8'],
       florist: ['#FFF0F6', '#FFD6E7'],
       rival_kang: ['#F3E8FF', '#D8B4FE'],
-      mansour: ['#FEF3C7', '#FDE68A']
+      mansour: ['#FEF3C7', '#FDE68A'],
+      movie_star: ['#FFE4E6', '#FBCFE8'],
+      fund_manager: ['#DBEAFE', '#BFDBFE'],
+      cruise_captain: ['#E0F2FE', '#BAE6FD']
     };
     const [bg1, bg2] = bgPalette[role] || bgPalette.student;
     let portrait = '';
@@ -1191,6 +1237,31 @@ function createNotebookArtworkSVG(kind, size = 48) {
         <rect x="20" y="19" width="24" height="4.2" rx="2" fill="#1E293B" stroke="#FFD93D" stroke-width="1.5"/>
         <rect x="22.5" y="31" width="8" height="4.8" rx="1.8" fill="#FFD93D" stroke="#3A2E2B" stroke-width="1.4"/>
         <rect x="33.5" y="31" width="8" height="4.8" rx="1.8" fill="#FFD93D" stroke="#3A2E2B" stroke-width="1.4"/>`;
+    } else if (role === 'movie_star') {
+      portrait = `
+        <path d="M14 58C15 44 22 40 32 40C42 40 49 44 50 58Z" fill="#E11D48" stroke="#3A2E2B" stroke-width="2"/>
+        <circle cx="32" cy="34" r="11.5" fill="#FFE5D6" stroke="#3A2E2B" stroke-width="2"/>
+        <path d="M18 30C19 17 45 17 46 31C39 24 25 24 18 30Z" fill="#FBBF24" stroke="#3A2E2B" stroke-width="1.8"/>
+        <rect x="22" y="30" width="9" height="5.2" rx="2.2" fill="#1E293B" stroke="#FFD93D" stroke-width="1.5"/>
+        <rect x="33" y="30" width="9" height="5.2" rx="2.2" fill="#1E293B" stroke="#FFD93D" stroke-width="1.5"/>
+        <line x1="31" y1="32" x2="33" y2="32" stroke="#FFD93D" stroke-width="1.5"/>`;
+    } else if (role === 'fund_manager') {
+      portrait = `
+        <path d="M14 58C15 44 22 40 32 40C42 40 49 44 50 58Z" fill="#1E3A8A" stroke="#3A2E2B" stroke-width="2"/>
+        <polygon points="32,41 29,56 32,58 35,56" fill="#F59E0B" stroke="#3A2E2B" stroke-width="1.2"/>
+        <circle cx="32" cy="33.5" r="11.5" fill="#FFE5D6" stroke="#3A2E2B" stroke-width="2"/>
+        <path d="M19.5 27C21 17 43 17 44.5 27L42 29H22Z" fill="#1E293B" stroke="#3A2E2B" stroke-width="1.7"/>
+        <circle cx="27.5" cy="34" r="3" fill="#FFFDF7" stroke="#3A2E2B" stroke-width="1.4"/>
+        <circle cx="36.5" cy="34" r="3" fill="#FFFDF7" stroke="#3A2E2B" stroke-width="1.4"/>`;
+    } else if (role === 'cruise_captain') {
+      portrait = `
+        <path d="M14 58C15 44 22 40 32 40C42 40 49 44 50 58Z" fill="#FFFDF7" stroke="#3A2E2B" stroke-width="2"/>
+        <rect x="23" y="42" width="18" height="3.2" rx="1" fill="#0284C7"/>
+        <circle cx="32" cy="35" r="11" fill="#FFE5D6" stroke="#3A2E2B" stroke-width="2"/>
+        <ellipse cx="32" cy="24.5" rx="15" ry="3.5" fill="#1E293B" stroke="#FFD93D" stroke-width="1.4"/>
+        <path d="M19 24L21.5 15H42.5L45 24Z" fill="#FFFDF7" stroke="#3A2E2B" stroke-width="1.8"/>
+        <circle cx="32" cy="19.5" r="2.6" fill="#FFD93D" stroke="#3A2E2B" stroke-width="1.2"/>
+        <circle cx="28" cy="35" r="1.8" fill="#3A2E2B"/><circle cx="36" cy="35" r="1.8" fill="#3A2E2B"/>`;
     } else {
       portrait = `
         <path d="M15 58C16 45 23 41 32 41C41 41 48 45 49 58Z" fill="#1E3A8A" stroke="#3A2E2B" stroke-width="2"/>
@@ -1282,17 +1353,19 @@ const BUILDING_NAME_PRESETS = [
 ];
 
 const INITIAL_ISLAND_LOTS = [
-  { lotId: 'lot_main', name: '수변 1번지', x: -4.2, z: -6.4, landPrice: 0, owned: true, devType: 'mixed_1', title: '해피 미니미 타운 1차' },
-  { lotId: 'lot_solar', name: '햇살언덕 2번지', x: -43.5, z: 4.5, landPrice: 320, owned: false, devType: null, title: null },
-  { lotId: 'lot_farm', name: '시냇가 3번지', x: -42.5, z: 21.5, landPrice: 420, owned: false, devType: null, title: null },
-  { lotId: 'lot_east', name: '아치교 4번지', x: 45.0, z: 5.5, landPrice: 680, owned: false, devType: null, title: null },
-  { lotId: 'lot_south_e', name: '벚꽃변 5번지', x: 44.0, z: 22.8, landPrice: 1200, owned: false, devType: null, title: null },
-  { lotId: 'lot_north', name: '전망대 6번지', x: -4.0, z: -24.5, landPrice: 2400, owned: false, devType: null, title: null }
+  { lotId: 'lot_main', stage: 1, name: '수변 1번지', x: -4.2, z: -6.4, landPrice: 0, owned: true, devType: 'mixed_1', title: '해피 미니미 타운 1차' },
+  { lotId: 'lot_solar', stage: 1, name: '햇살언덕 2번지', x: -43.5, z: 4.5, landPrice: 320, owned: false, devType: null, title: null },
+  { lotId: 'lot_farm', stage: 1, name: '시냇가 3번지', x: -42.5, z: 21.5, landPrice: 420, owned: false, devType: null, title: null },
+  { lotId: 'lot_east', stage: 1, name: '아치교 4번지', x: 45.0, z: 5.5, landPrice: 680, owned: false, devType: null, title: null },
+  { lotId: 'lot_south_e', stage: 1, name: '벚꽃변 5번지', x: 44.0, z: 22.8, landPrice: 1200, owned: false, devType: null, title: null },
+  { lotId: 'lot_north', stage: 1, name: '전망대 6번지', x: -4.0, z: -24.5, landPrice: 2400, owned: false, devType: null, title: null },
+  { lotId: 'lot_harbor_main', stage: 2, name: '트와일라잇 하버 1번지', x: 0.0, z: 103.5, landPrice: 0, owned: true, devType: 'harbor_hotel', title: '하버 부티크 호텔 & 펜트하우스' }
 ];
 
 const STANDALONE_SHOPS_TEMPLATE = [
   {
     shopId: 'shop_bakery',
+    stage: 1,
     kind: 'bakery',
     name: '바게트 하우스',
     engTitle: 'PATISSERIE',
@@ -1313,6 +1386,7 @@ const STANDALONE_SHOPS_TEMPLATE = [
   },
   {
     shopId: 'shop_roastery',
+    stage: 1,
     kind: 'roastery',
     name: '미니미 로스터스',
     engTitle: 'OAK & BARREL',
@@ -1333,6 +1407,7 @@ const STANDALONE_SHOPS_TEMPLATE = [
   },
   {
     shopId: 'shop_flower',
+    stage: 1,
     kind: 'flower',
     name: '플로레스 앤 코',
     engTitle: 'FLORES & CO.',
@@ -1350,6 +1425,69 @@ const STANDALONE_SHOPS_TEMPLATE = [
     staffName: '플로리스트 클레어',
     awningStyle: 'lavender',
     roofColor: 0x6D597A
+  },
+  {
+    shopId: 'shop_lobster',
+    stage: 2,
+    kind: 'lobster',
+    name: '오션뷰 랍스터 파인다이닝',
+    engTitle: 'ROYAL LOBSTER & STEAK',
+    subCopy: '활랍스터 플래터 & 토마호크 스테이크',
+    svgIcon: 'lobster_ico',
+    x: -19.5,
+    z: 121.0,
+    w: 10.2,
+    d: 6.4,
+    h: 5.4,
+    buyCost: 580,
+    baseVisitRevenue: 54,
+    passiveCycleProfit: 115,
+    staffRole: 'baker',
+    staffName: '미슐랭 총주방장 앙리',
+    awningStyle: 'coral',
+    roofColor: 0xC85A3B
+  },
+  {
+    shopId: 'shop_winelounge',
+    stage: 2,
+    kind: 'winelounge',
+    name: '선셋 와인 & 재즈 라운지',
+    engTitle: 'SUNSET WINE & JAZZ',
+    subCopy: '그랜드 피아노 라이브 & 빈티지 와인 셀러',
+    svgIcon: 'wine_ico',
+    x: 19.5,
+    z: 121.0,
+    w: 10.2,
+    d: 6.4,
+    h: 5.4,
+    buyCost: 680,
+    baseVisitRevenue: 62,
+    passiveCycleProfit: 135,
+    staffRole: 'barista',
+    staffName: '마스터 소믈리에 줄리앙',
+    awningStyle: 'brown',
+    roofColor: 0x2D3342
+  },
+  {
+    shopId: 'shop_marina',
+    stage: 2,
+    kind: 'marina',
+    name: 'VIP 요트 마리나 클럽',
+    engTitle: 'HARBOR YACHT CLUB',
+    subCopy: '슈퍼요트 프라이빗 차터 & 샴페인 라운지',
+    svgIcon: 'yacht_ico',
+    x: 0.0,
+    z: 133.2,
+    w: 10.8,
+    d: 6.4,
+    h: 5.2,
+    buyCost: 820,
+    baseVisitRevenue: 78,
+    passiveCycleProfit: 168,
+    staffRole: 'florist',
+    staffName: '마리나 캡틴 에드워드',
+    awningStyle: 'sky',
+    roofColor: 0x1E293B
   }
 ];
 
@@ -1604,25 +1742,29 @@ const FURNITURE_CATALOG = {
     { id: 'bed_iron', category: 'bed', name: '심플 스카이 침대', cost: 0, rentAdd: 0, happyAdd: 0, chip: '기본 제공', tone: 'sky', reaction: '깔끔한 스카이블루 철제 침대가 실용적이에요!' },
     { id: 'bed_queen', category: 'bed', name: '코지 원목 퀸침대', cost: 75, rentAdd: 26, happyAdd: 12, chip: '월세 +26만', tone: 'mint', reaction: '따뜻한 원목 퀸침대라 꿀잠 예약이에요!' },
     { id: 'bed_canopy', category: 'bed', name: '프린세스 캐노피 침대', cost: 145, rentAdd: 52, happyAdd: 20, chip: '월세 +52만', tone: 'coral', reaction: '와아! 핑크 캐노피 침대라니 동화 속 방 같아요!' },
-    { id: 'bed_bunk', category: 'bed', name: '패밀리 원목 2층침대', cost: 165, rentAdd: 58, happyAdd: 22, chip: '월세 +58만', tone: 'gold', reaction: '튼튼한 원목 2층 침대 사다리 타기가 신나요!' }
+    { id: 'bed_bunk', category: 'bed', name: '패밀리 원목 2층침대', cost: 165, rentAdd: 58, happyAdd: 22, chip: '월세 +58만', tone: 'gold', reaction: '튼튼한 원목 2층 침대 사다리 타기가 신나요!' },
+    { id: 'bed_jacuzzi', category: 'bed', harborTier: true, name: '오션뷰 스파 자쿠지 스위트', cost: 280, rentAdd: 165, happyAdd: 34, chip: 'VIP · 월세 +165만', tone: 'sky', reaction: '오션뷰 월풀 스파 자쿠지에서 노을 바다를 보며 반신욕이라니 천국이에요!' }
   ],
   sofa: [
     { id: 'sofa_beanbag', category: 'sofa', name: '버터 옐로우 빈백', cost: 0, rentAdd: 0, happyAdd: 0, chip: '기본 제공', tone: 'gold', reaction: '말랑말랑 노란 빈백에 파묻히면 피로가 싹 풀려요!' },
     { id: 'sofa_mint2', category: 'sofa', name: '애플민트 2인 소파', cost: 70, rentAdd: 24, happyAdd: 12, chip: '월세 +24만', tone: 'mint', reaction: '상큼한 애플민트 패브릭 소파로 거실이 화사해졌어요!' },
     { id: 'sofa_rocker', category: 'sofa', name: '원목 흔들의자 다과셋', cost: 115, rentAdd: 40, happyAdd: 18, chip: '월세 +40만', tone: 'coral', reaction: '원목 흔들의자에 앉아 따뜻한 차 한 잔 마시니 천국이구려~' },
-    { id: 'sofa_leather_l', category: 'sofa', name: '프리미엄 가죽 L소파', cost: 155, rentAdd: 56, happyAdd: 22, chip: '월세 +56만', tone: 'gold', reaction: '고급 가죽 L자형 소파가 펜트하우스 거실처럼 럭셔리해요!' }
+    { id: 'sofa_leather_l', category: 'sofa', name: '프리미엄 가죽 L소파', cost: 155, rentAdd: 56, happyAdd: 22, chip: '월세 +56만', tone: 'gold', reaction: '고급 가죽 L자형 소파가 펜트하우스 거실처럼 럭셔리해요!' },
+    { id: 'sofa_piano', category: 'sofa', harborTier: true, name: '콘서트 그랜드 피아노 라운지', cost: 320, rentAdd: 185, happyAdd: 36, chip: 'VIP · 월세 +185만', tone: 'gold', reaction: '클래식 블랙 그랜드 피아노 선율이 트와일라잇 항구에 울려 퍼져요!' }
   ],
   appliance: [
     { id: 'app_fan', category: 'appliance', name: '스탠드 서큘레이터', cost: 0, rentAdd: 0, happyAdd: 0, chip: '기본 제공', tone: 'sky', reaction: '솔솔 부는 서큘레이터 바람이 시원해요~' },
     { id: 'app_ac', category: 'appliance', name: '시네마 빔프로젝터', cost: 85, rentAdd: 30, happyAdd: 14, chip: '월세 +30만', tone: 'mint', reaction: '대형 시네마 빔프로젝터까지 풀옵션이라니 갓물주님 최고!' },
     { id: 'app_soundmat', category: 'appliance', name: 'LP 턴테이블 & 방음매트', cost: 95, rentAdd: 34, happyAdd: 18, grantsSoundproof: true, chip: '방음완벽 · +34만', tone: 'sky', reaction: '감성 LP 턴테이블과 도톰한 방음 매트로 층간소음 걱정 끝!' },
-    { id: 'app_rgb_desk', category: 'appliance', name: 'RGB 트리플 데스크', cost: 160, rentAdd: 58, happyAdd: 24, chip: '월세 +58만', tone: 'coral', reaction: '영롱한 RGB 트리플 모니터 데스크라니 방송 효율 폭발!' }
+    { id: 'app_rgb_desk', category: 'appliance', name: 'RGB 트리플 데스크', cost: 160, rentAdd: 58, happyAdd: 24, chip: '월세 +58만', tone: 'coral', reaction: '영롱한 RGB 트리플 모니터 데스크라니 방송 효율 폭발!' },
+    { id: 'app_winecellar', category: 'appliance', harborTier: true, name: '오크 와인 셀러 & 샹들리에', cost: 360, rentAdd: 215, happyAdd: 40, grantsSoundproof: true, chip: 'VIP · 월세 +215만', tone: 'coral', reaction: '호박빛 와인 셀러와 천장 크리스탈 샹들리에 품격에 반했어요!' }
   ],
   decor: [
     { id: 'dec_peach', category: 'decor', name: '피치 베이지 & 메이플', wallKey: 'wallPeach', floorKey: 'floor1', stairStyle: 'oak', cost: 0, rentAdd: 0, happyAdd: 0, chip: '피치 파스텔', tone: 'coral', reaction: '포근한 피치 오트밀 벽지 색감이 마음을 따뜻하게 해줘요!' },
     { id: 'dec_sage', category: 'decor', name: '세이지 민트 & 오크', wallKey: 'wallSage', floorKey: 'floor2', stairStyle: 'walnut', cost: 65, rentAdd: 22, happyAdd: 12, chip: '월세 +22만', tone: 'mint', reaction: '싱그러운 세이지 벽지와 헤링본 오크 마루 조합이 세련됐어요!' },
     { id: 'dec_butter', category: 'decor', name: '버터 크림 & 골드계단', wallKey: 'wallButter', floorKey: 'floor3', stairStyle: 'gold', cost: 120, rentAdd: 42, happyAdd: 16, chip: '월세 +42만', tone: 'gold', reaction: '햇살 같은 버터 크림 벽지 덕분에 집이 두 배 넓어 보여요!' },
-    { id: 'dec_lavender', category: 'decor', name: '로얄 라벤더 & 부티크', wallKey: 'wallLavender', floorKey: 'floor3', stairStyle: 'coral', cost: 170, rentAdd: 62, happyAdd: 22, chip: '월세 +62만', tone: 'coral', reaction: '로얄 라벤더 벽지와 부티크 계단 마감이 예술 작품 같아요!' }
+    { id: 'dec_lavender', category: 'decor', name: '로얄 라벤더 & 부티크', wallKey: 'wallLavender', floorKey: 'floor3', stairStyle: 'coral', cost: 170, rentAdd: 62, happyAdd: 22, chip: '월세 +62만', tone: 'coral', reaction: '로얄 라벤더 벽지와 부티크 계단 마감이 예술 작품 같아요!' },
+    { id: 'dec_harbor_royal', category: 'decor', harborTier: true, name: '트와일라잇 로열 월넛 & 골드', wallKey: 'wallButter', floorKey: 'floor2', stairStyle: 'gold', cost: 260, rentAdd: 150, happyAdd: 30, chip: 'VIP · 월세 +150만', tone: 'gold', reaction: '유럽풍 클래식 웨인스코팅과 골드 계단 마감이 5성급 스위트 그 자체네요!' }
   ]
 };
 
@@ -1690,6 +1832,17 @@ const DEVELOPMENT_CATALOG = {
     isResidential: true,
     baseRoomRent: 38,
     rentSynergyPct: 0
+  },
+  harbor_hotel: {
+    type: 'harbor_hotel',
+    name: '하버 부티크 호텔 & 오션뷰 펜트하우스',
+    svgIcon: 'yacht_ico',
+    artKey: 'shop_mart',
+    buildCost: 1850,
+    isResidential: true,
+    isHarborHotel: true,
+    baseRoomRent: 165,
+    rentSynergyPct: 20
   }
 };
 
@@ -1851,6 +2004,63 @@ const HOUSEHOLD_TYPES = {
     isHoarder: true,
     happyQuotes: [
       '트리플 모니터가 내 세상이야... 이번 달 월세도 칼입금 완료!'
+    ]
+  },
+  movie_star: {
+    type: 'movie_star',
+    isHarborVip: true,
+    label: '글로벌 영화배우',
+    accentHex: '#F59E0B',
+    memberCount: 2,
+    minRent: 580,
+    maxRent: 980,
+    noiseOutput: 22,
+    noiseLv: 1,
+    noiseSensitivity: 55,
+    odorSensitivity: 60,
+    needsElevator: false,
+    needsRecycling: false,
+    isHoarder: false,
+    happyQuotes: [
+      '노을빛 오션뷰 스파 자쿠지와 그랜드 피아노 스위트라니 헐리우드 별장보다 완벽해요!'
+    ]
+  },
+  fund_manager: {
+    type: 'fund_manager',
+    isHarborVip: true,
+    label: '월스트리트 펀드매니저',
+    accentHex: '#0EA5E9',
+    memberCount: 1,
+    minRent: 650,
+    maxRent: 1120,
+    noiseOutput: 12,
+    noiseLv: 1,
+    noiseSensitivity: 45,
+    odorSensitivity: 50,
+    needsElevator: false,
+    needsRecycling: false,
+    isHoarder: false,
+    happyQuotes: [
+      '오크 와인 셀러에서 빈티지 샴페인 한 잔 하며 뉴욕 증시 체크하기 최고군요!'
+    ]
+  },
+  cruise_captain: {
+    type: 'cruise_captain',
+    isHarborVip: true,
+    label: '럭셔리 크루즈 선장',
+    accentHex: '#10B981',
+    memberCount: 2,
+    minRent: 540,
+    maxRent: 920,
+    noiseOutput: 15,
+    noiseLv: 1,
+    noiseSensitivity: 30,
+    odorSensitivity: 40,
+    needsElevator: false,
+    needsRecycling: false,
+    isHoarder: false,
+    happyQuotes: [
+      '창밖으로 내 슈퍼요트가 정박된 선착장이 한눈에 내려다보여 대만족입니다!'
     ]
   }
 };
@@ -2088,6 +2298,69 @@ const FP_SHOP_DESTINATIONS = [
     ],
     driveThruItem: 'item_coffee',
     driveThruQuote: '건물주님! 차 안에서 바로 드실 라운지 모닝커피 대령했습니다!'
+  },
+  {
+    id: 'shop_lobster',
+    name: '오션뷰 랍스터 파인다이닝',
+    badge: '제2마을 파인다이닝',
+    icon: 'lobster_ico',
+    tone: 'coral',
+    roadX: -19.5,
+    roadZ: 114.0,
+    staffRole: 'baker',
+    staffName: '미슐랭 셰프 앙리',
+    wallColor: 0xFFF7ED,
+    accentColor: 0x991B1B,
+    showcaseItems: ['item_cake', 'item_fruit_basket', 'item_bouquet', 'item_croissant', 'item_coffee'],
+    welcomeQuote: '총독 오너님 어서 오십시오!! 활랍스터 플래터와 토마호크 스테이크를 즉시 서브하겠습니다!!',
+    customerQuotes: [
+      '하버 노을 보면서 먹는 랍스터 파인다이닝 최고예요!!',
+      '역시 제2마을 총독님이 인수하신 미슐랭 레스토랑답네요!'
+    ],
+    driveThruItem: 'item_fruit_basket',
+    driveThruQuote: '총독님! 해안 드라이브 중 즐기실 VIP 파인다이닝 기프트 대령했습니다!'
+  },
+  {
+    id: 'shop_winelounge',
+    name: '선셋 와인 & 재즈 라운지',
+    badge: '제2마을 재즈 라운지',
+    icon: 'wine_ico',
+    tone: 'gold',
+    roadX: 19.5,
+    roadZ: 114.0,
+    staffRole: 'barista',
+    staffName: '수석 소믈리에 로랑',
+    wallColor: 0xFDF4FF,
+    accentColor: 0x581C87,
+    showcaseItems: ['item_rose_vase', 'item_cake', 'item_bouquet', 'item_matcha_box', 'item_coffee'],
+    welcomeQuote: '총독 오너님 환영합니다!! 100년산 그랑크뤼 샴페인과 재즈 피아노 연주를 준비했습니다!!',
+    customerQuotes: [
+      '노을빛 하버 야경에 그랜드 피아노 선율이라니 황홀해요!!',
+      '월스트리트 VIP들도 줄 서서 마시는 최고의 와인 셀러예요!'
+    ],
+    driveThruItem: 'item_rose_vase',
+    driveThruQuote: '총독님! 선셋 라운지 시그니처 크리스탈 기프트 대령했습니다!'
+  },
+  {
+    id: 'shop_marina',
+    name: 'VIP 요트 마리나 클럽',
+    badge: '제2마을 슈퍼요트 클럽',
+    icon: 'yacht_ico',
+    tone: 'sky',
+    roadX: 0.0,
+    roadZ: 126.0,
+    staffRole: 'manager',
+    staffName: '마리나 캡틴 에드워드',
+    wallColor: 0xEFF6FF,
+    accentColor: 0x0F4C81,
+    showcaseItems: ['item_bouquet', 'item_rose_vase', 'item_fruit_basket', 'item_cake', 'item_drink_six'],
+    welcomeQuote: '로열 하버 총독님 승선 준비 완료!! 프라이빗 슈퍼요트 선착장이 언제든 대기 중입니다!!',
+    customerQuotes: [
+      '바다 위에 떠 있는 3D 럭셔리 요트들 좀 봐요, 모나코 부럽지 않네요!!',
+      '크루즈 선장님도 극찬한 최고의 VIP 마리나 클럽입니다!'
+    ],
+    driveThruItem: 'item_bouquet',
+    driveThruQuote: '총독님! 마리나 클럽 VIP 환영 부케 대령했습니다!'
   }
 ];
 
@@ -2776,3 +3049,71 @@ window.HOUSEHOLD_TYPES = HOUSEHOLD_TYPES;
 window.FAMILY_LAST_NAMES = FAMILY_LAST_NAMES;
 window.GIVEN_NAMES = GIVEN_NAMES;
 window.QUEST_LIST = QUEST_LIST;
+
+
+const CHRONICLE_DAY_TIERS = [
+  {
+    day: 1,
+    hoursRequired: 0,
+    emoji: '🌱',
+    title: '코지 타운 명예 동장',
+    badgeLabel: 'DAY 1 · 🌱 코지 타운 명예 동장',
+    desc: '제1마을 본점 인형의 집 빌딩과 1층 상가 상권을 탄탄히 육성하는 기간입니다.',
+    rewardText: '본점 경영 기본 자격 부여'
+  },
+  {
+    day: 2,
+    hoursRequired: 24,
+    emoji: '🏢',
+    title: '스트리트 상권 지배자',
+    badgeLabel: 'DAY 2 · 🏢 스트리트 상권 지배자',
+    desc: '최초 시작 후 24시간 경과! 부티크 거리 상권을 장악한 중견 건물주로 승급합니다.',
+    rewardText: '승급 출석 보너스 +50만 코인 즉시 지급',
+    bonusGold: 50
+  },
+  {
+    day: 3,
+    hoursRequired: 48,
+    emoji: '👑',
+    title: '로열 하버 개발 총독',
+    badgeLabel: 'DAY 3 · 👑 로열 하버 개발 총독',
+    desc: '최초 시작 후 48시간 경과! 빨간 해안 아치교가 개통되며 제2마을 [트와일라잇 하버 리조트 타운] 투자권이 영구 해금됩니다!',
+    rewardText: '황금 총독 인증서 수여 & 제2마을 해안 다리 영구 개통'
+  }
+];
+
+const HARBOR_SHOP_UPGRADE_CATALOG = [
+  {
+    id: 'upg_oven',
+    name: '활랍스터 & 토마호크 플래터 바',
+    cost: 240,
+    visitBonus: 26,
+    cycleBonus: 68,
+    chip: '방문 +26만 · 주기 +68만',
+    tone: 'coral',
+    reaction: '실사 버터구이 랍스터 플래터와 토마호크 스테이크 덕분에 VIP 예약이 폭주해요!'
+  },
+  {
+    id: 'upg_terrace',
+    name: '빈티지 샴페인 셀러 & 샹들리에',
+    cost: 320,
+    visitBonus: 34,
+    cycleBonus: 88,
+    chip: '방문 +34만 · 주기 +88만',
+    tone: 'gold',
+    reaction: '크리스탈 샹들리에 아래 최고급 샴페인 타워가 트와일라잇 밤바다를 수놓네요!'
+  },
+  {
+    id: 'upg_crate',
+    name: '프라이빗 슈퍼요트 정박 데크',
+    cost: 450,
+    visitBonus: 48,
+    cycleBonus: 125,
+    chip: '방문 +48만 · 주기 +125만',
+    tone: 'sky',
+    reaction: '전용 럭셔리 슈퍼요트 정박 데크 완공! 글로벌 억만장자들이 요트를 타고 몰려옵니다!'
+  }
+];
+
+window.CHRONICLE_DAY_TIERS = CHRONICLE_DAY_TIERS;
+window.HARBOR_SHOP_UPGRADE_CATALOG = HARBOR_SHOP_UPGRADE_CATALOG;

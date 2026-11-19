@@ -86,18 +86,36 @@
 
   <!-- ==================== 3. 미니멀 수첩 인덱스 상단 라벨 (좌상단 20px, 촌스러운 테두리 제로) ==================== -->
   <header id="main-game-header" class="hidden fixed top-[20px] left-[20px] z-30 flex flex-col items-start gap-2 pointer-events-none">
-    <!-- 단 하나의 깔끔한 크림 화이트 수첩 인덱스 캡슐 -->
-    <div id="hud-badge-gold" class="hud-minimal-index-pill pointer-events-auto relative">
-      <div id="hud-gold-wrap" class="hud-minimal-stat">
-        <span id="hud-gold">1,250</span><span>만</span>
+    <!-- 단 하나의 깔끔한 크림 화이트 수첩 인덱스 캡슐 (+ 3일 차 해금 시에만 옆에 붙는 [ ☀️ 본점 ⇄ 🌅 하버 ] 미니 알약 스위치) -->
+    <div class="flex items-center gap-2 flex-wrap">
+      <div id="hud-badge-gold" class="hud-minimal-index-pill pointer-events-auto relative">
+        <div id="hud-gold-wrap" class="hud-minimal-stat">
+          <span id="hud-gold">1,250</span><span>만</span>
+        </div>
+        <span id="hud-net-income" class="hud-minimal-rate">+4.2만/s</span>
+        <span class="hud-minimal-sep" aria-hidden="true"></span>
+        <button id="hud-badge-happy" type="button" title="행복도 마일스톤 진화 트래커 보기" class="hud-minimal-happy">
+          <span class="hud-heart-mark" aria-hidden="true">♥</span>
+          <span id="hud-happiness">85%</span>
+        </button>
+        <div id="hud-gold-pop-anchor" class="absolute right-3 top-0.5 pointer-events-none"></div>
       </div>
-      <span id="hud-net-income" class="hud-minimal-rate">+4.2만/s</span>
-      <span class="hud-minimal-sep" aria-hidden="true"></span>
-      <button id="hud-badge-happy" type="button" title="행복도 마일스톤 진화 트래커 보기" class="hud-minimal-happy">
-        <span class="hud-heart-mark" aria-hidden="true">♥</span>
-        <span id="hud-happiness">85%</span>
-      </button>
-      <div id="hud-gold-pop-anchor" class="absolute right-3 top-0.5 pointer-events-none"></div>
+
+      <!-- 3일 차 [👑 로열 하버 개발 총독] 달성 후에만 활성화되는 세련된 양방향 마을 스위치 -->
+      <div id="town-stage-switch-pill" class="hidden pointer-events-auto town-stage-switch-pill" role="group" aria-label="마을 전환 스위치">
+        <button id="btn-switch-stage-1" type="button" class="stage-seg-btn active" title="제1마을 본점(화사한 낮 인형의 집 타운)으로 이동">
+          <span>☀️ 본점</span>
+        </button>
+        <span class="stage-seg-arrow" aria-hidden="true">⇄</span>
+        <button id="btn-switch-stage-2" type="button" class="stage-seg-btn" title="제2마을 트와일라잇 하버 리조트 타운으로 이동">
+          <span>🌅 하버</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 제2마을 체류 중 상단 캡슐 아래에 은은하게 뜨는 본점 자동 배당금 입금 미니 토스트 -->
+    <div id="hq-dividend-pill" class="hidden pointer-events-none hq-dividend-mini-toast">
+      <span id="hq-dividend-text">+ 본점(1마을) 자동 배당금 입금!</span>
     </div>
 
     <!-- 골든벨 피버 타임 실시간 미니 캡슐 (발동 시에만 표시) -->
@@ -471,11 +489,23 @@
 
         <div class="pocket-paper-sheet">
           <div class="pocket-sheet-header">
-            <span class="pocket-sheet-title">건물주 수첩</span>
-            <button id="btn-close-pocket-planner" type="button" class="pocket-mini-close" aria-label="수첩 접기">✕</button>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center justify-between gap-1">
+                <span class="pocket-sheet-title">건물주 수첩</span>
+                <div class="flex items-center gap-1 shrink-0">
+                  <button id="btn-pocket-settings" type="button" class="pocket-mini-close" title="환경설정" aria-label="환경설정">
+                    <span id="hud-ico-settings" class="w-3.5 h-3.5 flex items-center justify-center"></span>
+                  </button>
+                  <button id="btn-close-pocket-planner" type="button" class="pocket-mini-close" aria-label="수첩 접기">✕</button>
+                </div>
+              </div>
+              <button id="btn-open-chronicle-header" type="button" class="pocket-chronicle-tag mt-1.5" title="갓물주 3일 마스터 칭호 현황판 보기">
+                <span id="pocket-day-title-text">DAY 1 · 🌱 코지 타운 명예 동장</span>
+              </button>
+            </div>
           </div>
 
-          <!-- 3열 미니 아이콘 스탬프 그리드 (100% 컬러 벡터 스탬프 아이콘) -->
+          <!-- 3열 미니 아이콘 스탬프 그리드 (해안타운 스탬프 포함 9종) -->
           <div class="pocket-stamp-grid">
             <button id="btn-collect-all" type="button" class="pocket-stamp-btn tone-gold" title="밀린 월세·매출 일괄 수금">
               <span id="hud-ico-collect" class="stamp-svg-slot" aria-hidden="true"></span>
@@ -508,6 +538,12 @@
               <span class="stamp-label">서열</span>
             </button>
 
+            <button id="btn-harbor-town" type="button" class="pocket-stamp-btn tone-harbor" title="갓물주 3일 칭호 & 해안 신도시(제2마을)">
+              <span id="hud-ico-harbor" class="stamp-svg-slot" aria-hidden="true"></span>
+              <span id="stamp-harbor-label" class="stamp-label">해안타운</span>
+              <span id="stamp-harbor-dot" class="stamp-harbor-badge">D-2</span>
+            </button>
+
             <button id="btn-guide-tour" type="button" class="pocket-stamp-btn tone-peach" title="5단계 시네마틱 시뮬레이션 가이드">
               <span id="hud-ico-tour" class="stamp-svg-slot" aria-hidden="true"></span>
               <span class="stamp-label">투어</span>
@@ -516,11 +552,6 @@
             <button id="btn-open-ledger-modal" type="button" class="pocket-stamp-btn tone-cream" title="타운 미션·세입자·인프라 장부">
               <span id="hud-ico-ledger" class="stamp-svg-slot" aria-hidden="true"></span>
               <span class="stamp-label">장부</span>
-            </button>
-
-            <button id="btn-pocket-settings" type="button" class="pocket-stamp-btn tone-sand" title="환경설정">
-              <span id="hud-ico-settings" class="stamp-svg-slot" aria-hidden="true"></span>
-              <span class="stamp-label">설정</span>
             </button>
           </div>
         </div>
@@ -977,6 +1008,52 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ==================== 25. 갓물주 3일 마스터 칭호 & 해안 신도시 개통 현황판 모달 ==================== -->
+  <div id="harbor-chronicle-modal" class="hidden fixed inset-0 z-[94] pastel-modal-backdrop flex items-center justify-center p-3">
+    <div class="cozy-planner-shell w-full max-w-md max-h-[92vh]">
+      <div class="cozy-planner-inner p-4 space-y-3 overflow-y-auto custom-scroll">
+        <div class="flex items-center justify-between border-b border-[#EED6BE] pb-2.5">
+          <div class="flex items-center gap-2">
+            <span id="chronicle-ico-header" class="flex items-center"></span>
+            <div>
+              <div class="diary-modal-title">3일간의 갓물주 연대기</div>
+              <div id="chronicle-elapsed-sub" class="text-[11px] font-bold text-[#7C6249]">현실 경과 시간 측정 중...</div>
+            </div>
+          </div>
+          <button id="btn-close-chronicle" type="button" class="btn-close-round" aria-label="닫기">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M3.5 3.5L10.5 10.5M10.5 3.5L3.5 10.5" stroke="#3A2E2B" stroke-width="2.3" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+
+        <!-- 현재 칭호 배너 -->
+        <div id="chronicle-current-banner" class="chronicle-hero-card"></div>
+
+        <!-- Day 1 -> Day 2 -> Day 3 타임라인 카드 -->
+        <div id="chronicle-days-list" class="space-y-2"></div>
+
+        <!-- 하단 액션 영역: 해금 시 양방향 이동 버튼 + 미해금/테스트용 [⚡ 3일 차 즉시 달성 (Day 3 스킵)] 버튼 -->
+        <div class="pt-1 space-y-2">
+          <button id="btn-chronicle-travel-harbor" type="button" class="hidden w-full py-3 rounded-2xl font-extrabold text-[14.5px] text-white shadow-lg transition-transform active:scale-[0.98]" style="background: linear-gradient(180deg, #FB923C 0%, #E11D48 100%); box-shadow: 0 4px 0 #9F1239;">
+            🌅 빨간 해안 다리 건너 제2마을(트와일라잇 하버) 이동 ➔
+          </button>
+
+          <button id="btn-skip-day3-test" type="button" class="w-full py-2.5 px-3 rounded-2xl font-extrabold text-[13px] text-[#3A2E2B] border-2 border-[#F59E0B] bg-gradient-to-b from-[#FFFBEB] to-[#FDE68A] shadow-sm hover:brightness-105 active:scale-[0.98] transition">
+            ⚡ 3일 차 즉시 달성 (Day 3 스킵)
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3일 차 [👑 로열 하버 개발 총독] 칭호 수여식 & 빨간 해안 다리 개통 팡파르 배너 -->
+  <div id="day3-coronation-banner" class="hidden fixed inset-x-3 top-[86px] z-[96] pointer-events-none flex justify-center">
+    <div class="coronation-royal-certificate">
+      <div class="text-[11px] font-extrabold tracking-widest text-[#B45309]">ROYAL HARBOR CORONATION · DAY 3 AWAKENED</div>
+      <div class="mt-1 text-[18px] sm:text-[20px] font-extrabold text-[#2C221E]">👑 [로열 하버 개발 총독] 칭호 각성 &amp; 빨간 해안 아치교 개통!</div>
+      <div class="mt-1 text-[12.5px] font-bold text-[#5C4938]">제2마을 ‘트와일라잇 하버 리조트 타운’ 양방향 자유 왕래 및 VIP 리조트 투자가 영구 해금되었습니다!</div>
     </div>
   </div>
 
