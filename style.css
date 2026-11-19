@@ -3557,16 +3557,799 @@ button:hover .toy-ico-img,
 @media (min-width: 640px) {
   body:has(#room-focus-panel:not(.hidden)) .telescope-hud-tag,
   body:has(#shop-focus-panel:not(.hidden)) .telescope-hud-tag {
-    left: calc(50% - 180px);
+    left: calc(50% - 228px);
     transition: left 0.22s ease;
   }
 
   body:has(#room-focus-panel:not(.hidden)) #focus-clean-capsule,
   body:has(#shop-focus-panel:not(.hidden)) #focus-clean-capsule {
-    left: calc(50% - 180px) !important;
-    max-width: calc(100vw - 388px);
+    left: calc(50% - 228px) !important;
+    max-width: calc(100vw - 480px);
     transition: left 0.22s ease;
   }
+}
+
+/* ==========================================================================
+   [전면 개편] BIG & BOLD TYPOGRAPHY + 초미니멀 4-코너 HUD + 원클릭 가이드
+   - 12px~15px 이하 깨알 글씨 100% 퇴출 (최소 보조 텍스트 16px Bold 강제!)
+   - 일반 버튼/메뉴: 18px ~ 22px (800)
+   - 패널 제목/핵심 액션: 24px ~ 28px (900)
+   - 보유 자산/수금 금액/서열 순위 핵심 숫자: 26px ~ 36px (900)
+   ========================================================================== */
+
+body.big-bold-ui {
+  font-size: 17px;
+  color: #1E1B18;
+}
+
+/* 깨알 글씨 원천 차단: 9px ~ 15px 유틸리티 클래스를 최소 16px ~ 18px 고대비 굵은 글씨로 강제 상향 */
+body.big-bold-ui [class*="text-[8"],
+body.big-bold-ui [class*="text-[9"],
+body.big-bold-ui [class*="text-[10"],
+body.big-bold-ui [class*="text-[11"],
+body.big-bold-ui [class*="text-[12"],
+body.big-bold-ui .text-xs {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  line-height: 1.35 !important;
+}
+
+body.big-bold-ui [class*="text-[13"],
+body.big-bold-ui [class*="text-[14"],
+body.big-bold-ui [class*="text-[15"],
+body.big-bold-ui .text-sm {
+  font-size: 18px !important;
+  font-weight: 800 !important;
+  line-height: 1.35 !important;
+}
+
+/* -------------------- 1. 좌측 상단: 왕큼직 통합 자산 & 서열 캡슐 -------------------- */
+.hud-big-unified-capsule {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 8px 18px 8px 10px;
+  border-radius: 999px;
+  background: rgba(255, 253, 247, 0.97);
+  border: 3px solid #F59E0B;
+  box-shadow:
+    0 5px 0 #D97706,
+    0 12px 28px rgba(30, 27, 24, 0.22);
+}
+
+.hud-big-avatar-chip {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #FFFBEB 0%, #FDE68A 100%);
+  border: 2.5px solid #D97706;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.16s var(--spring-ease);
+}
+
+.hud-big-avatar-chip:hover {
+  transform: scale(1.08);
+}
+
+.hud-big-money-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hud-money-bag-ico {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.hud-big-money-num {
+  font-family: 'Jua', 'Pretendard', sans-serif !important;
+  font-size: 28px !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.01em;
+  color: #1E1B18 !important;
+  text-shadow: 0 2px 0 #FDE68A;
+  white-space: nowrap;
+}
+
+.hud-big-divider {
+  width: 2px;
+  height: 28px;
+  border-radius: 2px;
+  background: #E2C09F;
+  flex-shrink: 0;
+}
+
+.hud-big-rank-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #FFFBEB 0%, #FEF08A 100%);
+  border: 2px solid #F59E0B;
+  box-shadow: 0 3px 0 #D97706;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.15s var(--spring-ease), filter 0.15s ease;
+}
+
+.hud-big-rank-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.04);
+}
+
+.hud-big-rank-btn:active {
+  transform: translateY(2px);
+}
+
+.hud-big-rank-num {
+  font-family: 'Jua', 'Pretendard', sans-serif !important;
+  font-size: 22px !important;
+  font-weight: 900 !important;
+  color: #92400E !important;
+}
+
+.hud-big-fame-tag {
+  font-family: 'Pretendard', sans-serif !important;
+  font-size: 17px !important;
+  font-weight: 800 !important;
+  color: #047857 !important;
+}
+
+/* -------------------- 2. 상단 정중앙: 왕큼직 원클릭 현재 할 일 가이드 바 -------------------- */
+#top-goal-navigator {
+  top: 94px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+}
+
+@media (min-width: 1560px) {
+  #top-goal-navigator {
+    top: 18px !important;
+    left: 54% !important;
+  }
+}
+
+.goal-navigator-capsule {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 58px;
+  padding: 8px 12px 8px 20px;
+  max-width: min(780px, calc(100vw - 24px));
+  border-radius: 999px;
+  background: linear-gradient(180deg, #FFFDF9 0%, #FEF3C7 100%);
+  border: 3px solid #F59E0B;
+  box-shadow:
+    0 5px 0 #B45309,
+    0 14px 30px rgba(30, 27, 24, 0.25);
+  cursor: pointer;
+  transition: transform 0.18s var(--spring-ease), box-shadow 0.18s ease;
+}
+
+.goal-navigator-capsule:hover {
+  transform: translateY(-2px) scale(1.02);
+}
+
+.goal-navigator-capsule:active {
+  transform: translateY(3px) scale(0.98);
+}
+
+.goal-nav-pin {
+  font-size: 24px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.goal-nav-label {
+  font-family: 'Jua', 'Pretendard', sans-serif !important;
+  font-size: 20px !important;
+  font-weight: 800 !important;
+  color: #1E1B18 !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.goal-nav-cta-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #FF7A7A 0%, #E11D48 100%);
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 3px 0 #9F1239;
+  font-family: 'Jua', 'Pretendard', sans-serif !important;
+  font-size: 18px !important;
+  font-weight: 800 !important;
+  color: #FFFFFF !important;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+body:has(.slim-right-drawer-modal:not(.hidden)) #top-goal-navigator,
+body:has(#room-focus-panel:not(.hidden)) #top-goal-navigator,
+body:has(#shop-focus-panel:not(.hidden)) #top-goal-navigator,
+body:has(#flagship-shop-drawer:not(.hidden)) #top-goal-navigator {
+  display: none !important;
+}
+
+/* -------------------- 3. 우측 상단: 54x54 대형 날씨·설정 버튼 & 밖으로 나가기 캡슐 -------------------- */
+.big-corner-square-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 20px;
+  background: rgba(255, 253, 247, 0.97);
+  border: 3px solid #E5C29F;
+  box-shadow:
+    0 5px 0 #C8A27E,
+    0 10px 22px rgba(30, 27, 24, 0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  color: #1E1B18;
+  cursor: pointer;
+  transition: transform 0.16s var(--spring-ease);
+}
+
+.big-corner-square-btn:hover {
+  transform: translateY(-2px) scale(1.05);
+}
+
+.big-corner-square-btn:active {
+  transform: translateY(3px) scale(0.96);
+}
+
+.big-exit-capsule-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+  padding: 0 24px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #FF6B6B 0%, #DC2626 100%);
+  border: 3px solid #FFFFFF;
+  box-shadow:
+    0 5px 0 #991B1B,
+    0 10px 24px rgba(220, 38, 38, 0.35);
+  font-family: 'Jua', 'Pretendard', sans-serif !important;
+  font-size: 20px !important;
+  font-weight: 900 !important;
+  color: #FFFFFF !important;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.16s var(--spring-ease);
+}
+
+.big-exit-capsule-btn:hover {
+  transform: translateY(-2px) scale(1.03);
+}
+
+.big-exit-capsule-btn:active {
+  transform: translateY(3px);
+}
+
+/* -------------------- 4. 우측 하단: 오직 딱 2개의 왕큼직 76x76 FAB (`돈 뿌리기` · `건물주 수첩`) -------------------- */
+.giant-bottom-fab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  padding: 0;
+  transition: transform 0.18s var(--spring-ease);
+}
+
+.giant-bottom-fab:hover {
+  transform: translateY(-4px) scale(1.04);
+}
+
+.giant-bottom-fab:active {
+  transform: translateY(3px) scale(0.96);
+}
+
+.giant-fab-icon-box {
+  width: 76px;
+  height: 76px;
+  border-radius: 26px;
+  border: 3.5px solid #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34px;
+}
+
+.giant-bottom-fab.tone-money .giant-fab-icon-box {
+  background: linear-gradient(180deg, #FFE869 0%, #F59E0B 100%);
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.85),
+    0 6px 0 #B45309,
+    0 14px 28px rgba(180, 83, 9, 0.35);
+}
+
+.giant-bottom-fab.tone-diary .giant-fab-icon-box {
+  background: linear-gradient(180deg, #9A5833 0%, #6D3B1E 100%);
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.35),
+    0 6px 0 #3E200F,
+    0 14px 28px rgba(30, 27, 24, 0.35);
+}
+
+.giant-fab-label {
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: #1E1B18;
+  border: 2px solid #FDE68A;
+  font-family: 'Jua', 'Pretendard', sans-serif !important;
+  font-size: 16.5px !important;
+  font-weight: 800 !important;
+  color: #FFFFFF !important;
+  white-space: nowrap;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.28);
+}
+
+.pocket-fab-dot {
+  position: absolute;
+  top: -6px;
+  right: -4px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #EF4444;
+  border: 3px solid #FFFFFF;
+  font-family: 'Jua', sans-serif !important;
+  font-size: 16px !important;
+  font-weight: 900 !important;
+  color: #FFFFFF !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.45);
+}
+
+/* -------------------- 5. 3D 월드 직접 클릭 플로팅 배지 (`18px Bold`) & 대형 황금 화살표 (`20px Bold`) -------------------- */
+.world-float-action-pill {
+  position: fixed;
+  transform: translate(-50%, -100%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: rgba(255, 253, 247, 0.96);
+  border: 3px solid #F59E0B;
+  box-shadow:
+    0 4px 0 #B45309,
+    0 10px 22px rgba(30, 27, 24, 0.28);
+  font-family: 'Jua', 'Pretendard', sans-serif !important;
+  font-size: 18px !important;
+  font-weight: 800 !important;
+  color: #1E1B18 !important;
+  white-space: nowrap;
+  cursor: pointer;
+  pointer-events: auto;
+  z-index: 24;
+  transition: transform 0.15s var(--spring-ease);
+}
+
+.world-float-action-pill:hover {
+  transform: translate(-50%, -106%) scale(1.06);
+}
+
+.world-float-action-pill.tone-drive {
+  background: linear-gradient(180deg, #FFFBEB 0%, #FEF08A 100%);
+  border-color: #EA580C;
+  box-shadow: 0 4px 0 #9A3412, 0 10px 22px rgba(30, 27, 24, 0.28);
+}
+
+.world-float-action-pill.tone-manager {
+  background: linear-gradient(180deg, #F0FDF4 0%, #DCFCE7 100%);
+  border-color: #059669;
+  box-shadow: 0 4px 0 #065F46, 0 10px 22px rgba(30, 27, 24, 0.28);
+}
+
+.world-float-action-pill.tone-manager.urgent {
+  background: linear-gradient(180deg, #FFF1F2 0%, #FECDD3 100%);
+  border-color: #E11D48;
+  color: #9F1239 !important;
+  box-shadow: 0 4px 0 #9F1239, 0 10px 24px rgba(225, 29, 72, 0.36);
+}
+
+.goal-3d-arrow-label {
+  position: fixed;
+  transform: translate(-50%, -100%);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 22px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #FFE869 0%, #F59E0B 100%);
+  border: 3.5px solid #FFFFFF;
+  box-shadow:
+    0 5px 0 #92400E,
+    0 12px 28px rgba(180, 83, 9, 0.45);
+  font-family: 'Jua', 'Pretendard', sans-serif !important;
+  font-size: 21px !important;
+  font-weight: 900 !important;
+  color: #1E1B18 !important;
+  white-space: nowrap;
+  cursor: pointer;
+  pointer-events: auto;
+  z-index: 26;
+  animation: goalArrowLabelHop 0.85s ease-in-out infinite alternate;
+}
+
+@keyframes goalArrowLabelHop {
+  0% { transform: translate(-50%, -100%) scale(1); }
+  100% { transform: translate(-50%, -118%) scale(1.06); }
+}
+
+/* -------------------- 6. 건물주 수첩 (`📒`) 3대 대형 액션 카드 (`24px 제목` · `30px 숫자` · `20px 버튼`) -------------------- */
+.pocket-planner-card {
+  position: absolute !important;
+  bottom: 132px !important;
+  right: 0 !important;
+  width: min(450px, calc(100vw - 28px)) !important;
+  max-height: calc(100vh - 220px) !important;
+  overflow-y: auto;
+}
+
+.moneygun-popover-card {
+  position: absolute !important;
+  bottom: 132px !important;
+  right: 0 !important;
+}
+
+.pocket-paper-sheet {
+  padding: 15px 16px !important;
+}
+
+.pocket-ledger-big-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: #FFFBEB;
+  border: 2px solid #F59E0B;
+  font-family: 'Jua', 'Pretendard', sans-serif !important;
+  font-size: 18px !important;
+  font-weight: 800 !important;
+  color: #92400E !important;
+  cursor: pointer;
+}
+
+.pocket-mini-close,
+.btn-close-round {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 14px !important;
+  font-size: 20px !important;
+  font-weight: 900 !important;
+  color: #1E1B18 !important;
+  background: #FFFDF7 !important;
+  border: 2px solid #D8B999 !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.pocket-giant-action-card {
+  border-radius: 20px;
+  padding: 12px 16px;
+  border: 2.5px solid #E5C29F;
+  background: #FFFDF9;
+  box-shadow: 0 4px 0 rgba(180, 140, 100, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.pocket-giant-action-card.tone-gold {
+  background: linear-gradient(180deg, #FFFDF5 0%, #FEF3C7 100%);
+  border-color: #F59E0B;
+}
+
+.pocket-giant-action-card.tone-sky {
+  background: linear-gradient(180deg, #F8FAFC 0%, #E0F2FE 100%);
+  border-color: #38BDF8;
+}
+
+.pocket-giant-action-card.tone-lavender {
+  background: linear-gradient(180deg, #FDF4FF 0%, #F3E8FF 100%);
+  border-color: #C084FC;
+}
+
+.pocket-giant-card-title {
+  font-family: 'Jua', 'Pretendard', sans-serif !important;
+  font-size: 24px !important;
+  font-weight: 900 !important;
+  color: #1E1B18 !important;
+  line-height: 1.2;
+}
+
+.pocket-giant-hero-number {
+  font-family: 'Jua', 'Pretendard', sans-serif !important;
+  font-size: 32px !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.01em;
+  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.9);
+  line-height: 1.15;
+}
+
+.pocket-giant-sub-highlight {
+  font-family: 'Pretendard', sans-serif !important;
+  font-size: 19px !important;
+  font-weight: 800 !important;
+  line-height: 1.35;
+}
+
+.pocket-giant-count-pill {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #E11D48;
+  color: #FFFFFF !important;
+  font-family: 'Pretendard', sans-serif !important;
+  font-size: 16px !important;
+  font-weight: 800 !important;
+  white-space: nowrap;
+}
+
+.pocket-thick-gauge-track {
+  position: relative;
+  width: 100%;
+  height: 32px;
+  border-radius: 999px;
+  background: #1E1B18;
+  border: 2px solid #F59E0B;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pocket-thick-gauge-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, #FBBF24 0%, #34D399 100%);
+  transition: width 0.25s ease;
+}
+
+.pocket-thick-gauge-text {
+  position: relative;
+  z-index: 2;
+  font-family: 'Jua', 'Pretendard', sans-serif !important;
+  font-size: 17px !important;
+  font-weight: 800 !important;
+  color: #FFFFFF !important;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85);
+}
+
+.pocket-giant-cta-btn {
+  min-height: 50px !important;
+  padding: 10px 22px !important;
+  font-size: 20px !important;
+  font-weight: 900 !important;
+  border-radius: 16px !important;
+}
+
+/* -------------------- 7. 우측 슬림 드로어 & 전 모달 빅&볼드 스케일 확장 (width: 440px~460px) -------------------- */
+.slim-right-drawer-modal {
+  padding: 84px 18px 22px 16px !important;
+}
+
+.slim-drawer-shell {
+  width: 450px !important;
+  max-width: calc(100vw - 28px) !important;
+  max-height: calc(100vh - 106px) !important;
+}
+
+.diary-modal-title {
+  font-size: 24px !important;
+  font-weight: 900 !important;
+  color: #1E1B18 !important;
+}
+
+.jelly-action-btn,
+.tactile-pill-btn,
+.focus-cap-action-btn,
+.duel-judge-cta-btn,
+.gate-awakening-cta-btn {
+  min-height: 52px;
+  padding: 12px 22px;
+  font-size: 19px !important;
+  font-weight: 800 !important;
+}
+
+.kw-chip,
+.diary-pill-badge,
+.hotel-num-tag,
+.role-accent-badge,
+.tier-filter-pill,
+.forbes-filter-pill,
+.fcat-tab-btn,
+.diary-index-tab,
+.focus-mini-icon-pill,
+.room-switch-chip,
+.duel-mode-pill {
+  font-size: 16.5px !important;
+  font-weight: 800 !important;
+  padding: 6px 13px !important;
+}
+
+.hotel-num-tag {
+  font-size: 20px !important;
+  font-weight: 900 !important;
+}
+
+.moneygun-popover-card {
+  width: min(410px, calc(100vw - 28px)) !important;
+  padding: 16px !important;
+}
+
+/* -------------------- 8. 정중앙 360도 3D 턴테이블 쇼케이스 왕큼직 스펙 독 -------------------- */
+.turntable-info-dock {
+  padding: 18px 24px !important;
+  border-radius: 26px !important;
+  border: 3px solid #F59E0B !important;
+  background: #FFFDF9 !important;
+}
+
+.tt-big-tier-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: #FEF3C7;
+  border: 2px solid #F59E0B;
+  font-family: 'Pretendard', sans-serif !important;
+  font-size: 18px !important;
+  font-weight: 800 !important;
+  color: #92400E !important;
+}
+
+.tt-big-item-name {
+  font-family: 'Jua', 'Pretendard', sans-serif !important;
+  font-size: 27px !important;
+  font-weight: 900 !important;
+  color: #1E1B18 !important;
+  line-height: 1.2;
+}
+
+.tt-big-stat-gold {
+  font-family: 'Jua', 'Pretendard', sans-serif !important;
+  font-size: 22px !important;
+  font-weight: 900 !important;
+  color: #B45309 !important;
+}
+
+.tt-big-stat-emerald {
+  font-family: 'Jua', 'Pretendard', sans-serif !important;
+  font-size: 22px !important;
+  font-weight: 900 !important;
+  color: #047857 !important;
+}
+
+.tt-big-primary-cta {
+  min-height: 60px !important;
+  padding: 14px 30px !important;
+  font-size: 22px !important;
+  font-weight: 900 !important;
+  border-radius: 20px !important;
+}
+
+.tt-filter-chip,
+.tt-quick-pill {
+  font-size: 17px !important;
+  font-weight: 800 !important;
+  padding: 8px 16px !important;
+}
+
+.tt-close-circle {
+  width: 50px !important;
+  height: 50px !important;
+  font-size: 22px !important;
+}
+
+.tt-nav-arrow {
+  width: 58px !important;
+  height: 58px !important;
+  font-size: 24px !important;
+}
+
+.telescope-hud-tag {
+  font-size: 17px !important;
+  padding: 8px 20px !important;
+  top: 84px !important;
+}
+
+body:has(#room-focus-topbar:not(.hidden)) .telescope-hud-tag,
+body:has(#shop-focus-topbar:not(.hidden)) .telescope-hud-tag {
+  display: none !important;
+}
+
+body:has(#room-focus-panel:not(.hidden)) #focus-clean-capsule,
+body:has(#shop-focus-panel:not(.hidden)) #focus-clean-capsule {
+  left: 18px !important;
+  transform: none !important;
+  max-width: calc(100vw - 490px) !important;
+}
+
+@media (max-width: 1120px) {
+  body:has(#room-focus-panel:not(.hidden)) #focus-clean-capsule,
+  body:has(#shop-focus-panel:not(.hidden)) #focus-clean-capsule {
+    display: none !important;
+  }
+}
+
+#tt-quick-strip {
+  min-height: 52px;
+  padding: 6px 10px !important;
+}
+
+.cloud-speech-bubble {
+  font-size: 18px !important;
+  font-weight: 800 !important;
+  padding: 10px 18px !important;
+  color: #1E1B18 !important;
+}
+
+.construction-prog-pin {
+  min-width: 250px !important;
+  padding: 12px 16px !important;
+}
+
+.construction-rush-btn {
+  min-height: 46px !important;
+  font-size: 17px !important;
+  font-weight: 900 !important;
+}
+
+.rent-cap-warning-box {
+  font-size: 17px !important;
+  padding: 12px 14px !important;
+}
+
+/* 시작 타이틀 카드 & 버튼 줄바꿈 방지 확대 */
+.title-floating-card {
+  width: min(430px, 92vw) !important;
+  padding: 36px 28px !important;
+}
+
+.title-coral-start-btn {
+  min-height: 64px !important;
+  font-size: 26px !important;
+  padding: 14px 40px !important;
+  white-space: nowrap !important;
+}
+
+.title-sub-nav {
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  gap: 10px !important;
+}
+
+.title-sub-link {
+  font-size: 18px !important;
+  font-weight: 800 !important;
+  white-space: nowrap !important;
 }
 
 

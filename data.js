@@ -1704,9 +1704,9 @@ const ROOM_SLOTS_TEMPLATE = [
     rw: 14.5,
     rd: 7.5,
     rh: 4.25,
-    rentBonus: 14,
+    rentBonus: 24,
     cycleSec: 11.2,
-    unlockCost: 95,
+    unlockCost: 115,
     defaultUnlocked: false,
     defaultDecor: 'dec_sage'
   },
@@ -1723,9 +1723,9 @@ const ROOM_SLOTS_TEMPLATE = [
     rw: 23.6,
     rd: 7.5,
     rh: 4.45,
-    rentBonus: 48,
+    rentBonus: 18,
     cycleSec: 11.8,
-    unlockCost: 340,
+    unlockCost: 25,
     defaultUnlocked: false,
     defaultDecor: 'dec_butter'
   },
