@@ -5368,5 +5368,286 @@ body:has(#moneygun-flex-popover:not(.hidden)) #top-right-action-cluster {
   color: #2C1E18 !important;
 }
 
+/* ==========================================================================
+   [25. 하이브리드 3D 이미지 타이포그래피 & 2026 트렌드 웹폰트 입체 양각 셰이더]
+   - 고정 주요 버튼/타이틀/월드 배지 10종: 3D 입체 한글 조각 일체형 이미지(`assets/ui_badges/`) 적용
+   - 실시간 변동 숫자(자산/월세/서열) & 말풍선 대사: TmoneyRoundWind / CookieRun / Fredoka + 3D 양각 베벨
+   - 검은 그림자(#000) 100% 금지 -> 웜 에스프레소 브라운(#5C3A21) & 골드(#D97706) 입체 볼륨 셰이더
+   ========================================================================== */
+
+body,
+.font-body {
+  font-family: 'Pretendard Variable', 'Pretendard', 'TmoneyRoundWind', sans-serif !important;
+  word-break: keep-all;
+}
+
+/* 1) 타이틀 · 할 일 가이드 · 3단계 말풍선 대사 · 강조 문구: TmoneyRoundWind + 쫀쫀한 자간 + 3D 클레이 양각 */
+.font-title,
+.goal-nav-label,
+.lod-world-bubble,
+.speech-cloud,
+.cloud-speech-bubble,
+.diary-modal-title,
+.pocket-giant-card-title,
+.pocket-giant-sub-highlight,
+.pastel-toast,
+.hud-manager-alert-pill,
+.hq-dividend-mini-toast,
+.hud-minimal-fever-pill,
+.tt-big-item-name,
+#tt-header-title,
+.kw-chip,
+.fcat-tab-btn,
+.forbes-filter-pill,
+.diary-index-tab,
+.hotel-num-tag,
+.title-sub-link {
+  font-family: 'TmoneyRoundWind', 'CookieRun', 'Pretendard Variable', sans-serif !important;
+  letter-spacing: -0.03em !important;
+  word-break: keep-all !important;
+}
+
+/* 크림/클레이 배경 위 한글 타이틀·가이드·말풍선 대사 입체 양각 질감 (검은색 그림자 제로!) */
+.goal-nav-label,
+.lod-world-bubble,
+.speech-cloud,
+.cloud-speech-bubble,
+.diary-modal-title,
+.pocket-giant-card-title,
+.pastel-toast,
+.tt-big-item-name,
+#tt-header-title {
+  color: #361F10 !important;
+  text-shadow:
+    0 1.5px 0 #FFFDF8,
+    0 2.5px 0 rgba(180, 118, 56, 0.34),
+    0 4px 6px rgba(92, 58, 33, 0.24) !important;
+}
+
+/* 밝은 입체 토이 버튼 텍스트: 웜 에스프레소 브라운 외곽 베벨 + 다층 볼륨 그림자 */
+.btn-gold-lip,
+.btn-mint-lip,
+.btn-coral-lip,
+.btn-sky-lip,
+.title-coral-start-btn,
+.hud-big-rank-btn,
+.hud-big-rank-btn .hud-big-rank-num,
+.hud-big-rank-btn .hud-big-fame-tag,
+.pocket-ledger-big-pill,
+.pocket-ledger-big-pill span,
+.big-exit-capsule-btn,
+.gate-awakening-cta-btn,
+.focus-cap-action-btn.primary,
+.focus-cap-action-btn.danger-soft,
+.duel-judge-cta-btn,
+.construction-rush-btn,
+.pocket-thick-gauge-text {
+  font-family: 'TmoneyRoundWind', 'CookieRun', sans-serif !important;
+  letter-spacing: -0.03em !important;
+  word-break: keep-all !important;
+  color: #FFFDF9 !important;
+  text-shadow:
+    0 2px 0 #5C3A21,
+    0 4px 6px rgba(92, 58, 33, 0.28) !important;
+}
+
+/* 2) 실시간 변동 숫자(보유 자산 · 월세 · 점수): Fredoka + Plus Jakarta Sans + TmoneyRoundWind + 3D 골드 숫자 블록 베벨 */
+.font-num,
+.hud-big-money-num,
+#hud-gold,
+.pocket-giant-hero-number,
+#forbes-total-worth,
+.tt-big-stat-gold {
+  font-family: 'Fredoka', 'Plus Jakarta Sans', 'TmoneyRoundWind', sans-serif !important;
+  font-variant-numeric: tabular-nums !important;
+  letter-spacing: -0.02em !important;
+  font-weight: 800 !important;
+  color: #3B210E !important;
+  text-shadow:
+    0 1px 0 #FFF8E7,
+    0 3px 0 #D97706,
+    0 5px 8px rgba(92, 58, 33, 0.24) !important;
+}
+
+.hud-big-rank-num {
+  font-family: 'Fredoka', 'Plus Jakarta Sans', 'TmoneyRoundWind', sans-serif !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+#tt-gold-display,
+#cockpit-kmh-num,
+#drive-hud-kmh-val {
+  font-family: 'Fredoka', 'Plus Jakarta Sans', 'TmoneyRoundWind', sans-serif !important;
+  font-variant-numeric: tabular-nums !important;
+  text-shadow: 0 2px 0 #5C3A21, 0 4px 6px rgba(92, 58, 33, 0.32) !important;
+}
+
+/* 3) 3D 입체 한글 조각 일체형 토이 배지 10종 전용 렌더링 (`assets/ui_badges/badge_*.png`) */
+.toy-img-main-fab {
+  background: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  cursor: pointer;
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.16s ease !important;
+}
+
+.toy-badge-main-fab-img {
+  width: 104px !important;
+  height: 104px !important;
+  object-fit: contain !important;
+  display: block !important;
+  pointer-events: none;
+  filter: drop-shadow(0 10px 18px rgba(62, 34, 14, 0.34));
+}
+
+.toy-img-main-fab:hover {
+  transform: scale(1.08) translateY(-4px) !important;
+  filter: brightness(1.05);
+}
+
+.toy-img-main-fab:active {
+  transform: scale(0.93) translateY(2px) !important;
+  filter: brightness(0.96);
+}
+
+/* 수첩 내부 3대 액션 이미지 버튼 (`일괄 수금`, `증축 착공`, `쇼룸 결투`) */
+.toy-img-action-btn {
+  background: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  cursor: pointer;
+  transition: transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.14s ease !important;
+}
+
+.toy-badge-wide-cta-img {
+  height: 50px !important;
+  width: auto !important;
+  max-width: 100% !important;
+  object-fit: contain !important;
+  display: block !important;
+  pointer-events: none;
+  filter: drop-shadow(0 6px 12px rgba(62, 34, 14, 0.28));
+}
+
+.toy-img-action-btn:hover:not(:disabled) {
+  transform: scale(1.05) translateY(-2px) !important;
+  filter: brightness(1.05);
+}
+
+.toy-img-action-btn:active:not(:disabled) {
+  transform: scale(0.94) translateY(2px) !important;
+  filter: brightness(0.96);
+}
+
+/* 상단 할 일 가이드 바 우측 `바로 이동` 3D 미니 버튼 (`badge_goal_move.png`) */
+.goal-nav-img-badge-slot {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  flex-shrink: 0 !important;
+}
+
+.toy-badge-goal-move-img {
+  height: 44px !important;
+  width: auto !important;
+  object-fit: contain !important;
+  display: block !important;
+  filter: drop-shadow(0 4px 8px rgba(78, 44, 16, 0.28));
+  transition: transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.goal-navigator-capsule:hover .toy-badge-goal-move-img {
+  transform: scale(1.08);
+}
+
+/* 오프닝 타이틀 & 수첩 & 쇼케이스 상단 `갓물주 라이프` 3D 왕관 로고 (`badge_header_title.png`) */
+.title-floating-card {
+  padding: 78px 46px 44px 46px !important;
+}
+
+.toy-badge-header-logo-img {
+  width: min(326px, 86%) !important;
+  height: auto !important;
+  object-fit: contain !important;
+  display: block !important;
+  margin: 0 auto !important;
+  filter: drop-shadow(0 10px 18px rgba(78, 44, 16, 0.32));
+}
+
+.toy-badge-pocket-logo-img {
+  height: 46px !important;
+  width: auto !important;
+  object-fit: contain !important;
+  display: block !important;
+  filter: drop-shadow(0 4px 8px rgba(78, 44, 16, 0.24));
+}
+
+.toy-badge-tt-logo-img {
+  height: 42px !important;
+  width: auto !important;
+  object-fit: contain !important;
+  display: block !important;
+  flex-shrink: 0 !important;
+  filter: drop-shadow(0 4px 8px rgba(78, 44, 16, 0.24));
+}
+
+/* 3D 월드 플로팅 입체 한글 배지 3종 (`드라이브`, `가구 백화점`, `관리소장`) */
+.world-3d-img-badge {
+  position: fixed;
+  transform: translate(-50%, -100%);
+  background: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  min-height: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
+  z-index: 24;
+  animation: toyBubbleGentleFloat 2.3s ease-in-out infinite alternate !important;
+  transition: transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.16s ease !important;
+}
+
+.world-3d-img-badge img {
+  height: 52px !important;
+  width: auto !important;
+  object-fit: contain !important;
+  display: block !important;
+  pointer-events: none;
+  filter: drop-shadow(0 8px 14px rgba(52, 28, 12, 0.34));
+}
+
+.world-3d-img-badge.badge-furniture img {
+  height: 60px !important;
+}
+
+.world-3d-img-badge:hover {
+  animation-play-state: paused !important;
+  transform: translate(-50%, -109%) scale(1.1) !important;
+  filter: brightness(1.06);
+}
+
+.world-3d-img-badge:active {
+  transform: translate(-50%, -98%) scale(0.93) !important;
+}
+
+
 
 

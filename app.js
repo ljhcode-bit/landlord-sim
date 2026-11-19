@@ -19316,6 +19316,53 @@ function ensureGoalArrowAndBadgesCreated() {
     arrowLayer.appendChild(btn);
     bigUiGuideState.arrowLabelEl = btn;
   }
+
+  // 3D 월드 플로팅 입체 한글 조각 배지 3종 (`드라이브`, `가구 백화점`, `관리소장`) 생성
+  const worldLayer = document.getElementById('world-action-badges-layer');
+  if (worldLayer && !bigUiGuideState.carBadgeEl) {
+    const badgePaths = window.POPMART_ASSET_PATHS?.uiBadges || {};
+
+    const carBtn = document.createElement('button');
+    carBtn.type = 'button';
+    carBtn.className = 'world-3d-img-badge badge-drive';
+    carBtn.setAttribute('aria-label', '드라이브');
+    carBtn.innerHTML = `<img id="badge-img-world-drive" src="${badgePaths.worldDrive || './assets/ui_badges/badge_world_drive.png'}" alt="드라이브" />`;
+    carBtn.style.display = 'none';
+    carBtn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      enterDriveMode();
+    });
+
+    const mgrBtn = document.createElement('button');
+    mgrBtn.type = 'button';
+    mgrBtn.className = 'world-3d-img-badge badge-manager';
+    mgrBtn.setAttribute('aria-label', '관리소장');
+    mgrBtn.innerHTML = `<img id="badge-img-world-manager" src="${badgePaths.worldManager || './assets/ui_badges/badge_world_manager.png'}" alt="관리소장" />`;
+    mgrBtn.style.display = 'none';
+    mgrBtn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      openNotebookModal('manager');
+    });
+
+    const shopBtn = document.createElement('button');
+    shopBtn.type = 'button';
+    shopBtn.className = 'world-3d-img-badge badge-furniture';
+    shopBtn.setAttribute('aria-label', '가구 백화점');
+    shopBtn.innerHTML = `<img id="badge-img-world-furniture" src="${badgePaths.worldFurniture || './assets/ui_badges/badge_world_furniture.png'}" alt="가구 백화점" />`;
+    shopBtn.style.display = 'none';
+    shopBtn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      openFurnitureFlagshipDrawer('bed');
+    });
+
+    worldLayer.appendChild(carBtn);
+    worldLayer.appendChild(mgrBtn);
+    worldLayer.appendChild(shopBtn);
+
+    bigUiGuideState.carBadgeEl = carBtn;
+    bigUiGuideState.mgrBadgeEl = mgrBtn;
+    bigUiGuideState.shopBadgeEl = shopBtn;
+  }
 }
 
 function getNextExpansionTargetInfo() {
@@ -19563,7 +19610,7 @@ function getOrCreateSmartLodBubbleEntry(key, onActionClick) {
   return entry;
 }
 
-function syncSmartWorldLodBubbles(anyModalOpen) {
+function syncSmartWorldLodBubbles(anyModalOpen, prePlacedBoxes = []) {
   const hideAll =
     anyModalOpen ||
     titleScreenState.active ||
@@ -19585,63 +19632,39 @@ function syncSmartWorldLodBubbles(anyModalOpen) {
     const D = GAME_BALANCE.buildingDepth || 8.0;
 
     if (!inStage2) {
-      // 1) 1층 분재 거북 관리소장 NPC
-      let anyCapped = false;
-      if (b) {
-        for (const rm of (b.rooms || [])) {
-          if (rm.unlocked && calcRoomRentDetail(b, rm).isCapped) {
-            anyCapped = true;
-            break;
+      // 1) 1층 분재 거북 관리소장 NPC (근접 클로즈업 Tier 3 진입 시 실제 대사 말풍선 오픈)
+      const mgrWx = mainLot.x + 2.55;
+      const mgrWy = 3.25;
+      const mgrWz = mainLot.z + D * 0.5 + 1.1;
+      if (getWorldSpeechLodTier(mgrWx, mgrWy, mgrWz) === 3) {
+        let anyCapped = false;
+        if (b) {
+          for (const rm of (b.rooms || [])) {
+            if (rm.unlocked && calcRoomRentDetail(b, rm).isCapped) {
+              anyCapped = true;
+              break;
+            }
           }
         }
+        candidates.push({
+          key: 'lod_npc_mgr',
+          wx: mgrWx,
+          wy: mgrWy,
+          wz: mgrWz,
+          hint: mgr.onStrike ? '💢' : 'dots',
+          urgent: !!mgr.onStrike,
+          text: mgr.onStrike
+            ? '사기가 바닥이에요! 성과급이나 월급 인상 부탁드려요! 💢'
+            : anyCapped
+              ? '월급 조금만 올려주시면 월세 한도를 뚫어드릴게요! 🪴'
+              : '회장님! 오늘도 빌딩 광택 관리 완벽합니다! 🪴',
+          priority: 98,
+          forceTier3: true,
+          onAction: () => openNotebookModal('manager')
+        });
       }
-      candidates.push({
-        key: 'lod_npc_mgr',
-        wx: mainLot.x + 2.55,
-        wy: 3.15,
-        wz: mainLot.z + D * 0.5 + 1.1,
-        hint: mgr.onStrike ? '💢' : 'dots',
-        urgent: !!mgr.onStrike,
-        text: mgr.onStrike
-          ? '사기가 바닥이에요! 성과급이나 월급 인상 부탁드려요! 💢'
-          : anyCapped
-            ? '월급 조금만 올려주시면 월세 한도를 뚫어드릴게요! 🪴'
-            : '회장님! 오늘도 빌딩 광택 관리 완벽합니다! 🪴',
-        priority: 95,
-        forceTier3: false,
-        onAction: () => openNotebookModal('manager')
-      });
 
-      // 2) VIP 주차장 슈퍼카
-      const carPos = driveState.carRootGroup ? driveState.carRootGroup.position : VIP_PARKING_POS;
-      candidates.push({
-        key: 'lod_npc_car',
-        wx: carPos.x,
-        wy: 2.35,
-        wz: carPos.z,
-        hint: '🏎️',
-        urgent: false,
-        text: '엔진 예열 완료! 해안 도로 드라이브 가실까요? 🏎️',
-        priority: 82,
-        forceTier3: false,
-        onAction: () => enterDriveMode()
-      });
-
-      // 3) 1층 가구 백화점 쇼룸
-      candidates.push({
-        key: 'lod_npc_flagship',
-        wx: 25.2,
-        wy: 5.2,
-        wz: -3.5,
-        hint: '💬',
-        urgent: false,
-        text: '신상 명품 침대 입고됐어요! 구경 오세요 🛋️',
-        priority: 80,
-        forceTier3: false,
-        onAction: () => openFurnitureFlagshipDrawer('bed')
-      });
-
-      // 4) 단독 상가 & 1층 상가 매니저 대사
+      // 2) 단독 상가 & 1층 상가 매니저 대사
       const bakeryTpl = STANDALONE_SHOPS_TEMPLATE.find((s) => s.shopId === 'shop_bakery');
       if (bakeryTpl) {
         candidates.push({
@@ -19689,7 +19712,7 @@ function syncSmartWorldLodBubbles(anyModalOpen) {
       });
     }
 
-    // 5) 실내 입주 세입자 캐릭터 (호실별 대표 아트토이)
+    // 3) 실내 입주 세입자 캐릭터 (호실별 대표 아트토이)
     const activeLots = state?.lots?.filter((l) => (inStage2 ? l.stage === 2 : (l.stage || 1) === 1)) || [];
     for (const lot of activeLots) {
       const bld = state?.buildings?.[lot.lotId];
@@ -19728,7 +19751,7 @@ function syncSmartWorldLodBubbles(anyModalOpen) {
       }
     }
 
-    // 6) 거리 산책 아트토이 주민들 (최대 5명)
+    // 4) 거리 산책 아트토이 주민들 (최대 5명)
     const walkers = (inStage2 ? harborWalkerActors : streetOutingActors)
       .filter((a) => a?.mesh && a.mesh.visible)
       .slice(0, 5);
@@ -19761,7 +19784,7 @@ function syncSmartWorldLodBubbles(anyModalOpen) {
 
   // 우선순위 정렬 및 화면 공간 겹침 방지 배치
   candidates.sort((a, b) => b.priority - a.priority);
-  const placedBoxes = [];
+  const placedBoxes = [...prePlacedBoxes];
 
   for (const cand of candidates) {
     activeKeys.add(cand.key);
@@ -19892,6 +19915,7 @@ function tickGoalNavigatorAndWorldActionBadges(dt) {
   }
 
   const vw = window.innerWidth;
+  const vh = window.innerHeight;
 
   if (bigUiGuideState.arrowGroup3D && bigUiGuideState.arrowLabelEl) {
     const showWorldArrow = inCleanTownStage1 && !anyModalOpen && goal?.targetType === 'world';
@@ -19906,7 +19930,6 @@ function tickGoalNavigatorAndWorldActionBadges(dt) {
         const pulse = 1.0 + Math.sin(bigUiGuideState.elapsed * 5.2) * 0.16;
         bigUiGuideState.arrowRing.scale.setScalar(pulse);
       }
-      // 3D 월드 목표는 텍스트 없이 오직 순금 3D 화살표(▼) 아이콘만 깔끔하게 둥실 유지!
       bigUiGuideState.arrowLabelEl.style.display = 'none';
     } else if (showUiArrow) {
       const fabEl = document.getElementById('fab-notebook');
@@ -19924,7 +19947,35 @@ function tickGoalNavigatorAndWorldActionBadges(dt) {
     }
   }
 
-  syncSmartWorldLodBubbles(anyModalOpen);
+  // 3D 입체 한글 조각 월드 배지 3종 (`드라이브`, `가구 백화점`, `관리소장`) 투영
+  const landmarkBoxes = [];
+  const showWorldImgBadges = inCleanTownStage1 && !anyModalOpen;
+  const place3DImgBadge = (el, wx, wy, wz, hw = 56, hh = 28, hideInTier3 = false) => {
+    if (!el) return;
+    if (!showWorldImgBadges || (hideInTier3 && getWorldSpeechLodTier(wx, wy, wz) === 3)) {
+      el.style.display = 'none';
+      return;
+    }
+    const pt = projectWorldToScreen(wx, wy, wz);
+    if (!pt.visible || pt.x < 64 || pt.x > vw - 64 || pt.y < 168 || pt.y > vh - 122) {
+      el.style.display = 'none';
+      return;
+    }
+    el.style.display = 'inline-flex';
+    el.style.left = `${pt.x}px`;
+    el.style.top = `${pt.y}px`;
+    landmarkBoxes.push({ cx: pt.x, cy: pt.y, hw, hh });
+  };
+
+  const mainLot = state?.lots?.find((l) => l.lotId === 'lot_main') || { x: -4.2, z: -6.4 };
+  const D = GAME_BALANCE.buildingDepth || 8.0;
+  const carPos = driveState.carRootGroup ? driveState.carRootGroup.position : VIP_PARKING_POS;
+
+  place3DImgBadge(bigUiGuideState.carBadgeEl, carPos.x, 3.05, carPos.z, 54, 28, false);
+  place3DImgBadge(bigUiGuideState.mgrBadgeEl, mainLot.x + 2.55, 3.85, mainLot.z + D * 0.5 + 1.1, 60, 26, true);
+  place3DImgBadge(bigUiGuideState.shopBadgeEl, 25.2, goal?.step === 1 ? 6.1 : 7.3, -3.5, 68, 30, false);
+
+  syncSmartWorldLodBubbles(anyModalOpen, landmarkBoxes);
 }
 
 // =========================================================
@@ -25074,7 +25125,38 @@ async function initPopMartAssetsAsync() {
     }));
   }
 
-  // 1) Batch 1: 동물 캐릭터 10종 단독 초고화질 마스터 PNG(char_01_bunny.png ~ char_10_panda_celeb.png) 로드 & 스튜디오 오프화이트 배경 100% 투명화
+  // 0-B) 10종 3D 입체 한글 조각 일체형 배지(`assets/ui_badges/badge_*.png`) 로드 & 외곽 #FFFFFF 자동 투명 누끼 처리 후 DOM 바인딩!
+  if (paths.uiBadges) {
+    POPMART_ASSETS.uiBadges = POPMART_ASSETS.uiBadges || {};
+    const badgeDomTargets = [
+      ['btnMoneygun', ['badge-img-btn-moneygun']],
+      ['btnNotebook', ['badge-img-btn-notebook']],
+      ['actionCollect', ['badge-img-action-collect']],
+      ['actionConstruct', ['badge-img-action-construct']],
+      ['actionDuel', ['badge-img-action-duel']],
+      ['worldDrive', ['badge-img-world-drive']],
+      ['worldFurniture', ['badge-img-world-furniture']],
+      ['worldManager', ['badge-img-world-manager']],
+      ['headerTitle', ['badge-img-title-hero', 'badge-img-pocket-header', 'badge-img-tt-brand']],
+      ['goalMove', ['badge-img-goal-move']]
+    ];
+    await Promise.all(badgeDomTargets.map(async ([bKey, domIds]) => {
+      try {
+        const bSrc = paths.uiBadges[bKey];
+        if (!bSrc) return;
+        const rawBadgeImg = await loadRawImagePromise(bSrc);
+        const cleanBadgeCv = removeWhiteBackground(rawBadgeImg, 'single', 242);
+        const cleanBadgeUrl = cleanUiSkinOuterWhiteToDataUrl(cleanBadgeCv);
+        POPMART_ASSETS.uiBadges[bKey] = cleanBadgeUrl;
+        for (const did of domIds) {
+          const el = document.getElementById(did);
+          if (el) el.src = cleanBadgeUrl;
+        }
+      } catch (e) {
+        // 로드 실패 시 기본 정적 PNG 경로 유지
+      }
+    }));
+  }
   await Promise.all(roster.map(async (ch) => {
     try {
       const srcPath = ch.imgPath || ch.sheetPath;

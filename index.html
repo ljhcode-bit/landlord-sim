@@ -1,6 +1,26 @@
 <!DOCTYPE html>
 <html lang="ko" class="light" style="color-scheme: light only;">
 <head>
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Plus+Jakarta+Sans:wght@800;900&family=Jua&display=swap" rel="stylesheet" />
+  <style>
+    @font-face {
+      font-family: 'TmoneyRoundWind';
+      src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_20-07@1.0/TmoneyRoundWindExtraBold.woff') format('woff');
+      font-weight: 800;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'CookieRun';
+      src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/CookieRun-Regular.woff') format('woff');
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+  </style>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="color-scheme" content="light only" />
@@ -10,12 +30,6 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <link rel="manifest" href="./manifest.json" />
   <title>갓물주 라이프 3D: 미니미 타운</title>
-
-  <!-- Google Fonts Jua (타이틀·숫자·버튼용) & Pretendard (상세 본문용) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css" />
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script type="importmap">
@@ -65,11 +79,11 @@
   <section id="title-screen-overlay" class="fixed inset-0 z-[90] pointer-events-none select-none">
     <div id="title-floating-card" class="title-floating-card pointer-events-auto">
       <h1 class="title-brand-display" aria-label="갓물주 라이프">
-        <span>갓물주</span>
-        <span>라이프</span>
+        <img id="badge-img-title-hero" src="./assets/ui_badges/badge_header_title.png" alt="갓물주 라이프" class="toy-badge-header-logo-img" />
+        <span class="sr-only">갓물주 라이프</span>
       </h1>
 
-      <div class="w-full mt-8 flex flex-col items-center">
+      <div class="w-full mt-4 flex flex-col items-center">
         <div id="title-loading-box" class="title-slim-loader-wrap">
           <div class="title-slim-loader-track">
             <div id="title-progress-fill" class="title-slim-loader-fill" style="width: 8%;"></div>
@@ -241,14 +255,17 @@
     </div>
   </header>
 
-  <!-- ==================== 3B. 상단 정중앙: 『🎯 슬림 비주얼 할 일 가이드 바 (44x44 썸네일 + 핵심 한 줄 + 👆 이동)』 ==================== -->
+  <!-- ==================== 3B. 상단 정중앙: 『🎯 슬림 비주얼 할 일 가이드 바 (44x44 썸네일 + 핵심 한 줄 + 3D 바로 이동 배지)』 ==================== -->
   <div id="top-goal-navigator" class="hidden fixed top-[18px] left-1/2 -translate-x-1/2 z-[36] pointer-events-auto">
     <button id="btn-goal-nav-bar" type="button" class="goal-navigator-capsule" title="클릭하면 목표 위치로 카메라가 즉시 이동하고 메뉴를 열어줍니다!">
       <span id="goal-nav-thumb" class="goal-nav-thumb-box" aria-hidden="true">
         <img id="goal-nav-thumb-img" src="./assets/furniture/bed_tier3_canopy.png" alt="" class="w-full h-full object-contain" />
       </span>
       <span id="goal-nav-text" class="goal-nav-label">가구 백화점 첫 침대 구매</span>
-      <span id="btn-goal-nav-go" class="goal-nav-cta-pill">👆 이동</span>
+      <span id="btn-goal-nav-go" class="goal-nav-img-badge-slot">
+        <img id="badge-img-goal-move" src="./assets/ui_badges/badge_goal_move.png" alt="바로 이동" class="toy-badge-goal-move-img" />
+        <span class="sr-only">바로 이동</span>
+      </span>
     </button>
   </div>
 
@@ -524,11 +541,11 @@
     <div id="pocket-planner-popover" class="hidden pocket-planner-card pointer-events-auto" role="dialog" aria-label="건물주 수첩">
       <div class="pocket-leather-frame">
         <div class="pocket-paper-sheet">
-          <!-- 수첩 상단 단정한 헤더 -->
+          <!-- 수첩 상단 3D 입체 로고 헤더 (`badge_header_title.png`) -->
           <div class="flex items-center justify-between gap-2 pb-2 mb-2 border-b-2 border-[#E8D0B5]">
-            <div class="flex items-center gap-2 min-w-0">
-              <span id="pocket-header-mini-ico" class="inline-flex items-center justify-center w-8 h-8 shrink-0">📒</span>
-              <span class="font-title text-[20px] text-[#1E1B18] whitespace-nowrap">건물주 수첩</span>
+            <div class="flex items-center gap-1.5 min-w-0">
+              <span id="pocket-header-mini-ico" class="hidden"></span>
+              <img id="badge-img-pocket-header" src="./assets/ui_badges/badge_header_title.png" alt="갓물주 라이프" class="toy-badge-pocket-logo-img" />
             </div>
             <div class="flex items-center gap-1.5 shrink-0">
               <button id="btn-open-ledger-modal" type="button" class="pocket-ledger-big-pill" title="전체 퀘스트 · 관리인 · 호실 장부 열기">
@@ -539,9 +556,9 @@
             </div>
           </div>
 
-          <!-- 3대 비주얼 쇼케이스 액션 카드 (큼직한 3D 일러스트 + 핵심 한 줄 + 원클릭 토이 버튼) -->
+          <!-- 3대 비주얼 쇼케이스 액션 카드 (큼직한 3D 일러스트 + 핵심 한 줄 + 3D 입체 한글 토이 배지 버튼) -->
           <div class="space-y-2">
-            <!-- ① 전 호실 월세 수금 카드 -->
+            <!-- ① 전 호실 월세 수금 카드 (`badge_action_collect.png`) -->
             <div class="pocket-giant-action-card tone-gold">
               <div class="pocket-visual-card-row">
                 <div id="pocket-art-collect" class="pocket-art-showcase-box">
@@ -553,15 +570,16 @@
                     <span id="stamp-collect-badge" class="hidden pocket-giant-count-pill">1건</span>
                   </div>
                   <div id="pocket-collect-amount" class="pocket-giant-hero-number text-[#B45309]">+150,000원</div>
-                  <button id="btn-collect-all" type="button" class="jelly-action-btn btn-gold-lip pocket-giant-cta-btn w-full">
-                    <span id="hud-ico-collect" class="inline-flex items-center justify-center w-5 h-5 shrink-0"></span>
-                    <span id="pocket-collect-btn-label">일괄 수금하기</span>
+                  <button id="btn-collect-all" type="button" class="toy-img-action-btn" aria-label="일괄 수금">
+                    <img id="badge-img-action-collect" src="./assets/ui_badges/badge_action_collect.png" alt="일괄 수금" class="toy-badge-wide-cta-img" />
+                    <span id="hud-ico-collect" class="hidden"></span>
+                    <span id="pocket-collect-btn-label" class="sr-only">일괄 수금</span>
                   </button>
                 </div>
               </div>
             </div>
 
-            <!-- ② 새 층 · 상가 착공 카드 -->
+            <!-- ② 새 층 · 상가 착공 카드 (`badge_action_construct.png`) -->
             <div class="pocket-giant-action-card tone-sky">
               <div class="pocket-visual-card-row">
                 <div id="pocket-art-build" class="pocket-art-showcase-box">
@@ -579,15 +597,16 @@
                       <span id="pocket-build-gauge-label" class="pocket-thick-gauge-text">🚧 65%</span>
                     </div>
                   </div>
-                  <button id="btn-quick-expand" type="button" class="jelly-action-btn btn-sky-lip pocket-giant-cta-btn w-full">
-                    <span id="hud-ico-expand" class="inline-flex items-center justify-center w-5 h-5 shrink-0"></span>
-                    <span id="pocket-build-btn-label">지금 착공하기</span>
+                  <button id="btn-quick-expand" type="button" class="toy-img-action-btn" aria-label="증축 착공">
+                    <img id="badge-img-action-construct" src="./assets/ui_badges/badge_action_construct.png" alt="증축 착공" class="toy-badge-wide-cta-img" />
+                    <span id="hud-ico-expand" class="hidden"></span>
+                    <span id="pocket-build-btn-label" class="sr-only">증축 착공</span>
                   </button>
                 </div>
               </div>
             </div>
 
-            <!-- ③ 앞 순위 부자와 쇼룸 결투 카드 -->
+            <!-- ③ 앞 순위 부자와 쇼룸 결투 카드 (`badge_action_duel.png`) -->
             <div class="pocket-giant-action-card tone-lavender">
               <div class="pocket-visual-card-row">
                 <div id="pocket-art-duel" class="pocket-art-showcase-box">
@@ -598,9 +617,10 @@
                     <span id="pocket-duel-card-title" class="pocket-giant-card-title">98위 부자와 결투</span>
                   </div>
                   <div id="pocket-duel-subtext" class="pocket-giant-sub-highlight text-[#047857]">🏆 승리 시 월세 +15%</div>
-                  <button id="btn-rival-battle" type="button" class="jelly-action-btn btn-coral-lip pocket-giant-cta-btn w-full">
-                    <span id="hud-ico-rival" class="inline-flex items-center justify-center w-5 h-5 shrink-0"></span>
-                    <span id="pocket-duel-btn-label">결투장 입장</span>
+                  <button id="btn-rival-battle" type="button" class="toy-img-action-btn" aria-label="쇼룸 결투">
+                    <img id="badge-img-action-duel" src="./assets/ui_badges/badge_action_duel.png" alt="쇼룸 결투" class="toy-badge-wide-cta-img" />
+                    <span id="hud-ico-rival" class="hidden"></span>
+                    <span id="pocket-duel-btn-label" class="sr-only">쇼룸 결투</span>
                   </button>
                 </div>
               </div>
@@ -617,20 +637,18 @@
       </div>
     </div>
 
-    <!-- 우측 하단 2대 장난감 퀵 버튼 (56x56 대형 3D 아이콘 + 14~15px Bold 단정 라벨!) -->
-    <div id="quick-duo-dock" class="flex items-end gap-3.5 pointer-events-auto">
-      <button id="btn-make-it-rain" type="button" title="💸 돈 뿌리기 (마을 행복도 &amp; 피버 상승)" aria-label="돈 뿌리기" class="giant-bottom-fab tone-money">
-        <span class="giant-fab-icon-box">
-          <span id="hud-ico-moneygun" class="w-[56px] h-[56px] flex items-center justify-center" aria-hidden="true">💸</span>
-        </span>
-        <span class="giant-fab-label">돈 뿌리기</span>
+    <!-- 우측 하단 2대 메인 버튼 (`badge_btn_moneygun.png` & `badge_btn_notebook.png` 3D 입체 한글 일체형 배지!) -->
+    <div id="quick-duo-dock" class="flex items-end gap-3 pointer-events-auto">
+      <button id="btn-make-it-rain" type="button" title="돈 뿌리기 (마을 행복도 &amp; 피버 상승)" aria-label="돈 뿌리기" class="giant-bottom-fab toy-img-main-fab tone-money">
+        <img id="badge-img-btn-moneygun" src="./assets/ui_badges/badge_btn_moneygun.png" alt="돈 뿌리기" class="toy-badge-main-fab-img" />
+        <span id="hud-ico-moneygun" class="hidden"></span>
+        <span class="sr-only">돈 뿌리기</span>
       </button>
 
-      <button id="fab-notebook" type="button" aria-label="건물주 수첩 열기" title="건물주 수첩 열기" class="giant-bottom-fab tone-diary relative">
-        <span class="giant-fab-icon-box">
-          <span id="fab-svg-slot" class="w-[56px] h-[56px] flex items-center justify-center" aria-hidden="true">📒</span>
-        </span>
-        <span class="giant-fab-label">건물주 수첩</span>
+      <button id="fab-notebook" type="button" aria-label="건물주 수첩 열기" title="건물주 수첩 열기" class="giant-bottom-fab toy-img-main-fab tone-diary relative">
+        <img id="badge-img-btn-notebook" src="./assets/ui_badges/badge_btn_notebook.png" alt="건물주 수첩" class="toy-badge-main-fab-img" />
+        <span id="fab-svg-slot" class="hidden"></span>
+        <span class="sr-only">건물주 수첩</span>
         <span id="fab-red-dot" class="hidden pocket-fab-dot">!</span>
       </button>
     </div>
@@ -1225,9 +1243,10 @@
     <!-- 상단 헤더 & 필터 탭 바 -->
     <div class="w-full max-w-[1000px] flex flex-col items-center gap-2.5 pointer-events-auto z-10">
       <div class="w-full flex items-center justify-between gap-3 turntable-top-pill">
-        <div class="flex items-center gap-3 min-w-0">
-          <span id="tt-header-badge" class="px-3.5 py-1 rounded-full font-title text-[16px] bg-[#FFD700] text-[#1E1B18] shrink-0">360° 쇼케이스</span>
-          <div id="tt-header-title" class="font-title text-[24px] sm:text-[26px] text-[#FFFFFF] truncate">🛋️ 가구 백화점</div>
+        <div class="flex items-center gap-2.5 min-w-0">
+          <img id="badge-img-tt-brand" src="./assets/ui_badges/badge_header_title.png" alt="갓물주 라이프" class="toy-badge-tt-logo-img" />
+          <span id="tt-header-badge" class="hidden">360° 쇼케이스</span>
+          <div id="tt-header-title" class="font-title text-[20px] sm:text-[22px] text-[#2C1E18] truncate">🛋️ 가구 백화점</div>
           <div id="tt-header-sub" class="hidden"></div>
         </div>
         <div class="flex items-center gap-2.5 shrink-0">

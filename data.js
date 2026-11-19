@@ -4046,6 +4046,18 @@ const POPMART_ASSET_PATHS = {
     btnActionCoral: './assets/ui_skins/skin_btn_action_coral.png',
     roundBadgeFrame: './assets/ui_skins/skin_round_badge_frame.png',
     drawerSidePanel: './assets/ui_skins/skin_drawer_side_panel.png'
+  },
+  uiBadges: {
+    btnMoneygun: './assets/ui_badges/badge_btn_moneygun.png',
+    btnNotebook: './assets/ui_badges/badge_btn_notebook.png',
+    actionCollect: './assets/ui_badges/badge_action_collect.png',
+    actionConstruct: './assets/ui_badges/badge_action_construct.png',
+    actionDuel: './assets/ui_badges/badge_action_duel.png',
+    worldDrive: './assets/ui_badges/badge_world_drive.png',
+    worldFurniture: './assets/ui_badges/badge_world_furniture.png',
+    worldManager: './assets/ui_badges/badge_world_manager.png',
+    headerTitle: './assets/ui_badges/badge_header_title.png',
+    goalMove: './assets/ui_badges/badge_goal_move.png'
   }
 };
 
