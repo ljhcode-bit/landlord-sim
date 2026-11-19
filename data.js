@@ -665,6 +665,87 @@ function createCustomSVGIcon(name, size = 24) {
         </g>`;
       break;
 
+    case 'rival_bolt':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <circle cx="16" cy="16" r="11.2" fill="url(#${uid}_purple)" stroke="#3A2E2B" stroke-width="1.7"/>
+          <path d="M17.8 5.2L9.2 17.2H15.4L13.8 26.8L22.8 14.4H16.6L17.8 5.2Z" fill="url(#${uid}_gold)" stroke="#3A2E2B" stroke-width="1.5" stroke-linejoin="round"/>
+        </g>`;
+      break;
+
+    case 'forbes_trophy':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <path d="M8.5 7.5H23.5V13.5C23.5 18 20.2 21 16 21C11.8 21 8.5 18 8.5 13.5V7.5Z" fill="url(#${uid}_gold)" stroke="#3A2E2B" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M8.5 9.5H5.2C4.6 9.5 4.2 10 4.3 10.6C4.8 14.2 6.8 16.2 9.2 16.5M23.5 9.5H26.8C27.4 9.5 27.8 10 27.7 10.6C27.2 14.2 25.2 16.2 22.8 16.5" fill="none" stroke="url(#${uid}_gold)" stroke-width="2.4" stroke-linecap="round"/>
+          <rect x="13.8" y="20.8" width="4.4" height="3.8" fill="url(#${uid}_gold)" stroke="#3A2E2B" stroke-width="1.4"/>
+          <rect x="10" y="24.5" width="12" height="3.5" rx="1.4" fill="url(#${uid}_leather)" stroke="#3A2E2B" stroke-width="1.5"/>
+          <polygon points="16,10.2 17.2,12.7 19.9,13.1 17.9,15 18.4,17.7 16,16.4 13.6,17.7 14.1,15 12.1,13.1 14.8,12.7" fill="#FFFDF7"/>
+        </g>`;
+      break;
+
+    case 'auction_paddle':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <rect x="14.2" y="17.5" width="3.6" height="10.2" rx="1.6" fill="url(#${uid}_wood)" stroke="#3A2E2B" stroke-width="1.4"/>
+          <circle cx="16" cy="11.8" r="7.6" fill="url(#${uid}_gold)" stroke="#3A2E2B" stroke-width="1.7"/>
+          <circle cx="16" cy="11.8" r="5.3" fill="#FFFDF7" stroke="#B45309" stroke-width="1.1"/>
+          <path d="M13.5 12.2L15.3 14L19 9.8" fill="none" stroke="#D97706" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>`;
+      break;
+
+    case 'golden_briefcase':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <path d="M11.8 8.8V6.5C11.8 5.4 12.7 4.6 13.8 4.6H18.2C19.3 4.6 20.2 5.4 20.2 6.5V8.8" fill="none" stroke="#3A2E2B" stroke-width="2.4" stroke-linecap="round"/>
+          <rect x="4.5" y="8.8" width="23" height="17.5" rx="3.6" fill="url(#${uid}_gold)" stroke="#3A2E2B" stroke-width="1.7"/>
+          <line x1="4.8" y1="16.2" x2="27.2" y2="16.2" stroke="#3A2E2B" stroke-width="1.5"/>
+          <rect x="13.2" y="14.2" width="5.6" height="4.2" rx="1.2" fill="#FFFDF7" stroke="#3A2E2B" stroke-width="1.4"/>
+        </g>`;
+      break;
+
+    case 'race_flag':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <line x1="6.8" y1="5" x2="6.8" y2="27.5" stroke="#3A2E2B" stroke-width="2.6" stroke-linecap="round"/>
+          <rect x="7.8" y="6.2" width="18.4" height="12.4" rx="2" fill="#FFFDF7" stroke="#3A2E2B" stroke-width="1.6"/>
+          <rect x="7.8" y="6.2" width="4.6" height="4.1" fill="#3A2E2B"/>
+          <rect x="17" y="6.2" width="4.6" height="4.1" fill="#3A2E2B"/>
+          <rect x="12.4" y="10.3" width="4.6" height="4.1" fill="#3A2E2B"/>
+          <rect x="21.6" y="10.3" width="4.6" height="4.1" fill="#3A2E2B"/>
+          <rect x="7.8" y="14.4" width="4.6" height="4.1" fill="#3A2E2B"/>
+          <rect x="17" y="14.4" width="4.6" height="4.1" fill="#3A2E2B"/>
+        </g>`;
+      break;
+
+    case 'megaphone_purple':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <path d="M6.5 14.2L22.5 7.5V23.5L6.5 18.2Z" fill="url(#${uid}_purple)" stroke="#3A2E2B" stroke-width="1.6" stroke-linejoin="round"/>
+          <rect x="4.2" y="13.6" width="3.5" height="5.2" rx="1.3" fill="url(#${uid}_gold)" stroke="#3A2E2B" stroke-width="1.4"/>
+          <path d="M9.5 18.8L11.2 25.2H14.5L13.2 19.8" fill="url(#${uid}_gold)" stroke="#3A2E2B" stroke-width="1.4" stroke-linejoin="round"/>
+          <path d="M25.2 11.5Q28 15.5 25.2 19.5" fill="none" stroke="url(#${uid}_gold)" stroke-width="2.4" stroke-linecap="round"/>
+        </g>`;
+      break;
+
+    case 'sleep_zzz':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <path d="M6 19.5H12.5L6 26H12.8" fill="none" stroke="url(#${uid}_sky)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M14.5 11.5H22L14.5 19H22.5" fill="none" stroke="url(#${uid}_purple)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M21.5 5H27.2L21.5 10.5H27.5" fill="none" stroke="url(#${uid}_gold)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>`;
+      break;
+
+    case 'lightbulb_tip':
+      body = `
+        <g filter="url(#${uid}_sh)">
+          <path d="M16 4.8C11.3 4.8 7.8 8.2 7.8 12.6C7.8 15.5 9.5 18 11.8 19.5L12.4 22.5H19.6L20.2 19.5C22.5 18 24.2 15.5 24.2 12.6C24.2 8.2 20.7 4.8 16 4.8Z" fill="url(#${uid}_gold)" stroke="#3A2E2B" stroke-width="1.6" stroke-linejoin="round"/>
+          <rect x="12.6" y="22.5" width="6.8" height="4.2" rx="1.6" fill="url(#${uid}_cream)" stroke="#3A2E2B" stroke-width="1.5"/>
+          <path d="M13.5 13.5L15.4 15.8L19 11.2" fill="none" stroke="#FFFDF7" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>`;
+      break;
+
     default:
       body = `
         <g filter="url(#${uid}_sh)">
@@ -1000,7 +1081,9 @@ function createNotebookArtworkSVG(kind, size = 48) {
       manager: ['#E0ECFF', '#BDD6FF'],
       baker: ['#FFF4EB', '#FFE0C8'],
       barista: ['#EFE6DD', '#DFCBB8'],
-      florist: ['#FFF0F6', '#FFD6E7']
+      florist: ['#FFF0F6', '#FFD6E7'],
+      rival_kang: ['#F3E8FF', '#D8B4FE'],
+      mansour: ['#FEF3C7', '#FDE68A']
     };
     const [bg1, bg2] = bgPalette[role] || bgPalette.student;
     let portrait = '';
@@ -1069,6 +1152,26 @@ function createNotebookArtworkSVG(kind, size = 48) {
         <circle cx="32" cy="35" r="11" fill="#FFE5D6" stroke="#3A2E2B" stroke-width="2"/>
         <ellipse cx="32" cy="23" rx="16" ry="4" fill="#FFD93D" stroke="#3A2E2B" stroke-width="1.7"/>
         <circle cx="28" cy="35" r="1.7" fill="#3A2E2B"/><circle cx="36" cy="35" r="1.7" fill="#3A2E2B"/>`;
+    } else if (role === 'rival_kang') {
+      portrait = `
+        <path d="M13 58C14 44 21 40 32 40C43 40 50 44 51 58Z" fill="#6B21A8" stroke="#3A2E2B" stroke-width="2"/>
+        <path d="M23 43Q32 52 41 43" fill="none" stroke="#FFD93D" stroke-width="3.2" stroke-linecap="round"/>
+        <circle cx="32" cy="50" r="3" fill="#FFD93D" stroke="#3A2E2B" stroke-width="1.3"/>
+        <circle cx="32" cy="34" r="11.5" fill="#FFE5D6" stroke="#3A2E2B" stroke-width="2"/>
+        <rect x="21.5" y="30" width="9" height="5.5" rx="1.8" fill="#1E293B" stroke="#FFD93D" stroke-width="1.4"/>
+        <rect x="33.5" y="30" width="9" height="5.5" rx="1.8" fill="#1E293B" stroke="#FFD93D" stroke-width="1.4"/>
+        <line x1="30.5" y1="32" x2="33.5" y2="32" stroke="#FFD93D" stroke-width="1.6"/>
+        <ellipse cx="32" cy="23" rx="16.5" ry="3.8" fill="#1E1B4B" stroke="#3A2E2B" stroke-width="1.8"/>
+        <path d="M21 23L23.5 13.5H40.5L43 23Z" fill="#312E81" stroke="#3A2E2B" stroke-width="1.8"/>
+        <rect x="22" y="20" width="20" height="3" rx="1" fill="#FFD93D"/>`;
+    } else if (role === 'mansour') {
+      portrait = `
+        <path d="M13 58C14 44 21 40 32 40C43 40 50 44 51 58Z" fill="#FFFDF7" stroke="#D97706" stroke-width="2"/>
+        <circle cx="32" cy="34" r="11.5" fill="#FDE2C8" stroke="#3A2E2B" stroke-width="2"/>
+        <path d="M18 28C18 16 46 16 46 28L49 46H44L42 29H22L20 46H15Z" fill="#FFFDF7" stroke="#3A2E2B" stroke-width="1.7"/>
+        <rect x="20" y="19" width="24" height="4.2" rx="2" fill="#1E293B" stroke="#FFD93D" stroke-width="1.5"/>
+        <rect x="22.5" y="31" width="8" height="4.8" rx="1.8" fill="#FFD93D" stroke="#3A2E2B" stroke-width="1.4"/>
+        <rect x="33.5" y="31" width="8" height="4.8" rx="1.8" fill="#FFD93D" stroke="#3A2E2B" stroke-width="1.4"/>`;
     } else {
       portrait = `
         <path d="M15 58C16 45 23 41 32 41C41 41 48 45 49 58Z" fill="#1E3A8A" stroke="#3A2E2B" stroke-width="2"/>
@@ -2255,6 +2358,261 @@ const CHARACTER_STYLE_PRESETS = [
   { face: 12, outfit: 5,  hair: 'wavy_perm',        hairHex: 0x7C2D12 }
 ];
 
+// =========================================================
+// 11. 포브스(FORBES) 대한민국 갓물주 자산 순위 보드 10인 거물 랭커 데이터
+// =========================================================
+const FORBES_RIVAL_RANKERS = [
+  {
+    baseRank: 1,
+    id: 'rank_mansour',
+    name: '두바이 오일머니 만수르 셰이크',
+    badge: '글로벌 절대성군',
+    titleUnlock: '세계관 최강 만수르 대제',
+    netWorth: 18500,
+    dividendReward: 1200,
+    tone: 'gold',
+    avatarRole: 'mansour',
+    desc: '유전과 초고층 골드 랜드마크를 소유한 전설의 최정점 자산가'
+  },
+  {
+    baseRank: 2,
+    id: 'rank_yeouido',
+    name: '여의도 월스트리트 한 회장',
+    badge: '금융타워 거물',
+    titleUnlock: '여의도 스카이라인 지배자',
+    netWorth: 12800,
+    dividendReward: 750,
+    tone: 'sky',
+    avatarRole: 'manager',
+    desc: '여의도 초고층 프라임 오피스와 글로벌 리츠를 굴리는 큰손'
+  },
+  {
+    baseRank: 3,
+    id: 'rank_gangnam',
+    name: '강남 테헤란로 타워 백 총수',
+    badge: '강남 빌딩왕',
+    titleUnlock: '테헤란로 프라임 건물주',
+    netWorth: 9200,
+    dividendReward: 550,
+    tone: 'mint',
+    avatarRole: 'developer',
+    desc: '테헤란로 역세권 코너 빌딩 5채를 보유한 전통의 빌딩 재벌'
+  },
+  {
+    baseRank: 4,
+    id: 'rival_kang',
+    name: '블랙타워 강 회장',
+    badge: '숙명의 라이벌!',
+    titleUnlock: '강 회장 참교육자 · 4대 천왕',
+    netWorth: 6400,
+    dividendReward: 500,
+    tone: 'coral',
+    isArchRival: true,
+    avatarRole: 'rival_kang',
+    desc: '보라색 슈퍼카를 몰고 다니며 우량 세입자와 상가 매물을 노리는 야심가'
+  },
+  {
+    baseRank: 5,
+    id: 'rank_haeundae',
+    name: '해운대 오션뷰 마 회장',
+    badge: '마린시티 큰손',
+    titleUnlock: '오션뷰 리조트 타이쿤',
+    netWorth: 5100,
+    dividendReward: 340,
+    tone: 'sky',
+    avatarRole: 'barista',
+    desc: '해운대 해안 상권과 오션뷰 펜트하우스를 싹쓸이한 리조트 재벌'
+  },
+  {
+    baseRank: 6,
+    id: 'rank_apgujeong',
+    name: '압구정 로데오 정 사모님',
+    badge: '청담 부티크 여왕',
+    titleUnlock: '로데오 플래그십 오너',
+    netWorth: 4200,
+    dividendReward: 280,
+    tone: 'coral',
+    avatarRole: 'florist',
+    desc: '청담·압구정 명품 부티크 상가 거리를 장악한 패션 부동산 큰손'
+  },
+  {
+    baseRank: 7,
+    id: 'rank_pangyo',
+    name: '판교 코인졸부 최 이사',
+    badge: '테크밸리 신흥부자',
+    titleUnlock: '스마트 밸리 건물주',
+    netWorth: 3450,
+    dividendReward: 220,
+    tone: 'mint',
+    avatarRole: 'streamer',
+    desc: '스타트업 엑싯 자금으로 주상복합 상가를 사 모으는 신흥 영앤리치'
+  },
+  {
+    baseRank: 8,
+    id: 'rank_seongsu',
+    name: '성수동 붉은벽돌 김 사장',
+    badge: '핫플 리모델링 장인',
+    titleUnlock: '성수 브릭타운 명인',
+    netWorth: 2850,
+    dividendReward: 180,
+    tone: 'gold',
+    avatarRole: 'baker',
+    desc: '구옥 공장을 감성 베이커리와 로스터리 상가로 탈바꿈시킨 고수'
+  },
+  {
+    baseRank: 9,
+    id: 'rank_hongdae',
+    name: '홍대 힙스터 윤 대표',
+    badge: '상권 트렌드세터',
+    titleUnlock: '부티크 스트리트 메이커',
+    netWorth: 2380,
+    dividendReward: 140,
+    tone: 'sky',
+    avatarRole: 'newlywed',
+    desc: '개성 넘치는 원룸·복층 스튜디오와 디저트 샵을 운영하는 젊은 건물주'
+  },
+  {
+    baseRank: 10,
+    id: 'rank_park',
+    name: '복덕방 박 영감',
+    badge: '동네 터줏대감',
+    titleUnlock: '미니미 타운 신예 갓물주',
+    netWorth: 1850,
+    dividendReward: 100,
+    tone: 'cream',
+    avatarRole: 'elderly',
+    desc: '30년째 동네 알짜 상가주택을 지키고 있는 노련한 원로 임대인'
+  }
+];
+
+const RIVAL_BATTLE_MODES = [
+  {
+    id: 'poach_defense',
+    title: '승부 ①: 우량 세입자 스카우트 방어전',
+    badge: '임대료 영구 +30%',
+    icon: 'megaphone_purple',
+    tone: 'coral',
+    desc: '블랙타워 강 회장이 확성기를 들고 내 세입자를 빼가려 유혹합니다! 즉석 가구 업그레이드·선물·머니건으로 참교육하세요!'
+  },
+  {
+    id: 'bidding_war',
+    title: '승부 ②: 황금 상가 1:1 실시간 입찰 경매 배틀',
+    badge: '상가수익 영구 +40%',
+    icon: 'auction_paddle',
+    tone: 'gold',
+    desc: '미인수 부티크 상가 앞에서 강 회장과 3D 경매 번호판을 들며 자존심 호가 배틀! 200% 황금 돈가방 폭격으로 즉시 낙찰받으세요!'
+  },
+  {
+    id: 'coastal_race',
+    title: '승부 ③-A: 외곽 해안 드라이빙 존 1:1 슈퍼카 레이스',
+    badge: '위자료 코인 대폭발',
+    icon: 'race_flag',
+    tone: 'sky',
+    desc: '해안 야자수 도로와 빨간 철제 아치교에서 보라색 라이벌 슈퍼카와 부스트 코인 추월 레이스를 펼칩니다!'
+  },
+  {
+    id: 'double_bell',
+    title: '승부 ③-B: 1인칭 상점 만수르 더블 골든벨 맞불 대결',
+    badge: '골든벨 팁 +480만',
+    icon: 'golden_bell',
+    tone: 'mint',
+    desc: '내 매장에서 거들먹거리는 강 회장 코앞에서 만수르 더블 골든벨을 울려 손님들의 찬양을 독차지하세요!'
+  }
+];
+
+const TITLE_LOADING_STAGES = [
+  { threshold: 0,   icon: 'item_croissant_ico', text: '파티세리 빵집에서 실사 크루아상 굽는 중...' },
+  { threshold: 26,  icon: 'mart_ico',           text: '1층 편의점 매대에 바삭한 과자 봉지 진열 중...' },
+  { threshold: 54,  icon: 'steering_supercar',  text: 'VIP 주차장에 오픈 슈퍼카 광택 내는 중...' },
+  { threshold: 80,  icon: 'money_gun',          text: '만수르 황금 머니건에 오만원권 지폐 장전 중...' },
+  { threshold: 100, icon: 'forbes_trophy',      text: '타운 오픈 준비 완료!' }
+];
+
+const TITLE_TIPS_POOL = [
+  'TIP: 세입자 방을 클릭해 취향에 맞는 가구를 배치하면 임대료 시너지가 폭발합니다!',
+  'TIP: 라이벌 강 회장의 스카우트 공세를 방어하면 해당 호실 임대료가 영구 +30% 인상됩니다!',
+  'TIP: 상가 경매에서 200% 황금 돈가방 폭격을 날리면 매장 기본 수익이 영구 +40% 상승합니다!',
+  'TIP: 총자산을 불려 포브스(FORBES) 대한민국 건물주 랭킹 1위 만수르 셰이크에 도전해 보세요!'
+];
+
+function createTitleEmblemSVG() {
+  return `
+    <svg width="164" height="128" viewBox="0 0 164 128" fill="none" xmlns="http://www.w3.org/2000/svg" class="select-none drop-shadow-xl">
+      <defs>
+        <linearGradient id="te_sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#FFFDF8"/>
+          <stop offset="100%" stop-color="#FFE8CC"/>
+        </linearGradient>
+        <linearGradient id="te_gold" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#FFF7B0"/>
+          <stop offset="50%" stop-color="#FFD93D"/>
+          <stop offset="100%" stop-color="#D97706"/>
+        </linearGradient>
+        <linearGradient id="te_coral" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#FF9E9E"/>
+          <stop offset="100%" stop-color="#E03E52"/>
+        </linearGradient>
+        <linearGradient id="te_mint" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#A7F3D0"/>
+          <stop offset="100%" stop-color="#10B981"/>
+        </linearGradient>
+      </defs>
+      <!-- 파스텔 구름 베이스 오라 -->
+      <ellipse cx="82" cy="108" rx="64" ry="13" fill="#3A2E2B" opacity="0.16"/>
+      <rect x="26" y="34" width="112" height="72" rx="34" fill="url(#te_sky)" stroke="#3A2E2B" stroke-width="3.2"/>
+      <!-- 좌측 아기자기 부티크 상가 -->
+      <rect x="36" y="64" width="28" height="34" rx="5" fill="#FFF5EB" stroke="#3A2E2B" stroke-width="2.4"/>
+      <rect x="33" y="56" width="34" height="10" rx="4" fill="url(#te_mint)" stroke="#3A2E2B" stroke-width="2.2"/>
+      <!-- 중앙 미니어처 랜드마크 빌딩 -->
+      <rect x="62" y="36" width="42" height="62" rx="6" fill="#FFFDF7" stroke="#3A2E2B" stroke-width="2.8"/>
+      <rect x="59" y="30" width="48" height="9" rx="4" fill="url(#te_coral)" stroke="#3A2E2B" stroke-width="2.4"/>
+      <rect x="69" y="45" width="11" height="11" rx="2.5" fill="#BAE6FD" stroke="#3A2E2B" stroke-width="1.8"/>
+      <rect x="86" y="45" width="11" height="11" rx="2.5" fill="#BAE6FD" stroke="#3A2E2B" stroke-width="1.8"/>
+      <rect x="69" y="62" width="11" height="11" rx="2.5" fill="#FDE68A" stroke="#3A2E2B" stroke-width="1.8"/>
+      <rect x="86" y="62" width="11" height="11" rx="2.5" fill="#FDE68A" stroke="#3A2E2B" stroke-width="1.8"/>
+      <rect x="76" y="80" width="14" height="18" rx="3" fill="url(#te_gold)" stroke="#3A2E2B" stroke-width="2"/>
+      <!-- 빌딩 꼭대기 24K 황금 왕관 -->
+      <path d="M65 28L69 11L83 20L97 11L101 28Z" fill="url(#te_gold)" stroke="#3A2E2B" stroke-width="2.6" stroke-linejoin="round"/>
+      <circle cx="69" cy="9" r="3.5" fill="#FFFDF7" stroke="#3A2E2B" stroke-width="1.8"/>
+      <circle cx="83" cy="7" r="4.2" fill="#FF6B6B" stroke="#3A2E2B" stroke-width="1.8"/>
+      <circle cx="97" cy="9" r="3.5" fill="#FFFDF7" stroke="#3A2E2B" stroke-width="1.8"/>
+      <!-- 우측 전면 오픈 레드 슈퍼카 -->
+      <g transform="translate(88, 76)">
+        <path d="M4 16L11 8H33L44 13L48 18V23H4V16Z" fill="url(#te_coral)" stroke="#3A2E2B" stroke-width="2.4" stroke-linejoin="round"/>
+        <path d="M15 9.2L12 14H31L28 9.2Z" fill="#BAE6FD" stroke="#3A2E2B" stroke-width="1.6"/>
+        <circle cx="14" cy="23" r="5.5" fill="#1E293B" stroke="#3A2E2B" stroke-width="2"/>
+        <circle cx="14" cy="23" r="2.3" fill="#FFD93D"/>
+        <circle cx="37" cy="23" r="5.5" fill="#1E293B" stroke="#3A2E2B" stroke-width="2"/>
+        <circle cx="37" cy="23" r="2.3" fill="#FFD93D"/>
+      </g>
+      <!-- 좌측 반짝이 골드 코인 -->
+      <circle cx="31" cy="88" r="10.5" fill="url(#te_gold)" stroke="#3A2E2B" stroke-width="2.4"/>
+      <circle cx="31" cy="88" r="6.8" fill="none" stroke="#FFFDF7" stroke-width="1.5"/>
+      <path d="M133 24L135.2 29.5L140.8 31.8L135.2 34L133 39.5L130.8 34L125.2 31.8L130.8 29.5Z" fill="#FFD93D" stroke="#3A2E2B" stroke-width="1.5"/>
+      <path d="M25 28L26.6 32L30.6 33.6L26.6 35.2L25 39.2L23.4 35.2L19.4 33.6L23.4 32Z" fill="#FFFDF7" stroke="#3A2E2B" stroke-width="1.3"/>
+    </svg>
+  `;
+}
+
+function createLoadingMiniCarSVG() {
+  return `
+    <svg width="44" height="28" viewBox="0 0 44 28" fill="none" xmlns="http://www.w3.org/2000/svg" class="select-none drop-shadow">
+      <path d="M4 16L10 8.5H28L38 13L41 17.5V21.5H4V16Z" fill="#FF5263" stroke="#3A2E2B" stroke-width="2.2" stroke-linejoin="round"/>
+      <path d="M13 9.8L10.5 14H26.5L24 9.8Z" fill="#BAE6FD" stroke="#3A2E2B" stroke-width="1.5"/>
+      <circle cx="12.5" cy="21.5" r="4.6" fill="#1E293B" stroke="#3A2E2B" stroke-width="1.8"/>
+      <circle cx="12.5" cy="21.5" r="1.9" fill="#FFD93D"/>
+      <circle cx="32.5" cy="21.5" r="4.6" fill="#1E293B" stroke="#3A2E2B" stroke-width="1.8"/>
+      <circle cx="32.5" cy="21.5" r="1.9" fill="#FFD93D"/>
+    </svg>
+  `;
+}
+
+window.FORBES_RIVAL_RANKERS = FORBES_RIVAL_RANKERS;
+window.RIVAL_BATTLE_MODES = RIVAL_BATTLE_MODES;
+window.TITLE_LOADING_STAGES = TITLE_LOADING_STAGES;
+window.TITLE_TIPS_POOL = TITLE_TIPS_POOL;
+window.createTitleEmblemSVG = createTitleEmblemSVG;
+window.createLoadingMiniCarSVG = createLoadingMiniCarSVG;
 window.FIRST_FLOOR_SHOPS_TEMPLATE = FIRST_FLOOR_SHOPS_TEMPLATE;
 window.HAPPINESS_MILESTONES = HAPPINESS_MILESTONES;
 window.CHARACTER_STYLE_PRESETS = CHARACTER_STYLE_PRESETS;

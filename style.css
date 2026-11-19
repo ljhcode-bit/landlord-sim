@@ -1494,3 +1494,188 @@ input[type='range'].golden-coin-range::-webkit-slider-thumb {
   0% { transform: translate(-50%, -95%) scale(0.92); opacity: 0.88; }
   100% { transform: translate(-50%, -125%) scale(1.1); opacity: 1; }
 }
+
+/* ==================== 14. 시네마틱 3D 오프닝 로딩 & 타이틀 스크린 / 라이벌 / 포브스 UI ==================== */
+.title-screen-glass {
+  background: radial-gradient(circle at 50% 38%, rgba(255, 251, 235, 0.22) 0%, rgba(255, 236, 209, 0.44) 62%, rgba(58, 46, 43, 0.28) 100%);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1), transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.title-screen-glass.fade-out-swoop {
+  opacity: 0 !important;
+  transform: scale(1.06) !important;
+  pointer-events: none !important;
+}
+
+.title-sub-ribbon {
+  background: linear-gradient(180deg, #FFFBEB 0%, #FDE68A 100%);
+  border: 2.5px solid #3A2E2B;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.9), 0 4px 0 #B45309, 0 8px 18px rgba(58, 46, 43, 0.2);
+}
+
+.title-main-heading {
+  color: #FFFDF7;
+  -webkit-text-stroke: 2.2px #3A2E2B;
+  paint-order: stroke fill;
+  text-shadow:
+    0 4px 0 #3A2E2B,
+    0 8px 20px rgba(58, 46, 43, 0.32);
+}
+
+.title-logo-float {
+  animation: titleLogoFloat 2.8s infinite ease-in-out;
+}
+
+@keyframes titleLogoFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-7px); }
+}
+
+.title-mini-car-runner {
+  position: absolute;
+  top: -11px;
+  transform: translateX(-50%);
+  transition: left 0.14s linear;
+  animation: miniCarHop 0.42s infinite alternate ease-in-out;
+  pointer-events: none;
+}
+
+@keyframes miniCarHop {
+  0% { margin-top: 0px; }
+  100% { margin-top: -3px; }
+}
+
+.title-start-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border-radius: 30px;
+  background: linear-gradient(180deg, #FFF7B0 0%, #FFD93D 52%, #F59E0B 100%);
+  border: 3px solid #3A2E2B;
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.92),
+    0 7px 0 #9A4E04,
+    0 14px 28px rgba(245, 158, 11, 0.45);
+  cursor: pointer;
+  animation: startBtnPulse 1.35s infinite ease-in-out;
+  transition: transform 0.15s var(--spring-ease), box-shadow 0.15s var(--spring-ease);
+}
+
+.title-start-cta:hover {
+  filter: brightness(1.05);
+}
+
+.title-start-cta:active {
+  transform: translateY(5px) scale(0.97) !important;
+  box-shadow: 0 2px 0 #9A4E04 !important;
+}
+
+@keyframes startBtnPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.035); }
+}
+
+.forbes-hud-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #FFFDF5 0%, #FEF08A 55%, #FCD34D 100%);
+  border: 2.2px solid #FFFFFF;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.95),
+    0 4px 0 #B45309,
+    0 8px 16px rgba(180, 83, 9, 0.24);
+  cursor: pointer;
+  transition: transform 0.16s var(--spring-ease);
+}
+
+.forbes-hud-pill:hover {
+  transform: translateY(-2px) scale(1.02);
+}
+
+.forbes-hud-pill:active {
+  transform: translateY(3px) scale(0.97);
+}
+
+.rival-bolt-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6.5px 13px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #F3E8FF 0%, #C084FC 48%, #7E22CE 100%) !important;
+  color: #FFFDF7 !important;
+  font-family: var(--font-title) !important;
+  font-size: 12px !important;
+  border: 2px solid #FDE047;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.65),
+    0 5px 0 #4C1D95,
+    0 8px 18px rgba(126, 34, 206, 0.34);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.16s var(--spring-ease), box-shadow 0.16s var(--spring-ease), filter 0.14s ease;
+}
+
+.rival-bolt-pill:hover {
+  transform: translateY(-2px) scale(1.03);
+  filter: brightness(1.07);
+}
+
+.rival-bolt-pill:active {
+  transform: translateY(4px) scale(0.97) !important;
+  box-shadow: 0 1px 0 #4C1D95 !important;
+}
+
+@media (max-width: 639px) {
+  .rival-bolt-pill {
+    padding: 5.5px 9.5px;
+    font-size: 11px !important;
+    gap: 3.5px;
+  }
+  .forbes-hud-pill {
+    padding: 4.5px 10px;
+    gap: 5px;
+  }
+}
+
+.poach-alert-pin {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #FAF5FF 0%, #9333EA 100%);
+  color: #FFFDF7;
+  font-family: var(--font-title);
+  font-size: 12px;
+  border: 2.5px solid #FFD93D;
+  box-shadow: 0 4px 0 #4C1D95, 0 8px 18px rgba(147, 51, 234, 0.45);
+  white-space: nowrap;
+  cursor: pointer;
+  animation: poachAlertPulse 0.9s infinite alternate ease-in-out;
+}
+
+@keyframes poachAlertPulse {
+  0% { transform: translate(-50%, -100%) scale(0.97); }
+  100% { transform: translate(-50%, -112%) scale(1.06); }
+}
+
+.forbes-row-me {
+  background: linear-gradient(90deg, #FFFBEB 0%, #FEF08A 100%) !important;
+  border: 2.8px solid #D97706 !important;
+  box-shadow: 0 4px 0 #B45309, 0 8px 18px rgba(217, 119, 6, 0.22) !important;
+}
+
+.forbes-row-kang {
+  background: linear-gradient(90deg, #FAF5FF 0%, #F3E8FF 100%) !important;
+  border: 2.2px solid #A855F7 !important;
+}

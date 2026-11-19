@@ -45,54 +45,138 @@
     <div id="rent-bubbles-layer"></div>
     <div id="speech-overlay-layer"></div>
     <div id="care-overlay-layer"></div>
+    <div id="rival-pins-layer"></div>
     <div id="jackpot-overlay-layer"></div>
   </div>
+
+  <!-- ==================== 2B. 상용 게임 시네마틱 3D 라이브 오프닝 로딩 & 타이틀 스크린 ==================== -->
+  <section id="title-screen-overlay" class="fixed inset-0 z-[90] flex flex-col items-center justify-between py-7 sm:py-10 px-4 title-screen-glass select-none">
+    <!-- 상단 서브 배지 -->
+    <div class="flex flex-col items-center gap-2 mt-1 sm:mt-2 title-logo-float">
+      <div class="title-sub-ribbon inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full">
+        <span id="title-ico-crown" class="flex items-center"></span>
+        <span class="font-title text-[11.5px] sm:text-[13px] tracking-wider text-[#9A4E04]">NINTENDO-STYLE 3D COZY TYCOON</span>
+      </div>
+
+      <!-- 중앙 3D 입체 엠블럼 & 메인 게임 타이틀 로고 -->
+      <div id="title-emblem-slot" class="mt-1"></div>
+
+      <div class="text-center space-y-1">
+        <h1 class="title-main-heading font-title text-[28px] sm:text-[44px] leading-tight break-keep">
+          갓물주 라이프 : 해피 미니미 타운
+        </h1>
+        <p class="font-title text-[13px] sm:text-[16px] tracking-wide text-[#6E4F3A] bg-[#FFFDF7]/85 inline-block px-4 py-0.5 rounded-full border-2 border-[#EED6BE]">
+          GOD-LANDLORD : Happy Minimi Town
+        </p>
+      </div>
+    </div>
+
+    <!-- 하단 단계별 로딩 프로그레스 바 / [타운 입장하기] 전환 독 & 꿀팁 박스 -->
+    <div class="w-full max-w-lg flex flex-col items-center gap-3 mb-1 sm:mb-3">
+      <!-- 로딩 진행 영역 (0% -> 100%) -->
+      <div id="title-loading-box" class="w-full diary-card !bg-[#FFFDF7]/95 !border-[3px] !border-[#E8CCB0] !p-4 space-y-2.5 shadow-2xl">
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2 min-w-0">
+            <span id="title-stage-ico" class="flex items-center shrink-0"></span>
+            <span id="title-stage-text" class="font-title text-[12.5px] sm:text-[14px] text-[#3A2E2B] truncate">
+              파티세리 빵집에서 실사 크루아상 굽는 중...
+            </span>
+          </div>
+          <span id="title-pct-num" class="font-num text-[14px] sm:text-[16px] text-[#D97706] shrink-0">12%</span>
+        </div>
+
+        <div class="relative pt-4 pb-1">
+          <div id="title-car-runner" class="title-mini-car-runner" style="left: 12%;"></div>
+          <div class="candy-gauge-track !h-4 !border-2 !border-[#D8B998]">
+            <div id="title-progress-fill" class="candy-gauge-fill candy-gold transition-all duration-150" style="width: 12%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 100% 완료 시 나타나는 쫀득한 대형 [타운 입장하기 (TOUCH TO START)] 버튼 -->
+      <button id="btn-start-game" type="button" class="hidden title-start-cta w-full max-w-md py-3.5 sm:py-4 px-6">
+        <span id="title-start-ico" class="flex items-center"></span>
+        <div class="flex flex-col items-start leading-tight">
+          <span class="font-title text-[19px] sm:text-[22px] text-[#3A2E2B]">타운 입장하기</span>
+          <span class="font-title text-[11px] sm:text-[12px] tracking-wider text-[#8C4A08]">TOUCH TO START · GAME START</span>
+        </div>
+      </button>
+
+      <!-- 랜덤 게임 꿀팁 카드 -->
+      <div class="w-full diary-subcard !bg-[#FFFBEB]/95 !border-2 !border-[#FDE68A] px-3.5 py-2 flex items-center gap-2 shadow-md">
+        <span id="title-tip-ico" class="flex items-center shrink-0"></span>
+        <span id="title-tip-text" class="font-body text-[11.5px] sm:text-[12.5px] font-extrabold text-[#5C4942] break-keep">
+          TIP: 세입자 방을 클릭해 취향에 맞는 가구를 배치하면 임대료 시너지가 폭발합니다!
+        </span>
+      </div>
+    </div>
+  </section>
 
   <!-- 코인 비행 & HUD 플로팅 텍스트 레이어 -->
   <div id="flying-coin-layer" class="fixed inset-0 z-40 pointer-events-none overflow-hidden"></div>
 
   <!-- ==================== 3. 글래스모피즘 플로팅 필(Floating Pill) 상단 HUD ==================== -->
-  <header class="fixed top-2.5 left-2.5 right-2.5 sm:right-auto sm:left-4 sm:top-3.5 z-30 flex flex-col gap-2 pointer-events-none sm:w-auto sm:max-w-[calc(100vw-348px)]">
-    <!-- 1열: 3대 핵심 재화 아일랜드 필 배지 -->
-    <div class="hud-top-row pointer-events-auto sm:w-[468px]">
-      <div id="hud-badge-gold" class="hud-glass-pill relative">
-        <span id="hud-ico-gold" class="flex items-center justify-center shrink-0"></span>
-        <div class="leading-tight min-w-0 flex-1">
-          <div class="hud-pill-label">보유자산</div>
-          <div id="hud-gold-wrap" class="hud-pill-num text-[#3A2E2B]">
-            <span id="hud-gold" class="font-num">1,250</span><span class="hud-unit">만</span>
+  <header id="main-game-header" class="hidden fixed top-2.5 left-2.5 right-2.5 sm:right-auto sm:left-4 sm:top-3.5 z-30 flex flex-col gap-1.5 sm:gap-2 pointer-events-none sm:w-auto sm:max-w-[calc(100vw-348px)]">
+    <!-- 1열: 3대 핵심 재화 아일랜드 필 배지 + 실시간 포브스(FORBES) 건물주 자산 순위 트로피 배지 -->
+    <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
+      <div class="hud-top-row pointer-events-auto sm:w-[456px]">
+        <div id="hud-badge-gold" class="hud-glass-pill relative">
+          <span id="hud-ico-gold" class="flex items-center justify-center shrink-0"></span>
+          <div class="leading-tight min-w-0 flex-1">
+            <div class="hud-pill-label">보유자산</div>
+            <div id="hud-gold-wrap" class="hud-pill-num text-[#3A2E2B]">
+              <span id="hud-gold" class="font-num">1,350</span><span class="hud-unit">만</span>
+            </div>
+          </div>
+          <div id="hud-gold-pop-anchor" class="absolute right-3 top-0.5 pointer-events-none"></div>
+        </div>
+
+        <div id="hud-badge-yield" class="hud-glass-pill">
+          <span id="hud-ico-yield" class="flex items-center justify-center shrink-0"></span>
+          <div class="leading-tight min-w-0 flex-1">
+            <div class="hud-pill-label">주기순익</div>
+            <div id="hud-net-income" class="hud-pill-num text-[#15803D]">+28만</div>
           </div>
         </div>
-        <div id="hud-gold-pop-anchor" class="absolute right-3 top-0.5 pointer-events-none"></div>
-      </div>
 
-      <div id="hud-badge-yield" class="hud-glass-pill">
-        <span id="hud-ico-yield" class="flex items-center justify-center shrink-0"></span>
-        <div class="leading-tight min-w-0 flex-1">
-          <div class="hud-pill-label">주기순익</div>
-          <div id="hud-net-income" class="hud-pill-num text-[#15803D]">+28만</div>
-        </div>
-      </div>
-
-      <button id="hud-badge-happy" type="button" title="행복도 마일스톤 진화 트래커 보기" class="hud-glass-pill cursor-pointer text-left hover:scale-[1.02] active:scale-[0.98] transition-transform">
-        <span id="hud-ico-happy" class="flex items-center justify-center shrink-0"></span>
-        <div class="leading-tight min-w-0 flex-1">
-          <div class="flex items-center justify-between gap-0.5">
-            <span id="hud-happy-label" class="hud-pill-label !text-[9.5px] sm:!text-[10.5px] whitespace-nowrap">행복</span>
-            <span id="hud-happiness" class="hud-pill-num !text-[11px] sm:!text-[13.5px] text-[#E03E52] whitespace-nowrap shrink-0">42%</span>
+        <button id="hud-badge-happy" type="button" title="행복도 마일스톤 진화 트래커 보기" class="hud-glass-pill cursor-pointer text-left hover:scale-[1.02] active:scale-[0.98] transition-transform">
+          <span id="hud-ico-happy" class="flex items-center justify-center shrink-0"></span>
+          <div class="leading-tight min-w-0 flex-1">
+            <div class="flex items-center justify-between gap-0.5">
+              <span id="hud-happy-label" class="hud-pill-label !text-[9.5px] sm:!text-[10.5px] whitespace-nowrap">행복</span>
+              <span id="hud-happiness" class="hud-pill-num !text-[11px] sm:!text-[13.5px] text-[#E03E52] whitespace-nowrap shrink-0">42%</span>
+            </div>
+            <div class="hud-mini-gauge-track mt-1">
+              <div id="hud-happy-bar" class="hud-mini-gauge-fill" style="width: 42%;"></div>
+            </div>
           </div>
-          <div class="hud-mini-gauge-track mt-1">
-            <div id="hud-happy-bar" class="hud-mini-gauge-fill" style="width: 42%;"></div>
+        </button>
+      </div>
+
+      <!-- 상단 실시간 포브스(FORBES) 건물주 자산 순위 보드 진입 배지 -->
+      <button id="hud-badge-forbes" type="button" title="FORBES 대한민국 갓물주 자산 순위 보드 열기" class="pointer-events-auto forbes-hud-pill self-start sm:self-auto">
+        <span id="hud-ico-forbes" class="flex items-center shrink-0"></span>
+        <div class="leading-tight text-left">
+          <div class="text-[9.5px] font-title text-[#8C4A08] tracking-tight hidden sm:block">FORBES RICH LIST</div>
+          <div class="flex items-center gap-1 whitespace-nowrap">
+            <span id="hud-forbes-rank-text" class="font-title text-[12px] sm:text-[13.5px] text-[#3A2E2B]">자산 순위: 9위 ▲</span>
+            <span id="hud-forbes-worth-sub" class="font-num text-[10.5px] text-[#B45309] sm:hidden">(2,240만)</span>
           </div>
         </div>
       </button>
     </div>
 
-    <!-- 2열 A: 타운 전체 뷰 액션 캡슐 바 (모바일 390px 정렬 대응 + 만수르 돈 뿌리기 버튼 포함) -->
+    <!-- 2열 A: 타운 전체 뷰 액션 캡슐 바 (라이벌 승부 호출 + 만수르 돈 뿌리기 포함) -->
     <div id="hud-town-controls" class="flex items-center gap-1 sm:gap-1.5 flex-wrap">
       <button id="btn-overview-cam" type="button" title="타운 전체 보기" class="pointer-events-auto tactile-pill-btn tone-cream">
         <span id="hud-ico-overview" class="flex items-center"></span>
         <span>타운뷰</span>
+      </button>
+
+      <button id="btn-rival-battle" type="button" title="블랙타워 강 회장 라이벌 3대 자본력 승부 호출!" class="pointer-events-auto rival-bolt-pill">
+        <span id="hud-ico-rival" class="flex items-center"></span>
+        <span class="sm:hidden">라이벌승부</span>
+        <span class="hidden sm:inline">라이벌 승부 호출!</span>
       </button>
 
       <button id="btn-make-it-rain" type="button" title="만수르 황금 머니건 돈 뿌리기 (MAKE IT RAIN!)" class="pointer-events-auto mansour-rain-pill">
@@ -152,7 +236,7 @@
           <span>좌우 드래그로 3D 회전 관찰</span>
         </span>
       </div>
-      <div id="room-switcher-chips" class="pointer-events-auto flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 pr-2 sm:max-w-[calc(100vw-348px)]"></div>
+      <div id="room-switcher-chips" class="pointer-events-auto flex items-center gap-1.5 overflow-x-auto sm:overflow-visible sm:flex-wrap no-scrollbar pb-1 pr-2 sm:max-w-[calc(100vw-360px)]"></div>
     </div>
 
     <!-- 2열 C: 단독 상가 클로즈업 뷰 상단 컨트롤 -->
@@ -167,7 +251,7 @@
           <span>1인칭 매장 직접 입장</span>
         </button>
       </div>
-      <div id="shop-switcher-chips" class="pointer-events-auto flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 pr-2 sm:max-w-[calc(100vw-348px)]"></div>
+      <div id="shop-switcher-chips" class="pointer-events-auto flex items-center gap-1.5 overflow-x-auto sm:overflow-visible sm:flex-wrap no-scrollbar pb-1 pr-2 sm:max-w-[calc(100vw-364px)]"></div>
     </div>
 
     <!-- 2열 D: 슈퍼카 드라이브 모드 상단 바 (1인칭 운전석 토글 & 하차 입장 포함) -->
@@ -189,10 +273,27 @@
           <span id="ico-drive-scenic" class="flex items-center"></span>
           <span id="label-drive-scenic">외곽 해안 드라이빙 존</span>
         </button>
+        <button id="btn-drive-rival-race" type="button" class="pointer-events-auto rival-bolt-pill">
+          <span id="ico-drive-race" class="flex items-center"></span>
+          <span>라이벌 레이스 대결</span>
+        </button>
         <button id="btn-drive-rain" type="button" class="pointer-events-auto mansour-rain-pill">
           <span id="ico-drive-rain" class="flex items-center"></span>
           <span>머니건 발사</span>
         </button>
+      </div>
+      <!-- 해안 1:1 슈퍼카 레이스 진행도 게이지 바 -->
+      <div id="drive-race-hud" class="hidden pointer-events-none diary-card !py-1.5 !px-3 !bg-[#FFFDF7]/95 flex items-center gap-2.5 max-w-md">
+        <span id="ico-race-hud" class="flex items-center shrink-0"></span>
+        <div class="flex-1 min-w-[160px] space-y-1">
+          <div class="flex items-center justify-between text-[11px] font-title">
+            <span id="race-status-label" class="text-[#7E22CE]">해안 1:1 레이스 진행 중!</span>
+            <span id="race-gap-label" class="text-[#15803D]">선두 질주 중!</span>
+          </div>
+          <div class="candy-gauge-track !h-2.5">
+            <div id="race-progress-fill" class="candy-gauge-fill candy-gold" style="width: 15%;"></div>
+          </div>
+        </div>
       </div>
       <div class="flex items-center gap-1.5 flex-wrap">
         <span id="drive-car-badge" class="pointer-events-none kw-chip tone-coral !py-1 !px-2.5"></span>
@@ -382,11 +483,15 @@
 
     <!-- 하단 메인 1인칭 컨트롤 독 -->
     <div class="pointer-events-auto drive-dashboard-bar w-full max-w-3xl px-3 py-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-      <!-- 상점 전용 액션: 골든벨 울리기 + 세입자 방 집들이 방문 -->
+      <!-- 상점 전용 액션: 골든벨 울리기 + 만수르 더블 골든벨 맞불 참교육 + 세입자 방 집들이 방문 -->
       <div id="fp-shop-actions" class="flex items-center justify-center gap-1.5 sm:gap-2 flex-wrap sm:order-2">
         <button id="btn-ring-golden-bell" type="button" class="jelly-action-btn pill btn-gold-lip golden-bell-cta !py-2 !px-3.5 sm:!px-4">
           <span id="ico-golden-bell" class="flex items-center"></span>
           <span>매장 골든벨 울리기 (150만)</span>
+        </button>
+        <button id="btn-fp-double-bell" type="button" class="hidden rival-bolt-pill !py-2 !px-3.5">
+          <span id="ico-fp-double-bell" class="flex items-center"></span>
+          <span>만수르 더블 골든벨 참교육! (200만)</span>
         </button>
         <button id="btn-fp-visit-tenant" type="button" class="jelly-action-btn pill btn-mint-lip !py-2 !px-3.5">
           <span id="ico-fp-visit-tenant" class="flex items-center"></span>
@@ -472,7 +577,7 @@
   </section>
 
   <!-- ==================== 8. 우측 하단 3D 줌 컨트롤 & 가죽 다이어리 수첩 FAB ==================== -->
-  <div id="bottom-town-bar" class="fixed bottom-3 right-3 sm:bottom-4 sm:right-4 z-30 flex items-center gap-2.5 pointer-events-none">
+  <div id="bottom-town-bar" class="hidden fixed bottom-3 right-3 sm:bottom-4 sm:right-4 z-30 flex items-center gap-2.5 pointer-events-none">
     <div class="pointer-events-auto milk-cam-bar px-2.5 py-1.5 flex items-center gap-1">
       <button id="btn-zoom-in" type="button" title="확대 (내부 투시)" class="cam-icon-btn" aria-label="확대">
         <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 3V13M3 8H13" stroke="#3A2E2B" stroke-width="2.5" stroke-linecap="round"/></svg>
@@ -726,6 +831,165 @@
       </div>
       <div id="ms-banner-sub" class="font-body text-[12px] font-extrabold text-[#D6384C]">
         마을 기본 임대 수익 영구 +15% 상승!
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 19. 라이벌 '블랙타워 강 회장' 3대 자본력 승부 호출 허브 모달 ==================== -->
+  <div id="rival-battle-hub-modal" class="hidden fixed inset-0 z-[65] pastel-modal-backdrop flex items-center justify-center p-2.5 sm:p-4">
+    <div class="cozy-planner-shell w-full max-w-2xl max-h-[90vh]">
+      <div class="cozy-planner-inner">
+        <div class="px-4 py-3 flex items-center justify-between border-b border-[#EED6BE] shrink-0" style="background: linear-gradient(90deg, #FDF4FF 0%, #F3E8FF 100%);">
+          <div class="flex items-center gap-2.5 flex-wrap">
+            <span id="rival-hub-ico" class="flex items-center"></span>
+            <span class="diary-modal-title text-[#581C87]">숙명의 라이벌 · 블랙타워 강 회장 3대 승부!</span>
+            <span id="rival-win-badge" class="kw-chip tone-gold">참교육 0승</span>
+          </div>
+          <button id="btn-close-rival-hub" type="button" class="btn-close-round" aria-label="닫기">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M3.5 3.5L10.5 10.5M10.5 3.5L3.5 10.5" stroke="#3A2E2B" stroke-width="2.3" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div class="p-3.5 sm:p-4 space-y-3 overflow-y-auto custom-scroll">
+          <div class="diary-card !bg-[#FAF5FF] !border-[#D8B4FE] flex items-center gap-3">
+            <div id="rival-kang-avatar-slot" class="shrink-0"></div>
+            <div class="space-y-0.5 min-w-0">
+              <div class="font-title text-[14.5px] text-[#581C87]">블랙타워 강 회장 (FORBES 4위 · 보라색 골드 슈퍼카 오너)</div>
+              <div class="font-body text-[12px] font-bold text-[#6B21A8] break-keep">
+                "흥! 이 해피 미니미 타운의 알짜 세입자와 상가는 전부 내 블랙타워가 접수하겠다! 자본력으로 붙어볼 테냐?"
+              </div>
+            </div>
+          </div>
+          <div id="rival-modes-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 20A. 승부 ①: 우량 세입자 '스카우트 방어전' 하단 비가림 액션 독 ==================== -->
+  <section id="rival-poach-dock" class="hidden fixed bottom-3 left-2.5 right-2.5 z-[55] pointer-events-none flex justify-center">
+    <div class="pointer-events-auto furniture-sheet-shell !border-[#A855F7] w-full max-w-3xl p-3 sm:p-3.5 space-y-2.5 shadow-2xl">
+      <div class="flex items-center justify-between gap-2 flex-wrap">
+        <div class="flex items-center gap-2">
+          <span id="poach-dock-ico" class="flex items-center"></span>
+          <span id="poach-dock-title" class="font-title text-[14.5px] sm:text-[16px] text-[#581C87]">102호 세입자 스카우트 방어전!</span>
+          <span class="kw-chip tone-coral">방어 성공 시 임대료 영구 +30%!</span>
+        </div>
+        <button id="btn-close-poach-dock" type="button" class="btn-close-round" aria-label="닫기">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M3.5 3.5L10.5 10.5M10.5 3.5L3.5 10.5" stroke="#3A2E2B" stroke-width="2.2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div id="poach-taunt-text" class="font-body text-[12px] font-bold text-[#6B21A8] bg-[#FAF5FF] border border-[#E9D5FF] rounded-xl px-3 py-1.5">
+        강 회장: "이봐 세입자! 내 블랙타워로 이사 오면 첫 달 월세 반값에 위약금도 다 내줄게!"
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <button id="btn-poach-def-furn" type="button" class="jelly-action-btn btn-sky-lip py-2.5 px-3 !text-[12px]">
+          <span id="ico-poach-furn" class="flex items-center"></span>
+          <span>즉석 최고급 가구 업그레이드 (110만)</span>
+        </button>
+        <button id="btn-poach-def-gift" type="button" class="jelly-action-btn btn-mint-lip py-2.5 px-3 !text-[12px]">
+          <span id="ico-poach-gift" class="flex items-center"></span>
+          <span>실사 케이크 & 커피 선물 공세 (80만)</span>
+        </button>
+        <button id="btn-poach-def-rain" type="button" class="jelly-action-btn btn-gold-lip py-2.5 px-3 !text-[12px]">
+          <span id="ico-poach-rain" class="flex items-center"></span>
+          <span>만수르 머니건 참교육 발사! (130만)</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 20B. 승부 ②: 미인수 상가 '1:1 실시간 3D 입찰 경매 배틀' 하단 독 ==================== -->
+  <section id="bidding-war-dock" class="hidden fixed bottom-3 left-2.5 right-2.5 z-[55] pointer-events-none flex justify-center">
+    <div class="pointer-events-auto furniture-sheet-shell !border-[#F59E0B] w-full max-w-3xl p-3 sm:p-4 space-y-2.5 shadow-2xl">
+      <div class="flex items-center justify-between gap-2 flex-wrap">
+        <div class="flex items-center gap-2">
+          <span id="bid-dock-ico" class="flex items-center"></span>
+          <span id="bid-shop-title" class="font-title text-[15px] sm:text-[17px] text-[#3A2E2B]">바게트 하우스 · 1:1 실시간 입찰 경매 배틀!</span>
+          <span class="kw-chip tone-gold">낙찰 시 기본수익 영구 +40%!</span>
+        </div>
+        <button id="btn-close-bid-dock" type="button" class="btn-close-round" aria-label="닫기">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M3.5 3.5L10.5 10.5M10.5 3.5L3.5 10.5" stroke="#3A2E2B" stroke-width="2.2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2.5 text-center">
+        <div class="bg-[#FFFBEB] border-2 border-[#FACC15] rounded-2xl py-2 px-3">
+          <div class="font-title text-[11.5px] text-[#9A4E04]">내 호가 패들</div>
+          <div id="bid-my-price" class="font-num text-[18px] sm:text-[21px] text-[#15803D]">360만</div>
+        </div>
+        <div class="bg-[#FAF5FF] border-2 border-[#C084FC] rounded-2xl py-2 px-3">
+          <div class="font-title text-[11.5px] text-[#6B21A8]">블랙타워 강 회장 호가</div>
+          <div id="bid-rival-price" class="font-num text-[18px] sm:text-[21px] text-[#7E22CE]">390만!</div>
+        </div>
+      </div>
+
+      <div id="bid-status-msg" class="font-body text-[12px] font-extrabold text-[#5C4942] text-center">
+        강 회장이 3D 경매 패들을 번쩍 들어 호가를 올렸습니다! 맞불 입찰하거나 황금 돈가방으로 즉시 참교육하세요!
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <button id="btn-bid-step-up" type="button" class="jelly-action-btn btn-mint-lip py-2.5 px-4">
+          <span id="ico-bid-up" class="flex items-center"></span>
+          <span id="label-bid-step-up">+10% 호가 올리기 (430만)</span>
+        </button>
+        <button id="btn-bid-briefcase-slam" type="button" class="jelly-action-btn btn-gold-lip py-2.5 px-4">
+          <span id="ico-bid-briefcase" class="flex items-center"></span>
+          <span id="label-bid-briefcase">만수르 200% 일시불 돈가방 폭격 (즉시 낙찰!)</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 21. 포브스(FORBES) 대한민국 갓물주 자산 순위 보드 모달 ==================== -->
+  <div id="forbes-modal" class="hidden fixed inset-0 z-[66] pastel-modal-backdrop flex items-center justify-center p-2.5 sm:p-4">
+    <div class="cozy-planner-shell w-full max-w-2xl max-h-[91vh]">
+      <div class="cozy-planner-inner">
+        <div class="px-4 py-3 flex items-center justify-between border-b border-[#EED6BE] shrink-0" style="background: linear-gradient(90deg, #FFFDF5 0%, #FEF3C7 100%);">
+          <div class="flex items-center gap-2.5 flex-wrap">
+            <span id="forbes-modal-ico" class="flex items-center"></span>
+            <span class="diary-modal-title text-[#78350F]">FORBES LANDLORD RICH LIST</span>
+            <span id="forbes-my-rank-chip" class="kw-chip tone-gold">대한민국 9위</span>
+          </div>
+          <button id="btn-close-forbes" type="button" class="btn-close-round" aria-label="닫기">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M3.5 3.5L10.5 10.5M10.5 3.5L3.5 10.5" stroke="#3A2E2B" stroke-width="2.3" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+
+        <div class="p-3.5 sm:p-4 space-y-3 overflow-y-auto custom-scroll">
+          <!-- 실시간 내 총자산(Total Net Worth) 포트폴리오 감정서 카드 -->
+          <div class="diary-card !bg-[#FFFBEB] !border-2 !border-[#F59E0B] space-y-2.5">
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <div>
+                <div class="font-title text-[12px] text-[#9A4E04]">MY TOTAL NET WORTH · 실시간 총자산 감정가</div>
+                <div class="flex items-baseline gap-2">
+                  <span id="forbes-total-worth" class="font-num text-[24px] sm:text-[28px] text-[#3A2E2B]">2,240만</span>
+                  <span id="forbes-vip-title" class="kw-chip tone-coral">미니미 타운 신예 갓물주</span>
+                </div>
+              </div>
+              <button id="btn-forbes-challenge-kang" type="button" class="rival-bolt-pill !py-2 !px-3.5">
+                <span id="ico-forbes-kang" class="flex items-center"></span>
+                <span>4위 강 회장 승부 도발!</span>
+              </button>
+            </div>
+            <div id="forbes-portfolio-grid" class="grid grid-cols-2 sm:grid-cols-5 gap-1.5 text-center"></div>
+          </div>
+
+          <!-- 1위 ~ 10위 + 내 실시간 랭킹 리스트 -->
+          <div id="forbes-ranking-list" class="space-y-2"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 22. FORBES RANK UP! 실시간 서열 추월 황금 축하 배너 ==================== -->
+  <div id="forbes-rankup-banner" class="hidden fixed inset-x-3 top-[168px] sm:top-[162px] z-[68] pointer-events-none flex justify-center">
+    <div class="golden-bell-slam diary-card !bg-[#FFFBEB] !border-4 !border-[#F59E0B] px-5 py-3.5 max-w-xl text-center space-y-1 shadow-2xl">
+      <div class="flex items-center justify-center gap-2 font-title text-[15px] sm:text-[18.5px] text-[#9A4E04] break-keep">
+        <span id="rankup-banner-ico" class="flex items-center shrink-0"></span>
+        <span id="rankup-banner-title">FORBES RANK UP! '블랙타워 강 회장'을 제치고 대한민국 자산 순위 4위 등극!!</span>
+      </div>
+      <div id="rankup-banner-sub" class="font-body text-[12px] font-extrabold text-[#15803D]">
+        서열 추월 축하 배당금 +500만 지급 · 신규 VIP 칭호 해금!
       </div>
     </div>
   </div>

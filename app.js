@@ -141,6 +141,7 @@ function createInitialStandaloneShops() {
     map[tpl.shopId] = {
       shopId: tpl.shopId,
       owned: false,
+      auctionBonusPct: 0,
       upgrades: {
         upg_oven: false,
         upg_terrace: false,
@@ -181,6 +182,7 @@ function ensureRoomSchema(room) {
     }
   }
   if (typeof room.giftBonusPct !== 'number') room.giftBonusPct = 0;
+  if (typeof room.poachDefenseBonusPct !== 'number') room.poachDefenseBonusPct = 0;
   if (!Array.isArray(room.giftedItems)) room.giftedItems = [];
   syncRoomInteriorStats(room);
 }
@@ -217,6 +219,10 @@ function createInitialState() {
     townHappinessBoost: 0,
     unlockedMilestones: [],
     goldenKeys: 0,
+    rivalWins: 0,
+    rivalKangPenalty: 0,
+    bestForbesRank: 10,
+    vipTitle: '미니미 타운 신예 갓물주',
     heldGifts: {
       left: null,
       right: null
@@ -504,6 +510,71 @@ const milestoneState = {
   ceremonyActive: false,
   ceremonyTimer: 0,
   ceremonyQueue: []
+};
+
+// [신규 8] 시네마틱 3D 오프닝 로딩 & 타이틀 스크린 상태
+const titleScreenState = {
+  active: true,
+  progress: 8,
+  ready: false,
+  entering: false,
+  orbitAngle: 0.42,
+  autoEnterTimer: 12.0,
+  tipIdx: 0,
+  tipTimer: 3.4
+};
+
+// [신규 1 & 2] 1층 직영매장 & 단독상가 내부 스마트 손님/직원 일상 루틴 레지스트리
+const shopSmartAI = {
+  martCustomers: [],
+  washCustomers: [],
+  martClerk: null,
+  washClerk: null,
+  martTimer: 0.8,
+  washTimer: 1.4
+};
+
+// [신규 3~6] 라이벌 '블랙타워 강 회장' 침공 & 3대 자본력 승부 상태 레지스트리
+const rivalState = {
+  periodicTimer: 60.0,
+  poach: {
+    active: false,
+    roomId: null,
+    carMesh: null,
+    kangMesh: null,
+    pinEl: null,
+    pulsePhase: 0
+  },
+  bidding: {
+    active: false,
+    shopId: null,
+    myBid: 360,
+    rivalBid: 390,
+    stageGrp: null,
+    myAvatar: null,
+    kangAvatar: null,
+    myPaddleGrp: null,
+    kangPaddleGrp: null,
+    myPaddleMat: null,
+    kangPaddleMat: null,
+    briefcaseMesh: null,
+    swingPhase: 0,
+    resolving: false
+  },
+  race: {
+    active: false,
+    rivalCar: null,
+    rivalWpIdx: 4,
+    rivalX: 19.5,
+    rivalZ: 31.5,
+    rivalHeading: 0.56,
+    rivalSpeed: 9.8,
+    playerProg: 0,
+    rivalProg: 0,
+    finished: false
+  },
+  fpKangMesh: null,
+  fpKangActive: false
 };
 
 // DOM 오버레이 레지스트리
@@ -1779,6 +1850,22 @@ function initSharedResources() {
     clearcoat: 0.9,
     emissive: 0xCBD5E1,
     emissiveIntensity: 0.18
+  });
+  MAT.carClearPurple = new THREE.MeshPhysicalMaterial({
+    color: 0x7E22CE,
+    metalness: 0.34,
+    roughness: 0.14,
+    clearcoat: 1.0,
+    clearcoatRoughness: 0.06,
+    emissive: 0x4C1D95,
+    emissiveIntensity: 0.28
+  });
+  MAT.rivalRimPurple = new THREE.MeshBasicMaterial({
+    color: 0xA855F7,
+    transparent: true,
+    opacity: 0.78,
+    side: THREE.DoubleSide,
+    depthWrite: false
   });
   MAT.bridgeSteelRed = new THREE.MeshPhysicalMaterial({
     color: 0xDC2626,
@@ -3386,12 +3473,32 @@ function addVolumetricArtToyHair3D(parent, styleName, hairMat, role) {
     capDome.position.set(0, 1.44, 0);
     const visor = createRoundedToyMesh(0.48, 0.05, 0.28, capCol, 0, 1.45, 0.32, 0.02);
     parent.add(capDome, visor);
-  } else if (role === 'landlord_driver' || role === 'landlord') {
+  } else if (role === 'landlord_driver' || role === 'landlord' || role === 'landlord_avatar') {
     const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.31, 0.25, 0.26, 7), MAT.pureGold24k);
     crown.position.y = 1.64;
     const shades = createRoundedToyMesh(0.54, 0.14, 0.09, MAT.carbonFiber, 0, 1.24, 0.39, 0.03);
     const bridge = createRoundedToyMesh(0.58, 0.03, 0.04, MAT.pureGold24k, 0, 1.29, 0.41, 0.01);
     parent.add(crown, shades, bridge);
+  } else if (role === 'rival_kang') {
+    // 블랙타워 강 회장 시그니처: 검은색 보스 중절모(24K 골드 리본) + 선글라스 + 두꺼운 3D 순금 체인 목걸이!
+    const brim = new THREE.Mesh(GEO.cyl, MAT.carbonFiber);
+    brim.scale.set(1.06, 0.07, 1.06);
+    brim.position.y = 1.53;
+    const fedoraTop = new THREE.Mesh(new THREE.CylinderGeometry(0.31, 0.36, 0.28, 20), MAT.carbonFiber);
+    fedoraTop.position.y = 1.68;
+    const goldBand = new THREE.Mesh(GEO.cyl, MAT.pureGold24k);
+    goldBand.scale.set(0.73, 0.06, 0.73);
+    goldBand.position.y = 1.58;
+    const shades = createRoundedToyMesh(0.58, 0.16, 0.1, MAT.carbonFiber, 0, 1.25, 0.39, 0.03);
+    const goldBridge = createRoundedToyMesh(0.62, 0.035, 0.05, MAT.pureGold24k, 0, 1.31, 0.41, 0.01);
+    // 가슴팍 위 두꺼운 3D 24K 금목걸이 체인 + 골드 메달리온
+    const goldChain = new THREE.Mesh(new THREE.TorusGeometry(0.27, 0.048, 12, 24), MAT.pureGold24k);
+    goldChain.rotation.x = Math.PI * 0.36;
+    goldChain.position.set(0, 0.84, 0.14);
+    const medallion = new THREE.Mesh(GEO.coin, MAT.pureGold24k);
+    medallion.scale.setScalar(0.56);
+    medallion.position.set(0, 0.69, 0.34);
+    parent.add(brim, fedoraTop, goldBand, shades, goldBridge, goldChain, medallion);
   }
 }
 
@@ -3439,14 +3546,19 @@ function createChibiPerson3D(role = 'student', customShirtHex = null, variantOve
   else if (role === 'wash_clerk') { outfitNum = 15; hairStyle = 'double_buns'; faceNum = 3; }
   else if (role === 'elderly') { outfitNum = 7; hairStyle = 'fluffy_curl'; faceNum = 7; hairColor = 0xE5E7EB; }
   else if (role === 'streamer') { outfitNum = 6; hairStyle = 'cat_headset'; faceNum = 5; hairColor = 0xC084FC; }
+  else if (role === 'rival_kang') { outfitNum = 13; hairStyle = 'parted_perm'; faceNum = 11; hairColor = 0x1E1B24; }
 
   const outfitTex = REAL_TEX.outfits[(outfitNum - 1) % Math.max(1, REAL_TEX.outfits.length)] || null;
   const faceTex = REAL_TEX.faces[(faceNum - 1) % Math.max(1, REAL_TEX.faces.length)] || null;
 
-  const outfitMat = outfitTex
-    ? new THREE.MeshStandardMaterial({ map: outfitTex, roughness: 0.46 })
-    : makeClayMat(customShirtHex || 0x4EA8DE, { roughness: 0.46 });
-  const sleeveMat = makeClayMat(customShirtHex || 0xFFF6EC, { roughness: 0.46 });
+  const outfitMat = role === 'rival_kang'
+    ? (MAT.carClearPurple || makeClayMat(0x7E22CE, { roughness: 0.32 }))
+    : outfitTex
+      ? new THREE.MeshStandardMaterial({ map: outfitTex, roughness: 0.46 })
+      : makeClayMat(customShirtHex || 0x4EA8DE, { roughness: 0.46 });
+  const sleeveMat = role === 'rival_kang'
+    ? (MAT.carClearPurple || makeClayMat(0x6B21A8, { roughness: 0.35 }))
+    : makeClayMat(customShirtHex || 0xFFF6EC, { roughness: 0.46 });
   const skinMat = makeClayMat(0xFFE4D4, { roughness: 0.44 });
   const faceMat = faceTex
     ? new THREE.MeshStandardMaterial({ map: faceTex, roughness: 0.36 })
@@ -3530,7 +3642,50 @@ function createChibiPerson3D(role = 'student', customShirtHex = null, variantOve
   carryBag.visible = false;
   bodyRig.add(carryBag);
 
-  grp.userData = { bodyRig, legL, legR, armL, armR, carryBag, auraMat, auraTimer: 0 };
+  // 스마트 일상 루틴 전용 소품: ① 스마트폰(침대/벤치 휴식용) ② 팝콘/음료컵(소파 영화감상용) ③ 라이벌 보라색 확성기
+  const phoneProp = createRoundedToyMesh(0.16, 0.24, 0.04, MAT.screenCyan, 0, 0.68, 0.38, 0.02);
+  phoneProp.rotation.x = -0.48;
+  phoneProp.visible = false;
+  bodyRig.add(phoneProp);
+
+  const cupProp = new THREE.Group();
+  const cBody = new THREE.Mesh(GEO.cyl, MAT.coral);
+  cBody.scale.set(0.18, 0.24, 0.18);
+  const cTop = new THREE.Mesh(GEO.sphere, MAT.white);
+  cTop.scale.setScalar(0.17);
+  cTop.position.y = 0.13;
+  cupProp.add(cBody, cTop);
+  cupProp.position.set(-0.34, 0.64, 0.34);
+  cupProp.visible = false;
+  bodyRig.add(cupProp);
+
+  const megaphoneProp = new THREE.Group();
+  const megaCone = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.56, 16), MAT.carClearPurple || MAT.purpleDark);
+  megaCone.rotation.x = -Math.PI * 0.5;
+  megaCone.position.z = 0.26;
+  const megaRim = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.035, 10, 20), MAT.pureGold24k);
+  megaRim.position.z = 0.54;
+  megaphoneProp.add(megaCone, megaRim);
+  megaphoneProp.position.set(0.38, 1.06, 0.32);
+  megaphoneProp.visible = false;
+  bodyRig.add(megaphoneProp);
+
+  grp.userData = {
+    bodyRig,
+    legL,
+    legR,
+    armL,
+    armR,
+    armLPivot: armL,
+    armRPivot: armR,
+    head,
+    carryBag,
+    phoneProp,
+    cupProp,
+    megaphoneProp,
+    auraMat,
+    auraTimer: 0
+  };
   return grp;
 }
 
@@ -3703,30 +3858,34 @@ function createVehicle3D(carId = 'car_scooter', includeDriver = true) {
       grp.add(sedanDriver);
       driverRef = sedanDriver;
     }
-  } else if (carId === 'car_supercar') {
-    // 이탈리안 페라리 레드 유광 클리어코트 오픈 슈퍼카 (28+ 세부 파츠!)
-    shadow.scale.set(2.9, 5.1, 1);
-    makeAlloyWheel(-1.14, 0.41, 1.36, 0.42, true, true);
-    makeAlloyWheel(1.14, 0.41, 1.36, 0.42, true, true);
-    makeAlloyWheel(-1.14, 0.43, -1.36, 0.45, true, true);
-    makeAlloyWheel(1.14, 0.43, -1.36, 0.45, true, true);
+  } else if (carId === 'car_supercar' || carId === 'car_rival_purple') {
+    // 이탈리안 페라리 레드 & 라이벌 강 회장 전용 보라+24K 골드 크롬 오픈 슈퍼카 (28+ 세부 파츠!)
+    const isRivalCar = carId === 'car_rival_purple';
+    const bodyPaint = isRivalCar ? (MAT.carClearPurple || MAT.purpleDark) : MAT.carClearRed;
+    const accentTrim = isRivalCar ? MAT.pureGold24k : MAT.carbonFiber;
 
-    // 카본 프론트 스플리터 & 사이드 스커트 & 리어 디퓨저
-    grp.add(createRoundedToyMesh(2.34, 0.1, 4.56, MAT.carbonFiber, 0, 0.28, 0, 0.04));
-    // 로우 와이드 레드 메인 바디 + 조각 보닛 + 좌우 에어로 휀더 + 측면 에어 인테이크
-    grp.add(createRoundedToyMesh(2.28, 0.48, 4.42, MAT.carClearRed, 0, 0.56, 0, 0.15));
-    const hood = createRoundedToyMesh(1.96, 0.22, 1.58, MAT.carClearRed, 0, 0.82, 1.24, 0.1);
+    shadow.scale.set(2.9, 5.1, 1);
+    makeAlloyWheel(-1.14, 0.41, 1.36, 0.42, true, !isRivalCar);
+    makeAlloyWheel(1.14, 0.41, 1.36, 0.42, true, !isRivalCar);
+    makeAlloyWheel(-1.14, 0.43, -1.36, 0.45, true, !isRivalCar);
+    makeAlloyWheel(1.14, 0.43, -1.36, 0.45, true, !isRivalCar);
+
+    // 프론트 스플리터 & 사이드 스커트 & 리어 디퓨저
+    grp.add(createRoundedToyMesh(2.34, 0.1, 4.56, accentTrim, 0, 0.28, 0, 0.04));
+    // 로우 와이드 메인 바디 + 조각 보닛 + 좌우 에어로 휀더 + 측면 에어 인테이크
+    grp.add(createRoundedToyMesh(2.28, 0.48, 4.42, bodyPaint, 0, 0.56, 0, 0.15));
+    const hood = createRoundedToyMesh(1.96, 0.22, 1.58, bodyPaint, 0, 0.82, 1.24, 0.1);
     hood.rotation.x = 0.14;
     grp.add(hood);
-    grp.add(createRoundedToyMesh(0.86, 0.07, 0.48, MAT.carbonFiber, 0, 0.89, 1.35, 0.02)); // 보닛 에어벤트
-    grp.add(createRoundedToyMesh(0.24, 0.04, 4.35, MAT.pureGold24k, 0, 0.87, 0, 0.01));  // 골드 레이싱 스트라이프
-    grp.add(createRoundedToyMesh(1.38, 0.22, 0.14, MAT.carbonFiber, 0, 0.44, 2.22, 0.04)); // 프론트 메쉬 그릴
+    grp.add(createRoundedToyMesh(0.86, 0.07, 0.48, accentTrim, 0, 0.89, 1.35, 0.02));
+    grp.add(createRoundedToyMesh(0.28, 0.045, 4.35, MAT.pureGold24k, 0, 0.87, 0, 0.01)); // 24K 골드 레이싱 스트라이프
+    grp.add(createRoundedToyMesh(1.38, 0.22, 0.14, accentTrim, 0, 0.44, 2.22, 0.04));
 
     for (const sx of [-1.14, 1.14]) {
-      grp.add(createRoundedToyMesh(0.26, 0.34, 1.05, MAT.carClearRed, sx, 0.66, 1.32, 0.1));
-      grp.add(createRoundedToyMesh(0.28, 0.38, 1.15, MAT.carClearRed, sx, 0.7, -1.32, 0.1));
-      grp.add(createRoundedToyMesh(0.14, 0.26, 0.68, MAT.carbonFiber, sx * 0.98, 0.62, -0.48, 0.03)); // 측면 에어덕트
-      grp.add(createRoundedToyMesh(0.24, 0.12, 0.18, MAT.carClearRed, sx * 1.04, 0.98, 0.52, 0.04)); // 에어로 사이드미러
+      grp.add(createRoundedToyMesh(0.26, 0.34, 1.05, bodyPaint, sx, 0.66, 1.32, 0.1));
+      grp.add(createRoundedToyMesh(0.28, 0.38, 1.15, bodyPaint, sx, 0.7, -1.32, 0.1));
+      grp.add(createRoundedToyMesh(0.14, 0.26, 0.68, accentTrim, sx * 0.98, 0.62, -0.48, 0.03));
+      grp.add(createRoundedToyMesh(0.24, 0.12, 0.18, bodyPaint, sx * 1.04, 0.98, 0.52, 0.04));
     }
 
     // 경사진 스포츠 윈드실드 + A필러 + 개폐식 소프트탑
@@ -3734,22 +3893,22 @@ function createVehicle3D(carId = 'car_scooter', includeDriver = true) {
     windshield.rotation.x = -0.56;
     grp.add(windshield);
     for (const px of [-0.94, 0.94]) {
-      const pillar = createRoundedToyMesh(0.09, 0.62, 0.09, MAT.carbonFiber, px, 1.06, 0.56, 0.02);
+      const pillar = createRoundedToyMesh(0.09, 0.62, 0.09, accentTrim, px, 1.06, 0.56, 0.02);
       pillar.rotation.x = -0.56;
       grp.add(pillar);
     }
 
-    roofRef = createRoundedToyMesh(1.88, 0.38, 1.62, MAT.carbonFiber, 0, 1.28, -0.25, 0.12);
-    roofRef.visible = !driveState.roofOpen;
+    roofRef = createRoundedToyMesh(1.88, 0.38, 1.62, accentTrim, 0, 1.28, -0.25, 0.12);
+    roofRef.visible = isRivalCar ? false : !driveState.roofOpen;
     grp.add(roofRef);
 
     // 실내 스포츠 버킷 시트 2개 + 롤후프 2개 + 센터콘솔 + 레이싱 스티어링 휠
-    grp.add(createRoundedToyMesh(0.32, 0.28, 1.1, MAT.carbonFiber, 0, 0.72, -0.1, 0.05));
+    grp.add(createRoundedToyMesh(0.32, 0.28, 1.1, accentTrim, 0, 0.72, -0.1, 0.05));
     for (const bx of [-0.52, 0.52]) {
       grp.add(createRoundedToyMesh(0.58, 0.58, 0.22, MAT.leatherCamel, bx, 0.95, -0.58, 0.07));
-      grp.add(createRoundedToyMesh(0.34, 0.24, 0.18, MAT.carClearRed, bx, 1.28, -0.6, 0.05));
+      grp.add(createRoundedToyMesh(0.34, 0.24, 0.18, bodyPaint, bx, 1.28, -0.6, 0.05));
       grp.add(createRoundedToyMesh(0.58, 0.15, 0.56, MAT.leatherCamel, bx, 0.7, -0.26, 0.05));
-      const hoop = new THREE.Mesh(GEO.torus, MAT.chromeAlloy);
+      const hoop = new THREE.Mesh(GEO.torus, isRivalCar ? MAT.pureGold24k : MAT.chromeAlloy);
       hoop.scale.setScalar(0.42);
       hoop.position.set(bx, 1.26, -0.74);
       grp.add(hoop);
@@ -3761,20 +3920,20 @@ function createVehicle3D(carId = 'car_scooter', includeDriver = true) {
     grp.add(raceWheel);
 
     if (includeDriver) {
-      const ownerDriver = createChibiPerson3D('landlord_driver');
+      const ownerDriver = createChibiPerson3D(isRivalCar ? 'rival_kang' : 'landlord_driver');
       ownerDriver.scale.setScalar(0.86);
       ownerDriver.position.set(-0.52, 0.56, -0.22);
       grp.add(ownerDriver);
       driverRef = ownerDriver;
     }
 
-    // 리어 엔진 데크 루버 + 카본 GT 리어 윙 스포일러 + 쿼드 황금 머플러 + 날카로운 LED 램프
+    // 리어 엔진 데크 루버 + GT 리어 윙 스포일러 + 쿼드 황금 머플러 + 날카로운 LED 램프
     for (let lv = 0; lv < 3; lv++) {
-      grp.add(createRoundedToyMesh(1.15, 0.05, 0.18, MAT.carbonFiber, 0, 0.92, -1.15 - lv * 0.26, 0.02));
+      grp.add(createRoundedToyMesh(1.15, 0.05, 0.18, accentTrim, 0, 0.92, -1.15 - lv * 0.26, 0.02));
     }
-    grp.add(createRoundedToyMesh(0.12, 0.42, 0.26, MAT.carbonFiber, -0.78, 1.04, -1.96, 0.03));
-    grp.add(createRoundedToyMesh(0.12, 0.42, 0.26, MAT.carbonFiber, 0.78, 1.04, -1.96, 0.03));
-    grp.add(createRoundedToyMesh(2.36, 0.1, 0.48, MAT.carClearRed, 0, 1.26, -2.02, 0.04));
+    grp.add(createRoundedToyMesh(0.12, 0.42, 0.26, accentTrim, -0.78, 1.04, -1.96, 0.03));
+    grp.add(createRoundedToyMesh(0.12, 0.42, 0.26, accentTrim, 0.78, 1.04, -1.96, 0.03));
+    grp.add(createRoundedToyMesh(2.36, 0.1, 0.48, isRivalCar ? MAT.pureGold24k : bodyPaint, 0, 1.26, -2.02, 0.04));
 
     for (const lx of [-0.8, 0.8]) {
       const hl = createRoundedToyMesh(0.46, 0.13, 0.16, MAT.neonYellow, lx, 0.68, 2.2, 0.04);
@@ -3834,7 +3993,7 @@ function createVehicle3D(carId = 'car_scooter', includeDriver = true) {
     }
   }
 
-  if (driverRef) driverRef.visible = !driveState.cockpitView;
+  if (driverRef) driverRef.visible = carId === 'car_rival_purple' ? true : !driveState.cockpitView;
   grp.userData = { wheels, driverRef, roofRef };
   return grp;
 }
@@ -4814,6 +4973,28 @@ function build1FMinimiMartInterior3D(martGrp, lotId) {
     ramenCup.position.set(sx, 1.12, 3.16);
     martGrp.add(stoolTop, stoolLeg, ramenCup);
   }
+
+  // [스마트 매장 일상 루틴 AI] 메인 빌딩 1층 편의점 손님 2명(통로 보행 ➔ 과자 고르기 ➔ POS 계산 ➔ 창가 취식) 등록!
+  if (lotId === 'lot_main') {
+    shopSmartAI.martClerk = clerk;
+    shopSmartAI.martCustomers = [];
+    const roles = ['student', 'developer'];
+    for (let ci = 0; ci < 2; ci++) {
+      const cust = createChibiPerson3D(roles[ci], null, ci + 3);
+      const aisleX = ci === 0 ? -1.45 : 0.92;
+      cust.position.set(aisleX, 0.08, ci === 0 ? -0.25 : 1.95);
+      martGrp.add(cust);
+      shopSmartAI.martCustomers.push({
+        mesh: cust,
+        slotIdx: ci,
+        aisleX,
+        phase: ci === 0 ? 'browse_shelf' : 'walk_to_shelf',
+        timer: ci === 0 ? 2.4 : 0,
+        waypoints: ci === 0 ? [] : [{ x: aisleX, z: 1.95 }, { x: aisleX, z: -0.18 }],
+        wpIdx: 0
+      });
+    }
+  }
 }
 
 function createStackedDrumWasherPair3D() {
@@ -4923,8 +5104,30 @@ function build1FBubbleLaundryInterior3D(washGrp, lotId) {
   washGrp.add(waitBench);
 
   const washStaff = createChibiPerson3D('wash_clerk');
-  washStaff.position.set(2.15, 0.08, 1.95);
+  washStaff.position.set(2.45, 0.08, 1.95);
   washGrp.add(washStaff);
+
+  // [스마트 매장 일상 루틴 AI] 1층 코인세탁소 손님 2명(드럼세탁기 앞 투입 ➔ 대기 벤치 착석 스마트폰 ➔ 원목 테이블 빨래 개기) 등록!
+  if (lotId === 'lot_main') {
+    shopSmartAI.washClerk = washStaff;
+    shopSmartAI.washCustomers = [];
+    const roles = ['newlywed', 'streamer'];
+    for (let wi = 0; wi < 2; wi++) {
+      const cust = createChibiPerson3D(roles[wi], null, wi + 6);
+      const targetWasherX = wi === 0 ? -2.85 : 0.95;
+      cust.position.set(wi === 0 ? targetWasherX : -1.55, 0.08, wi === 0 ? -1.82 : 2.62);
+      washGrp.add(cust);
+      shopSmartAI.washCustomers.push({
+        mesh: cust,
+        slotIdx: wi,
+        washerX: targetWasherX,
+        phase: wi === 0 ? 'load_washer' : 'wait_bench',
+        timer: wi === 0 ? 2.6 : 3.4,
+        waypoints: [],
+        wpIdx: 0
+      });
+    }
+  }
 }
 
 // --------------------- 16종 고디테일 다중 파츠 인테리어 가구 & 방음 패드 타일 3D ---------------------
@@ -5532,7 +5735,334 @@ function create3DGiftPropMesh(itemId = 'item_cake', packagedBox = false) {
   return grp;
 }
 
-// 호실 내부 세입자 & 반려동물 동기화 및 일상 루틴 AI
+// =========================================================
+// 8B. [핵심 개편 1 & 2] 2D AABB 충돌 회피 NavGrid & 목적 기반 스마트 일상 AI (Context-Aware Smart Routine FSM)
+// =========================================================
+function resetCharacterPoseNeutral(mesh) {
+  const ud = mesh?.userData;
+  if (!ud) return;
+  if (ud.bodyRig) {
+    ud.bodyRig.position.set(0, 0, 0);
+    ud.bodyRig.rotation.set(0, 0, 0);
+  }
+  if (ud.legL) ud.legL.rotation.set(0, 0, 0);
+  if (ud.legR) ud.legR.rotation.set(0, 0, 0);
+  if (ud.armL) { ud.armL.rotation.set(0, 0, 0.28); }
+  if (ud.armR) { ud.armR.rotation.set(0, 0, -0.28); }
+  if (ud.phoneProp) ud.phoneProp.visible = false;
+  if (ud.cupProp) ud.cupProp.visible = false;
+}
+
+function segmentHitsAABB2D(x1, z1, x2, z2, box, pad = 0.28) {
+  const minX = box.minX - pad;
+  const maxX = box.maxX + pad;
+  const minZ = box.minZ - pad;
+  const maxZ = box.maxZ + pad;
+  const steps = 8;
+  for (let s = 1; s < steps; s++) {
+    const t = s / steps;
+    const px = x1 + (x2 - x1) * t;
+    const pz = z1 + (z2 - z1) * t;
+    if (px > minX && px < maxX && pz > minZ && pz < maxZ) return true;
+  }
+  return false;
+}
+
+function pushOutOfObstaclesAndWalls2D(pos, obstacles, bounds, radius = 0.34) {
+  pos.x = THREE.MathUtils.clamp(pos.x, bounds.minX, bounds.maxX);
+  pos.z = THREE.MathUtils.clamp(pos.z, bounds.minZ, bounds.maxZ);
+
+  for (const ob of obstacles) {
+    if ((ob.onlyFloor1 && pos.y > 1.5) || (ob.onlyLoft && pos.y < 1.5)) continue;
+    const minX = ob.minX - radius;
+    const maxX = ob.maxX + radius;
+    const minZ = ob.minZ - radius;
+    const maxZ = ob.maxZ + radius;
+    if (pos.x > minX && pos.x < maxX && pos.z > minZ && pos.z < maxZ) {
+      const dLeft = Math.abs(pos.x - minX);
+      const dRight = Math.abs(maxX - pos.x);
+      const dBack = Math.abs(pos.z - minZ);
+      const dFront = Math.abs(maxZ - pos.z);
+      const m = Math.min(dLeft, dRight, dBack, dFront);
+      if (m === dLeft) pos.x = minX;
+      else if (m === dRight) pos.x = maxX;
+      else if (m === dBack) pos.z = minZ;
+      else pos.z = maxZ;
+    }
+  }
+  pos.x = THREE.MathUtils.clamp(pos.x, bounds.minX, bounds.maxX);
+  pos.z = THREE.MathUtils.clamp(pos.z, bounds.minZ, bounds.maxZ);
+}
+
+function enforceCharacterSeparation(actorList, minDist = 0.62) {
+  for (let i = 0; i < actorList.length; i++) {
+    const a = actorList[i];
+    if (!a?.mesh?.visible || a.allowFurnitureOverlap) continue;
+    for (let j = i + 1; j < actorList.length; j++) {
+      const b = actorList[j];
+      if (!b?.mesh?.visible || b.allowFurnitureOverlap) continue;
+      if (Math.abs(a.mesh.position.y - b.mesh.position.y) > 0.9) continue;
+      const dx = a.mesh.position.x - b.mesh.position.x;
+      const dz = a.mesh.position.z - b.mesh.position.z;
+      const d = Math.hypot(dx, dz);
+      if (d > 0.001 && d < minDist) {
+        const push = (minDist - d) * 0.5;
+        const nx = dx / d;
+        const nz = dz / d;
+        a.mesh.position.x += nx * push;
+        a.mesh.position.z += nz * push;
+        b.mesh.position.x -= nx * push;
+        b.mesh.position.z -= nz * push;
+      } else if (d <= 0.001) {
+        a.mesh.position.x += 0.31;
+        b.mesh.position.x -= 0.31;
+      }
+    }
+  }
+}
+
+function buildRoomNavData(room) {
+  const rw = room.rw;
+  const rd = room.rd;
+  const bounds = {
+    minX: -rw * 0.5 + 0.52,
+    maxX: rw * 0.5 - 0.52,
+    minZ: -rd * 0.5 + 0.52,
+    maxZ: rd * 0.5 - 0.52
+  };
+  const obstacles = [];
+  const nodes = [];
+  let stations = {};
+
+  if (room.layoutType === 'studio') {
+    const bx = -rw * 0.24;
+    const bz = -rd * 0.16;
+    const sx = rw * 0.2;
+    const sz = 0.85;
+    const ax = rw * 0.24;
+    const az = -rd * 0.28;
+
+    obstacles.push(
+      { minX: bx - 1.32, maxX: bx + 1.32, minZ: bz - 1.42, maxZ: bz + 1.42, onlyFloor1: true },
+      { minX: sx - 1.32, maxX: sx + 1.32, minZ: sz - 0.62, maxZ: sz + 0.62, onlyFloor1: true },
+      { minX: ax - 1.15, maxX: ax + 1.15, minZ: az - 0.55, maxZ: az + 0.55, onlyFloor1: true }
+    );
+    nodes.push(
+      { id: 'door', x: 0.0, y: 0.16, z: rd * 0.36 },
+      { id: 'mid_front', x: 0.0, y: 0.16, z: 0.85 },
+      { id: 'center', x: 0.08, y: 0.16, z: -0.05 },
+      { id: 'bed_side', x: bx + 1.56, y: 0.16, z: bz + 0.2 },
+      { id: 'sofa_front', x: sx, y: 0.16, z: sz - 0.86 },
+      { id: 'desk_front', x: ax - 0.1, y: 0.16, z: az + 0.82 }
+    );
+    stations = {
+      bedApproach: 'bed_side',
+      bedPose: { x: bx, y: 0.66, z: bz + 0.1, yaw: 0 },
+      sofaApproach: 'sofa_front',
+      sofaPose: { x: sx, y: 0.22, z: sz - 0.06, yaw: Math.PI },
+      deskApproach: 'desk_front',
+      deskPose: { x: ax - 0.1, y: 0.16, z: az + 0.72, yaw: Math.PI },
+      doorNode: 'door',
+      snackApproach: 'center',
+      snackPose: { x: 0.12, y: 0.16, z: 0.32, yaw: Math.PI }
+    };
+  } else if (room.layoutType === 'tworoom') {
+    const sx = -rw * 0.24;
+    const sz = 0.72;
+    const bx = rw * 0.26;
+    const bz = -rd * 0.14;
+    const ax = rw * 0.24;
+    const az = -rd * 0.28;
+
+    // 아치형 가벽(x=0.55) 충돌 박스 — 중앙 아치 문틀(z = -0.35 ~ +1.35)만 통과 가능!
+    obstacles.push(
+      { minX: 0.32, maxX: 0.78, minZ: -rd * 0.5, maxZ: -0.42, onlyFloor1: true },
+      { minX: 0.32, maxX: 0.78, minZ: 1.48, maxZ: rd * 0.5, onlyFloor1: true },
+      { minX: -rw * 0.28 - 1.4, maxX: -rw * 0.28 + 1.4, minZ: -rd * 0.5, maxZ: -rd * 0.5 + 1.15, onlyFloor1: true },
+      { minX: sx - 1.32, maxX: sx + 1.32, minZ: sz - 0.62, maxZ: sz + 0.62, onlyFloor1: true },
+      { minX: bx - 1.32, maxX: bx + 1.32, minZ: bz - 1.42, maxZ: bz + 1.42, onlyFloor1: true }
+    );
+    nodes.push(
+      { id: 'door', x: -1.35, y: 0.16, z: rd * 0.36 },
+      { id: 'liv_mid', x: -1.25, y: 0.16, z: -0.18 },
+      { id: 'sofa_front', x: sx, y: 0.16, z: sz - 0.88 },
+      { id: 'arch_door', x: 0.55, y: 0.16, z: 0.48 },
+      { id: 'bed_aisle', x: bx - 1.55, y: 0.16, z: 0.45 },
+      { id: 'desk_front', x: -rw * 0.22, y: 0.16, z: -rd * 0.5 + 1.48 }
+    );
+    stations = {
+      bedApproach: 'bed_aisle',
+      bedPose: { x: bx, y: 0.66, z: bz + 0.1, yaw: 0 },
+      sofaApproach: 'sofa_front',
+      sofaPose: { x: sx, y: 0.22, z: sz - 0.06, yaw: Math.PI },
+      deskApproach: 'desk_front',
+      deskPose: { x: ax > 0 ? -rw * 0.22 : ax, y: 0.16, z: -rd * 0.5 + 1.42, yaw: Math.PI },
+      doorNode: 'door',
+      snackApproach: 'liv_mid',
+      snackPose: { x: -1.15, y: 0.16, z: 0.38, yaw: Math.PI }
+    };
+  } else if (room.layoutType === 'threeroom') {
+    const w1 = -rw * 0.18;
+    const w2 = rw * 0.2;
+    const bx = -rw * 0.35;
+    const bz = -rd * 0.14;
+    const sx = -0.6;
+    const sz = 0.92;
+
+    obstacles.push(
+      { minX: w1 - 0.22, maxX: w1 + 0.22, minZ: -rd * 0.5, maxZ: -0.42, onlyFloor1: true },
+      { minX: w1 - 0.22, maxX: w1 + 0.22, minZ: 1.48, maxZ: rd * 0.5, onlyFloor1: true },
+      { minX: w2 - 0.22, maxX: w2 + 0.22, minZ: -rd * 0.5, maxZ: -0.42, onlyFloor1: true },
+      { minX: w2 - 0.22, maxX: w2 + 0.22, minZ: 1.48, maxZ: rd * 0.5, onlyFloor1: true },
+      { minX: bx - 1.32, maxX: bx + 1.32, minZ: bz - 1.42, maxZ: bz + 1.42, onlyFloor1: true },
+      { minX: sx - 1.38, maxX: sx + 1.38, minZ: sz - 0.62, maxZ: sz + 0.62, onlyFloor1: true },
+      { minX: 2.1 - 1.3, maxX: 2.1 + 1.3, minZ: -0.65 - 0.72, maxZ: -0.65 + 0.72, onlyFloor1: true },
+      { minX: rw * 0.36 - 1.2, maxX: rw * 0.36 + 1.2, minZ: bz - 1.3, maxZ: bz + 1.3, onlyFloor1: true }
+    );
+    nodes.push(
+      { id: 'door', x: 0.35, y: 0.16, z: rd * 0.36 },
+      { id: 'hall_mid', x: 0.4, y: 0.16, z: 0.35 },
+      { id: 'sofa_front', x: sx, y: 0.16, z: sz - 0.9 },
+      { id: 'arch_left', x: w1, y: 0.16, z: 0.48 },
+      { id: 'bed_aisle', x: bx + 1.58, y: 0.16, z: 0.42 },
+      { id: 'arch_right', x: w2, y: 0.16, z: 0.48 },
+      { id: 'desk_front', x: 2.1, y: 0.16, z: 0.38 }
+    );
+    stations = {
+      bedApproach: 'bed_aisle',
+      bedPose: { x: bx, y: 0.66, z: bz + 0.1, yaw: 0 },
+      sofaApproach: 'sofa_front',
+      sofaPose: { x: sx, y: 0.22, z: sz - 0.06, yaw: Math.PI },
+      deskApproach: 'desk_front',
+      deskPose: { x: 2.1, y: 0.16, z: 0.28, yaw: Math.PI },
+      doorNode: 'door',
+      snackApproach: 'desk_front',
+      snackPose: { x: 1.85, y: 0.16, z: 0.28, yaw: Math.PI }
+    };
+  } else {
+    // 복층 로프트(Loft): 실제 9단 원목 계단 발판 노드를 따라 2층 다락 침실로 오르내림!
+    const mezW = rw * 0.54;
+    const mezX = -rw * 0.5 + mezW * 0.5 + 0.14;
+    const railX = mezX + mezW * 0.5 - 0.08;
+    const stairStartX = railX + 2.55;
+    const stairEndX = railX + 0.12;
+    const stairZ = -rd * 0.26;
+    const sx = rw * 0.18;
+    const sz = 0.65;
+    const bx = mezX - 0.35;
+    const bz = -rd * 0.14;
+
+    obstacles.push(
+      { minX: sx - 1.35, maxX: sx + 1.35, minZ: sz - 0.62, maxZ: sz + 0.62, onlyFloor1: true },
+      { minX: bx - 1.25, maxX: bx + 1.25, minZ: bz - 1.35, maxZ: bz + 1.35, onlyLoft: true }
+    );
+    nodes.push(
+      { id: 'door', x: 2.1, y: 0.16, z: rd * 0.36 },
+      { id: 'liv_aisle', x: 0.25, y: 0.16, z: -0.15 },
+      { id: 'sofa_front', x: sx, y: 0.16, z: sz - 0.9 },
+      { id: 'desk_front', x: rw * 0.22, y: 0.16, z: -rd * 0.16 },
+      { id: 'stair_bot', x: stairStartX + 0.22, y: 0.16, z: stairZ },
+      { id: 'stair_mid', x: (stairStartX + stairEndX) * 0.5, y: 1.95, z: stairZ },
+      { id: 'stair_top', x: stairEndX - 0.28, y: 3.78, z: stairZ },
+      { id: 'bed_aisle', x: bx + 1.35, y: 3.78, z: 0.35 }
+    );
+    stations = {
+      bedApproach: 'bed_aisle',
+      bedPose: { x: bx, y: 4.24, z: bz + 0.08, yaw: 0 },
+      sofaApproach: 'sofa_front',
+      sofaPose: { x: sx, y: 0.22, z: sz - 0.06, yaw: Math.PI },
+      deskApproach: 'desk_front',
+      deskPose: { x: rw * 0.22, y: 0.16, z: -rd * 0.16, yaw: Math.PI },
+      doorNode: 'door',
+      snackApproach: 'liv_aisle',
+      snackPose: { x: 1.35, y: 0.16, z: 0.22, yaw: Math.PI }
+    };
+  }
+
+  return { bounds, obstacles, nodes, stations };
+}
+
+function findRoomAislePath(nav, curPos, targetNodeId) {
+  const nodes = nav.nodes;
+  const dstNode = nodes.find((n) => n.id === targetNodeId);
+  if (!dstNode) return [];
+
+  // 현재 위치에서 가장 가까운 같은 층 노드 선택
+  let startNode = nodes[0];
+  let bestD = Infinity;
+  for (const n of nodes) {
+    const floorDiff = Math.abs(n.y - curPos.y);
+    const d = Math.hypot(n.x - curPos.x, n.z - curPos.z) + floorDiff * 2.2;
+    if (d < bestD) {
+      bestD = d;
+      startNode = n;
+    }
+  }
+  if (startNode.id === dstNode.id) return [{ x: dstNode.x, y: dstNode.y, z: dstNode.z }];
+
+  // 노드 간 장애물 비관통 인접 그래프 BFS 최단 우회 경로 탐색!
+  const canLink = (a, b) => {
+    const dy = Math.abs(a.y - b.y);
+    if (dy > 2.2) return false;
+    if (dy > 0.4) {
+      // 복층 계단 노드끼리만 층간 이동 허용!
+      return a.id.startsWith('stair_') && b.id.startsWith('stair_');
+    }
+    for (const ob of nav.obstacles) {
+      if ((ob.onlyFloor1 && a.y > 1.5) || (ob.onlyLoft && a.y < 1.5)) continue;
+      if (segmentHitsAABB2D(a.x, a.z, b.x, b.z, ob, 0.24)) return false;
+    }
+    return true;
+  };
+
+  const queue = [[startNode]];
+  const visited = new Set([startNode.id]);
+  while (queue.length > 0) {
+    const path = queue.shift();
+    const last = path[path.length - 1];
+    if (last.id === dstNode.id) {
+      return path.map((p) => ({ x: p.x, y: p.y, z: p.z }));
+    }
+    for (const nxt of nodes) {
+      if (visited.has(nxt.id)) continue;
+      if (canLink(last, nxt)) {
+        visited.add(nxt.id);
+        queue.push([...path, nxt]);
+      }
+    }
+  }
+  return [{ x: startNode.x, y: startNode.y, z: startNode.z }, { x: dstNode.x, y: dstNode.y, z: dstNode.z }];
+}
+
+function chooseNextSmartRoomRoutine(ac, actorIdx = 0) {
+  const rm = ac.room;
+  const nav = ac.nav;
+  const st = nav.stations;
+  resetCharacterPoseNeutral(ac.mesh);
+  ac.allowFurnitureOverlap = false;
+
+  // 순환 루틴: ① 침대 수면/스마트폰 ➔ ② 소파 착석 영화/TV 감상 ➔ ③ 책상 타이핑 / LP 음악감상 ➔ ④ 1층 편의점·빵집 간식 외출 & 귀가 취식!
+  const cycleOrder = ['sofa_watch', 'desk_work', 'bed_sleep', 'outing_snack'];
+  ac.routineStep = ((ac.routineStep || 0) + 1) % cycleOrder.length;
+  const pick = cycleOrder[(ac.routineStep + actorIdx) % cycleOrder.length];
+
+  if (pick === 'bed_sleep') {
+    ac.nextAction = 'bed_sleep';
+    ac.path = findRoomAislePath(nav, ac.mesh.position, st.bedApproach);
+  } else if (pick === 'sofa_watch') {
+    ac.nextAction = 'sofa_watch';
+    ac.path = findRoomAislePath(nav, ac.mesh.position, st.sofaApproach);
+  } else if (pick === 'desk_work') {
+    ac.nextAction = 'desk_work';
+    ac.path = findRoomAislePath(nav, ac.mesh.position, st.deskApproach);
+  } else {
+    ac.nextAction = 'go_outing';
+    ac.path = findRoomAislePath(nav, ac.mesh.position, st.doorNode);
+  }
+  ac.pathIdx = 0;
+  ac.state = 'walking';
+}
+
 function syncBuildingResidents3D(lotId) {
   const entry = lot3D[lotId];
   const bState = state.buildings[lotId];
@@ -5541,6 +6071,7 @@ function syncBuildingResidents3D(lotId) {
   for (const rm of bState.rooms) {
     if (residentActors[rm.id]) {
       for (const a of residentActors[rm.id]) {
+        if (a.zzzEl) a.zzzEl.remove();
         if (a.mesh.parent) a.mesh.parent.remove(a.mesh);
       }
       delete residentActors[rm.id];
@@ -5553,43 +6084,53 @@ function syncBuildingResidents3D(lotId) {
     const rGrp = entry.roomsMap[rm.id];
     if (!rGrp || !rm.unlocked || !rm.household) continue;
 
+    const nav = buildRoomNavData(rm);
     const hType = HOUSEHOLD_TYPES[rm.household.type] || HOUSEHOLD_TYPES.student;
     const count = Math.min(3, hType.memberCount || 1);
     const list = [];
 
     for (let i = 0; i < count; i++) {
-      const mesh = createChibiPerson3D(rm.household.type);
+      const mesh = createChibiPerson3D(rm.household.type, null, i + Number(rm.subId || 1));
       if (rm.household.type === 'family4' && i >= 2) {
-        mesh.scale.setScalar(0.76); // 귀여운 아이 미니미
+        mesh.scale.setScalar(0.76);
       }
-      const startX = -1.2 + i * 1.35;
-      const startZ = 0.85;
-      mesh.position.set(startX, 0.16, startZ);
+      const spawnNode = nav.nodes[Math.min(i, nav.nodes.length - 1)] || { x: 0, y: 0.16, z: 0.6 };
+      mesh.position.set(spawnNode.x + i * 0.45, spawnNode.y, spawnNode.z);
       rGrp.add(mesh);
 
-      list.push({
+      const actorObj = {
         mesh,
         room: rm,
-        tx: startX,
-        ty: 0.16,
-        tz: startZ,
-        waitTimer: 0.8 + i * 1.1,
-        onLoft: false
-      });
+        nav,
+        actorIdx: i,
+        routineStep: i,
+        state: 'idle',
+        nextAction: 'sofa_watch',
+        path: [],
+        pathIdx: 0,
+        actionTimer: 0.4 + i * 0.9,
+        zzzTimer: 0,
+        zzzEl: null,
+        allowFurnitureOverlap: false,
+        waitTimer: 0
+      };
+      chooseNextSmartRoomRoutine(actorObj, i);
+      list.push(actorObj);
     }
     residentActors[rm.id] = list;
 
-    // 쾌적한 방에는 귀여운 웰시코기/고양이 반려동물 동거!
     if (rm.interiorLv >= 1 || rm.layoutType !== 'studio') {
       const petMesh = createCutePet3D(rm.subId === '102' ? 'corgi' : 'cat');
-      petMesh.position.set(0.6, 0.16, 1.4);
+      const doorN = nav.nodes[0] || { x: 0.4, z: 1.1 };
+      petMesh.position.set(doorN.x, 0.16, doorN.z);
       rGrp.add(petMesh);
       roomPetActors[rm.id] = {
         mesh: petMesh,
         room: rm,
-        tx: 0.6,
-        tz: 1.4,
-        waitTimer: 1.4
+        nav,
+        tx: doorN.x,
+        tz: doorN.z,
+        waitTimer: 1.2
       };
     }
   }
@@ -5598,45 +6139,204 @@ function syncBuildingResidents3D(lotId) {
 function tickBuildingResidentsAI(dt, elapsed) {
   for (const roomId of Object.keys(residentActors)) {
     const actors = residentActors[roomId];
-    for (const ac of actors) {
+    for (let idx = 0; idx < actors.length; idx++) {
+      const ac = actors[idx];
       const rm = ac.room;
-      if (ac.waitTimer > 0) {
-        ac.waitTimer -= dt;
-        ac.mesh.userData.legL.rotation.x *= 0.85;
-        ac.mesh.userData.legR.rotation.x *= 0.85;
-        if (ac.waitTimer <= 0) {
-          // 복층 로프트에서는 1층 거실과 2층 다락방을 오르내림!
-          if (rm.layoutType === 'loft' && Math.random() < 0.42) {
-            ac.onLoft = !ac.onLoft;
-            ac.tx = ac.onLoft ? -rm.rw * 0.24 : rm.rw * 0.18;
-            ac.ty = ac.onLoft ? 3.78 : 0.16;
-            ac.tz = ac.onLoft ? -0.4 : 0.95;
+      const ud = ac.mesh.userData;
+      const lot = state.lots.find((l) => l.lotId === rm.lotId);
+      const roomWorldX = (lot?.x || 0) + rm.lx;
+      const roomWorldZ = (lot?.z || 0) + rm.lz;
+
+      // 1인칭 집들이 방문 중 마중 나온 호스트는 정중히 인사 대기 유지
+      if (fpState.active && fpState.mode === 'room' && fpState.roomId === rm.id && idx === 0) {
+        resetCharacterPoseNeutral(ac.mesh);
+        continue;
+      }
+
+      if (ac.state === 'walking') {
+        const wp = ac.path[ac.pathIdx];
+        if (!wp) {
+          // 목적지 통로 도착 -> 가구/설비 상호작용 상태 돌입!
+          const st = ac.nav.stations;
+          if (ac.nextAction === 'bed_sleep') {
+            ac.state = 'bed_sleep';
+            ac.allowFurnitureOverlap = true;
+            ac.actionTimer = 5.8 + Math.random() * 2.2;
+            ac.usePhoneOnBed = Math.random() < 0.35;
+            ac.mesh.position.set(st.bedPose.x + idx * 0.28, st.bedPose.y, st.bedPose.z);
+            ac.mesh.rotation.y = st.bedPose.yaw;
+            if (ac.usePhoneOnBed) {
+              ud.legL.rotation.x = -1.15;
+              ud.legR.rotation.x = -1.15;
+              ud.armL.rotation.x = -0.85;
+              ud.armR.rotation.x = -0.85;
+              if (ud.phoneProp) ud.phoneProp.visible = true;
+              showSpeechBubble3D(`res_act_${rm.id}_${idx}`, roomWorldX + st.bedPose.x, rm.ly + st.bedPose.y + 1.85, roomWorldZ + st.bedPose.z, '새 침대에 걸터앉아 스마트폰 보는 시간이 제일 행복해~', 3.0);
+            } else {
+              ud.bodyRig.rotation.x = -1.38;
+              ud.bodyRig.position.y = -0.22;
+              ud.bodyRig.position.z = 0.32;
+              ud.armL.rotation.z = 0.1;
+              ud.armR.rotation.z = -0.1;
+            }
+          } else if (ac.nextAction === 'sofa_watch') {
+            ac.state = 'sofa_watch';
+            ac.allowFurnitureOverlap = true;
+            ac.actionTimer = 5.6 + Math.random() * 2.0;
+            ac.mesh.position.set(st.sofaPose.x + (idx - 0.5) * 0.52, st.sofaPose.y, st.sofaPose.z);
+            ac.mesh.rotation.y = st.sofaPose.yaw;
+            // 무릎을 실제로 굽혀 소파 시트에 착석 + 빔프로젝터/TV 정면 응시 + 음료컵 파지!
+            ud.bodyRig.position.y = -0.14;
+            ud.legL.rotation.x = -1.24;
+            ud.legR.rotation.x = -1.24;
+            ud.armL.rotation.x = -0.68;
+            if (ud.cupProp) ud.cupProp.visible = true;
+            const watchingMsg = rm.equippedFurniture?.appliance === 'app_cinema'
+              ? '소파에 앉아 빔프로젝터 대화면으로 영화 보니까 극장이 따로 없네!'
+              : '푹신한 소파에 앉아 시원한 음료 마시며 TV 타임~';
+            showSpeechBubble3D(`res_act_${rm.id}_${idx}`, roomWorldX + st.sofaPose.x, rm.ly + 2.0, roomWorldZ + st.sofaPose.z, watchingMsg, 3.2);
+          } else if (ac.nextAction === 'desk_work') {
+            ac.state = 'desk_work';
+            ac.allowFurnitureOverlap = false;
+            ac.actionTimer = 5.2 + Math.random() * 2.0;
+            ac.mesh.position.set(st.deskPose.x, st.deskPose.y, st.deskPose.z);
+            ac.mesh.rotation.y = st.deskPose.yaw;
+            const isVinyl = rm.equippedFurniture?.appliance === 'app_vinyl' || rm.household?.type === 'musician';
+            ac.isVinylDance = isVinyl;
+            showSpeechBubble3D(
+              `res_act_${rm.id}_${idx}`,
+              roomWorldX + st.deskPose.x,
+              rm.ly + 2.05,
+              roomWorldZ + st.deskPose.z,
+              isVinyl ? 'LP 턴테이블 아날로그 재즈 선율 최고다~' : '집중 모드 ON! 오늘 작업 진도 쭉쭉 나간다!',
+              3.0
+            );
+          } else if (ac.nextAction === 'go_outing') {
+            // 현관문을 통해 1층 편의점·빵집 간식 사러 외출!
+            ac.state = 'outing_away';
+            ac.actionTimer = 4.2;
+            ac.mesh.visible = false;
+          } else if (ac.nextAction === 'eat_snack') {
+            ac.state = 'eat_snack';
+            ac.actionTimer = 4.4;
+            ac.mesh.position.set(st.snackPose.x, st.snackPose.y, st.snackPose.z);
+            ac.mesh.rotation.y = st.snackPose.yaw;
+            ud.carryBag.visible = true;
+            showSpeechBubble3D(
+              `res_act_${rm.id}_${idx}`,
+              roomWorldX + st.snackPose.x,
+              rm.ly + 2.05,
+              roomWorldZ + st.snackPose.z,
+              '1층 마트랑 빵집에서 갓 사 온 간식 타임! 너무 맛있다~',
+              3.2
+            );
           } else {
-            ac.onLoft = false;
-            ac.ty = 0.16;
-            ac.tx = (Math.random() - 0.5) * (rm.rw * 0.68);
-            ac.tz = (Math.random() - 0.35) * (rm.rd * 0.52);
+            chooseNextSmartRoomRoutine(ac, idx);
           }
+          continue;
         }
-      } else {
-        const dx = ac.tx - ac.mesh.position.x;
-        const dy = ac.ty - ac.mesh.position.y;
-        const dz = ac.tz - ac.mesh.position.z;
+
+        const dx = wp.x - ac.mesh.position.x;
+        const dy = wp.y - ac.mesh.position.y;
+        const dz = wp.z - ac.mesh.position.z;
         const dist = Math.hypot(dx, dy, dz);
-        if (dist < 0.16) {
-          ac.waitTimer = 1.6 + Math.random() * 2.4;
+        if (dist < 0.15) {
+          ac.pathIdx += 1;
         } else {
-          const spd = 2.1 * dt;
+          const spd = 2.25 * dt;
           ac.mesh.position.x += (dx / dist) * Math.min(dist, spd);
-          ac.mesh.position.y += (dy / dist) * Math.min(dist, spd * 1.15);
+          ac.mesh.position.y += (dy / dist) * Math.min(dist, spd * 1.25);
           ac.mesh.position.z += (dz / dist) * Math.min(dist, spd);
+          if (Math.abs(dy) < 0.25) {
+            pushOutOfObstaclesAndWalls2D(ac.mesh.position, ac.nav.obstacles, ac.nav.bounds, 0.28);
+          }
           ac.mesh.rotation.y = Math.atan2(dx, dz);
-          const swing = Math.sin(elapsed * 11) * 0.45;
-          ac.mesh.userData.legL.rotation.x = swing;
-          ac.mesh.userData.legR.rotation.x = -swing;
+          const swing = Math.sin(elapsed * 11.5 + idx * 1.7) * 0.48;
+          ud.legL.rotation.x = swing;
+          ud.legR.rotation.x = -swing;
+          ud.armL.rotation.x = -swing * 0.65;
+          ud.armR.rotation.x = ud.carryBag.visible ? -0.55 : swing * 0.65;
+        }
+      } else if (ac.state === 'bed_sleep') {
+        ac.actionTimer -= dt;
+        ac.zzzTimer -= dt;
+        if (!ac.usePhoneOnBed) {
+          // 새근새근 수면 호흡 & Zzz 수면 구름 파티클
+          ud.bodyRig.scale.y = 1.0 + Math.sin(elapsed * 3.2) * 0.03;
+          if (ac.zzzTimer <= 0) {
+            ac.zzzTimer = 1.6;
+            showSpeechBubble3D(
+              `zzz_${rm.id}_${idx}`,
+              roomWorldX + ac.mesh.position.x,
+              rm.ly + ac.mesh.position.y + 1.35,
+              roomWorldZ + ac.mesh.position.z,
+              '쿨쿨... Zzz 꿀잠 자는 중~',
+              1.45
+            );
+          }
+        } else {
+          ud.armR.rotation.x = -0.85 + Math.sin(elapsed * 6.0) * 0.1;
+        }
+        if (ac.actionTimer <= 0) {
+          ud.bodyRig.scale.set(1, 1, 1);
+          const appNode = ac.nav.nodes.find((n) => n.id === ac.nav.stations.bedApproach);
+          if (appNode) ac.mesh.position.set(appNode.x, appNode.y, appNode.z);
+          chooseNextSmartRoomRoutine(ac, idx);
+        }
+      } else if (ac.state === 'sofa_watch') {
+        ac.actionTimer -= dt;
+        // 화면 쪽을 바라보며 고개를 까딱이고 음료를 홀짝이는 리얼 모션
+        if (ud.head) ud.head.rotation.x = Math.sin(elapsed * 3.4 + idx) * 0.08;
+        ud.armL.rotation.x = -0.68 + Math.sin(elapsed * 2.8) * 0.16;
+        if (ac.actionTimer <= 0) {
+          if (ud.head) ud.head.rotation.x = 0;
+          const appNode = ac.nav.nodes.find((n) => n.id === ac.nav.stations.sofaApproach);
+          if (appNode) ac.mesh.position.set(appNode.x, appNode.y, appNode.z);
+          chooseNextSmartRoomRoutine(ac, idx);
+        }
+      } else if (ac.state === 'desk_work') {
+        ac.actionTimer -= dt;
+        if (ac.isVinylDance) {
+          // LP 턴테이블 리듬에 맞춰 몸을 흔들며 음악 감상!
+          ud.bodyRig.rotation.z = Math.sin(elapsed * 5.6) * 0.11;
+          ud.bodyRig.position.y = Math.abs(Math.sin(elapsed * 5.6)) * 0.08;
+          ud.armL.rotation.z = 0.45 + Math.sin(elapsed * 5.6) * 0.25;
+          ud.armR.rotation.z = -0.45 - Math.sin(elapsed * 5.6) * 0.25;
+        } else {
+          // 책상 의자 착석 포즈 + 양팔 고속 타이핑/드로잉!
+          ud.bodyRig.position.y = -0.1;
+          ud.legL.rotation.x = -1.05;
+          ud.legR.rotation.x = -1.05;
+          ud.armL.rotation.x = -0.95 + Math.sin(elapsed * 18.0) * 0.22;
+          ud.armR.rotation.x = -0.95 + Math.cos(elapsed * 18.0) * 0.22;
+        }
+        if (ac.actionTimer <= 0) {
+          chooseNextSmartRoomRoutine(ac, idx);
+        }
+      } else if (ac.state === 'outing_away') {
+        ac.actionTimer -= dt;
+        if (ac.actionTimer <= 0) {
+          // 1층에서 간식 봉투를 사 들고 자기 방 현관으로 귀가!
+          ac.mesh.visible = true;
+          const doorN = ac.nav.nodes.find((n) => n.id === ac.nav.stations.doorNode) || ac.nav.nodes[0];
+          ac.mesh.position.set(doorN.x, doorN.y, doorN.z);
+          ud.carryBag.visible = true;
+          ac.nextAction = 'eat_snack';
+          ac.path = findRoomAislePath(ac.nav, ac.mesh.position, ac.nav.stations.snackApproach);
+          ac.pathIdx = 0;
+          ac.state = 'walking';
+        }
+      } else if (ac.state === 'eat_snack') {
+        ac.actionTimer -= dt;
+        ud.armR.rotation.x = -0.75 + Math.sin(elapsed * 8.0) * 0.24;
+        if (ac.actionTimer <= 0) {
+          ud.carryBag.visible = false;
+          chooseNextSmartRoomRoutine(ac, idx);
         }
       }
     }
+    // 세입자 캐릭터 간 최소 안전거리(0.62m) 유지로 겹침 원천 차단!
+    enforceCharacterSeparation(actors, 0.62);
   }
 
   for (const roomId of Object.keys(roomPetActors)) {
@@ -5644,21 +6344,288 @@ function tickBuildingResidentsAI(dt, elapsed) {
     if (p.waitTimer > 0) {
       p.waitTimer -= dt;
       if (p.waitTimer <= 0) {
-        p.tx = (Math.random() - 0.5) * (p.room.rw * 0.55);
-        p.tz = 0.3 + Math.random() * 1.4;
+        const pickNode = p.nav.nodes[Math.floor(Math.random() * p.nav.nodes.length)];
+        if (pickNode && pickNode.y < 1.0) {
+          p.tx = pickNode.x;
+          p.tz = pickNode.z;
+        }
       }
     } else {
       const dx = p.tx - p.mesh.position.x;
       const dz = p.tz - p.mesh.position.z;
       const dist = Math.hypot(dx, dz);
-      if (dist < 0.12) {
+      if (dist < 0.14) {
         p.waitTimer = 1.8 + Math.random() * 2.2;
       } else {
-        p.mesh.position.x += (dx / dist) * Math.min(dist, 1.6 * dt);
-        p.mesh.position.z += (dz / dist) * Math.min(dist, 1.6 * dt);
+        p.mesh.position.x += (dx / dist) * Math.min(dist, 1.55 * dt);
+        p.mesh.position.z += (dz / dist) * Math.min(dist, 1.55 * dt);
+        pushOutOfObstaclesAndWalls2D(p.mesh.position, p.nav.obstacles, p.nav.bounds, 0.22);
         p.mesh.rotation.y = Math.atan2(dx, dz);
         p.mesh.position.y = 0.16 + Math.abs(Math.sin(elapsed * 14)) * 0.08;
       }
+    }
+  }
+
+  // 1층 편의점 · 코인세탁소 · 부티크 단독상가 직원 & 손님 스마트 일상 AI 동시 구동!
+  tickShopInteriorSmartAI(dt, elapsed);
+}
+
+function tickShopInteriorSmartAI(dt, elapsed) {
+  const mainLot = state.lots.find((l) => l.lotId === 'lot_main') || { x: -4.2, z: -6.4 };
+
+  // 1) 1층 미니미 마트 24 손님 & POS 알바생 리얼 루틴 (통로 이동 ➔ 과자 고르기 ➔ POS 계산 차링! ➔ 창가 컵라면 취식)
+  const martWorldX = mainLot.x - 7.15;
+  const martWorldZ = mainLot.z;
+  let someoneAtMartPos = false;
+
+  for (const mc of shopSmartAI.martCustomers) {
+    const ud = mc.mesh?.userData;
+    if (!ud) continue;
+
+    if (mc.waypoints && mc.wpIdx < mc.waypoints.length) {
+      const wp = mc.waypoints[mc.wpIdx];
+      const dx = wp.x - mc.mesh.position.x;
+      const dz = wp.z - mc.mesh.position.z;
+      const d = Math.hypot(dx, dz);
+      if (d < 0.14) {
+        mc.wpIdx += 1;
+      } else {
+        mc.mesh.position.x += (dx / d) * Math.min(d, 2.15 * dt);
+        mc.mesh.position.z += (dz / d) * Math.min(d, 2.15 * dt);
+        mc.mesh.position.y = 0.08 + Math.abs(Math.sin(elapsed * 11 + mc.slotIdx)) * 0.05;
+        mc.mesh.rotation.y = Math.atan2(dx, dz);
+        const sw = Math.sin(elapsed * 11.5) * 0.46;
+        ud.legL.rotation.x = sw;
+        ud.legR.rotation.x = -sw;
+        ud.armL.rotation.x = -sw * 0.6;
+        ud.armR.rotation.x = ud.carryBag.visible ? -0.5 : sw * 0.6;
+        continue;
+      }
+    }
+
+    ud.legL.rotation.x = 0;
+    ud.legR.rotation.x = 0;
+
+    if (mc.phase === 'walk_to_shelf') {
+      mc.phase = 'browse_shelf';
+      mc.timer = 2.8 + Math.random() * 1.4;
+    } else if (mc.phase === 'browse_shelf') {
+      // 곤돌라 진열대 쪽으로 몸을 돌려 실사 과자봉지·라면을 팔 뻗어 고르는 모션!
+      mc.timer -= dt;
+      mc.mesh.rotation.y = mc.slotIdx === 0 ? -Math.PI * 0.5 : Math.PI * 0.5;
+      ud.armR.rotation.x = -1.05 + Math.sin(elapsed * 5.5) * 0.22;
+      if (ud.head) ud.head.rotation.y = -Math.PI * 0.5 + Math.sin(elapsed * 2.5) * 0.18;
+      if (mc.timer <= 0) {
+        if (ud.head) ud.head.rotation.y = -Math.PI * 0.5;
+        mc.phase = 'to_pos';
+        mc.waypoints = [
+          { x: mc.aisleX, z: 1.95 },
+          { x: 2.05, z: 1.35 - mc.slotIdx * 0.62 }
+        ];
+        mc.wpIdx = 0;
+      }
+    } else if (mc.phase === 'to_pos') {
+      mc.phase = 'pay_pos';
+      mc.timer = 2.1;
+      mc.paidEffectDone = false;
+    } else if (mc.phase === 'pay_pos') {
+      someoneAtMartPos = true;
+      mc.timer -= dt;
+      mc.mesh.rotation.y = Math.PI * 0.5; // 알바생과 정면 마주 보기!
+      ud.armR.rotation.x = -0.65 + Math.sin(elapsed * 7.0) * 0.15;
+      if (!mc.paidEffectDone && mc.timer < 1.2) {
+        mc.paidEffectDone = true;
+        ud.carryBag.visible = true;
+        spawnPoofParticles3D(martWorldX + 2.75, 1.85, martWorldZ + 1.35, 0xFFD93D, 6);
+        if (focusedFirstFloorShopId === 'shop_mart1f') {
+          spawnJackpotText3D(martWorldX + 2.8, 2.25, martWorldZ + 1.35, '차링! 바코드 결제 완료!', 'coin_stack');
+          showSpeechBubble3D(`mart_pay_${mc.slotIdx}`, martWorldX + 2.05, 2.45, martWorldZ + 1.35, '허니버터칩이랑 도시락 결제할게요~!', 2.4, true);
+        }
+      }
+      if (mc.timer <= 0) {
+        if (mc.slotIdx === 0) {
+          // 창가 스툴 의자로 돌아가 컵라면/도시락 취식!
+          mc.phase = 'to_ramen_bar';
+          mc.waypoints = [
+            { x: 1.45, z: 2.05 },
+            { x: -0.43, z: 2.48 }
+          ];
+          mc.wpIdx = 0;
+        } else {
+          // 쇼핑백 들고 출입문 앞까지 이동 후 다음 손님 순환
+          mc.phase = 'to_door_cycle';
+          mc.waypoints = [
+            { x: 1.15, z: 2.15 },
+            { x: 0.85, z: 3.35 }
+          ];
+          mc.wpIdx = 0;
+        }
+      }
+    } else if (mc.phase === 'to_ramen_bar') {
+      mc.phase = 'eat_ramen';
+      mc.timer = 3.8;
+    } else if (mc.phase === 'eat_ramen') {
+      mc.timer -= dt;
+      mc.mesh.rotation.y = 0; // 통유리 창밖 거리 감상하며 컵라면 호로록!
+      ud.bodyRig.position.y = -0.08;
+      ud.legL.rotation.x = -1.16;
+      ud.legR.rotation.x = -1.16;
+      ud.armR.rotation.x = -0.88 + Math.sin(elapsed * 8.5) * 0.22;
+      if (mc.timer <= 0) {
+        resetCharacterPoseNeutral(mc.mesh);
+        ud.carryBag.visible = false;
+        mc.phase = 'walk_to_shelf';
+        mc.waypoints = [
+          { x: -1.45, z: 1.95 },
+          { x: -1.45, z: -0.28 }
+        ];
+        mc.wpIdx = 0;
+      }
+    } else if (mc.phase === 'to_door_cycle') {
+      ud.carryBag.visible = false;
+      mc.phase = 'walk_to_shelf';
+      mc.waypoints = [
+        { x: 0.92, z: 1.95 },
+        { x: 0.92, z: -0.22 }
+      ];
+      mc.wpIdx = 0;
+    }
+  }
+  enforceCharacterSeparation(shopSmartAI.martCustomers, 0.6);
+
+  // 편의점 POS 알바생 민수 능동 모션 (손님 계산 시 포스기 타건 & 인사, 평소엔 매대/포스 점검)
+  if (shopSmartAI.martClerk?.userData) {
+    const cud = shopSmartAI.martClerk.userData;
+    if (someoneAtMartPos) {
+      shopSmartAI.martClerk.rotation.y = -Math.PI * 0.35;
+      cud.armL.rotation.x = -0.75 + Math.sin(elapsed * 14) * 0.22;
+      cud.armR.rotation.x = -0.75 + Math.cos(elapsed * 14) * 0.22;
+    } else {
+      shopSmartAI.martClerk.rotation.y = Math.sin(elapsed * 0.9) * 0.35;
+      cud.armL.rotation.x = -0.25 + Math.sin(elapsed * 3.2) * 0.1;
+      cud.armR.rotation.x = -0.25;
+    }
+  }
+
+  // 2) 1층 버블 코인세탁소 손님 & 매니저 리얼 루틴 (회전 세탁기 앞 투입 ➔ 대기 벤치 스마트폰 ➔ 원목 테이블 빨래 개기)
+  const washWorldX = mainLot.x + 7.15;
+  const washWorldZ = mainLot.z;
+  for (const wc of shopSmartAI.washCustomers) {
+    const ud = wc.mesh?.userData;
+    if (!ud) continue;
+
+    if (wc.waypoints && wc.wpIdx < wc.waypoints.length) {
+      const wp = wc.waypoints[wc.wpIdx];
+      const dx = wp.x - wc.mesh.position.x;
+      const dz = wp.z - wc.mesh.position.z;
+      const d = Math.hypot(dx, dz);
+      if (d < 0.14) {
+        wc.wpIdx += 1;
+      } else {
+        wc.mesh.position.x += (dx / d) * Math.min(d, 2.05 * dt);
+        wc.mesh.position.z += (dz / d) * Math.min(d, 2.05 * dt);
+        wc.mesh.position.y = 0.08 + Math.abs(Math.sin(elapsed * 11 + wc.slotIdx)) * 0.05;
+        wc.mesh.rotation.y = Math.atan2(dx, dz);
+        const sw = Math.sin(elapsed * 11.2) * 0.45;
+        ud.legL.rotation.x = sw;
+        ud.legR.rotation.x = -sw;
+        continue;
+      }
+    }
+
+    ud.legL.rotation.x = 0;
+    ud.legR.rotation.x = 0;
+
+    if (wc.phase === 'to_washer') {
+      wc.phase = 'load_washer';
+      wc.timer = 3.0;
+    } else if (wc.phase === 'load_washer') {
+      // 돌아가는 2단 드럼세탁기 정면 앞에 서서 빨랫감을 넣는 모션!
+      wc.timer -= dt;
+      resetCharacterPoseNeutral(wc.mesh);
+      wc.mesh.rotation.y = Math.PI;
+      ud.armL.rotation.x = -0.95 + Math.sin(elapsed * 7.5) * 0.25;
+      ud.armR.rotation.x = -0.95 - Math.sin(elapsed * 7.5) * 0.25;
+      if (wc.timer <= 0) {
+        // 원목 폴딩 테이블과 바퀴 카트를 우회해 대기 벤치로 이동!
+        wc.phase = 'to_bench';
+        wc.waypoints = [
+          { x: -3.25, z: -1.65 },
+          { x: -3.25, z: 2.25 },
+          { x: -1.55 + wc.slotIdx * 0.68, z: 2.62 }
+        ];
+        wc.wpIdx = 0;
+      }
+    } else if (wc.phase === 'to_bench') {
+      wc.phase = 'wait_bench';
+      wc.timer = 3.8;
+    } else if (wc.phase === 'wait_bench') {
+      // 대기 벤치에 걸터앉아 스마트폰을 보며 세탁 완료 대기!
+      wc.timer -= dt;
+      wc.mesh.rotation.y = Math.PI;
+      ud.bodyRig.position.y = -0.1;
+      ud.legL.rotation.x = -1.16;
+      ud.legR.rotation.x = -1.16;
+      ud.armR.rotation.x = -0.82 + Math.sin(elapsed * 5.0) * 0.08;
+      if (ud.phoneProp) ud.phoneProp.visible = true;
+      if (wc.timer <= 0) {
+        resetCharacterPoseNeutral(wc.mesh);
+        wc.phase = 'to_fold_table';
+        wc.waypoints = [
+          { x: -0.2 + wc.slotIdx * 0.72, z: 1.56 }
+        ];
+        wc.wpIdx = 0;
+      }
+    } else if (wc.phase === 'to_fold_table') {
+      wc.phase = 'fold_towels';
+      wc.timer = 3.2;
+      if (focusedFirstFloorShopId === 'shop_wash1f') {
+        showSpeechBubble3D(`wash_fold_${wc.slotIdx}`, washWorldX + wc.mesh.position.x, 2.45, washWorldZ + 1.56, '건조기 돌린 수건이 뽀송뽀송 따끈해요~!', 2.5, true);
+      }
+    } else if (wc.phase === 'fold_towels') {
+      // 원목 폴딩 테이블 앞에서 빨래를 반듯하게 개는 양손 모션!
+      wc.timer -= dt;
+      wc.mesh.rotation.y = Math.PI;
+      ud.armL.rotation.x = -0.85 + Math.sin(elapsed * 9.0) * 0.24;
+      ud.armR.rotation.x = -0.85 + Math.cos(elapsed * 9.0) * 0.24;
+      if (wc.timer <= 0) {
+        resetCharacterPoseNeutral(wc.mesh);
+        wc.phase = 'to_washer';
+        wc.waypoints = [
+          { x: 2.35, z: 1.56 },
+          { x: 2.35, z: -1.75 },
+          { x: wc.washerX, z: -1.82 }
+        ];
+        wc.wpIdx = 0;
+      }
+    }
+  }
+  enforceCharacterSeparation(shopSmartAI.washCustomers, 0.62);
+
+  if (shopSmartAI.washClerk?.userData) {
+    const wud = shopSmartAI.washClerk.userData;
+    shopSmartAI.washClerk.rotation.y = -Math.PI * 0.65 + Math.sin(elapsed * 1.2) * 0.35;
+    wud.armL.rotation.x = -0.35 + Math.sin(elapsed * 4.2) * 0.16;
+  }
+
+  // 3) 단독 상가 3곳(빵집 제빵사 · 카페 바리스타 · 플라워샵 플로리스트) 능동 설비 작업 모션!
+  for (const sid of Object.keys(standaloneShop3D)) {
+    const entry = standaloneShop3D[sid];
+    const staff = entry?.staffMesh;
+    if (!staff?.userData) continue;
+    const sud = staff.userData;
+    // 오븐/에스프레소 머신 쪽과 전면 POS 카운터 쪽을 번갈아 돌며 조리·추출·계산 수행!
+    const workCycle = (elapsed * 0.45 + (sid === 'shop_bakery' ? 0 : sid === 'shop_roastery' ? 1.5 : 3.0)) % 2.0;
+    if (workCycle < 1.0) {
+      // 뒷벽 화덕 오븐 / 에스프레소 머신 작업
+      staff.rotation.y = Math.PI + Math.sin(elapsed * 2.0) * 0.25;
+      sud.armL.rotation.x = -0.85 + Math.sin(elapsed * 10.0) * 0.22;
+      sud.armR.rotation.x = -0.85 - Math.sin(elapsed * 10.0) * 0.22;
+    } else {
+      // 전면 쇼케이스 진열 & 손님 맞이 인사
+      staff.rotation.y = Math.sin(elapsed * 1.8) * 0.25;
+      sud.armL.rotation.x = -0.35;
+      sud.armR.rotation.x = -0.55 + Math.sin(elapsed * 7.5) * 0.22;
     }
   }
 }
@@ -5849,8 +6816,9 @@ function calcRoomEffectiveRent(bState, room) {
     }
   }
   const giftMult = 1 + (room.giftBonusPct || 0) / 100;
+  const poachMult = 1 + (room.poachDefenseBonusPct || 0) / 100;
   const mult = 1 + (calcGlobalSynergyPct() + calcBuildingInfraBonusPct(bState)) / 100;
-  return Math.round(base * mult * giftMult * getFeverMultiplier() * getLegendaryTotalMultiplier());
+  return Math.round(base * mult * giftMult * poachMult * getFeverMultiplier() * getLegendaryTotalMultiplier());
 }
 
 function calcFirstFloorShopStats(shopId) {
@@ -5891,6 +6859,10 @@ function calcStandaloneShopStats(shopId) {
       upgCount += 1;
     }
   }
+  const auctionMult = 1 + (st.auctionBonusPct || 0) / 100;
+  visitRev = visitRev * auctionMult;
+  cycleRev = cycleRev * auctionMult;
+
   const carDef = getCarDef(state.garage?.currentCar || 'car_scooter');
   if (carDef.rentBonusPct > 0) {
     cycleRev = Math.round(cycleRev * (1 + carDef.rentBonusPct / 100));
@@ -6007,6 +6979,9 @@ function updateTopHUDTargets() {
     happyLabel.textContent = (state.unlockedMilestones || []).includes(100) ? '성군' : '행복';
   }
   checkAndTriggerHappinessMilestones(hudAnim.targetHappy);
+  if (typeof updateForbesRankAndHUD === 'function') {
+    updateForbesRankAndHUD(true);
+  }
   refreshQuestRedDot();
 }
 
@@ -6416,10 +7391,11 @@ function tickStreetOutingAndDiningAI(dt, elapsed) {
       const target = ac.waypoints[ac.wpIndex];
       if (!target) {
         if (ac.phase === 'to_shop') {
-          ac.phase = 'ordering';
-          ac.timer = 1.4;
+          // 매장 출입문으로 걸어 들어와 쇼케이스/진열대 앞 통로(무충돌 지점)에서 상품을 고르는 단계!
+          ac.phase = 'browse_showcase';
+          ac.timer = 1.65;
           if (tpl) {
-            ac.mesh.position.set(tpl.x + 0.3, 0.48, tpl.z + 0.55);
+            ac.mesh.position.set(tpl.x - 1.55, 0.48, tpl.z + 1.48);
             ac.mesh.rotation.y = Math.PI;
           }
           ac.mesh.userData.legL.rotation.x = 0;
@@ -6429,8 +7405,8 @@ function tickStreetOutingAndDiningAI(dt, elapsed) {
             ac.mesh.position.x,
             ac.mesh.position.y + 1.9,
             ac.mesh.position.z,
-            tpl?.kind === 'bakery' ? '갓 구운 바게트랑 딸기케이크 주세요!' : tpl?.kind === 'roastery' ? '아이스 라떼랑 유기농 사과 주세요!' : '오늘 피어난 프리지아 꽃다발 주세요!',
-            2.2
+            tpl?.kind === 'bakery' ? '우와~ 실사 크루아상이랑 딸기케이크 윤기 대박!' : tpl?.kind === 'roastery' ? '원두 향기 너무 좋다~ 유기농 사과도 담자!' : '프리지아 꽃다발이 방금 피어난 것 같아요!',
+            2.0
           );
         } else {
           if (ac.sourceRoom && ac.sourceRoom.household) {
@@ -6477,6 +7453,45 @@ function tickStreetOutingAndDiningAI(dt, elapsed) {
         ac.mesh.userData.legR.rotation.x = -swing;
         ac.mesh.userData.armL.rotation.x = -swing * 0.7;
         ac.mesh.userData.armR.rotation.x = ac.mesh.userData.carryBag.visible ? -0.45 : swing * 0.7;
+      }
+    } else if (ac.phase === 'browse_showcase') {
+      // 쇼케이스 앞 통로에 멈춰 고개를 돌리고 손을 뻗어 상품을 집어 드는 스마트 모션!
+      ac.timer -= dt;
+      ac.mesh.rotation.y = Math.PI + Math.sin(elapsed * 3.6 + i) * 0.22;
+      ac.mesh.userData.armR.rotation.x = -1.05 + Math.sin(elapsed * 7.5 + i) * 0.28;
+      if (ac.timer <= 0) {
+        ac.phase = 'walk_to_pos';
+      }
+    } else if (ac.phase === 'walk_to_pos') {
+      // 카운터를 관통하지 않고 전면 통로를 따라 POS 계산대 앞(z + 0.92)으로 우회 이동!
+      const posX = (tpl ? tpl.x : 0) + 0.45;
+      const posZ = (tpl ? tpl.z : 0) + 0.92;
+      const dx = posX - ac.mesh.position.x;
+      const dz = posZ - ac.mesh.position.z;
+      const dist = Math.hypot(dx, dz);
+      if (dist < 0.16) {
+        ac.mesh.position.set(posX, 0.48, posZ);
+        ac.mesh.rotation.y = Math.PI;
+        ac.mesh.userData.legL.rotation.x = 0;
+        ac.mesh.userData.legR.rotation.x = 0;
+        ac.mesh.userData.armR.rotation.x = -0.55;
+        ac.phase = 'ordering';
+        ac.timer = 1.25;
+        showSpeechBubble3D(
+          ac.id,
+          posX,
+          ac.mesh.position.y + 1.9,
+          posZ,
+          tpl?.kind === 'bakery' ? '크루아상이랑 딸기케이크 결제할게요! 차링~!' : tpl?.kind === 'roastery' ? '아이스 라떼랑 사과 포장 결제할게요!' : '프리지아 꽃다발 예쁘게 포장해 주세요!',
+          2.1
+        );
+      } else {
+        ac.mesh.position.x += (dx / dist) * Math.min(dist, 3.6 * dt);
+        ac.mesh.position.z += (dz / dist) * Math.min(dist, 3.6 * dt);
+        ac.mesh.rotation.y = Math.atan2(dx, dz);
+        const sw = Math.sin(elapsed * 12 + i) * 0.46;
+        ac.mesh.userData.legL.rotation.x = sw;
+        ac.mesh.userData.legR.rotation.x = -sw;
       }
     } else if (ac.phase === 'bench_rest') {
       ac.timer -= dt;
@@ -6580,6 +7595,8 @@ function closeAllModalsImmediate() {
   dom.renameModal?.classList.add('hidden');
   dom.fpVisitModal?.classList.add('hidden');
   document.getElementById('happiness-milestone-modal')?.classList.add('hidden');
+  document.getElementById('rival-battle-hub-modal')?.classList.add('hidden');
+  document.getElementById('forbes-modal')?.classList.add('hidden');
 }
 
 function triggerDockSlideUpAnimation(el) {
@@ -6597,27 +7614,36 @@ function tuckFocusDockTemporarily(durationSec = 1.28) {
 }
 
 function syncTopBarsByMode() {
-  const inFp = fpState.active;
-  const inDrive = driveState.active && !inFp;
-  const inRoom = !!focusedRoomId && !inDrive && !inFp;
-  const inShop = (!!focusedShopId || !!focusedFirstFloorShopId) && !inDrive && !inFp;
+  const inTitle = !!titleScreenState.active;
+  const inFp = fpState.active && !inTitle;
+  const inDrive = driveState.active && !inFp && !inTitle;
+  const inRoom = !!focusedRoomId && !inDrive && !inFp && !inTitle;
+  const inShop = (!!focusedShopId || !!focusedFirstFloorShopId) && !inDrive && !inFp && !inTitle;
   const showFocusDock = focusRevealState.revealed && !focusRevealState.pending;
 
-  dom.hudTownControls?.classList.toggle('hidden', inDrive || inRoom || inShop || inFp);
+  const isPoachRoom = !!(rivalState.poach.active && inRoom && focusedRoomId === rivalState.poach.roomId);
+  const isBiddingShop = !!(rivalState.bidding.active && inShop && focusedShopId === rivalState.bidding.shopId);
+
+  dom.hudTownControls?.classList.toggle('hidden', inTitle || inDrive || inRoom || inShop || inFp);
   dom.roomFocusTopbar?.classList.toggle('hidden', !inRoom);
   dom.shopFocusTopbar?.classList.toggle('hidden', !inShop);
   dom.driveFocusTopbar?.classList.toggle('hidden', !inDrive);
   dom.fpFocusTopbar?.classList.toggle('hidden', !inFp);
 
   // Step 1(카메라 정중앙 이동 0.6s + 도착 직후 0.4s 클린 감상) 동안은 모든 패널/팝업을 숨김!
+  // 라이벌 스카우트 방어전/입찰 경매 배틀 중에는 가구 바텀시트와 절대 겹치지 않도록 전용 배틀 독만 단독 노출!
   dom.roomFocusPanel?.classList.toggle('hidden', !(inRoom && showFocusDock));
-  dom.shopFocusPanel?.classList.toggle('hidden', !(inShop && showFocusDock));
-  dom.furnitureCatalogSheet?.classList.toggle('hidden', !((inRoom || inShop) && showFocusDock));
+  dom.shopFocusPanel?.classList.toggle('hidden', !(inShop && showFocusDock && !isBiddingShop));
+  dom.furnitureCatalogSheet?.classList.toggle('hidden', !((inRoom || inShop) && showFocusDock && !isPoachRoom && !isBiddingShop));
+  document.getElementById('rival-poach-dock')?.classList.toggle('hidden', !(isPoachRoom && showFocusDock));
+  document.getElementById('bidding-war-dock')?.classList.toggle('hidden', !(isBiddingShop && showFocusDock));
+
   dom.driveModeHud?.classList.toggle('hidden', !inDrive);
   dom.cockpitOverlay?.classList.toggle('hidden', !(inDrive && driveState.cockpitView));
-  dom.driveProximityBar?.classList.toggle('hidden', !inDrive);
+  dom.driveProximityBar?.classList.toggle('hidden', !inDrive || rivalState.race.active);
+  document.getElementById('drive-race-hud')?.classList.toggle('hidden', !(inDrive && rivalState.race.active));
   dom.fpModeHud?.classList.toggle('hidden', !inFp);
-  dom.bottomTownBar?.classList.toggle('hidden', inDrive || inRoom || inShop || inFp);
+  dom.bottomTownBar?.classList.toggle('hidden', inTitle || inDrive || inRoom || inShop || inFp);
   dom.isolationVignette?.classList.toggle('hidden', !(inRoom || inShop));
 
   updateCollectAllButtonVisibility();
@@ -6775,10 +7801,14 @@ function focusCameraOnShop(shopId) {
   const aspect = window.innerWidth / Math.max(1, window.innerHeight);
   const frustumH = 38;
   const frustumW = frustumH * aspect;
-  const fitZoom = THREE.MathUtils.clamp(Math.min(frustumW / 15.5, frustumH / 12.8) * 0.9, 1.6, 2.95);
+  const isBiddingTarget = !!(rivalState.bidding.active && rivalState.bidding.shopId === shopId);
+  const baseFitZoom = THREE.MathUtils.clamp(Math.min(frustumW / 15.5, frustumH / 12.8) * 0.9, 1.6, 2.95);
+  const fitZoom = isBiddingTarget ? baseFitZoom * 0.84 : baseFitZoom;
 
-  const lookPt = new THREE.Vector3(tpl.x, 1.45, tpl.z + 0.65);
-  const camPt = new THREE.Vector3(tpl.x + 11.5, 12.2, tpl.z + 21.5);
+  const lookPt = isBiddingTarget
+    ? new THREE.Vector3(tpl.x, 0.35, tpl.z + 2.65)
+    : new THREE.Vector3(tpl.x, 1.45, tpl.z + 0.65);
+  const camPt = new THREE.Vector3(tpl.x + 11.5, 12.2, tpl.z + (isBiddingTarget ? 23.5 : 21.5));
 
   controls.enablePan = false;
   beginTwoStepFocusSequence(camPt, lookPt, fitZoom, () => {
@@ -7502,6 +8532,9 @@ function enterDriveMode(startInCockpit = false) {
 function exitDriveMode() {
   if (!driveState.active) return;
   stopCarRadioBGM();
+  if (typeof endRivalCoastalRaceCleanup === 'function') {
+    endRivalCoastalRaceCleanup();
+  }
   driveState.active = false;
   driveState.cockpitView = false;
   driveState.keys.forward = false;
@@ -8180,6 +9213,33 @@ function enterFirstPersonShop(shopId = 'shop_bakery', rememberDrive = null) {
 
   showSpeechBubble3D('fp_clerk_welcome', FP_STAGE_ORIGIN.x - 0.45, FP_STAGE_ORIGIN.y + 2.75, FP_STAGE_ORIGIN.z - 2.05, dest.welcomeQuote, 5.8);
 
+  // [승부 ③-B] 1인칭 매장 내 라이벌 '블랙타워 강 회장' 거들먹 등장 및 더블 골든벨 맞불 대치!
+  if (rivalState.fpKangActive) {
+    const kangFp = createChibiPerson3D('rival_kang');
+    kangFp.position.set(1.38, 0.04, 0.58);
+    stg.add(kangFp);
+    rivalState.fpKangMesh = kangFp;
+    fpState.npcActors.push({ mesh: kangFp, isClerk: false, isRivalKang: true, baseY: 0.04, phase: 2.1 });
+    showSpeechBubble3D(
+      'fp_rival_kang_brag',
+      FP_STAGE_ORIGIN.x + 1.38,
+      FP_STAGE_ORIGIN.y + 2.38,
+      FP_STAGE_ORIGIN.z + 0.58,
+      '흥! 고작 150만 골든벨로 생색이냐? 내 블랙타워에선 껌값이지!',
+      7.5,
+      true
+    );
+    createFpPinBadge(
+      FP_STAGE_ORIGIN.x + 1.38,
+      FP_STAGE_ORIGIN.y + 2.68,
+      FP_STAGE_ORIGIN.z + 0.58,
+      `${createCustomSVGIcon('rival_bolt', 14)}<span class="text-[#7E22CE]">더블 골든벨 참교육! (200만)</span>`,
+      () => triggerDoubleGoldenBellShowdown()
+    );
+  } else {
+    rivalState.fpKangMesh = null;
+  }
+
   // 1.62m 사람 눈높이 진입 시작점 (진열대 5종 + 황금 종 + 직원 + 손님이 한 화면에 모두 들어오는 최적 거리)
   fpState.entryWalkTimer = 0.55;
   fpState.bounds = {
@@ -8520,6 +9580,7 @@ function syncFpModeHUD() {
   document.getElementById('fp-shop-shelf-strip')?.classList.toggle('hidden', !isShop);
   document.getElementById('fp-shop-actions')?.classList.toggle('hidden', !isShop);
   document.getElementById('fp-room-actions')?.classList.toggle('hidden', isShop);
+  document.getElementById('btn-fp-double-bell')?.classList.toggle('hidden', !isShop);
 
   const exitLbl = document.getElementById('label-exit-fp');
   if (exitLbl) {
@@ -8680,6 +9741,8 @@ function exitFirstPersonMode(returnToDriveOverride = null) {
   const shouldDrive = returnToDriveOverride !== null ? returnToDriveOverride : fpState.returnToDrive;
   const visitedRoomId = fpState.mode === 'room' ? fpState.roomId : null;
 
+  rivalState.fpKangActive = false;
+  rivalState.fpKangMesh = null;
   fpState.active = false;
   fpState.keys.forward = false;
   fpState.keys.backward = false;
@@ -8907,6 +9970,7 @@ function renderFocusedRoomInspector() {
             <span class="kw-chip tone-gold !py-0.5 !px-2">${createCustomSVGIcon('coin_stack', 14)}<span>주기 ${effRent}만</span></span>
             <span class="kw-chip tone-coral !py-0.5 !px-2">${createCustomSVGIcon('sparkle_heart_gauge', 14)}<span>${happyVal}%</span></span>
             ${(rm.giftBonusPct || 0) > 0 ? `<span class="kw-chip tone-mint !py-0.5 !px-2">${createCustomSVGIcon('gift_ribbon_box', 13)}<span>평생단골 +${rm.giftBonusPct}%</span></span>` : ''}
+            ${(rm.poachDefenseBonusPct || 0) > 0 ? `<span class="kw-chip tone-gold !py-0.5 !px-2">${createCustomSVGIcon('rival_bolt', 13)}<span>방어보너스 +${rm.poachDefenseBonusPct}%</span></span>` : ''}
           </div>
         </div>
       </div>
@@ -9360,22 +10424,38 @@ function renderFocusedShopPanel() {
         </div>
       </div>
 
+      ${(st.auctionBonusPct || 0) > 0 ? `
+        <div class="kw-chip tone-gold w-full justify-center py-1.5">
+          ${createCustomSVGIcon('auction_paddle', 15)}
+          <span>강 회장 경매 배틀 완승! 기본수익 영구 +${st.auctionBonusPct}% 적용</span>
+        </div>
+      ` : ''}
+
       ${st.owned ? `
         <div class="kw-chip tone-mint w-full justify-center py-2">
           ${createCustomSVGIcon('cash_arrow_up', 16)}
           <span>손님 결제금이 내 자산으로 실시간 적립 중!</span>
         </div>
       ` : `
-        <button type="button" id="btn-acquire-shop" class="jelly-action-btn btn-coral-lip w-full py-2.5">
-          ${createCustomSVGIcon('crown_badge', 18)}
-          <span>단독 상가 직영 인수 (${tpl.buyCost.toLocaleString()}만)</span>
-        </button>
+        <div class="space-y-1.5">
+          <button type="button" id="btn-acquire-shop" class="jelly-action-btn btn-coral-lip w-full py-2.5">
+            ${createCustomSVGIcon('crown_badge', 18)}
+            <span>단독 상가 직영 인수 (${tpl.buyCost.toLocaleString()}만)</span>
+          </button>
+          <button type="button" id="btn-auction-war-shop" class="rival-bolt-pill w-full justify-center py-2 !text-[12px]">
+            ${createCustomSVGIcon('auction_paddle', 16)}
+            <span>라이벌 1:1 경매 배틀로 인수 (수익 +40%!)</span>
+          </button>
+        </div>
       `}
     </div>
   `;
 
   dom.sfBody.querySelector('#btn-acquire-shop')?.addEventListener('click', () => {
     acquireStandaloneShopAction(focusedShopId);
+  });
+  dom.sfBody.querySelector('#btn-auction-war-shop')?.addEventListener('click', () => {
+    startShopBiddingWar(focusedShopId);
   });
 }
 
@@ -11339,12 +12419,1278 @@ function isInBottomRightFabZone(x, y) {
   return x > window.innerWidth - 265 && y > window.innerHeight - 95;
 }
 
+// =========================================================
+// 16C. [신규 핵심 컨텐츠]
+//  - FORBES 대한민국 갓물주 자산 순위 보드 & 실시간 서열 추월 시스템
+//  - 숙명의 라이벌 '블랙타워 강 회장' 침공 & 3대 자본력 승부 (스카우트 방어전 · 1:1 입찰 경매 · 해안 레이스 & 더블 골든벨)
+//  - 시네마틱 3D 라이브 오프닝 로딩 & 타이틀 스크린 ('갓물주 라이프 : 해피 미니미 타운')
+// =========================================================
+let forbesRankBannerTimeout = null;
+
+function calcPlayerNetWorthBreakdown() {
+  const cash = Math.max(0, Math.round(state.gold || 0));
+
+  // 1) 부동산(빌딩·호실·가구·방음·공용인프라·추가개발부지) 감정가
+  let realEstate = 360;
+  for (const b of Object.values(state.buildings || {})) {
+    for (const rm of (b.rooms || [])) {
+      if (rm.unlocked) {
+        realEstate += 110 + (rm.interiorLv || 0) * 85;
+        if (rm.soundproofed) realEstate += 95;
+        if ((rm.giftBonusPct || 0) > 0) realEstate += 120;
+        if ((rm.poachDefenseBonusPct || 0) > 0) realEstate += 260;
+        for (const cat of ['bed', 'sofa', 'appliance', 'decor']) {
+          const eqId = rm.equippedFurniture?.[cat];
+          const fDef = getFurnitureItemDef(cat, eqId);
+          if (fDef && fDef.cost > 0) realEstate += Math.round(fDef.cost * 1.15);
+        }
+      }
+    }
+    for (const [infKey, installed] of Object.entries(b.infra || {})) {
+      if (installed && PUBLIC_INFRA_CATALOG[infKey]) {
+        realEstate += Math.round(PUBLIC_INFRA_CATALOG[infKey].cost * 1.2);
+      }
+    }
+  }
+  for (const lot of (state.lots || [])) {
+    if (lot.lotId !== 'lot_main' && lot.owned) {
+      realEstate += lot.landPrice || 450;
+      if (lot.devType && DEVELOPMENT_CATALOG[lot.devType]) {
+        realEstate += Math.round(DEVELOPMENT_CATALOG[lot.devType].buildCost * 1.25);
+      }
+    }
+  }
+
+  // 2) 상업시설(1층 직영점 + 부티크 단독상가 + 설비 + 경매 프리미엄) 감정가
+  let commercial = 290;
+  for (const tpl of (window.FIRST_FLOOR_SHOPS_TEMPLATE || [])) {
+    const fst = state.firstFloorShops?.[tpl.shopId];
+    for (const upg of (tpl.upgradesCatalog || [])) {
+      if (fst?.upgrades?.[upg.id]) commercial += Math.round(upg.cost * 1.25);
+    }
+  }
+  for (const tpl of STANDALONE_SHOPS_TEMPLATE) {
+    const sst = state.standaloneShops?.[tpl.shopId];
+    if (sst?.owned) {
+      commercial += Math.round(tpl.buyCost * 1.35);
+      if ((sst.auctionBonusPct || 0) > 0) commercial += 420;
+      for (const upg of SHOP_UPGRADE_CATALOG) {
+        if (sst.upgrades?.[upg.id]) commercial += Math.round(upg.cost * 1.25);
+      }
+    }
+  }
+
+  // 3) VIP 차량 컬렉션 감정가
+  let vehicles = 45;
+  for (const cid of (state.garage?.ownedCars || ['car_scooter'])) {
+    const cDef = CAR_CATALOG.find((c) => c.id === cid);
+    if (cDef && cDef.cost > 0) vehicles += Math.round(cDef.cost * 1.15);
+  }
+
+  // 4) 갓물주 명성 프리미엄 (마일스톤 · 라이벌 참교육 승수 · 황금열쇠)
+  const prestige =
+    (state.unlockedMilestones?.length || 0) * 520 +
+    (state.rivalWins || 0) * 760 +
+    (state.goldenKeys || 0) * 140;
+
+  const total = Math.round(cash + realEstate + commercial + vehicles + prestige);
+  return { cash, realEstate, commercial, vehicles, prestige, total };
+}
+
+function getForbesStandings() {
+  const breakdown = calcPlayerNetWorthBreakdown();
+  const rankersRaw = window.FORBES_RIVAL_RANKERS || [];
+  const entries = rankersRaw.map((rk) => {
+    let worth = rk.netWorth;
+    if (rk.isArchRival) {
+      // 강 회장을 참교육할 때마다 강 회장의 블랙타워 지분 가치가 깎여 4위 추월의 발판이 됨! (5위 마 회장 5,100만 위는 유지)
+      worth = Math.max(5180, rk.netWorth - (state.rivalKangPenalty || 0));
+    }
+    return {
+      ...rk,
+      netWorth: Math.round(worth),
+      isMe: false
+    };
+  });
+
+  entries.push({
+    id: 'player_me',
+    name: '해피 타운 갓물주 (나)',
+    badge: state.vipTitle || '미니미 타운 신예 갓물주',
+    titleUnlock: state.vipTitle || '미니미 타운 신예 갓물주',
+    netWorth: breakdown.total,
+    tone: 'gold',
+    avatarRole: 'streamer',
+    desc: '실사 베이커리·편의점 상권과 럭셔리 세대 인테리어로 급부상 중인 주인공 건물주',
+    isMe: true
+  });
+
+  entries.sort((a, b) => {
+    if (b.netWorth !== a.netWorth) return b.netWorth - a.netWorth;
+    return a.isMe ? -1 : 1;
+  });
+
+  entries.forEach((item, idx) => {
+    item.liveRank = idx + 1;
+  });
+
+  const meEntry = entries.find((e) => e.isMe) || entries[entries.length - 1];
+  return { breakdown, entries, myRank: meEntry.liveRank };
+}
+
+function updateForbesRankAndHUD(allowCelebration = true) {
+  const { breakdown, entries, myRank } = getForbesStandings();
+
+  const rankTextEl = document.getElementById('hud-forbes-rank-text');
+  if (rankTextEl) {
+    rankTextEl.textContent = `자산 순위: ${myRank}위 ▲`;
+  }
+  const subEl = document.getElementById('hud-forbes-worth-sub');
+  if (subEl) {
+    subEl.textContent = `(${breakdown.total.toLocaleString()}만)`;
+  }
+
+  // 타이틀 화면 중에는 초기 순위 기준점만 조용히 동기화
+  if (titleScreenState.active) {
+    if (typeof state.bestForbesRank !== 'number' || state.bestForbesRank > myRank) {
+      state.bestForbesRank = myRank;
+    }
+    return;
+  }
+
+  if (typeof state.bestForbesRank !== 'number') {
+    state.bestForbesRank = myRank;
+  }
+
+  if (allowCelebration && myRank < state.bestForbesRank) {
+    const prevRank = state.bestForbesRank;
+    state.bestForbesRank = myRank;
+
+    // 방금 내가 제친 바로 아래 순위 거물(특히 4위 등극 시 블랙타워 강 회장 우선 표시!)
+    let overtaken = entries.find((e) => !e.isMe && e.liveRank === myRank + 1);
+    const kangEntry = entries.find((e) => e.isArchRival);
+    if (kangEntry && prevRank > kangEntry.liveRank - 1 && myRank <= kangEntry.liveRank) {
+      overtaken = kangEntry;
+    }
+    if (!overtaken) {
+      overtaken = entries.find((e) => !e.isMe && e.liveRank > myRank) || {
+        name: '기존 거물 건물주',
+        dividendReward: 200,
+        titleUnlock: '대한민국 상위권 갓물주'
+      };
+    }
+
+    const reward = overtaken.dividendReward || 220;
+    if (overtaken.titleUnlock) {
+      state.vipTitle = overtaken.titleUnlock;
+    }
+
+    // 재귀 축하 방지 후 배당금 입금
+    state.gold += reward;
+    state.stats.totalEarned = (state.stats.totalEarned || 0) + reward;
+    hudAnim.targetGold = state.gold;
+
+    playGoldenBellSound();
+    const fwCols = [0xFFD93D, 0xFF6B6B, 0x38E54D, 0x4CC2FF, 0xA855F7];
+    for (let f = 0; f < 5; f++) {
+      spawnPoofParticles3D(-8 + f * 4, 8.5 + (f % 2) * 2.2, 6.0, fwCols[f % fwCols.length], 14);
+    }
+
+    const banner = document.getElementById('forbes-rankup-banner');
+    const titleEl = document.getElementById('rankup-banner-title');
+    const subBannerEl = document.getElementById('rankup-banner-sub');
+    if (titleEl) {
+      titleEl.textContent = `FORBES RANK UP! '${overtaken.name}'을(를) 제치고 대한민국 자산 순위 ${myRank}위 등극!!`;
+    }
+    if (subBannerEl) {
+      subBannerEl.textContent = `서열 추월 축하 배당금 +${reward.toLocaleString()}만 지급 · 신규 칭호 [${state.vipTitle}] 해금!`;
+    }
+    if (banner) {
+      banner.classList.remove('hidden');
+      if (forbesRankBannerTimeout) clearTimeout(forbesRankBannerTimeout);
+      forbesRankBannerTimeout = setTimeout(() => banner.classList.add('hidden'), 4800);
+    }
+
+    const forbesModal = document.getElementById('forbes-modal');
+    if (forbesModal && !forbesModal.classList.contains('hidden')) {
+      renderForbesModal();
+    }
+    saveGameState();
+  }
+}
+
+function openForbesModal() {
+  renderForbesModal();
+  document.getElementById('forbes-modal')?.classList.remove('hidden');
+}
+
+function renderForbesModal() {
+  const { breakdown, entries, myRank } = getForbesStandings();
+
+  const rankChip = document.getElementById('forbes-my-rank-chip');
+  if (rankChip) rankChip.textContent = `대한민국 ${myRank}위`;
+
+  const totalEl = document.getElementById('forbes-total-worth');
+  if (totalEl) totalEl.textContent = `${breakdown.total.toLocaleString()}만`;
+
+  const titleEl = document.getElementById('forbes-vip-title');
+  if (titleEl) titleEl.textContent = state.vipTitle || '미니미 타운 신예 갓물주';
+
+  const kangEntry = entries.find((e) => e.isArchRival);
+  const kangBtn = document.getElementById('btn-forbes-challenge-kang');
+  if (kangBtn && kangEntry) {
+    const lblSpan = kangBtn.querySelector('span:last-child');
+    if (lblSpan) lblSpan.textContent = `${kangEntry.liveRank}위 강 회장 승부 도발!`;
+  }
+
+  const portGrid = document.getElementById('forbes-portfolio-grid');
+  if (portGrid) {
+    const items = [
+      { label: '보유 현금', val: breakdown.cash, col: '#B45309', bg: '#FEF3C7' },
+      { label: '빌딩·인테리어', val: breakdown.realEstate, col: '#1D4ED8', bg: '#DBEAFE' },
+      { label: '1층·단독상가', val: breakdown.commercial, col: '#15803D', bg: '#DCFCE7' },
+      { label: '슈퍼카 차고', val: breakdown.vehicles, col: '#BE123C', bg: '#FFE4E6' },
+      { label: '명성·참교육', val: breakdown.prestige, col: '#6B21A8', bg: '#F3E8FF' }
+    ];
+    portGrid.innerHTML = items.map((it) => `
+      <div class="rounded-2xl py-2 px-1.5 border border-[#EED6BE]" style="background:${it.bg};">
+        <div class="font-title text-[10.5px]" style="color:${it.col};">${it.label}</div>
+        <div class="font-num text-[13px] text-[#3A2E2B] mt-0.5">${it.val.toLocaleString()}만</div>
+      </div>
+    `).join('');
+  }
+
+  const listEl = document.getElementById('forbes-ranking-list');
+  if (listEl) {
+    listEl.innerHTML = entries.map((rk) => {
+      const rowCls = rk.isMe
+        ? 'diary-card forbes-row-me'
+        : rk.isArchRival
+          ? 'diary-card forbes-row-kang'
+          : 'diary-card';
+      const rankBadgeBg = rk.liveRank === 1
+        ? 'background:linear-gradient(180deg,#FFE869,#F59E0B);color:#3A2E2B;'
+        : rk.liveRank <= 3
+          ? 'background:linear-gradient(180deg,#E2E8F0,#94A3B8);color:#1E293B;'
+          : rk.isArchRival
+            ? 'background:linear-gradient(180deg,#A855F7,#6B21A8);color:#FFFDF7;'
+            : 'background:#F7EFE5;color:#5C4942;';
+
+      return `
+        <div class="${rowCls} !p-3 flex items-center justify-between gap-2.5">
+          <div class="flex items-center gap-2.5 min-w-0 flex-1">
+            <div class="w-9 h-9 rounded-xl border-2 border-[#3A2E2B] font-num text-[14px] flex items-center justify-center shrink-0" style="${rankBadgeBg}">
+              ${rk.liveRank}위
+            </div>
+            ${createHouseholdAvatarSVG(rk.avatarRole || 'manager', 44)}
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="font-title text-[13.5px] sm:text-[14.5px] ${rk.isArchRival ? 'text-[#581C87]' : 'text-[#3A2E2B]'}">${rk.name}</span>
+                <span class="kw-chip tone-${rk.tone || 'gold'} !text-[10px] !py-0.5 !px-2">${rk.badge}</span>
+              </div>
+              <div class="font-body text-[11px] font-semibold text-[#69544C] truncate mt-0.5">${rk.desc}</div>
+            </div>
+          </div>
+          <div class="text-right shrink-0">
+            <div class="font-num text-[14.5px] sm:text-[16px] ${rk.isMe ? 'text-[#B45309]' : rk.isArchRival ? 'text-[#7E22CE]' : 'text-[#3A2E2B]'}">
+              ${rk.netWorth.toLocaleString()}만
+            </div>
+            ${rk.isArchRival ? `
+              <button type="button" data-forbes-fight-kang="1" class="mt-1 kw-chip tone-coral cursor-pointer !text-[10px] !py-0.5 !px-2">
+                ${createCustomSVGIcon('rival_bolt', 12)}<span>승부 도발</span>
+              </button>
+            ` : `<div class="font-title text-[10px] text-[#8C746A]">총자산 감정가</div>`}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    listEl.querySelectorAll('[data-forbes-fight-kang]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.getElementById('forbes-modal')?.classList.add('hidden');
+        openRivalBattleHubModal();
+      });
+    });
+  }
+}
+
+// --------------------- 라이벌 '블랙타워 강 회장' 3D 경매 패들 & 대형 황금 돈가방 메쉬 ---------------------
+function createAuctionPaddleTexture(priceStr, isRival = false) {
+  const cv = document.createElement('canvas');
+  cv.width = 256;
+  cv.height = 192;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = isRival ? '#581C87' : '#FFFBEB';
+  ctx.fillRect(0, 0, 256, 192);
+  ctx.strokeStyle = isRival ? '#FFD93D' : '#D97706';
+  ctx.lineWidth = 14;
+  ctx.strokeRect(10, 10, 236, 172);
+  ctx.fillStyle = isRival ? '#E9D5FF' : '#9A4E04';
+  ctx.font = 'bold 30px Jua, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(isRival ? 'BLACK TOWER' : 'MY BID', 128, 58);
+  ctx.fillStyle = isRival ? '#FFD93D' : '#15803D';
+  ctx.font = 'bold 54px Jua, sans-serif';
+  ctx.fillText(priceStr, 128, 134);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+function createAuctionPaddle3D(priceStr, isRival = false) {
+  const grp = new THREE.Group();
+  grp.add(createRoundedToyMesh(0.08, 0.65, 0.08, MAT.woodDark, 0, 0.32, 0, 0.02));
+  const tex = createAuctionPaddleTexture(priceStr, isRival);
+  const faceMat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.35 });
+  const board = createRoundedToyMesh(0.92, 0.68, 0.1, faceMat, 0, 0.88, 0, 0.04);
+  grp.add(board);
+  grp.userData = { faceMat };
+  return grp;
+}
+
+function createGiantGoldenBriefcase3D() {
+  const grp = new THREE.Group();
+  // 초거대 24K 순금 돈가방 + 다이아몬드 잠금쇠 + 삐져나온 오만원권 지폐 다발!
+  grp.add(createRoundedToyMesh(2.55, 1.72, 0.92, MAT.pureGold24k, 0, 0.86, 0, 0.14));
+  grp.add(createRoundedToyMesh(2.64, 0.16, 0.98, MAT.chromeAlloy, 0, 0.88, 0, 0.04));
+  // 손잡이
+  grp.add(createRoundedToyMesh(0.14, 0.42, 0.14, MAT.walnutTrim, -0.42, 1.88, 0, 0.03));
+  grp.add(createRoundedToyMesh(0.14, 0.42, 0.14, MAT.walnutTrim, 0.42, 1.88, 0, 0.03));
+  grp.add(createRoundedToyMesh(0.98, 0.14, 0.16, MAT.walnutTrim, 0, 2.06, 0, 0.04));
+  // 황금 버클 2개
+  grp.add(createRoundedToyMesh(0.24, 0.32, 1.02, MAT.white, -0.68, 0.88, 0, 0.04));
+  grp.add(createRoundedToyMesh(0.24, 0.32, 1.02, MAT.white, 0.68, 0.88, 0, 0.04));
+  // 틈새로 삐져나온 실사 오만원권/달러 지폐!
+  const billMat = new THREE.MeshStandardMaterial({
+    map: REAL_TEX.bills.krw50k || null,
+    color: 0xFFFDF5,
+    roughness: 0.42
+  });
+  const peek1 = createRoundedToyMesh(0.65, 0.08, 0.45, billMat, -0.75, 1.72, 0.25, 0.02);
+  peek1.rotation.z = 0.18;
+  const peek2 = createRoundedToyMesh(0.65, 0.08, 0.45, billMat, 0.78, 1.72, -0.22, 0.02);
+  peek2.rotation.z = -0.2;
+  grp.add(peek1, peek2);
+  return grp;
+}
+
+function openRivalBattleHubModal() {
+  const winBadge = document.getElementById('rival-win-badge');
+  if (winBadge) winBadge.textContent = `참교육 ${state.rivalWins || 0}승`;
+
+  const avatarSlot = document.getElementById('rival-kang-avatar-slot');
+  if (avatarSlot) avatarSlot.innerHTML = createHouseholdAvatarSVG('rival_kang', 58);
+
+  const grid = document.getElementById('rival-modes-grid');
+  if (grid) {
+    const modes = window.RIVAL_BATTLE_MODES || [];
+    grid.innerHTML = modes.map((m) => `
+      <div class="diary-card !bg-[#FFFDF9] flex flex-col justify-between gap-2.5">
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between gap-1.5">
+            <div class="w-10 h-10 rounded-2xl bg-[#FAF5FF] border-2 border-[#D8B4FE] flex items-center justify-center shrink-0">
+              ${createCustomSVGIcon(m.icon, 24)}
+            </div>
+            <span class="kw-chip tone-${m.tone} !text-[10.5px]">${m.badge}</span>
+          </div>
+          <div class="font-title text-[14px] text-[#3A2E2B] leading-snug">${m.title}</div>
+          <div class="font-body text-[11.5px] font-semibold text-[#69544C] leading-snug break-keep">${m.desc}</div>
+        </div>
+        <button type="button" data-launch-rival="${m.id}" class="rival-bolt-pill w-full justify-center py-2">
+          ${createCustomSVGIcon('rival_bolt', 16)}
+          <span>즉시 승부 돌입!</span>
+        </button>
+      </div>
+    `).join('');
+
+    grid.querySelectorAll('[data-launch-rival]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const modeId = btn.getAttribute('data-launch-rival');
+        document.getElementById('rival-battle-hub-modal')?.classList.add('hidden');
+        if (modeId === 'poach_defense') startRivalPoachEvent(true);
+        else if (modeId === 'bidding_war') startShopBiddingWar(null);
+        else if (modeId === 'coastal_race') startRivalCoastalRace();
+        else if (modeId === 'double_bell') startDoubleGoldenBellBattle();
+      });
+    });
+  }
+
+  document.getElementById('rival-battle-hub-modal')?.classList.remove('hidden');
+}
+
+// --------------------- [승부 ①] 우량 세입자 스카우트 방어전 ---------------------
+function cleanupRivalPoachEvent() {
+  rivalState.poach.active = false;
+  rivalState.poach.roomId = null;
+  if (rivalState.poach.carMesh) {
+    scene.remove(rivalState.poach.carMesh);
+    rivalState.poach.carMesh = null;
+  }
+  if (rivalState.poach.kangMesh) {
+    scene.remove(rivalState.poach.kangMesh);
+    rivalState.poach.kangMesh = null;
+  }
+  if (rivalState.poach.pinEl) {
+    rivalState.poach.pinEl.remove();
+    rivalState.poach.pinEl = null;
+  }
+  document.getElementById('rival-poach-dock')?.classList.add('hidden');
+  syncTopBarsByMode();
+}
+
+function startRivalPoachEvent(focusImmediately = true) {
+  cleanupShopBiddingWar();
+  cleanupRivalPoachEvent();
+
+  // 입주 중인 호실 우선 선택 (없으면 개방된 호실에 즉시 VIP 입주 생성하여 배틀 보장)
+  const b = state.buildings.lot_main;
+  let targetRoom = b.rooms.find((r) => r.unlocked && r.household) || b.rooms.find((r) => r.unlocked) || b.rooms[0];
+  if (!targetRoom.unlocked) targetRoom.unlocked = true;
+  if (!targetRoom.household) {
+    targetRoom.household = {
+      type: 'newlywed',
+      familyName: '한서준 세대',
+      maxBudget: 180,
+      happiness: 82
+    };
+    rebuildRoom3D('lot_main', targetRoom);
+    syncBuildingResidents3D('lot_main');
+  }
+
+  rivalState.poach.active = true;
+  rivalState.poach.roomId = targetRoom.id;
+  rivalState.poach.pulsePhase = 0;
+
+  // 메인 빌딩 정문 도로변에 보라색+24K 골드 오픈 슈퍼카 주차 & 확성기 든 강 회장 출현!
+  const carGrp = createVehicle3D('car_rival_purple', false);
+  carGrp.position.set(-5.8, 0.24, 4.85);
+  carGrp.rotation.y = Math.PI * 0.48;
+  scene.add(carGrp);
+  rivalState.poach.carMesh = carGrp;
+
+  const kang = createChibiPerson3D('rival_kang');
+  kang.position.set(-2.35, 0.28, 2.05);
+  kang.rotation.y = Math.PI;
+  if (kang.userData?.megaphoneProp) {
+    kang.userData.megaphoneProp.visible = true;
+  }
+  scene.add(kang);
+  rivalState.poach.kangMesh = kang;
+
+  spawnShockwaveRing3D(-2.35, 0.35, 2.05, 0x9333EA, 5.2);
+  playSupercarHornSound('car_supercar');
+
+  showSpeechBubble3D(
+    'rival_kang_poach',
+    -2.35,
+    2.65,
+    2.05,
+    `이봐 ${targetRoom.name}호 세입자! 내 블랙타워로 이사 오면 첫 달 월세 반값에 위약금도 다 내줄게!!`,
+    7.0,
+    true
+  );
+
+  // 호실 상단 [라이벌 스카우트 방어!] 3D 투영 경고 핀 생성
+  const rivalLayer = document.getElementById('rival-pins-layer');
+  if (rivalLayer) {
+    const pin = document.createElement('button');
+    pin.type = 'button';
+    pin.className = 'poach-alert-pin pointer-events-auto';
+    pin.innerHTML = `${createCustomSVGIcon('megaphone_purple', 17)}<span>${targetRoom.name}호 라이벌 스카우트 방어!</span>`;
+    pin.addEventListener('click', (e) => {
+      e.stopPropagation();
+      focusCameraOnRoom(targetRoom.id);
+    });
+    rivalLayer.appendChild(pin);
+    rivalState.poach.pinEl = pin;
+  }
+
+  const dockTitle = document.getElementById('poach-dock-title');
+  if (dockTitle) {
+    dockTitle.textContent = `${targetRoom.name}호 (${targetRoom.household.familyName}) 스카우트 방어전!`;
+  }
+  const tauntEl = document.getElementById('poach-taunt-text');
+  if (tauntEl) {
+    tauntEl.textContent = `강 회장: "이봐 ${targetRoom.name}호! 내 블랙타워로 오면 첫 달 월세 반값에 위약금도 다 내줄게!"`;
+  }
+
+  if (focusImmediately) {
+    focusCameraOnRoom(targetRoom.id);
+    showToast(`[라이벌 침공!] 강 회장이 ${targetRoom.name}호 세입자를 유혹합니다! 맞불 플렉스로 방어하세요!`, 'coral');
+  } else {
+    showToast(`[경보!] 블랙타워 강 회장이 ${targetRoom.name}호 앞에서 확성기 스카우트 공세를 시작했습니다!`, 'coral');
+  }
+}
+
+function resolveRivalPoachDefense(method = 'furn') {
+  if (!rivalState.poach.active || !rivalState.poach.roomId) return;
+  const rm = findRoomById(rivalState.poach.roomId);
+  if (!rm) return;
+
+  const costMap = { furn: 110, gift: 80, rain: 130 };
+  const cost = costMap[method] || 100;
+  if (!spendGold(cost)) return;
+
+  const lot = state.lots.find((l) => l.lotId === rm.lotId) || { x: -4.2, z: -6.4 };
+  const wx = lot.x + rm.lx;
+  const wy = rm.ly + 1.5;
+  const wz = lot.z + rm.lz;
+
+  if (method === 'furn') {
+    if (!rm.ownedFurniture.sofa.includes('sofa_leather_l')) rm.ownedFurniture.sofa.push('sofa_leather_l');
+    rm.equippedFurniture.sofa = 'sofa_leather_l';
+    syncRoomInteriorStats(rm);
+    rebuildRoom3D(rm.lotId, rm);
+    syncBuildingResidents3D(rm.lotId);
+    const rGrp = lot3D[rm.lotId]?.roomsMap?.[rm.id];
+    if (rGrp) playDropBouncePlacement3D(rGrp, wx, rm.ly + 0.4, wz);
+  } else if (method === 'gift') {
+    if (!Array.isArray(rm.giftedItems)) rm.giftedItems = [];
+    rm.giftedItems.push('item_cake', 'item_coffee');
+    rebuildRoom3D(rm.lotId, rm);
+    syncBuildingResidents3D(rm.lotId);
+    spawnPoofParticles3D(wx, wy, wz, 0xFF6B6B, 18);
+  } else {
+    playMoneyGunFlutterSFX();
+    for (let i = 0; i < 26; i++) {
+      spawnSingleFlutterBill3D(wx, wy + 1.8, wz + 0.8, (Math.random() - 0.5) * 2.5, -1.2, 1.4);
+    }
+  }
+
+  // 방어 성공 보상: 해당 호실 임대료 영구 +30% 인상 + 세입자 충성 보너스 코인 +320만 폭발 + 강 회장 자산 타격!
+  rm.poachDefenseBonusPct = (rm.poachDefenseBonusPct || 0) + 30;
+  if (rm.household) rm.household.happiness = 100;
+  state.rivalWins = (state.rivalWins || 0) + 1;
+  state.rivalKangPenalty = (state.rivalKangPenalty || 0) + 450;
+
+  const loyaltyBonus = 320;
+  addGold(loyaltyBonus);
+  playGoldenBellSound();
+  spawnShockwaveRing3D(wx, rm.ly + 0.25, wz, 0xFFD93D, 5.0);
+  spawnJackpotText3D(wx, wy + 1.2, wz, `방어 대성공! 임대료 영구 +30% & 충성보너스 +${loyaltyBonus}만!`, 'forbes_trophy');
+
+  showSpeechBubble3D(
+    `poach_win_${rm.id}`,
+    wx,
+    wy + 0.9,
+    wz,
+    '블랙타워 안 가요!! 우리 건물주님이 우주 최고 갓물주예요!! 평생 재계약할게요!!',
+    5.2,
+    true
+  );
+  showSpeechBubble3D(
+    'rival_kang_flee',
+    -2.35,
+    2.65,
+    2.05,
+    '크악!! 저 압도적인 플렉스에 세입자가 감동해버렸다니!! 두고 보자!!',
+    4.0,
+    true
+  );
+
+  cleanupRivalPoachEvent();
+  updateTopHUDTargets();
+  renderFocusedRoomInspector();
+  renderFurnitureCatalogSheet();
+  showToast(`[참교육 완승!] 강 회장 격퇴! ${rm.name}호 임대료 영구 +30% 상승 & 보너스 +${loyaltyBonus}만!`, 'gold');
+  saveGameState();
+}
+
+// --------------------- [승부 ②] 미인수 상가 1:1 실시간 3D 입찰 경매 배틀 ---------------------
+function cleanupShopBiddingWar() {
+  rivalState.bidding.active = false;
+  rivalState.bidding.resolving = false;
+  rivalState.bidding.shopId = null;
+  if (rivalState.bidding.stageGrp) {
+    scene.remove(rivalState.bidding.stageGrp);
+    rivalState.bidding.stageGrp = null;
+  }
+  rivalState.bidding.myAvatar = null;
+  rivalState.bidding.kangAvatar = null;
+  rivalState.bidding.myPaddleGrp = null;
+  rivalState.bidding.kangPaddleGrp = null;
+  rivalState.bidding.briefcaseMesh = null;
+  document.getElementById('bidding-war-dock')?.classList.add('hidden');
+  syncTopBarsByMode();
+}
+
+function updateBiddingDockLabels() {
+  const tpl = STANDALONE_SHOPS_TEMPLATE.find((s) => s.shopId === rivalState.bidding.shopId);
+  if (!tpl) return;
+  const myEl = document.getElementById('bid-my-price');
+  const rvEl = document.getElementById('bid-rival-price');
+  const stepLbl = document.getElementById('label-bid-step-up');
+  const slamLbl = document.getElementById('label-bid-briefcase');
+  const nextStepPrice = Math.round(rivalState.bidding.rivalBid * 1.1);
+  const slamCost = Math.round(tpl.buyCost * 1.55);
+
+  if (myEl) myEl.textContent = `${rivalState.bidding.myBid.toLocaleString()}만`;
+  if (rvEl) rvEl.textContent = `${rivalState.bidding.rivalBid.toLocaleString()}만!`;
+  if (stepLbl) stepLbl.textContent = `+10% 호가 올리기 (${nextStepPrice.toLocaleString()}만)`;
+  if (slamLbl) slamLbl.textContent = `만수르 200% 황금 돈가방 폭격 (${slamCost.toLocaleString()}만 · 즉시 낙찰!)`;
+
+  if (rivalState.bidding.myPaddleGrp?.userData?.faceMat) {
+    rivalState.bidding.myPaddleGrp.userData.faceMat.map = createAuctionPaddleTexture(`${rivalState.bidding.myBid}만!`, false);
+    rivalState.bidding.myPaddleGrp.userData.faceMat.needsUpdate = true;
+  }
+  if (rivalState.bidding.kangPaddleGrp?.userData?.faceMat) {
+    rivalState.bidding.kangPaddleGrp.userData.faceMat.map = createAuctionPaddleTexture(`${rivalState.bidding.rivalBid}만!`, true);
+    rivalState.bidding.kangPaddleGrp.userData.faceMat.needsUpdate = true;
+  }
+}
+
+function startShopBiddingWar(preferredShopId = null) {
+  cleanupRivalPoachEvent();
+  cleanupShopBiddingWar();
+
+  const unowned = STANDALONE_SHOPS_TEMPLATE.find((s) => !state.standaloneShops?.[s.shopId]?.owned);
+  const targetShopId = preferredShopId || unowned?.shopId || 'shop_bakery';
+  const tpl = STANDALONE_SHOPS_TEMPLATE.find((s) => s.shopId === targetShopId) || STANDALONE_SHOPS_TEMPLATE[0];
+
+  rivalState.bidding.active = true;
+  rivalState.bidding.resolving = false;
+  rivalState.bidding.shopId = tpl.shopId;
+  rivalState.bidding.myBid = tpl.buyCost;
+  rivalState.bidding.rivalBid = Math.round(tpl.buyCost * 1.1);
+  rivalState.bidding.rallyCount = 0;
+
+  // 매장 전면 파라솔 앞 오픈 보행 데크에 레드카펫 경매 단상 + 내 건물주 아바타(좌) vs 블랙타워 강 회장(우) + 대형 3D 번호 패들 배치!
+  const stg = new THREE.Group();
+  const frontZ = tpl.z + tpl.d * 0.5 + 3.65;
+  stg.position.set(tpl.x, 0.26, frontZ);
+
+  // 경매 레드카펫 & 황금 포디움
+  stg.add(createRoundedToyMesh(4.9, 0.12, 2.3, MAT.supercarRed, 0, 0.06, 0, 0.05));
+  stg.add(createRoundedToyMesh(1.22, 0.82, 0.9, MAT.walnutTrim, 0, 0.46, -0.25, 0.06));
+  stg.add(createRoundedToyMesh(1.34, 0.12, 1.0, MAT.pureGold24k, 0, 0.9, -0.25, 0.04));
+
+  const myAv = createChibiPerson3D('streamer');
+  const crown = createRoundedToyMesh(0.46, 0.24, 0.46, MAT.pureGold24k, 0, 1.98, 0, 0.05);
+  myAv.add(crown);
+  myAv.position.set(-1.68, 0.12, 0.22);
+  myAv.rotation.y = 0.28;
+  const myPad = createAuctionPaddle3D(`${rivalState.bidding.myBid}만!`, false);
+  myPad.scale.setScalar(1.18);
+  myPad.position.set(0.32, 0.45, 0.18);
+  myAv.userData.armR.add(myPad);
+  stg.add(myAv);
+
+  const kangAv = createChibiPerson3D('rival_kang');
+  kangAv.position.set(1.68, 0.12, 0.22);
+  kangAv.rotation.y = -0.28;
+  const kangPad = createAuctionPaddle3D(`${rivalState.bidding.rivalBid}만!`, true);
+  kangPad.scale.setScalar(1.18);
+  kangPad.position.set(-0.32, 0.45, 0.18);
+  kangAv.userData.armL.add(kangPad);
+  stg.add(kangAv);
+
+  scene.add(stg);
+  rivalState.bidding.stageGrp = stg;
+  rivalState.bidding.myAvatar = myAv;
+  rivalState.bidding.kangAvatar = kangAv;
+  rivalState.bidding.myPaddleGrp = myPad;
+  rivalState.bidding.kangPaddleGrp = kangPad;
+
+  const titleEl = document.getElementById('bid-shop-title');
+  if (titleEl) titleEl.textContent = `${tpl.name} · 1:1 실시간 입찰 경매 배틀!`;
+  const msgEl = document.getElementById('bid-status-msg');
+  if (msgEl) {
+    msgEl.textContent = `강 회장이 [${rivalState.bidding.rivalBid}만!] 패들을 들었습니다! 호가를 올리거나 황금 돈가방 폭격으로 참교육하세요!`;
+  }
+  updateBiddingDockLabels();
+
+  focusCameraOnShop(tpl.shopId);
+  showSpeechBubble3D('bid_kang_taunt', tpl.x + 1.68, 2.55, frontZ, `${rivalState.bidding.rivalBid}만!! 이 알짜 상가는 내 블랙타워 거다!`, 4.5, true);
+}
+
+function finishShopBiddingVictory(tpl, paidCost, usedBriefcaseSlam = false) {
+  const st = state.standaloneShops[tpl.shopId];
+  st.owned = true;
+  st.auctionBonusPct = Math.max(40, (st.auctionBonusPct || 0) + 40);
+
+  state.rivalWins = (state.rivalWins || 0) + 1;
+  state.rivalKangPenalty = (state.rivalKangPenalty || 0) + 520;
+  state.townHappinessBoost = Math.min(65, (state.townHappinessBoost || 0) + 8);
+
+  // 경매 명성 리베이트 지급으로 연속 배틀 자금 선순환!
+  const prestigeRebate = usedBriefcaseSlam ? 460 : 320;
+  addGold(prestigeRebate);
+
+  rebuildStandaloneShop3D(tpl.shopId);
+  ensureShopOverlayBadge(tpl.shopId);
+  updateTopHUDTargets();
+
+  const frontZ = tpl.z + tpl.d * 0.5 + 3.65;
+  spawnJackpotText3D(
+    tpl.x,
+    3.6,
+    frontZ,
+    `${tpl.name} 경매 낙찰! 기본수익 영구 +40% & 명성배당 +${prestigeRebate}만!`,
+    'golden_briefcase'
+  );
+  showSpeechBubble3D(
+    'bid_kang_ko',
+    tpl.x + 1.68,
+    2.45,
+    frontZ,
+    usedBriefcaseSlam
+      ? '크아악!! 하늘에서 24K 순금 돈가방이 떨어지다니!! 내 자금력이 완패했다...!!'
+      : '헉... 저 끝없는 현금 동원력은 도대체 뭐냐?! 내가 졌다!!',
+    4.5,
+    true
+  );
+
+  const msgEl = document.getElementById('bid-status-msg');
+  if (msgEl) {
+    msgEl.textContent = `낙찰 성공!! [${tpl.name}] 직영권 획득 & 매장 기본 수익 영구 +40% 보너스 적용 완료!`;
+  }
+
+  setTimeout(() => {
+    cleanupShopBiddingWar();
+    if (focusedShopId === tpl.shopId) {
+      renderFocusedShopPanel();
+      renderShopUpgradeCatalog();
+    }
+  }, 1550);
+
+  showToast(`[경매 완승!] ${tpl.name} 즉시 낙찰 & 기본수익 영구 +40% 상승!`, 'gold');
+  saveGameState();
+}
+
+function raiseShopBidStep() {
+  if (!rivalState.bidding.active || rivalState.bidding.resolving) return;
+  const tpl = STANDALONE_SHOPS_TEMPLATE.find((s) => s.shopId === rivalState.bidding.shopId);
+  if (!tpl) return;
+
+  const nextBid = Math.round(rivalState.bidding.rivalBid * 1.1);
+  if (state.gold < nextBid) {
+    showToast(`호가 입찰 자산이 부족합니다! (필요: ${nextBid.toLocaleString()}만)`, 'coral');
+    return;
+  }
+
+  rivalState.bidding.myBid = nextBid;
+  rivalState.bidding.rallyCount = (rivalState.bidding.rallyCount || 0) + 1;
+  const frontZ = tpl.z + tpl.d * 0.5 + 3.65;
+
+  if (rivalState.bidding.myAvatar) {
+    triggerSquashStretch(rivalState.bidding.myAvatar, 1.3);
+  }
+  playShopDoorChimeSound();
+  showSpeechBubble3D('bid_me_shout', tpl.x - 1.68, 2.55, frontZ, `내 호가 ${nextBid}만!! 따라올 수 있겠나?!`, 3.0, true);
+
+  if (rivalState.bidding.rallyCount >= 2) {
+    if (!spendGold(nextBid)) return;
+    rivalState.bidding.resolving = true;
+    if (rivalState.bidding.kangAvatar) {
+      rivalState.bidding.kangAvatar.rotation.x = -0.55;
+    }
+    updateBiddingDockLabels();
+    finishShopBiddingVictory(tpl, nextBid, false);
+  } else {
+    rivalState.bidding.rivalBid = Math.round(nextBid * 1.06);
+    updateBiddingDockLabels();
+    const msgEl = document.getElementById('bid-status-msg');
+    if (msgEl) {
+      msgEl.textContent = `강 회장이 식은땀을 흘리며 [${rivalState.bidding.rivalBid}만!]을 불렀습니다! 한 번 더 올리거나 돈가방으로 끝내세요!`;
+    }
+    showSpeechBubble3D('bid_kang_taunt', tpl.x + 1.68, 2.55, frontZ, `크윽... 지지 않는다! ${rivalState.bidding.rivalBid}만!!`, 3.2, true);
+  }
+}
+
+function slamGoldenBriefcaseBuyout() {
+  if (!rivalState.bidding.active || rivalState.bidding.resolving) return;
+  const tpl = STANDALONE_SHOPS_TEMPLATE.find((s) => s.shopId === rivalState.bidding.shopId);
+  if (!tpl) return;
+
+  const slamCost = Math.round(tpl.buyCost * 1.55);
+  if (!spendGold(slamCost)) return;
+
+  rivalState.bidding.resolving = true;
+  rivalState.bidding.myBid = slamCost;
+  updateBiddingDockLabels();
+
+  const frontZ = tpl.z + tpl.d * 0.5 + 3.65;
+  if (rivalState.bidding.stageGrp) {
+    const briefcase = createGiantGoldenBriefcase3D();
+    briefcase.position.set(0, 0.94, -0.2);
+    rivalState.bidding.stageGrp.add(briefcase);
+    rivalState.bidding.briefcaseMesh = briefcase;
+    playDropBouncePlacement3D(briefcase, tpl.x, 1.15, frontZ);
+  }
+
+  // 지폐 폭풍 & 강 회장 넉다운 연출!
+  playMoneyGunFlutterSFX();
+  for (let i = 0; i < 28; i++) {
+    spawnSingleFlutterBill3D(tpl.x, 2.8, frontZ, (Math.random() - 0.5) * 3.0, (Math.random() - 0.5) * 2.4, 1.5);
+  }
+  if (rivalState.bidding.kangAvatar) {
+    rivalState.bidding.kangAvatar.rotation.x = -0.92;
+    rivalState.bidding.kangAvatar.position.z = 0.65;
+  }
+  spawnShockwaveRing3D(tpl.x, 0.38, frontZ, 0xFFD93D, 6.2);
+
+  finishShopBiddingVictory(tpl, slamCost, true);
+}
+
+// --------------------- [승부 ③-A] 외곽 해안 드라이빙 존 1:1 슈퍼카 레이스 ---------------------
+function endRivalCoastalRaceCleanup() {
+  rivalState.race.active = false;
+  rivalState.race.finished = false;
+  if (rivalState.race.rivalCar) {
+    scene.remove(rivalState.race.rivalCar);
+    rivalState.race.rivalCar = null;
+  }
+  document.getElementById('drive-race-hud')?.classList.add('hidden');
+}
+
+function startRivalCoastalRace() {
+  cleanupRivalPoachEvent();
+  cleanupShopBiddingWar();
+  endRivalCoastalRaceCleanup();
+
+  if (!driveState.active) {
+    enterDriveMode(false);
+  }
+
+  // 외곽 해안 야자수 대로 출발선에 내 차량(좌) vs 강 회장 보라+골드 오픈 슈퍼카(우) 나란히 정렬!
+  driveState.x = 18.8;
+  driveState.z = 30.2;
+  driveState.y = 0.24;
+  driveState.heading = 0.42;
+  driveState.waypointIdx = 4;
+  driveState.autoCruise = true;
+  driveState.speed = 13.5;
+
+  if (driveState.carRootGroup) {
+    driveState.carRootGroup.position.set(driveState.x, driveState.y, driveState.z);
+    driveState.carRootGroup.rotation.y = driveState.heading;
+  }
+
+  const rvCarGrp = createVehicle3D('car_rival_purple', true);
+  rvCarGrp.position.set(21.4, 0.24, 30.2);
+  rvCarGrp.rotation.y = 0.42;
+  scene.add(rvCarGrp);
+
+  rivalState.race.active = true;
+  rivalState.race.finished = false;
+  rivalState.race.rivalCar = rvCarGrp;
+  rivalState.race.rivalWheels = rvCarGrp.userData?.wheels || [];
+  rivalState.race.rivalWpIdx = 4;
+  rivalState.race.rivalX = 21.4;
+  rivalState.race.rivalZ = 30.2;
+  rivalState.race.rivalHeading = 0.42;
+  rivalState.race.rivalSpeed = 10.6;
+  rivalState.race.elapsed = 0;
+
+  syncTopBarsByMode();
+  playSupercarHornSound('car_supercar');
+  showSpeechBubble3D(
+    'race_kang_start',
+    21.4,
+    2.45,
+    30.2,
+    '해안 빨간 아치교 끝 전망대까지 1:1 승부다!! 내 보라색 슈퍼카 먼지나 마셔라!!',
+    4.2,
+    true
+  );
+  showToast('[해안 1:1 슈퍼카 레이스 출발!] 부스트 코인을 먹으며 빨간 아치교 너머 전망대 결승선으로 질주하세요!', 'gold');
+}
+
+// --------------------- [승부 ③-B] 1인칭 상점 '만수르 더블 골든벨' 맞불 참교육 ---------------------
+function startDoubleGoldenBellBattle() {
+  cleanupRivalPoachEvent();
+  cleanupShopBiddingWar();
+  rivalState.fpKangActive = true;
+  const targetShop = (fpState.active && fpState.mode === 'shop') ? fpState.shopId : 'shop_bakery';
+  enterFirstPersonShop(targetShop, false);
+  showToast('[1인칭 맞불 대결!] 매장에서 거들먹거리는 강 회장 코앞에서 [만수르 더블 골든벨]을 울려 참교육하세요!', 'gold');
+}
+
+function triggerDoubleGoldenBellShowdown() {
+  if (!fpState.active || fpState.mode !== 'shop') return;
+  if (!spendGold(200)) return;
+
+  playGoldenBellSound();
+  playMoneyGunFlutterSFX();
+  fpState.bellSwingTimer = 4.5;
+  fpState.cheerTimer = 6.5;
+
+  const fwCols = [0xFFD93D, 0xA855F7, 0xFF6B6B, 0x38E54D, 0x4CC2FF];
+  for (let b = 0; b < 6; b++) {
+    const bx = FP_STAGE_ORIGIN.x - 3.4 + b * 1.35;
+    const by = FP_STAGE_ORIGIN.y + 2.95 + (b % 2) * 0.4;
+    const bz = FP_STAGE_ORIGIN.z - 0.9;
+    spawnPoofParticles3D(bx, by, bz, fwCols[b % fwCols.length], 14);
+  }
+  for (let m = 0; m < 24; m++) {
+    spawnSingleFlutterBill3D(FP_STAGE_ORIGIN.x, FP_STAGE_ORIGIN.y + 2.5, FP_STAGE_ORIGIN.z + 0.5, (Math.random() - 0.5) * 2.8, -1.0, 1.4);
+  }
+
+  // 강 회장 패배 연출 + 카운터에 황금 위자료 팁 +480만 투척 후 줄행랑!
+  const kangTip = 480;
+  addGold(kangTip);
+  state.rivalWins = (state.rivalWins || 0) + 1;
+  state.rivalKangPenalty = (state.rivalKangPenalty || 0) + 480;
+  state.feverTimer = 60.0;
+  state.feverPower = 3.0;
+
+  for (const b of Object.values(state.buildings)) {
+    for (const rm of b.rooms) {
+      if (rm.household) rm.household.happiness = 100;
+    }
+  }
+
+  if (rivalState.fpKangMesh) {
+    rivalState.fpKangMesh.rotation.x = -0.65;
+    rivalState.fpKangMesh.position.z = 2.6;
+    showSpeechBubble3D(
+      'fp_rival_kang_brag',
+      FP_STAGE_ORIGIN.x + 1.38,
+      FP_STAGE_ORIGIN.y + 2.35,
+      FP_STAGE_ORIGIN.z + 1.8,
+      `컥!! 더블 골든벨이라니!! 여기 황금 팁 ${kangTip}만 내놓고 간다... 완패다!!`,
+      4.2,
+      true
+    );
+    const kangRef = rivalState.fpKangMesh;
+    setTimeout(() => {
+      if (kangRef && kangRef.parent) kangRef.parent.remove(kangRef);
+    }, 1800);
+    rivalState.fpKangMesh = null;
+  }
+  rivalState.fpKangActive = false;
+
+  showSpeechBubble3D(
+    'fp_clerk_welcome',
+    FP_STAGE_ORIGIN.x - 0.45,
+    FP_STAGE_ORIGIN.y + 2.75,
+    FP_STAGE_ORIGIN.z - 2.05,
+    '땡땡땡!! 우리 건물주님의 만수르 더블 골든벨 완승!! 강 회장이 꼬리를 내리고 도망갔습니다!!',
+    5.0,
+    true
+  );
+
+  updateTopHUDTargets();
+  showToast(`[더블 골든벨 참교육 완승!] 강 회장 골든팁 +${kangTip}만 회수 & 60초 수익 3배 피버 발동!`, 'gold');
+  saveGameState();
+}
+
+function tickRivalBattlesAndRace(dt, elapsed) {
+  if (titleScreenState.active) return;
+
+  // 1) 60초 주기 라이벌 자동 도발 타이머 (타운 전체 뷰에서 평화로울 때 자동 발동)
+  if (!rivalState.poach.active && !rivalState.bidding.active && !rivalState.race.active && !driveState.active && !fpState.active && !focusedRoomId && !focusedShopId) {
+    rivalState.periodicTimer -= dt;
+    if (rivalState.periodicTimer <= 0) {
+      rivalState.periodicTimer = 65.0;
+      startRivalPoachEvent(false);
+    }
+  }
+
+  // 2) 스카우트 방어전 중 강 회장 확성기 흔들기 & 보라색 오라 펄스
+  if (rivalState.poach.active && rivalState.poach.kangMesh) {
+    rivalState.poach.pulsePhase += dt;
+    const km = rivalState.poach.kangMesh;
+    km.position.y = 0.28 + Math.abs(Math.sin(elapsed * 5.5)) * 0.1;
+    km.rotation.y = Math.PI + Math.sin(elapsed * 2.6) * 0.25;
+    if (km.userData?.armR) {
+      km.userData.armR.rotation.x = -1.15 + Math.sin(elapsed * 8.0) * 0.2;
+    }
+    if (rivalState.poach.pulsePhase > 2.2) {
+      rivalState.poach.pulsePhase = 0;
+      spawnShockwaveRing3D(km.position.x, 0.34, km.position.z, 0x9333EA, 3.6);
+    }
+  }
+
+  // 3) 상가 1:1 입찰 경매 배틀 중 내 아바타 vs 강 회장 3D 번호판 교차 번쩍 들기 모션!
+  if (rivalState.bidding.active && !rivalState.bidding.resolving) {
+    const myLift = Math.max(0, Math.sin(elapsed * 4.2));
+    const rvLift = Math.max(0, Math.sin(elapsed * 4.2 + Math.PI));
+    if (rivalState.bidding.myAvatar?.userData?.armR) {
+      rivalState.bidding.myAvatar.userData.armR.rotation.x = -0.85 - myLift * 1.35;
+      rivalState.bidding.myAvatar.position.y = 0.12 + myLift * 0.14;
+    }
+    if (rivalState.bidding.kangAvatar?.userData?.armL) {
+      rivalState.bidding.kangAvatar.userData.armL.rotation.x = -0.85 - rvLift * 1.35;
+      rivalState.bidding.kangAvatar.position.y = 0.12 + rvLift * 0.14;
+    }
+  }
+
+  // 4) 외곽 해안 1:1 슈퍼카 레이스 AI 주행 및 결승선 승리 판정!
+  if (rivalState.race.active && driveState.active && rivalState.race.rivalCar) {
+    rivalState.race.elapsed = (rivalState.race.elapsed || 0) + dt;
+
+    // 플레이어가 크루징 중일 때도 시원한 레이스 속도감 보장
+    if (driveState.autoCruise) {
+      driveState.speed = Math.max(driveState.speed, 15.2);
+    }
+
+    const rWp = RING_ROAD_WAYPOINTS[Math.min(9, rivalState.race.rivalWpIdx)];
+    const dx = rWp.x - rivalState.race.rivalX;
+    const dz = rWp.z - rivalState.race.rivalZ;
+    const dist = Math.hypot(dx, dz);
+    if (dist < 3.4 && rivalState.race.rivalWpIdx < 9) {
+      rivalState.race.rivalWpIdx += 1;
+    }
+    const targetH = Math.atan2(dx, dz);
+    let diff = targetH - rivalState.race.rivalHeading;
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    rivalState.race.rivalHeading += diff * Math.min(1, dt * 4.5);
+
+    rivalState.race.rivalX += Math.sin(rivalState.race.rivalHeading) * rivalState.race.rivalSpeed * dt;
+    rivalState.race.rivalZ += Math.cos(rivalState.race.rivalHeading) * rivalState.race.rivalSpeed * dt;
+    rivalState.race.rivalCar.position.set(rivalState.race.rivalX, 0.24, rivalState.race.rivalZ);
+    rivalState.race.rivalCar.rotation.y = rivalState.race.rivalHeading;
+
+    for (const rw of (rivalState.race.rivalWheels || [])) {
+      rw.rotation.x += rivalState.race.rivalSpeed * dt * 1.6;
+    }
+
+    const finishPt = RING_ROAD_WAYPOINTS[8]; // 해안 전망대 결승 지점 (-16.8, 48.2)
+    const myDistToFinish = Math.hypot(finishPt.x - driveState.x, finishPt.z - driveState.z);
+    const rvDistToFinish = Math.hypot(finishPt.x - rivalState.race.rivalX, finishPt.z - rivalState.race.rivalZ);
+    const totalSpan = 44.0;
+    const progPct = THREE.MathUtils.clamp(Math.round((1 - myDistToFinish / totalSpan) * 100), 8, 100);
+
+    const fillEl = document.getElementById('race-progress-fill');
+    const gapEl = document.getElementById('race-gap-label');
+    if (fillEl) fillEl.style.width = `${progPct}%`;
+    if (gapEl) {
+      const ahead = rvDistToFinish - myDistToFinish;
+      gapEl.textContent = ahead >= -0.5 ? `내가 +${Math.max(1, Math.round(ahead + 2))}m 선두 질주!` : '맹추격 중! 부스트 코인 획득!';
+    }
+
+    if (!rivalState.race.finished && (myDistToFinish < 7.2 || driveState.waypointIdx >= 9 || rivalState.race.elapsed > 11.5)) {
+      rivalState.race.finished = true;
+      state.rivalWins = (state.rivalWins || 0) + 1;
+      state.rivalKangPenalty = (state.rivalKangPenalty || 0) + 500;
+
+      // 도로 위에 황금 위자료 코인 보따리 8개 대폭발 -> 차량 자석으로 즉시 촤르륵 흡수!
+      for (let c = 0; c < 8; c++) {
+        const ang = (c / 8) * Math.PI * 2;
+        spawnRentBubble(
+          `race_prize_${Date.now()}_${c}`,
+          driveState.x + Math.cos(ang) * 3.2,
+          1.35,
+          driveState.z + Math.sin(ang) * 3.2,
+          70,
+          '강 회장 레이스 위자료'
+        );
+      }
+      playGoldenBellSound();
+      spawnShockwaveRing3D(driveState.x, 0.4, driveState.z, 0xFFD93D, 7.5);
+      showSpeechBubble3D(
+        'race_kang_lose',
+        rivalState.race.rivalX,
+        2.5,
+        rivalState.race.rivalZ,
+        '크아악!! 내 24K 골드 슈퍼카가 코너링에서 따이다니!! 위자료 코인 받아라!!',
+        4.5,
+        true
+      );
+      updateTopHUDTargets();
+      showToast('[해안 레이스 우승!] 강 회장 슈퍼카 추월 완승! 위자료 황금 코인 보따리가 폭발합니다!', 'gold');
+      saveGameState();
+
+      setTimeout(() => {
+        endRivalCoastalRaceCleanup();
+      }, 2400);
+    }
+  }
+}
+
+// --------------------- [신규 8] 시네마틱 3D 라이브 오프닝 로딩 & 타이틀 스크린 ---------------------
+function playTitleStartFanfareSFX() {
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    if (!window._landlordAudioCtx) window._landlordAudioCtx = new AC();
+    const ctx = window._landlordAudioCtx;
+    if (ctx.state === 'suspended') ctx.resume();
+    const now = ctx.currentTime;
+
+    // 경쾌한 차링~ 코인 스파클 + 브라스 팡파르 화음!
+    const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5, 1567.98];
+    notes.forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = idx < 3 ? 'triangle' : 'sine';
+      osc.frequency.setValueAtTime(freq, now + idx * 0.065);
+      gain.gain.setValueAtTime(0.13, now + idx * 0.065);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.065 + 0.48);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + idx * 0.065);
+      osc.stop(now + idx * 0.065 + 0.5);
+    });
+  } catch (e) {}
+}
+
+function initTitleScreenUI() {
+  const emblemSlot = document.getElementById('title-emblem-slot');
+  if (emblemSlot && typeof window.createTitleEmblemSVG === 'function') {
+    emblemSlot.innerHTML = window.createTitleEmblemSVG();
+  }
+  const carSlot = document.getElementById('title-car-runner');
+  if (carSlot && typeof window.createLoadingMiniCarSVG === 'function') {
+    carSlot.innerHTML = window.createLoadingMiniCarSVG();
+  }
+  const crownIco = document.getElementById('title-ico-crown');
+  if (crownIco) crownIco.innerHTML = createCustomSVGIcon('crown_badge', 16);
+  const startIco = document.getElementById('title-start-ico');
+  if (startIco) startIco.innerHTML = createCustomSVGIcon('forbes_trophy', 30);
+  const tipIco = document.getElementById('title-tip-ico');
+  if (tipIco) tipIco.innerHTML = createCustomSVGIcon('lightbulb_tip', 20);
+  const stageIco = document.getElementById('title-stage-ico');
+  if (stageIco) stageIco.innerHTML = createCustomSVGIcon('item_croissant_ico', 20);
+
+  const tips = window.TITLE_TIPS_POOL || [];
+  if (tips.length > 0) {
+    titleScreenState.tipIdx = Math.floor(Math.random() * tips.length);
+    const tipText = document.getElementById('title-tip-text');
+    if (tipText) tipText.textContent = tips[titleScreenState.tipIdx];
+  }
+
+  // 초기 드론 항공 오빗 카메라 위치 세팅
+  if (camera && controls) {
+    controls.enabled = false;
+    controls.target.set(0, 4.8, 12.5);
+    camera.position.set(Math.sin(titleScreenState.orbitAngle) * 56, 36, 12.5 + Math.cos(titleScreenState.orbitAngle) * 56);
+    camera.zoom = window.innerWidth < 640 ? 0.42 : 0.68;
+    camera.updateProjectionMatrix();
+    controls.update();
+  }
+}
+
+function enterTownFromTitleScreen() {
+  if (!titleScreenState.active || titleScreenState.entering) return;
+  titleScreenState.entering = true;
+
+  playTitleStartFanfareSFX();
+
+  const overlay = document.getElementById('title-screen-overlay');
+  if (overlay) {
+    overlay.classList.add('fade-out-swoop');
+    setTimeout(() => {
+      overlay.classList.add('hidden');
+    }, 640);
+  }
+
+  titleScreenState.active = false;
+  document.getElementById('main-game-header')?.classList.remove('hidden');
+  document.getElementById('bottom-town-bar')?.classList.remove('hidden');
+
+  controls.enabled = true;
+  controls.minPolarAngle = 0.35;
+  controls.maxPolarAngle = Math.PI * 0.44;
+  controls.enablePan = true;
+
+  const isMobilePortrait = window.innerWidth < 640 && window.innerHeight > window.innerWidth;
+  const offset = CAM_OFFSETS[camAzimuth % 4];
+  const targetLook = isMobilePortrait ? new THREE.Vector3(-1.2, 4.4, 8.2) : OVERVIEW_LOOK.clone();
+  const targetPos = targetLook.clone().add(offset);
+  const targetZoom = isMobilePortrait ? 0.45 : 0.78;
+
+  // 드론 상공 시점에서 메인 빌딩과 분수 광장 앞으로 1.0초 동안 스우프 인(Swoop-in)!
+  startSmoothCameraTween(targetPos, targetLook, targetZoom, 1.0, () => {
+    showToast('해피 미니미 타운에 오신 것을 환영합니다, 갓물주님!', 'gold');
+  });
+  syncTopBarsByMode();
+  updateForbesRankAndHUD(false);
+}
+
+function tickTitleScreenAndDroneCam(dt) {
+  if (!titleScreenState.active) return;
+
+  // 1) 라이브 3D 타운 파노라마 360도 슬로우 항공 드론 회전
+  titleScreenState.orbitAngle += dt * 0.16;
+  const radius = 56;
+  const centerZ = 12.0;
+  camera.position.set(
+    Math.sin(titleScreenState.orbitAngle) * radius,
+    35.5,
+    centerZ + Math.cos(titleScreenState.orbitAngle) * radius
+  );
+  controls.target.set(0, 4.8, centerZ);
+  camera.zoom = window.innerWidth < 640 ? 0.42 : 0.68;
+  camera.updateProjectionMatrix();
+  camera.lookAt(controls.target);
+
+  // 2) 랜덤 꿀팁 순환
+  const tips = window.TITLE_TIPS_POOL || [];
+  if (tips.length > 1) {
+    titleScreenState.tipTimer -= dt;
+    if (titleScreenState.tipTimer <= 0) {
+      titleScreenState.tipTimer = 3.6;
+      titleScreenState.tipIdx = (titleScreenState.tipIdx + 1) % tips.length;
+      const tipText = document.getElementById('title-tip-text');
+      if (tipText) tipText.textContent = tips[titleScreenState.tipIdx];
+    }
+  }
+
+  // 3) 0% -> 100% 단계별 게이지 & 미니 슈퍼카 러너 진행 (~2.4초)
+  if (!titleScreenState.ready) {
+    titleScreenState.progress = Math.min(100, titleScreenState.progress + dt * 42);
+    const pct = Math.round(titleScreenState.progress);
+
+    const pctEl = document.getElementById('title-pct-num');
+    const fillEl = document.getElementById('title-progress-fill');
+    const carEl = document.getElementById('title-car-runner');
+    if (pctEl) pctEl.textContent = `${pct}%`;
+    if (fillEl) fillEl.style.width = `${pct}%`;
+    if (carEl) carEl.style.left = `${THREE.MathUtils.clamp(pct, 6, 94)}%`;
+
+    const stages = window.TITLE_LOADING_STAGES || [];
+    let currentStage = stages[0];
+    for (const stg of stages) {
+      if (pct >= stg.threshold) currentStage = stg;
+    }
+    if (currentStage) {
+      const stgTxt = document.getElementById('title-stage-text');
+      const stgIco = document.getElementById('title-stage-ico');
+      if (stgTxt && stgTxt.textContent !== currentStage.text) {
+        stgTxt.textContent = currentStage.text;
+        if (stgIco) stgIco.innerHTML = createCustomSVGIcon(currentStage.icon, 20);
+      }
+    }
+
+    if (pct >= 100) {
+      titleScreenState.ready = true;
+      setTimeout(() => {
+        if (!titleScreenState.active) return;
+        document.getElementById('title-loading-box')?.classList.add('hidden');
+        document.getElementById('btn-start-game')?.classList.remove('hidden');
+      }, 260);
+    }
+  }
+}
+
 function updateAllProjectedOverlays(dt) {
-  const hideTownBadges = !!focusedRoomId || !!focusedShopId || !!focusedFirstFloorShopId || fpState.active;
+  const hideTownBadges = !!titleScreenState.active || !!focusedRoomId || !!focusedShopId || !!focusedFirstFloorShopId || fpState.active;
   const vw = window.innerWidth;
   const vh = window.innerHeight;
 
   const visibleShopBoxes = [];
+
+  // 0A) 라이벌 스카우트 방어 3D 경고 핀 투영
+  if (rivalState.poach.active && rivalState.poach.pinEl && rivalState.poach.roomId) {
+    const rm = findRoomById(rivalState.poach.roomId);
+    const lot = state.lots.find((l) => l.lotId === (rm?.lotId || 'lot_main'));
+    if (!rm || !lot || titleScreenState.active || driveState.active || fpState.active || focusedShopId || focusedFirstFloorShopId || focusedRoomId === rm.id) {
+      rivalState.poach.pinEl.style.display = 'none';
+    } else {
+      const pt = projectWorldToScreen(lot.x + rm.lx, rm.ly + rm.rh + 0.9, lot.z + rm.lz + 2.2);
+      if (!pt.visible || pt.y < 60 || pt.y > vh - 60) {
+        rivalState.poach.pinEl.style.display = 'none';
+      } else {
+        const clampedX = THREE.MathUtils.clamp(pt.x, 115, Math.max(115, vw - 115));
+        rivalState.poach.pinEl.style.display = 'inline-flex';
+        rivalState.poach.pinEl.style.left = `${clampedX}px`;
+        rivalState.poach.pinEl.style.top = `${Math.max(145, pt.y)}px`;
+      }
+    }
+  }
 
   // 0) 1인칭 상점 쇼케이스 상품 & 골든벨 플로팅 배지 투영
   for (const pin of fpState.labelPins) {
@@ -11444,7 +13790,7 @@ function updateAllProjectedOverlays(dt) {
   // 3) 월세 & 상가 매출 코인 버블 투영 (상가 배지 및 다른 코인 버블과 2D 충돌 원천 차단!)
   const visibleRentBoxes = [];
   for (const rb of rentBubbles) {
-    if (focusedRoomId || focusedFirstFloorShopId || fpState.active) {
+    if (titleScreenState.active || focusedRoomId || focusedFirstFloorShopId || fpState.active || rivalState.bidding.active) {
       rb.el.style.display = 'none';
       continue;
     }
@@ -11483,6 +13829,11 @@ function updateAllProjectedOverlays(dt) {
       sp.el.remove();
       if (sp.moteEl) sp.moteEl.remove();
       delete speechEls[key];
+      continue;
+    }
+    if (titleScreenState.active) {
+      sp.el.style.display = 'none';
+      if (sp.moteEl) sp.moteEl.style.display = 'none';
       continue;
     }
     const pt = projectWorldToScreen(sp.wx, sp.wy, sp.wz);
@@ -11556,15 +13907,35 @@ function loadGameState() {
       townHappinessBoost: Number(parsed.townHappinessBoost) || 0,
       unlockedMilestones: Array.isArray(parsed.unlockedMilestones) ? parsed.unlockedMilestones : [],
       goldenKeys: Number(parsed.goldenKeys) || 0,
+      rivalWins: Number(parsed.rivalWins) || 0,
+      rivalKangPenalty: Number(parsed.rivalKangPenalty) || 0,
+      bestForbesRank: typeof parsed.bestForbesRank === 'number' ? parsed.bestForbesRank : 10,
+      vipTitle: parsed.vipTitle || '미니미 타운 신예 갓물주',
       stats: { ...fresh.stats, ...(parsed.stats || {}) }
     };
+
+    // 기존 저장 호실/상가 스키마 보정
+    for (const b of Object.values(state.buildings || {})) {
+      for (const rm of (b.rooms || [])) {
+        ensureRoomSchema(rm);
+      }
+    }
+    for (const tpl of STANDALONE_SHOPS_TEMPLATE) {
+      if (state.standaloneShops[tpl.shopId] && typeof state.standaloneShops[tpl.shopId].auctionBonusPct !== 'number') {
+        state.standaloneShops[tpl.shopId].auctionBonusPct = 0;
+      }
+    }
 
     const elapsedSec = Math.min(3600, Math.max(0, (Date.now() - (parsed.lastSavedAt || Date.now())) / 1000));
     if (elapsedSec > 25) {
       const offlineGain = Math.min(600, Math.round((calcCycleNetIncome() * elapsedSec) / 45));
       if (offlineGain >= 10) {
         state.gold += offlineGain;
-        setTimeout(() => showToast(`부재중 월세·상가 수익 +${offlineGain}만 정산 완료!`, 'gold'), 800);
+        setTimeout(() => {
+          if (!titleScreenState.active) {
+            showToast(`부재중 월세·상가 수익 +${offlineGain}만 정산 완료!`, 'gold');
+          }
+        }, 3800);
       }
     }
   } catch (e) {
@@ -11663,7 +14034,7 @@ function initThreeScene() {
 
     renderer.setSize(window.innerWidth, window.innerHeight);
 
-    if (!focusedRoomId && !focusedShopId && !focusedFirstFloorShopId && !driveState.active && !fpState.active) {
+    if (!titleScreenState.active && !focusedRoomId && !focusedShopId && !focusedFirstFloorShopId && !driveState.active && !fpState.active) {
       setOverviewCamera(false);
     }
   });
@@ -11864,6 +14235,24 @@ function cacheDOMElements() {
   setSvg('ico-ms-rain', 'money_gun', 18);
   setSvg('ms-banner-ico', 'statue_gold', 26);
 
+  // 신규 FORBES 랭킹 · 라이벌 3대 승부 · 더블 골든벨 커스텀 SVG 주입
+  setSvg('hud-ico-forbes', 'forbes_trophy', 22);
+  setSvg('hud-ico-rival', 'rival_bolt', 18);
+  setSvg('ico-drive-race', 'race_flag', 17);
+  setSvg('ico-race-hud', 'race_flag', 20);
+  setSvg('ico-fp-double-bell', 'rival_bolt', 18);
+  setSvg('rival-hub-ico', 'rival_bolt', 24);
+  setSvg('poach-dock-ico', 'megaphone_purple', 21);
+  setSvg('ico-poach-furn', 'sofa_ico', 16);
+  setSvg('ico-poach-gift', 'gift_ribbon_box', 16);
+  setSvg('ico-poach-rain', 'money_gun', 17);
+  setSvg('bid-dock-ico', 'auction_paddle', 22);
+  setSvg('ico-bid-up', 'auction_paddle', 18);
+  setSvg('ico-bid-briefcase', 'golden_briefcase', 19);
+  setSvg('forbes-modal-ico', 'forbes_trophy', 25);
+  setSvg('ico-forbes-kang', 'rival_bolt', 17);
+  setSvg('rankup-banner-ico', 'forbes_trophy', 26);
+
   const wheelSlot = document.getElementById('cockpit-wheel-rotator');
   if (wheelSlot && typeof createCockpitSteeringWheelSVG === 'function') {
     wheelSlot.innerHTML = createCockpitSteeringWheelSVG();
@@ -11948,6 +14337,33 @@ function bindAllUIEvents() {
       openLotDevModal(ud.lotId);
     }
   });
+
+  document.getElementById('btn-start-game')?.addEventListener('click', () => enterTownFromTitleScreen());
+
+  document.getElementById('hud-badge-forbes')?.addEventListener('click', () => openForbesModal());
+  document.getElementById('btn-close-forbes')?.addEventListener('click', () => {
+    document.getElementById('forbes-modal')?.classList.add('hidden');
+  });
+  document.getElementById('btn-forbes-challenge-kang')?.addEventListener('click', () => {
+    document.getElementById('forbes-modal')?.classList.add('hidden');
+    openRivalBattleHubModal();
+  });
+
+  document.getElementById('btn-rival-battle')?.addEventListener('click', () => openRivalBattleHubModal());
+  document.getElementById('btn-close-rival-hub')?.addEventListener('click', () => {
+    document.getElementById('rival-battle-hub-modal')?.classList.add('hidden');
+  });
+  document.getElementById('btn-drive-rival-race')?.addEventListener('click', () => startRivalCoastalRace());
+  document.getElementById('btn-fp-double-bell')?.addEventListener('click', () => triggerDoubleGoldenBellShowdown());
+
+  document.getElementById('btn-close-poach-dock')?.addEventListener('click', () => cleanupRivalPoachEvent());
+  document.getElementById('btn-poach-def-furn')?.addEventListener('click', () => resolveRivalPoachDefense('furn'));
+  document.getElementById('btn-poach-def-gift')?.addEventListener('click', () => resolveRivalPoachDefense('gift'));
+  document.getElementById('btn-poach-def-rain')?.addEventListener('click', () => resolveRivalPoachDefense('rain'));
+
+  document.getElementById('btn-close-bid-dock')?.addEventListener('click', () => cleanupShopBiddingWar());
+  document.getElementById('btn-bid-step-up')?.addEventListener('click', () => raiseShopBidStep());
+  document.getElementById('btn-bid-briefcase-slam')?.addEventListener('click', () => slamGoldenBriefcaseBuyout());
 
   document.getElementById('hud-badge-happy')?.addEventListener('click', () => openHappinessMilestoneModal());
   document.getElementById('btn-close-ms-modal')?.addEventListener('click', () => {
@@ -12087,9 +14503,19 @@ function bindAllUIEvents() {
   window.addEventListener('keydown', (e) => {
     if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
     if (e.key === 'Escape') {
+      const fbModal = document.getElementById('forbes-modal');
+      const rvModal = document.getElementById('rival-battle-hub-modal');
       const msModal = document.getElementById('happiness-milestone-modal');
-      if (msModal && !msModal.classList.contains('hidden')) {
+      if (fbModal && !fbModal.classList.contains('hidden')) {
+        fbModal.classList.add('hidden');
+      } else if (rvModal && !rvModal.classList.contains('hidden')) {
+        rvModal.classList.add('hidden');
+      } else if (msModal && !msModal.classList.contains('hidden')) {
         msModal.classList.add('hidden');
+      } else if (rivalState.bidding.active) {
+        cleanupShopBiddingWar();
+      } else if (rivalState.poach.active && focusedRoomId === rivalState.poach.roomId) {
+        cleanupRivalPoachEvent();
       } else if (fpState.active) exitFirstPersonMode();
       else if (driveState.active) exitDriveMode();
       else if (focusedRoomId) exitRoomFocusMode();
@@ -12191,6 +14617,7 @@ window.addEventListener('DOMContentLoaded', () => {
   hudAnim.shownHappy = calcAvgHappiness();
   updateTopHUDTargets();
   setOverviewCamera(false);
+  initTitleScreenUI();
   bindAllUIEvents();
 
   setInterval(() => saveGameState(), 3000);
@@ -12202,14 +14629,17 @@ window.addEventListener('DOMContentLoaded', () => {
     prevTime = now;
     const elapsed = now * 0.001;
 
+    tickTitleScreenAndDroneCam(dt);
     tickSimulationEconomyAndCrises(dt);
     tickBuildingResidentsAI(dt, elapsed);
+    tickShopInteriorSmartAI(dt, elapsed);
     tickStreetOutingAndDiningAI(dt, elapsed);
+    tickRivalBattlesAndRace(dt, elapsed);
     tickDriveMode(dt, elapsed);
     tickFirstPersonMode(dt, elapsed);
     tickAnimationsAndEffects(dt, elapsed);
 
-    if (!driveState.active && !fpState.active) {
+    if (!titleScreenState.active && !driveState.active && !fpState.active) {
       controls.update();
     }
     updateXRayAndFocusHighlights(dt);
