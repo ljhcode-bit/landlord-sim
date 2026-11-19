@@ -3439,6 +3439,7 @@ const POPMART_ASSET_PATHS = {
   skills: {
     moneygunBlast: './assets/skills/skill_moneygun_blast.png',
     moneyRainParticles: './assets/skills/skill_money_rain_particles.png',
+    moneyParticles: './assets/skills/skill_money_particles.png',
     mansourFeverAura: './assets/skills/skill_mansour_fever_aura.png',
     rentCollectBurst: './assets/skills/skill_rent_collect_burst.png',
     nitroBoostFlame: './assets/skills/skill_nitro_boost_flame.png'
@@ -3454,11 +3455,38 @@ const POPMART_ASSET_PATHS = {
     bedTier2Hotel: './assets/furniture/bed_tier2_hotel.png',
     bedTier3Canopy: './assets/furniture/bed_tier3_canopy.png',
     bedTier4Gold: './assets/furniture/bed_tier4_gold.png',
+    velvetSofa: './assets/furniture/furn_velvet_sofa.png',
+    goldPiano: './assets/furniture/furn_gold_piano.png',
+    spaJacuzzi: './assets/furniture/furn_spa_jacuzzi.png',
+    chandelier: './assets/furniture/furn_chandelier.png',
+    aquariumWall: './assets/furniture/furn_aquarium_wall.png',
+    wineBar: './assets/furniture/furn_wine_bar.png',
+    texWallWainscot: './assets/furniture/tex_wall_wainscot.png',
+    texWallMarble: './assets/furniture/tex_wall_marble.png',
     luxurySetSheet: './assets/furniture/furn_luxury_set_sheet.png',
     wallpaperCream: './assets/furniture/wallpaper_cream_wainscot.png',
     wallpaperMarble: './assets/furniture/wallpaper_royal_marble.png'
   },
+  buildings: {
+    signBakeryCroissant: './assets/buildings/sign_bakery_croissant.png',
+    signConv24h: './assets/buildings/sign_conv_24h.png',
+    signLaundryBubble: './assets/buildings/sign_laundry_bubble.png',
+    signFurnitureFlagship: './assets/buildings/sign_furniture_flagship.png',
+    signCafeRoastery: './assets/buildings/sign_cafe_roastery.png',
+    signHarborLobster: './assets/buildings/sign_harbor_lobster.png',
+    signHarborWine: './assets/buildings/sign_harbor_wine.png',
+    signHarborMarina: './assets/buildings/sign_harbor_marina.png',
+    propGrandGateLock: './assets/buildings/prop_grand_gate_lock.png',
+    propConstructionCrane: './assets/buildings/prop_construction_crane.png'
+  },
   ui: {
+    goldenTelescope: './assets/ui/ui_golden_telescope.png',
+    notebookIcon: './assets/ui/ui_notebook_icon.png',
+    quickMoneygun: './assets/ui/ui_quick_moneygun.png',
+    quickSupercar: './assets/ui/ui_quick_supercar.png',
+    quickTrophy: './assets/ui/ui_quick_trophy.png',
+    weatherIconsSheet: './assets/ui/ui_weather_icons_sheet.png',
+    actionIconsSheet: './assets/ui/ui_action_icons_sheet.png',
     signsShopsSheet: './assets/ui/signs_shops_sheet.png',
     pocketNotebook: './assets/ui/ui_pocket_notebook.png',
     quickIconsSheet: './assets/ui/ui_quick_icons_sheet.png'

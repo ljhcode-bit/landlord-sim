@@ -1623,14 +1623,18 @@ input[type='range'].golden-coin-range::-webkit-slider-thumb {
 }
 
 .title-sub-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
   background: transparent;
   border: none;
-  padding: 6px 8px;
-  color: #5C4938 !important;
+  padding: 6px 7px;
+  color: #4A3728 !important;
   font-family: 'Pretendard', sans-serif !important;
-  font-weight: 700;
-  font-size: 15px;
-  letter-spacing: -0.01em;
+  font-weight: 800;
+  font-size: 13.5px;
+  letter-spacing: -0.02em;
   cursor: pointer;
   border-radius: 10px;
   transition: color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
@@ -3018,16 +3022,19 @@ input[type='range'].golden-coin-range::-webkit-slider-thumb {
 
 .telescope-hud-tag {
   position: absolute;
-  top: 22px;
+  top: 68px;
   left: 50%;
   transform: translateX(-50%);
-  padding: 4px 14px;
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 15px;
   border-radius: 999px;
-  background: rgba(38, 26, 18, 0.72);
-  border: 1.5px solid rgba(251, 191, 36, 0.78);
+  background: rgba(38, 26, 18, 0.82);
+  border: 1.5px solid rgba(251, 191, 36, 0.85);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.24);
   font-family: 'Pretendard', sans-serif;
   font-weight: 800;
-  font-size: 10.5px;
+  font-size: 11px;
   letter-spacing: 0.04em;
   color: #FDE68A;
   white-space: nowrap;
@@ -3368,28 +3375,73 @@ input[type='range'].golden-coin-range::-webkit-slider-thumb {
   gap: 14px;
 }
 
-.tt-quick-pill {
-  padding: 5px 12px;
+.tt-quick-pill,
+.tt-strip-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5.5px 13px;
   border-radius: 999px;
-  border: 1.5px solid rgba(255, 255, 255, 0.28);
-  background: rgba(30, 23, 38, 0.72);
+  border: 1.5px solid rgba(253, 224, 71, 0.35);
+  background: rgba(32, 23, 42, 0.86);
   font-family: 'Pretendard', sans-serif;
   font-weight: 800;
   font-size: 11.5px;
-  color: #F8FAFC;
+  color: #FFFDF9 !important;
   white-space: nowrap;
   cursor: pointer;
-  transition: all 0.14s ease;
+  transition: transform 0.16s var(--spring-ease), background 0.14s ease, border-color 0.14s ease;
 }
 
-.tt-quick-pill:hover {
-  background: rgba(255, 255, 255, 0.22);
+.tt-quick-pill:hover,
+.tt-strip-chip:hover {
+  transform: translateY(-2px);
+  background: rgba(58, 42, 76, 0.94);
+  border-color: rgba(253, 224, 71, 0.75);
 }
 
-.tt-quick-pill.active {
-  background: linear-gradient(180deg, #FFFBEB 0%, #FDE047 100%);
-  border-color: #F59E0B;
-  color: #2C221E;
-  box-shadow: 0 2px 8px rgba(250, 204, 21, 0.4);
+.tt-quick-pill.active,
+.tt-strip-chip.active {
+  background: linear-gradient(180deg, #FFFBEB 0%, #FDE047 100%) !important;
+  border-color: #F59E0B !important;
+  color: #2C221E !important;
+  box-shadow: 0 3px 10px rgba(250, 204, 21, 0.45);
+}
+
+#turntable-webgl-canvas {
+  background: transparent !important;
+  mask-image: radial-gradient(ellipse 58% 58% at 50% 50%, rgba(0,0,0,1) 62%, rgba(0,0,0,0) 100%);
+  -webkit-mask-image: radial-gradient(ellipse 58% 58% at 50% 50%, rgba(0,0,0,1) 62%, rgba(0,0,0,0) 100%);
+}
+
+.tt-master-art-card {
+  position: absolute;
+  right: 84px;
+  bottom: 14px;
+  width: 116px;
+  height: 116px;
+  padding: 6px;
+  border-radius: 24px;
+  background: radial-gradient(circle at 50% 45%, rgba(255, 253, 248, 0.96) 0%, rgba(254, 243, 199, 0.92) 100%);
+  border: 2.5px solid #F59E0B;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.34), 0 3px 0 #B45309;
+  animation: harborPopIn 0.25s var(--spring-ease) forwards;
+}
+
+/* 3D 아트토이 이미지 아이콘 공통 호버 쫀득 스프링 바운스 */
+.toy-ico-img {
+  display: inline-block;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 3px rgba(44, 34, 30, 0.22));
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.18s ease;
+}
+
+button:hover .toy-ico-img,
+.quick-glass-circle-btn:hover .toy-ico-img,
+.pocket-diary-fab:hover .toy-ico-img,
+.pocket-wide-card-btn:hover .toy-ico-img,
+.weather-seg-btn:hover .toy-ico-img {
+  transform: translateY(-2px) scale(1.14) rotate(-4deg);
+  filter: drop-shadow(0 4px 6px rgba(44, 34, 30, 0.28));
 }
 

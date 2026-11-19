@@ -2057,12 +2057,12 @@ function initSharedResources() {
   // ==================== 신규 고품격 물리 재질(MeshPhysicalMaterial) & 실사 PNG 에셋 로더 ====================
   MAT.pureGold24k = new THREE.MeshPhysicalMaterial({
     color: 0xFFE44D,
-    metalness: 0.34,
-    roughness: 0.16,
+    metalness: 0.64,
+    roughness: 0.14,
     clearcoat: 1.0,
-    clearcoatRoughness: 0.06,
+    clearcoatRoughness: 0.05,
     emissive: 0xF59E0B,
-    emissiveIntensity: 0.52
+    emissiveIntensity: 0.36
   });
   MAT.cutawayGlass = new THREE.MeshStandardMaterial({
     color: 0xE0F2FE,
@@ -2288,6 +2288,10 @@ function initSharedResources() {
     });
   }
 
+  TEX.lobsterSign = createShopSignboardTexture('lobster');
+  TEX.wineloungeSign = createShopSignboardTexture('winelounge');
+  TEX.marinaSign = createShopSignboardTexture('marina');
+
   if (document.fonts && document.fonts.ready) {
     document.fonts.ready.then(() => {
       TEX.martSign = createShopSignboardTexture('mart');
@@ -2296,6 +2300,9 @@ function initSharedResources() {
       TEX.patisserieSign = createShopSignboardTexture('patisserie');
       TEX.roasterySign = createShopSignboardTexture('roastery');
       TEX.floresSign = createShopSignboardTexture('flores');
+      TEX.lobsterSign = createShopSignboardTexture('lobster');
+      TEX.wineloungeSign = createShopSignboardTexture('winelounge');
+      TEX.marinaSign = createShopSignboardTexture('marina');
       TEX.blade24 = createBladeNeon24Texture();
 
       signMaterialsToRefresh.forEach((entry) => {
@@ -2305,6 +2312,9 @@ function initSharedResources() {
         else if (entry.kind === 'patisserie') entry.mat.map = TEX.patisserieSign;
         else if (entry.kind === 'roastery') entry.mat.map = TEX.roasterySign;
         else if (entry.kind === 'flores') entry.mat.map = TEX.floresSign;
+        else if (entry.kind === 'lobster') entry.mat.map = TEX.lobsterSign;
+        else if (entry.kind === 'winelounge') entry.mat.map = TEX.wineloungeSign;
+        else if (entry.kind === 'marina') entry.mat.map = TEX.marinaSign;
         else if (entry.kind === 'blade24') entry.mat.map = TEX.blade24;
         else if (entry.kind === 'roomPlate') entry.mat.map = createRoomNumberPlateTexture(entry.numStr, entry.typeLabel, entry.unlocked);
         entry.mat.needsUpdate = true;
@@ -4137,69 +4147,198 @@ function create3DChampagneBucketMesh() {
 
 function create3DGrandPianoMesh() {
   const grp = new THREE.Group();
-  const blackGloss = makeClayMat(0x18181B, { roughness: 0.16, metalness: 0.32 });
+  const blackGloss = makeClayMat(0x18181B, { roughness: 0.14, metalness: 0.36 });
   const goldMat = MAT.pureGold24k || MAT.gold;
+  const velvetRed = makeClayMat(0xE11D48, { roughness: 0.48, metalness: 0.06 });
 
   // 그랜드 피아노 곡선 바디 & 건반부
-  grp.add(createRoundedToyMesh(1.95, 0.28, 1.55, blackGloss, 0, 0.92, -0.15, 0.1));
+  grp.add(createRoundedToyMesh(1.98, 0.3, 1.58, blackGloss, 0, 0.92, -0.15, 0.1));
   const curveBack = new THREE.Mesh(GEO.cyl, blackGloss);
-  curveBack.scale.set(1.75, 0.28, 1.45);
+  curveBack.scale.set(1.78, 0.3, 1.48);
   curveBack.position.set(-0.08, 0.92, -0.58);
   grp.add(curveBack);
-  // 황금 내부 하프 프레임 & 비스듬히 열린 상판 리드
+
+  // 황금 내부 하프 프레임 & 현 디테일 & 비스듬히 열린 상판 리드
   const harp = new THREE.Mesh(GEO.cyl, goldMat);
-  harp.scale.set(1.48, 0.05, 1.25);
-  harp.position.set(-0.05, 1.08, -0.45);
-  const lid = createRoundedToyMesh(1.88, 0.06, 1.52, blackGloss, 0.12, 1.48, -0.28, 0.04);
-  lid.rotation.z = 0.42;
+  harp.scale.set(1.5, 0.06, 1.28);
+  harp.position.set(-0.05, 1.09, -0.45);
+  const lid = createRoundedToyMesh(1.9, 0.06, 1.54, blackGloss, 0.14, 1.5, -0.28, 0.04);
+  lid.rotation.z = 0.44;
   const propStick = new THREE.Mesh(GEO.cyl, goldMat);
-  propStick.scale.set(0.04, 0.72, 0.04);
-  propStick.position.set(0.76, 1.32, -0.15);
+  propStick.scale.set(0.045, 0.74, 0.045);
+  propStick.position.set(0.76, 1.33, -0.15);
   propStick.rotation.z = -0.18;
-  // 피아노 흰 건반 + 3개 다리 + 벨벳 벤치
   grp.add(harp, lid, propStick);
-  grp.add(createRoundedToyMesh(1.62, 0.09, 0.28, MAT.white, 0, 0.88, 0.68, 0.02));
+
+  // 골드 보면대 & 악보
+  const stand = createRoundedToyMesh(0.78, 0.34, 0.04, goldMat, 0, 1.22, 0.36, 0.02);
+  stand.rotation.x = -0.26;
+  const sheet = createRoundedToyMesh(0.62, 0.28, 0.03, MAT.white, 0, 1.23, 0.38, 0.01);
+  sheet.rotation.x = -0.26;
+  grp.add(stand, sheet);
+
+  // 입체 흰 건반(18개) + 검은 건반(12개)
+  grp.add(createRoundedToyMesh(1.66, 0.08, 0.32, MAT.white, 0, 0.87, 0.68, 0.02));
+  for (let k = -8; k <= 8; k++) {
+    const wk = createRoundedToyMesh(0.075, 0.035, 0.26, MAT.cream, k * 0.09, 0.92, 0.7, 0.008);
+    grp.add(wk);
+    if (Math.abs(k) % 7 !== 2 && Math.abs(k) % 7 !== 6 && k < 8) {
+      const bk = createRoundedToyMesh(0.048, 0.055, 0.16, blackGloss, k * 0.09 + 0.045, 0.945, 0.64, 0.008);
+      grp.add(bk);
+    }
+  }
+
+  // 중앙 황금 페달 라이어 & 3개 페달 + 3개 조각 다리 + 퀼팅 레드 벨벳 벤치
+  grp.add(createRoundedToyMesh(0.28, 0.62, 0.06, goldMat, 0, 0.46, 0.32, 0.02));
+  for (const px of [-0.08, 0, 0.08]) {
+    grp.add(createRoundedToyMesh(0.035, 0.03, 0.14, goldMat, px, 0.14, 0.38, 0.01));
+  }
   for (const [lx, lz] of [[-0.78, 0.48], [0.78, 0.48], [-0.1, -1.05]]) {
     const leg = new THREE.Mesh(GEO.cyl, blackGloss);
-    leg.scale.set(0.12, 0.78, 0.12);
+    leg.scale.set(0.13, 0.78, 0.13);
     leg.position.set(lx, 0.4, lz);
-    grp.add(leg);
+    const caster = new THREE.Mesh(GEO.sphere, goldMat);
+    caster.scale.setScalar(0.09);
+    caster.position.set(lx, 0.06, lz);
+    grp.add(leg, caster);
   }
-  grp.add(createRoundedToyMesh(1.12, 0.44, 0.46, MAT.supercarRed, 0, 0.24, 1.18, 0.06));
+  grp.add(createRoundedToyMesh(1.14, 0.16, 0.48, velvetRed, 0, 0.42, 1.18, 0.06));
+  grp.add(createRoundedToyMesh(1.1, 0.08, 0.44, goldMat, 0, 0.32, 1.18, 0.03));
+  for (const [bx, bz] of [[-0.46, 1.02], [0.46, 1.02], [-0.46, 1.34], [0.46, 1.34]]) {
+    grp.add(createRoundedToyMesh(0.08, 0.3, 0.08, goldMat, bx, 0.15, bz, 0.02));
+  }
   return grp;
 }
 
 function create3DOceanJacuzziMesh() {
   const grp = new THREE.Group();
   const teakMat = MAT.yachtTeakDeck || MAT.woodWarm;
-  const waterMat = makeClayMat(0x38BDF8, { emissive: 0x0EA5E9, emissiveIntensity: 0.62, roughness: 0.12 });
+  const goldMat = MAT.pureGold24k || MAT.gold;
+  const marbleShell = makeClayMat(0xFFFDF9, {
+    map: POPMART_ASSETS?.furniture?.texWallMarbleTex || TEX.wallLavender || null,
+    roughness: 0.26,
+    metalness: 0.08
+  });
+  const waterMat = new THREE.MeshPhysicalMaterial({
+    color: 0x22D3EE,
+    emissive: 0x0EA5E9,
+    emissiveIntensity: 0.68,
+    roughness: 0.08,
+    metalness: 0.12,
+    clearcoat: 0.95,
+    transparent: true,
+    opacity: 0.92
+  });
 
-  // 티크 원목 스파 데크 + 월풀 자쿠지 수조 + 거품 + 리조트 선베드
-  grp.add(createRoundedToyMesh(3.25, 0.24, 2.55, teakMat, 0, 0.12, 0, 0.08));
-  grp.add(createRoundedToyMesh(2.55, 0.68, 1.95, MAT.white, -0.2, 0.52, 0, 0.14));
-  grp.add(createRoundedToyMesh(2.15, 0.12, 1.55, waterMat, -0.2, 0.82, 0, 0.08));
-  for (let b = 0; b < 7; b++) {
+  // 티크 원목 스파 데크 & 2단 계단 + 화이트 마블 & 24K 골드 몰딩 월풀 욕조
+  grp.add(createRoundedToyMesh(3.32, 0.24, 2.62, teakMat, 0, 0.12, 0, 0.08));
+  grp.add(createRoundedToyMesh(1.15, 0.18, 0.42, teakMat, -0.2, 0.28, 1.18, 0.05));
+  grp.add(createRoundedToyMesh(2.62, 0.72, 2.02, marbleShell, -0.2, 0.54, 0, 0.15));
+  grp.add(createRoundedToyMesh(2.68, 0.08, 2.08, goldMat, -0.2, 0.89, 0, 0.04));
+  grp.add(createRoundedToyMesh(2.18, 0.14, 1.58, waterMat, -0.2, 0.84, 0, 0.08, false, false, false));
+
+  // 24K 순금 스완 수전 & 핸들
+  const spoutArch = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.045, 10, 20, Math.PI), goldMat);
+  spoutArch.position.set(-0.2, 1.02, -0.92);
+  grp.add(spoutArch);
+  for (const kx of [-0.48, 0.08]) {
+    const knob = new THREE.Mesh(GEO.cyl, goldMat);
+    knob.scale.set(0.08, 0.14, 0.08);
+    knob.position.set(kx, 0.98, -0.92);
+    grp.add(knob);
+  }
+
+  // 풍성한 스파 거품 14개 + 물 위에 둥둥 떠 있는 귀여운 3D 노란 러버덕!
+  for (let b = 0; b < 14; b++) {
+    const ang = (b / 14) * Math.PI * 2;
     const foam = new THREE.Mesh(GEO.sphere, MAT.white);
-    foam.scale.setScalar(0.16 + (b % 3) * 0.05);
-    foam.position.set(-0.85 + b * 0.22, 0.89, (b % 2 === 0 ? -0.35 : 0.32));
+    foam.scale.setScalar(0.13 + (b % 3) * 0.045);
+    foam.position.set(-0.2 + Math.cos(ang) * 0.74, 0.91, Math.sin(ang) * 0.48);
     grp.add(foam);
   }
+  const duckGrp = new THREE.Group();
+  duckGrp.position.set(0.22, 0.93, 0.12);
+  duckGrp.rotation.y = -0.45;
+  const duckBody = new THREE.Mesh(GEO.sphere, MAT.duckYellow);
+  duckBody.scale.set(0.2, 0.15, 0.24);
+  const duckHead = new THREE.Mesh(GEO.sphere, MAT.duckYellow);
+  duckHead.scale.setScalar(0.13);
+  duckHead.position.set(0, 0.14, 0.11);
+  const duckBeak = createRoundedToyMesh(0.09, 0.04, 0.09, MAT.coral, 0, 0.13, 0.22, 0.015);
+  duckGrp.add(duckBody, duckHead, duckBeak);
+  grp.add(duckGrp);
+
   const champ = create3DChampagneBucketMesh();
-  champ.scale.setScalar(0.85);
+  champ.scale.setScalar(0.88);
   champ.position.set(1.22, 0.24, 0.55);
   grp.add(champ);
   return grp;
 }
 
+function create3DCrystalChandelierUnit(scale = 1.0) {
+  const chGrp = new THREE.Group();
+  const goldMat = MAT.pureGold24k || MAT.gold;
+  const crystalMat = new THREE.MeshPhysicalMaterial({
+    color: 0xFFFDF7,
+    emissive: 0xFDE68A,
+    emissiveIntensity: 0.55,
+    roughness: 0.06,
+    metalness: 0.15,
+    clearcoat: 1.0
+  });
+
+  const chain = new THREE.Mesh(GEO.cyl, goldMat);
+  chain.scale.set(0.055, 0.62, 0.055);
+  chain.position.set(0, 0.36, 0);
+  const ringTop = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.045, 10, 24), goldMat);
+  ringTop.rotation.x = Math.PI * 0.5;
+  ringTop.position.set(0, 0.16, 0);
+  const ringMain = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.06, 12, 28), goldMat);
+  ringMain.rotation.x = Math.PI * 0.5;
+  ringMain.position.set(0, -0.1, 0);
+  const finialDrop = new THREE.Mesh(new THREE.OctahedronGeometry(0.18, 0), crystalMat);
+  finialDrop.position.set(0, -0.36, 0);
+  chGrp.add(chain, ringTop, ringMain, finialDrop);
+
+  for (let c = 0; c < 8; c++) {
+    const ang = (c / 8) * Math.PI * 2;
+    const candle = new THREE.Mesh(GEO.sphere, MAT.stringBulbAmber || MAT.neonYellow);
+    candle.scale.set(0.14, 0.22, 0.14);
+    candle.position.set(Math.cos(ang) * 0.72, 0.06, Math.sin(ang) * 0.72);
+    const drop = new THREE.Mesh(new THREE.OctahedronGeometry(0.095, 0), crystalMat);
+    drop.position.set(Math.cos(ang) * 0.72, -0.24, Math.sin(ang) * 0.72);
+    chGrp.add(candle, drop);
+  }
+
+  // 고해상도 팝마트 크리스탈 샹들리에 텍스처 십자(+) 하이브리드 빌보드 레이어 결합!
+  if (POPMART_ASSETS?.furniture?.chandelierMat) {
+    for (const rotY of [0, Math.PI * 0.5]) {
+      const plane = new THREE.Mesh(new THREE.PlaneGeometry(1.75, 1.55), POPMART_ASSETS.furniture.chandelierMat);
+      plane.position.set(0, -0.02, 0);
+      plane.rotation.y = rotY;
+      chGrp.add(plane);
+    }
+  }
+  chGrp.scale.setScalar(scale);
+  return chGrp;
+}
+
 function create3DWineCellarAndChandelierMesh(rh = 4.2, rd = 7.2) {
   const grp = new THREE.Group();
-  const rackX = -2.2;
+  const goldMat = MAT.pureGold24k || MAT.gold;
+  const rackX = -2.15;
   const rackZ = -rd * 0.5 + 0.48;
-  // 호박색 간접조명 오크 와인 셀러 월
-  grp.add(createRoundedToyMesh(2.85, 2.65, 0.52, MAT.walnutTrim, rackX, 1.48, rackZ, 0.06));
-  grp.add(createRoundedToyMesh(2.55, 2.35, 0.14, MAT.amberWindowGlow || MAT.gold, rackX, 1.48, rackZ - 0.12, 0.03, false, false, false));
+
+  // 호박색 간접조명 오크 와인 셀러 월 + 고해상도 와인바 백라이트 쇼케이스 결합
+  grp.add(createRoundedToyMesh(2.92, 2.72, 0.52, MAT.walnutTrim, rackX, 1.5, rackZ, 0.07));
+  grp.add(createRoundedToyMesh(2.6, 2.38, 0.14, MAT.amberWindowGlow || goldMat, rackX, 1.5, rackZ - 0.12, 0.03, false, false, false));
+  if (POPMART_ASSETS?.furniture?.wineBarMat) {
+    const wbPlane = new THREE.Mesh(new THREE.PlaneGeometry(2.45, 2.22), POPMART_ASSETS.furniture.wineBarMat);
+    wbPlane.position.set(rackX, 1.52, rackZ + 0.29);
+    grp.add(wbPlane);
+  }
   for (const sy of [0.68, 1.22, 1.76, 2.28]) {
-    grp.add(createRoundedToyMesh(2.6, 0.07, 0.48, MAT.woodWarm, rackX, sy, rackZ + 0.04, 0.02));
+    grp.add(createRoundedToyMesh(2.62, 0.07, 0.48, MAT.woodWarm, rackX, sy, rackZ + 0.04, 0.02));
     for (let bx = -1.0; bx <= 1.0; bx += 0.4) {
       const btl = new THREE.Mesh(GEO.cyl, bx > 0 ? MAT.parasolGreen : MAT.roofPlum);
       btl.scale.set(0.11, 0.36, 0.11);
@@ -4209,22 +4348,25 @@ function create3DWineCellarAndChandelierMesh(rh = 4.2, rd = 7.2) {
     }
   }
 
-  // 천장 크리스탈 골드 샹들리에
-  const chY = rh - 0.88;
-  const chain = new THREE.Mesh(GEO.cyl, MAT.pureGold24k || MAT.gold);
-  chain.scale.set(0.06, 0.65, 0.06);
-  chain.position.set(0, rh - 0.42, 0.2);
-  const ring1 = new THREE.Mesh(new THREE.TorusGeometry(0.68, 0.06, 10, 24), MAT.pureGold24k || MAT.gold);
-  ring1.rotation.x = Math.PI * 0.5;
-  ring1.position.set(0, chY, 0.2);
-  grp.add(chain, ring1);
-  for (let c = 0; c < 8; c++) {
-    const ang = (c / 8) * Math.PI * 2;
-    const candle = new THREE.Mesh(GEO.sphere, MAT.stringBulbAmber || MAT.neonYellow);
-    candle.scale.set(0.16, 0.24, 0.16);
-    candle.position.set(Math.cos(ang) * 0.68, chY + 0.14, 0.2 + Math.sin(ang) * 0.68);
-    grp.add(candle);
+  // 전면 화이트 마블 & 골드 미니 홈바 카운터 + 크리스탈 와인잔 2개
+  const barZ = rackZ + 0.92;
+  grp.add(createRoundedToyMesh(2.15, 0.88, 0.56, MAT.walnutTrim, rackX, 0.5, barZ, 0.06));
+  grp.add(createRoundedToyMesh(2.28, 0.1, 0.66, MAT.white, rackX, 0.96, barZ, 0.04));
+  grp.add(createRoundedToyMesh(2.3, 0.05, 0.68, goldMat, rackX, 0.9, barZ, 0.02));
+  for (const gx of [-0.36, 0.36]) {
+    const stem = new THREE.Mesh(GEO.cyl, MAT.silver);
+    stem.scale.set(0.03, 0.22, 0.03);
+    stem.position.set(rackX + gx, 1.12, barZ);
+    const cup = new THREE.Mesh(GEO.sphere, MAT.roofPlum);
+    cup.scale.set(0.1, 0.12, 0.1);
+    cup.position.set(rackX + gx, 1.25, barZ);
+    grp.add(stem, cup);
   }
+
+  // 천장 크리스탈 골드 샹들리에
+  const chandelier = create3DCrystalChandelierUnit(1.0);
+  chandelier.position.set(0, rh - 0.78, 0.2);
+  grp.add(chandelier);
   return grp;
 }
 
@@ -4516,31 +4658,45 @@ function buildTwilightHarborTown3D() {
   const straitSea = new THREE.Mesh(
     new THREE.PlaneGeometry(220, 180),
     new THREE.MeshPhysicalMaterial({
-      color: 0x0B4F6C,
+      color: 0x0E7490,
       map: TEX.water,
-      roughness: 0.11,
-      metalness: 0.28,
-      clearcoat: 0.96,
-      emissive: 0x2A1B4E,
-      emissiveIntensity: 0.32
+      roughness: 0.09,
+      metalness: 0.26,
+      clearcoat: 0.98,
+      emissive: 0x1E3A8A,
+      emissiveIntensity: 0.42
     })
   );
   straitSea.rotation.x = -Math.PI * 0.5;
   straitSea.position.set(4.0, -0.08, 122.0);
   harborRootGroup.add(straitSea);
 
-  // 수면 위 일렁이는 노을·호박색 반사 윤슬 패치 (Water Shimmer Reflections)
-  const shimmerMat = new THREE.MeshBasicMaterial({
-    color: 0xFFB347,
+  // 해안 방파제와 선착장 주변 에메랄드 파도 포말 라인 + 수면 위 노을빛 반사 윤슬 패치
+  const shorelineFoamMat = new THREE.MeshBasicMaterial({
+    color: 0x67E8F9,
     transparent: true,
-    opacity: 0.24,
+    opacity: 0.36,
+    depthWrite: false
+  });
+  const shoreFoamSouth = new THREE.Mesh(new THREE.PlaneGeometry(72.0, 2.2), shorelineFoamMat);
+  shoreFoamSouth.rotation.x = -Math.PI * 0.5;
+  shoreFoamSouth.position.set(-2.5, -0.03, 145.6);
+  const shoreFoamEast = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 54.0), shorelineFoamMat);
+  shoreFoamEast.rotation.x = -Math.PI * 0.5;
+  shoreFoamEast.position.set(33.2, -0.03, 118.0);
+  harborRootGroup.add(shoreFoamSouth, shoreFoamEast);
+
+  const shimmerMat = new THREE.MeshBasicMaterial({
+    color: 0xFDBA74,
+    transparent: true,
+    opacity: 0.34,
     blending: THREE.AdditiveBlending,
     depthWrite: false
   });
-  for (let sr = 0; sr < 10; sr++) {
-    const strip = new THREE.Mesh(new THREE.PlaneGeometry(5.5 + (sr % 3) * 2.4, 0.55), shimmerMat);
+  for (let sr = 0; sr < 14; sr++) {
+    const strip = new THREE.Mesh(new THREE.PlaneGeometry(5.8 + (sr % 3) * 2.6, 0.65), shimmerMat);
     strip.rotation.x = -Math.PI * 0.5;
-    strip.position.set(-24 + sr * 6.2, 0.01, 145.5 + (sr % 3) * 4.2);
+    strip.position.set(-28 + sr * 5.2, 0.01, 145.2 + (sr % 4) * 3.8);
     harborRootGroup.add(strip);
   }
 
@@ -4662,23 +4818,57 @@ function buildTwilightHarborTown3D() {
   pickableMeshes.push(retHit);
   harborRootGroup.add(returnGate);
 
-  // 중앙 황금 닻(Golden Anchor) 노을 분수 광장 (x = 0, z = 121.5)
-  const hPlaza = new THREE.Mesh(new THREE.CylinderGeometry(6.6, 6.8, 0.1, 42), quayStoneMat);
+  // 중앙 황금 닻(Golden Anchor) 2단 조각 노을 분수 광장 (x = 0, z = 121.5)
+  const hPlaza = new THREE.Mesh(new THREE.CylinderGeometry(6.6, 6.8, 0.12, 42), quayStoneMat);
   hPlaza.position.set(0, 0.28, 121.5);
-  harborRootGroup.add(hPlaza);
-  const fPool = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.65, 0.56, 32), trimStoneMat);
-  fPool.position.set(0, 0.56, 121.5);
-  const fWater = new THREE.Mesh(
-    new THREE.CylinderGeometry(2.25, 2.25, 0.12, 32),
-    makeClayMat(0x38BDF8, { emissive: 0xF59E0B, emissiveIntensity: 0.38, roughness: 0.12 })
-  );
-  fWater.position.set(0, 0.82, 121.5);
-  const anchorPillar = new THREE.Mesh(GEO.cyl, MAT.pureGold24k || MAT.gold);
-  anchorPillar.scale.set(0.45, 2.1, 0.45);
-  anchorPillar.position.set(0, 1.65, 121.5);
-  const anchorRing = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.14, 12, 24), MAT.pureGold24k || MAT.gold);
-  anchorRing.position.set(0, 2.35, 121.5);
-  harborRootGroup.add(fPool, fWater, anchorPillar, anchorRing);
+  const hPlazaTrim = new THREE.Mesh(new THREE.TorusGeometry(6.65, 0.1, 10, 48), goldMat);
+  hPlazaTrim.rotation.x = Math.PI * 0.5;
+  hPlazaTrim.position.set(0, 0.34, 121.5);
+  harborRootGroup.add(hPlaza, hPlazaTrim);
+
+  const fPool = new THREE.Mesh(new THREE.CylinderGeometry(2.85, 3.05, 0.62, 36), whiteMarble);
+  fPool.position.set(0, 0.58, 121.5);
+  const fPoolRim = new THREE.Mesh(new THREE.TorusGeometry(2.9, 0.09, 12, 36), goldMat);
+  fPoolRim.rotation.x = Math.PI * 0.5;
+  fPoolRim.position.set(0, 0.89, 121.5);
+  const fWaterMat = new THREE.MeshPhysicalMaterial({
+    color: 0x38BDF8,
+    emissive: 0x0EA5E9,
+    emissiveIntensity: 0.65,
+    roughness: 0.08,
+    clearcoat: 0.95
+  });
+  const fWater = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, 0.14, 32), fWaterMat);
+  fWater.position.set(0, 0.84, 121.5);
+
+  const upperBasin = new THREE.Mesh(new THREE.CylinderGeometry(1.35, 0.92, 0.38, 28), whiteMarble);
+  upperBasin.position.set(0, 1.56, 121.5);
+  const upperWater = new THREE.Mesh(new THREE.CylinderGeometry(1.18, 1.18, 0.1, 24), fWaterMat);
+  upperWater.position.set(0, 1.74, 121.5);
+
+  const anchorPillar = new THREE.Mesh(GEO.cyl, goldMat);
+  anchorPillar.scale.set(0.42, 2.35, 0.42);
+  anchorPillar.position.set(0, 1.75, 121.5);
+  const anchorCross = createRoundedToyMesh(1.45, 0.18, 0.18, goldMat, 0, 2.45, 121.5, 0.05);
+  const anchorFluke = new THREE.Mesh(new THREE.TorusGeometry(0.82, 0.14, 12, 24, Math.PI), goldMat);
+  anchorFluke.rotation.z = Math.PI;
+  anchorFluke.position.set(0, 2.25, 121.5);
+  const anchorRing = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.08, 10, 20), goldMat);
+  anchorRing.position.set(0, 3.05, 121.5);
+  harborRootGroup.add(fPool, fPoolRim, fWater, upperBasin, upperWater, anchorPillar, anchorCross, anchorFluke, anchorRing);
+
+  const jetMat = new THREE.MeshBasicMaterial({ color: 0xBAE6FD, transparent: true, opacity: 0.78 });
+  for (let j = 0; j < 8; j++) {
+    const ang = (j / 8) * Math.PI * 2;
+    const jet = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.95, 10), jetMat);
+    jet.position.set(Math.cos(ang) * 1.65, 1.25, 121.5 + Math.sin(ang) * 1.65);
+    jet.rotation.z = -Math.cos(ang) * 0.35;
+    jet.rotation.x = Math.sin(ang) * 0.35;
+    const foam = new THREE.Mesh(GEO.sphere, MAT.white);
+    foam.scale.setScalar(0.16);
+    foam.position.set(Math.cos(ang) * 1.95, 0.92, 121.5 + Math.sin(ang) * 1.95);
+    harborRootGroup.add(jet, foam);
+  }
 
   // 6) 바다 위 티크 원목 요트 선착장(Marina Pier) & 정박 중인 3D 럭셔리 크루즈 요트 선단!
   const mainPier = createRoundedToyMesh(42.0, 0.34, 4.2, teakMat, 0, 0.28, 143.0, 0.08);
@@ -5687,6 +5877,11 @@ function rebuildStandaloneShop3D(shopId) {
       mascot.scale.setScalar(1.35);
       mascot.position.set(-w * 0.34, h + 0.68, -d * 0.12);
       grp.add(mascot);
+    }
+
+    // 팝마트 초고화질 3D 상가 엠블럼 간판 자동 부착 (로딩 완료 시 및 포커스 복귀 시 항상 유지!)
+    if (typeof attachPopMartShopEmblemByKind === 'function') {
+      attachPopMartShopEmblemByKind(grp, tpl.kind, w, h, d, tpl.stage === 2);
     }
 
     if (shopState?.owned) {
@@ -6833,18 +7028,26 @@ function createCatalogBed3D(bedId) {
   if (bedId === 'bed_golden_float') {
     const fg = new THREE.Group();
     const goldMat = MAT.pureGold24k || MAT.gold;
-    const haloMat = makeClayMat(0xFDE047, { emissive: 0xF59E0B, emissiveIntensity: 0.9, roughness: 0.15 });
-    const haloRing = new THREE.Mesh(new THREE.TorusGeometry(1.38, 0.08, 12, 32), haloMat);
+    const haloMat = makeClayMat(0xFDE047, { emissive: 0xF59E0B, emissiveIntensity: 0.92, roughness: 0.14 });
+    const haloRing = new THREE.Mesh(new THREE.TorusGeometry(1.42, 0.085, 14, 36), haloMat);
     haloRing.rotation.x = Math.PI * 0.5;
     haloRing.position.y = 0.14;
-    fg.add(haloRing);
-    // 공중 부양(y=0.52) 24K 순금 킹 베드 프레임 + 실크 화이트 구스다운 + 골드 왕관 헤드보드
+    const innerHalo = new THREE.Mesh(new THREE.TorusGeometry(0.95, 0.055, 12, 30), haloMat);
+    innerHalo.rotation.x = Math.PI * 0.5;
+    innerHalo.position.y = 0.28;
+    fg.add(haloRing, innerHalo);
+    // 공중 부양(y=0.56) 24K 순금 킹 베드 프레임 + 퀼팅 헤드보드 + 왕관 크레스트 + 실크 화이트 구스다운
     fg.add(createRoundedToyMesh(2.68, 0.28, 2.86, goldMat, 0, 0.56, 0, 0.1));
-    fg.add(createRoundedToyMesh(2.74, 1.48, 0.22, goldMat, 0, 1.18, -1.36, 0.08));
+    fg.add(createRoundedToyMesh(2.74, 1.54, 0.24, goldMat, 0, 1.22, -1.36, 0.09));
+    fg.add(createRoundedToyMesh(2.38, 1.08, 0.14, MAT.cream, 0, 1.24, -1.24, 0.07));
+    const crownCrest = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.3, 0.36, 6), goldMat);
+    crownCrest.position.set(0, 2.12, -1.36);
+    fg.add(crownCrest);
     fg.add(createRoundedToyMesh(2.48, 0.24, 2.64, MAT.white, 0, 0.82, 0.04, 0.09));
-    fg.add(createRoundedToyMesh(2.5, 0.24, 1.72, goldMat, 0, 0.92, 0.46, 0.09));
-    fg.add(createRoundedToyMesh(0.95, 0.22, 0.52, MAT.white, -0.58, 1.02, -0.92, 0.07));
-    fg.add(createRoundedToyMesh(0.95, 0.22, 0.52, MAT.white, 0.58, 1.02, -0.92, 0.07));
+    fg.add(createRoundedToyMesh(2.5, 0.25, 1.72, goldMat, 0, 0.93, 0.46, 0.09));
+    fg.add(createRoundedToyMesh(2.52, 0.08, 0.34, MAT.white, 0, 1.04, -0.26, 0.03));
+    fg.add(createRoundedToyMesh(0.95, 0.22, 0.52, MAT.white, -0.58, 1.04, -0.92, 0.07));
+    fg.add(createRoundedToyMesh(0.95, 0.22, 0.52, MAT.white, 0.58, 1.04, -0.92, 0.07));
     return fg;
   }
   if (bedId === 'bed_wood_single') {
@@ -7005,15 +7208,34 @@ function createCatalogSofa3D(sofaId) {
     cup.position.set(0, 0.6, 0.1);
     grp.add(cup);
   } else {
-    // sofa_leather_l 프리미엄 가죽 L자형 카우치 소파 + 원목 커피테이블
-    grp.add(createRoundedToyMesh(2.92, 0.34, 1.14, MAT.leatherCamel, -0.25, 0.3, 0, 0.1));
-    for (const cx of [-1.15, -0.25, 0.65]) {
-      grp.add(createRoundedToyMesh(0.86, 0.2, 0.92, MAT.leatherCamel, cx, 0.54, 0.05, 0.07));
-      grp.add(createRoundedToyMesh(0.86, 0.58, 0.28, MAT.leatherCamel, cx, 0.84, -0.4, 0.08));
+    // sofa_leather_l 프리미엄 코랄-카멜 벨벳/가죽 L자형 카우치 소파 + 황금 브라스 다리 + 몬스테라 화분 + 커피테이블
+    const velvetCoral = makeClayMat(0xEE7B6B, { roughness: 0.52, metalness: 0.05 });
+    const goldMat = MAT.pureGold24k || MAT.gold;
+    for (const [lx, lz] of [[-1.55, -0.45], [1.12, -0.45], [-1.55, 0.45], [1.18, 1.52]]) {
+      grp.add(createRoundedToyMesh(0.1, 0.18, 0.1, goldMat, lx, 0.09, lz, 0.02));
     }
-    grp.add(createRoundedToyMesh(1.08, 0.52, 2.1, MAT.leatherCamel, 0.76, 0.38, 0.58, 0.1));
-    grp.add(createRoundedToyMesh(0.46, 0.4, 0.18, MAT.cream, -1.18, 0.76, -0.15, 0.06));
-    grp.add(createRoundedToyMesh(1.42, 0.36, 0.78, MAT.woodLight, -0.68, 0.22, 1.18, 0.06));
+    grp.add(createRoundedToyMesh(2.94, 0.34, 1.14, MAT.leatherCamel, -0.25, 0.3, 0, 0.1));
+    for (const cx of [-1.15, -0.25, 0.65]) {
+      grp.add(createRoundedToyMesh(0.86, 0.22, 0.92, velvetCoral, cx, 0.55, 0.05, 0.08));
+      grp.add(createRoundedToyMesh(0.86, 0.6, 0.28, velvetCoral, cx, 0.85, -0.4, 0.09));
+    }
+    grp.add(createRoundedToyMesh(1.08, 0.54, 2.1, velvetCoral, 0.76, 0.4, 0.58, 0.1));
+    grp.add(createRoundedToyMesh(0.46, 0.42, 0.18, MAT.cream, -1.18, 0.78, -0.15, 0.06));
+    grp.add(createRoundedToyMesh(0.44, 0.4, 0.18, goldMat, 0.72, 0.78, -0.15, 0.06));
+    grp.add(createRoundedToyMesh(1.42, 0.34, 0.78, MAT.woodLight, -0.68, 0.22, 1.18, 0.06));
+    // 옆면 화이트 세라믹 몬스테라 화분
+    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.22, 0.42, 14), MAT.white);
+    pot.position.set(-1.95, 0.24, 0.15);
+    const potRim = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.03, 8, 18), goldMat);
+    potRim.rotation.x = Math.PI * 0.5;
+    potRim.position.set(-1.95, 0.45, 0.15);
+    grp.add(pot, potRim);
+    for (const [ox, oy, oz] of [[0, 0.78, 0], [-0.18, 0.68, 0.12], [0.16, 0.72, -0.1]]) {
+      const lf = new THREE.Mesh(GEO.sphere, MAT.leafGreen);
+      lf.scale.set(0.28, 0.24, 0.28);
+      lf.position.set(-1.95 + ox, oy, 0.15 + oz);
+      grp.add(lf);
+    }
   }
   return grp;
 }
@@ -7035,29 +7257,36 @@ function createCatalogAppliance3D(appId, rw = 8.5, rd = 7.2, rh = 4.2) {
     const aq = new THREE.Group();
     const ax = 0;
     const az = -rd * 0.5 + 0.58;
+    const goldMat = MAT.pureGold24k || MAT.gold;
     const waterGlow = new THREE.MeshPhysicalMaterial({
       color: 0x06B6D4,
       emissive: 0x0284C7,
-      emissiveIntensity: 0.58,
-      roughness: 0.1,
-      transmission: 0.45,
+      emissiveIntensity: 0.45,
+      roughness: 0.08,
+      transmission: 0.52,
       transparent: true,
-      opacity: 0.86
+      opacity: 0.62
     });
-    aq.add(createRoundedToyMesh(3.85, 0.58, 0.86, MAT.pureGold24k || MAT.gold, ax, 0.32, az, 0.07));
+    aq.add(createRoundedToyMesh(3.92, 0.58, 0.88, goldMat, ax, 0.32, az, 0.07));
+    // 수조 내부 고해상도 팝마트 산호초 & 흰동가리 파노라마 아트 패널 결합!
+    if (POPMART_ASSETS?.furniture?.aquariumWallMat) {
+      const reefBackdrop = new THREE.Mesh(new THREE.PlaneGeometry(3.62, 1.82), POPMART_ASSETS.furniture.aquariumWallMat);
+      reefBackdrop.position.set(ax, 1.58, az - 0.06);
+      aq.add(reefBackdrop);
+    }
     aq.add(createRoundedToyMesh(3.75, 1.95, 0.72, waterGlow, ax, 1.58, az, 0.06, false, false, false));
-    aq.add(createRoundedToyMesh(3.88, 0.2, 0.88, MAT.pureGold24k || MAT.gold, ax, 2.64, az, 0.06));
+    aq.add(createRoundedToyMesh(3.94, 0.22, 0.9, goldMat, ax, 2.64, az, 0.06));
     const coralCols = [MAT.coral, MAT.pinkSoft, MAT.duckYellow, MAT.mint];
     for (let c = -3; c <= 3; c++) {
       const cr = new THREE.Mesh(GEO.sphere, coralCols[Math.abs(c) % coralCols.length]);
       cr.scale.set(0.24, 0.38 + (Math.abs(c) % 2) * 0.18, 0.22);
-      cr.position.set(ax + c * 0.46, 0.86, az);
+      cr.position.set(ax + c * 0.48, 0.84, az + 0.12);
       aq.add(cr);
     }
     for (let f = 0; f < 5; f++) {
-      const fish = new THREE.Mesh(GEO.sphere, f % 2 === 0 ? MAT.gold : MAT.coral);
+      const fish = new THREE.Mesh(GEO.sphere, f % 2 === 0 ? goldMat : MAT.coral);
       fish.scale.set(0.24, 0.13, 0.1);
-      fish.position.set(ax - 1.2 + f * 0.62, 1.38 + (f % 3) * 0.32, az + 0.08);
+      fish.position.set(ax - 1.2 + f * 0.62, 1.38 + (f % 3) * 0.32, az + 0.18);
       aq.add(fish);
     }
     return aq;
@@ -7270,12 +7499,27 @@ function rebuildRoom3D(lotId, room) {
   const rh = room.rh;
 
   const decorDef = getFurnitureItemDef('decor', room.equippedFurniture.decor);
-  const floorTex = TEX[decorDef?.floorKey || 'floor1'] || TEX.floor1;
+  const bedDef = getFurnitureItemDef('bed', room.equippedFurniture.bed);
+  const sofaDef = getFurnitureItemDef('sofa', room.equippedFurniture.sofa);
+  const appDef = getFurnitureItemDef('appliance', room.equippedFurniture.appliance);
+  const maxEquippedTier = Math.max(decorDef?.tier || 1, bedDef?.tier || 1, sofaDef?.tier || 1, appDef?.tier || 1);
+  const isMarbleSuite = room.lotId === 'lot_harbor_main' || (decorDef?.tier || 1) >= 3 || decorDef?.wallKey === 'wallLavender' || decorDef?.wallKey === 'wallButter';
+
+  const floorTex = (isMarbleSuite && TEX.floorMarble)
+    ? TEX.floorMarble
+    : (TEX[decorDef?.floorKey || 'floor1'] || TEX.floor1);
   const wallTex = TEX[decorDef?.wallKey || 'wallPeach'] || TEX.wallPeach;
 
-  // 바닥 마루 & 뒷벽/측벽 벽지
-  const floorMat = makeClayMat(room.unlocked ? 0xFFFFFF : 0xB8ABA0, { map: floorTex, roughness: 0.56 });
-  const wallMat = makeClayMat(room.unlocked ? 0xFFFFFF : 0xC6B9AE, { map: wallTex, roughness: 0.62 });
+  // 바닥 마루/대리석 & 뒷벽/측벽 웨인스코팅·마블 벽지 (고해상도 이방성 필터링 적용)
+  const floorMat = makeClayMat(room.unlocked ? 0xFFFFFF : 0xB8ABA0, {
+    map: floorTex,
+    roughness: isMarbleSuite ? 0.28 : 0.52,
+    metalness: isMarbleSuite ? 0.08 : 0.02
+  });
+  const wallMat = makeClayMat(room.unlocked ? 0xFFFFFF : 0xC6B9AE, {
+    map: wallTex,
+    roughness: isMarbleSuite ? 0.36 : 0.56
+  });
 
   rGrp.add(createRoundedToyMesh(rw - 0.22, 0.14, rd - 0.22, floorMat, 0, 0.07, 0, 0.06));
   rGrp.add(createRoundedToyMesh(rw - 0.24, rh - 0.22, 0.16, wallMat, 0, rh * 0.5, -rd * 0.5 + 0.14, 0.06));
@@ -7372,18 +7616,25 @@ function rebuildRoom3D(lotId, room) {
     rGrp.add(loftRug, bedMesh, sofaMesh);
   }
 
-  // 인형의 집 방 내부 따뜻한 펜던트 조명 & 실내 원목 화분 배치
+  // 인형의 집 방 내부 조명: 하이엔드(Tier 3+)·하버·로프트는 3D 크리스탈 골드 샹들리에, 일반 방은 따뜻한 펜던트 조명 배치!
+  const useLuxuryChandelier = maxEquippedTier >= 3 || room.lotId === 'lot_harbor_main' || room.layoutType === 'loft';
   const pendantPositions = room.colSpan >= 3 ? [-rw * 0.28, 0.2, rw * 0.3] : room.colSpan === 2 ? [-rw * 0.22, rw * 0.22] : [0];
   for (const px of pendantPositions) {
-    const cord = new THREE.Mesh(GEO.cyl, MAT.julietIron || MAT.charcoal);
-    cord.scale.set(0.04, 0.58, 0.04);
-    cord.position.set(px, rh - 0.36, 0.15);
-    const shade = new THREE.Mesh(new THREE.ConeGeometry(0.46, 0.34, 18, 1, true), MAT.pendantShadeCream || MAT.cream);
-    shade.position.set(px, rh - 0.68, 0.15);
-    const bulb = new THREE.Mesh(GEO.sphere, MAT.pendantBulbWarm || MAT.gold);
-    bulb.scale.setScalar(0.18);
-    bulb.position.set(px, rh - 0.8, 0.15);
-    rGrp.add(cord, shade, bulb);
+    if (useLuxuryChandelier && room.equippedFurniture.appliance !== 'app_winecellar') {
+      const chUnit = create3DCrystalChandelierUnit(room.colSpan >= 2 ? 0.86 : 0.94);
+      chUnit.position.set(px, rh - 0.72, 0.15);
+      rGrp.add(chUnit);
+    } else if (!useLuxuryChandelier) {
+      const cord = new THREE.Mesh(GEO.cyl, MAT.julietIron || MAT.charcoal);
+      cord.scale.set(0.04, 0.58, 0.04);
+      cord.position.set(px, rh - 0.36, 0.15);
+      const shade = new THREE.Mesh(new THREE.ConeGeometry(0.46, 0.34, 18, 1, true), MAT.pendantShadeCream || MAT.cream);
+      shade.position.set(px, rh - 0.68, 0.15);
+      const bulb = new THREE.Mesh(GEO.sphere, MAT.pendantBulbWarm || MAT.gold);
+      bulb.scale.setScalar(0.18);
+      bulb.position.set(px, rh - 0.8, 0.15);
+      rGrp.add(cord, shade, bulb);
+    }
   }
 
   const plantPot = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.24, 0.42, 14), MAT.coral);
@@ -9953,15 +10204,15 @@ function syncTopBarsByMode() {
       if (inRoom) {
         const rm = findRoomById(focusedRoomId);
         const stars = rm ? calcRoomLuxuryStars(rm) : 1;
-        if (capLabel) capLabel.textContent = rm ? `🔭 ${rm.name}호 · ★${stars}` : '🔭 호실 투시';
-        if (openTxt) openTxt.textContent = showFocusDock ? '🛋️ 관리창 접기' : '🛋️ 가구 세팅 · 관리';
+        if (capLabel) capLabel.textContent = rm ? `${rm.name}호 · ★${stars}` : '호실 투시';
+        if (openTxt) openTxt.textContent = showFocusDock ? '관리창 접기' : '가구 세팅 · 관리';
         recBtn?.classList.toggle('hidden', !rm?.unlocked);
       } else {
         const tpl = focusedShopId
           ? STANDALONE_SHOPS_TEMPLATE.find((s) => s.shopId === focusedShopId)
           : (window.FIRST_FLOOR_SHOPS_TEMPLATE || []).find((s) => s.shopId === focusedFirstFloorShopId);
-        if (capLabel) capLabel.textContent = `🔭 ${tpl?.name || '매장 투시'}`;
-        if (openTxt) openTxt.textContent = showFocusDock ? '🛋️ 관리창 접기' : '🛋️ 가구 세팅 · 관리';
+        if (capLabel) capLabel.textContent = `${tpl?.name || '매장 투시'}`;
+        if (openTxt) openTxt.textContent = showFocusDock ? '관리창 접기' : '시설 관리';
         recBtn?.classList.add('hidden');
       }
     }
@@ -14214,11 +14465,25 @@ function create3DLiveConstructionRig(isRoomFloor = false, spanW = 10.2, spanD = 
   }
   grp.add(worker);
 
-  // 전면 안전 라바콘 2개
+  // 전면 안전 라바콘 2개 + 팝마트 3D 공사 안내 입체 현판
   for (const cx of [-2.6, 2.2]) {
     const cone = new THREE.Mesh(new THREE.ConeGeometry(0.26, 0.68, 12), coneOrange);
     cone.position.set(cx, 0.34, hd + 1.05);
-    grp.add(cone);
+    const stripe = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.035, 8, 16), MAT.white);
+    stripe.rotation.x = Math.PI * 0.5;
+    stripe.position.set(cx, 0.36, hd + 1.05);
+    grp.add(cone, stripe);
+  }
+  const beacon = new THREE.Mesh(GEO.sphere, MAT.supercarRed || coneOrange);
+  beacon.scale.setScalar(0.2);
+  beacon.position.set(0, 2.75, 0);
+  jibPivot.add(beacon);
+
+  if (POPMART_ASSETS?.buildings?.propConstructionCraneMat) {
+    const craneSign = new THREE.Mesh(new THREE.PlaneGeometry(2.15, 2.15), POPMART_ASSETS.buildings.propConstructionCraneMat);
+    craneSign.name = 'popmart_construction_emblem';
+    craneSign.position.set(1.25, 1.48, hd + 1.12);
+    grp.add(craneSign);
   }
 
   return { grp, scafGroup, risingCore, jibPivot, hookGroup, worker, mastH };
@@ -19113,6 +19378,7 @@ const POPMART_ASSETS = {
   skills: {},
   vehicles: {},
   furniture: {},
+  buildings: {},
   ui: {},
   moneyRainUrls: [],
   moneyRainMats: [],
@@ -19120,6 +19386,8 @@ const POPMART_ASSETS = {
   shopSignUrls: [],
   shopSignMats: [],
   quickIconUrls: [],
+  weatherIconUrls: [],
+  actionIconUrls: [],
   goldStatueTex: null,
   goldStatueUrl: null,
   nitroFlameTex: null,
@@ -19389,24 +19657,37 @@ function normalize4FrameSpriteSheet(cleanCanvas) {
   };
 }
 
-function split2x2Sheet(cleanCanvas) {
-  const hw = Math.floor(cleanCanvas.width * 0.5);
-  const hh = Math.floor(cleanCanvas.height * 0.5);
+function split2x2Sheet(srcImgOrCanvas) {
+  const fullW = Math.max(4, srcImgOrCanvas.naturalWidth || srcImgOrCanvas.width || 512);
+  const fullH = Math.max(4, srcImgOrCanvas.naturalHeight || srcImgOrCanvas.height || 512);
+  const hw = Math.floor(fullW * 0.5);
+  const hh = Math.floor(fullH * 0.5);
+  // 중앙 분할 격자선 및 외곽 테두리 잔상을 100% 차단하기 위해 각 사분면 안쪽으로 12px 인셋 크롭!
+  const insetX = Math.min(18, Math.max(6, Math.round(fullW * 0.016)));
+  const insetY = Math.min(18, Math.max(6, Math.round(fullH * 0.016)));
   const quads = [
-    [0, 0, hw, hh],
-    [hw, 0, cleanCanvas.width - hw, hh],
-    [0, hh, hw, cleanCanvas.height - hh],
-    [hw, hh, cleanCanvas.width - hw, cleanCanvas.height - hh]
+    [insetX, insetY, Math.max(8, hw - insetX * 2), Math.max(8, hh - insetY * 2)],
+    [hw + insetX, insetY, Math.max(8, fullW - hw - insetX * 2), Math.max(8, hh - insetY * 2)],
+    [insetX, hh + insetY, Math.max(8, hw - insetX * 2), Math.max(8, fullH - hh - insetY * 2)],
+    [hw + insetX, hh + insetY, Math.max(8, fullW - hw - insetX * 2), Math.max(8, fullH - hh - insetY * 2)]
   ];
   const urls = [];
   const textures = [];
   const mats = [];
+  const maxAniso = renderer?.capabilities?.getMaxAnisotropy ? renderer.capabilities.getMaxAnisotropy() : 8;
 
   for (const [sx, sy, sw, sh] of quads) {
-    const subCv = cropTrimmedRegionToCanvas(cleanCanvas, sx, sy, sw, sh, 384, 384, false);
+    const rawQuad = document.createElement('canvas');
+    rawQuad.width = sw;
+    rawQuad.height = sh;
+    const qCtx = rawQuad.getContext('2d', { willReadFrequently: true });
+    qCtx.drawImage(srcImgOrCanvas, sx, sy, sw, sh, 0, 0, sw, sh);
+    const cleanedQuad = removeWhiteBackground(rawQuad, 'vfx', 240);
+    const subCv = cropTrimmedRegionToCanvas(cleanedQuad, 0, 0, sw, sh, 384, 384, false);
     urls.push(subCv.toDataURL('image/png'));
     const tex = new THREE.CanvasTexture(subCv);
     tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = maxAniso;
     tex.needsUpdate = true;
     textures.push(tex);
     mats.push(new THREE.MeshBasicMaterial({
@@ -20761,26 +21042,29 @@ function getPopMartCatalogThumbDataUrl(itemId) {
     case 'bed_canopy':
       return f.bedTier3Canopy || null;
     case 'bed_jacuzzi':
-      return lux[2] || f.bedTier3Canopy || null;
+      return f.spaJacuzziUrl || lux[2] || f.bedTier3Canopy || null;
     case 'bed_golden_float':
       return f.bedTier4Gold || null;
     case 'sofa_mint2':
     case 'sofa_leather_l':
-      return lux[0] || null;
+      return f.velvetSofaUrl || lux[0] || null;
     case 'sofa_piano':
     case 'sofa_gold_piano':
-      return lux[1] || null;
+      return f.goldPianoUrl || lux[1] || null;
+    case 'app_aquarium':
+      return f.aquariumWallUrl || null;
     case 'app_winecellar':
+      return f.wineBarUrl || f.chandelierUrl || lux[3] || null;
     case 'dec_harbor_royal':
     case 'dec_diamond_art':
-      return lux[3] || null;
+      return f.chandelierUrl || f.texWallMarbleUrl || lux[3] || null;
     case 'dec_peach':
     case 'dec_basic_shelf':
     case 'dec_sage':
-      return f.wallpaperCreamUrl || null;
+      return f.texWallWainscotUrl || f.wallpaperCreamUrl || null;
     case 'dec_butter':
     case 'dec_lavender':
-      return f.wallpaperMarbleUrl || null;
+      return f.texWallMarbleUrl || f.wallpaperMarbleUrl || null;
     case 'car_supercar':
       return v.redSupercar || null;
     case 'car_sedan':
@@ -20796,23 +21080,27 @@ function syncHeroMiniHudAvatar() {
   const heroId = state?.selectedHeroCharId || 'char_05_hamster';
   const roster = window.ANIMAL_CHARACTER_ROSTER || [];
   const def = roster.find((c) => c.id === heroId) || roster[4] || roster[0];
+  const charAsset = POPMART_ASSETS.characters[heroId];
   const cv = document.getElementById('hud-hero-mini-canvas');
   if (cv) {
     const ctx = cv.getContext('2d');
     ctx.clearRect(0, 0, cv.width, cv.height);
-    const charAsset = POPMART_ASSETS.characters[heroId];
     if (charAsset?.masterCanvas) {
       ctx.drawImage(charAsset.masterCanvas, 0, 0, cv.width, cv.height);
     } else if (def) {
       ctx.font = '22px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(def.emoji || '🐹', cv.width * 0.5, cv.height * 0.54);
+      ctx.fillText(def.emoji || '★', cv.width * 0.5, cv.height * 0.54);
     }
   }
   const titlePickBtn = document.getElementById('btn-title-pick-animal');
   if (titlePickBtn && def) {
-    titlePickBtn.textContent = `${def.emoji} 주인공: ${def.name}`;
+    if (charAsset?.masterUrl) {
+      titlePickBtn.innerHTML = `<img src="${charAsset.masterUrl}" alt="${def.name}" class="toy-ico-img w-5 h-5" /><span>주인공: ${def.name}</span>`;
+    } else {
+      titlePickBtn.textContent = `주인공: ${def.name}`;
+    }
   }
 }
 
@@ -21197,10 +21485,11 @@ function initTurntableStage3D() {
   if (!canvas) return;
 
   const ttRenderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  ttRenderer.setClearColor(0x000000, 0);
   ttRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   ttRenderer.outputColorSpace = THREE.SRGBColorSpace;
   ttRenderer.toneMapping = THREE.ACESFilmicToneMapping;
-  ttRenderer.toneMappingExposure = 1.12;
+  ttRenderer.toneMappingExposure = 1.14;
 
   const ttScene = new THREE.Scene();
   const ttCam = new THREE.PerspectiveCamera(36, 1.35, 0.1, 60);
@@ -21328,20 +21617,25 @@ function openTurntableShowcaseModal(mode = 'animal', opt = {}) {
     furnFilters.classList.toggle('flex', mode === 'flagship');
   }
 
-  const modeBadge = document.getElementById('tt-mode-badge');
+  const modeBadge = document.getElementById('tt-header-badge') || document.getElementById('tt-mode-badge');
   const headerTitle = document.getElementById('tt-header-title');
+  const headerSub = document.getElementById('tt-header-sub');
   if (mode === 'animal') {
-    if (modeBadge) modeBadge.textContent = '🐾 3D ANIMAL HERO TURNTABLE';
+    if (modeBadge) modeBadge.textContent = '3D ANIMAL HERO TURNTABLE';
     if (headerTitle) headerTitle.textContent = '내 동물 건물주 주인공 360° 쇼케이스';
+    if (headerSub) headerSub.textContent = '마우스 드래그로 360° 회전 · 귀여운 정면 윙크 애교 피규어를 골라보세요!';
   } else if (mode === 'flagship') {
-    if (modeBadge) modeBadge.textContent = '🛋️ MAISON DE LUXURY 360° SHOWROOM';
+    if (modeBadge) modeBadge.textContent = 'MAISON DE LUXURY 360° SHOWROOM';
     if (headerTitle) headerTitle.textContent = '메종 드 럭셔리 가구 백화점 3D 턴테이블';
+    if (headerSub) headerSub.textContent = 'Tier 1~4 하이엔드 가구를 360° 회전하며 감상하고 창고에 담아 방·결투 쇼룸에 세팅하세요!';
   } else if (mode === 'garage') {
-    if (modeBadge) modeBadge.textContent = '🏎️ VIP SUPERCAR GARAGE 360°';
+    if (modeBadge) modeBadge.textContent = 'VIP SUPERCAR GARAGE 360°';
     if (headerTitle) headerTitle.textContent = '프라이빗 슈퍼카 컬렉션 3D 턴테이블';
+    if (headerSub) headerSub.textContent = '마우스 드래그로 360° 외관을 감상하고 즉시 도로 주행 모드로 출고하세요!';
   } else if (mode === 'recruit') {
-    if (modeBadge) modeBadge.textContent = '🔑 VIP TENANT AUDITION 360°';
+    if (modeBadge) modeBadge.textContent = 'VIP TENANT AUDITION 360°';
     if (headerTitle) headerTitle.textContent = `${recruitRoomTarget ? `${recruitRoomTarget.name}호 ` : ''}입주 희망 동물 세입자 3D 쇼케이스`;
+    if (headerSub) headerSub.textContent = '입주 희망 동물 세입자의 월세 한도와 희망 럭셔리 등급(★)을 확인하고 계약하세요!';
   }
 
   turntableState.items = buildTurntableItemsForCurrentMode();
@@ -21471,18 +21765,41 @@ function syncTurntableInfoAndStripUI() {
   const entry = turntableState.items[turntableState.index];
   if (!entry) return;
 
-  const goldEl = document.getElementById('tt-gold-readout');
+  const goldEl = document.getElementById('tt-gold-display') || document.getElementById('tt-gold-readout');
   if (goldEl) goldEl.textContent = `${Math.round(state.gold || 0).toLocaleString()}만`;
 
-  const tierPill = document.getElementById('tt-item-tier-pill');
+  const tierPill = document.getElementById('tt-item-badge') || document.getElementById('tt-item-tier-pill');
   const counterEl = document.getElementById('tt-index-counter');
+  const ownedTagEl = document.getElementById('tt-item-owned-tag');
   const nameEl = document.getElementById('tt-item-name');
   const descEl = document.getElementById('tt-item-desc');
   const chipsRow = document.getElementById('tt-item-stats-row');
   const actionBtn = document.getElementById('btn-tt-primary-action');
+  const artCard = document.getElementById('tt-master-art-card');
+  const artImg = document.getElementById('tt-master-art-img');
 
   if (counterEl) {
     counterEl.textContent = `${turntableState.index + 1} / ${turntableState.items.length}`;
+  }
+  ownedTagEl?.classList.add('hidden');
+
+  // 초고화질 팝마트 마스터 아트 메달리온 동기화
+  let masterArtUrl = null;
+  if (entry.kind === 'animal') {
+    masterArtUrl = POPMART_ASSETS.characters[entry.data.id]?.masterUrl || null;
+  } else if (entry.kind === 'flagship' || entry.kind === 'garage') {
+    masterArtUrl = getPopMartCatalogThumbDataUrl(entry.data.id);
+  } else if (entry.kind === 'recruit') {
+    const cid = resolveAnimalIdForRole(entry.data.type, entry.idx);
+    masterArtUrl = cid ? POPMART_ASSETS.characters[cid]?.masterUrl : null;
+  }
+  if (artCard && artImg) {
+    if (masterArtUrl) {
+      artImg.src = masterArtUrl;
+      artCard.classList.remove('hidden');
+    } else {
+      artCard.classList.add('hidden');
+    }
   }
 
   // 필터 탭 활성 동기화
@@ -21493,26 +21810,33 @@ function syncTurntableInfoAndStripUI() {
     b.classList.toggle('active', b.getAttribute('data-tt-tier') === String(turntableState.flagshipTier));
   });
 
+  const trophyMini = POPMART_ASSETS.ui.quickTrophyUrl
+    ? `<img src="${POPMART_ASSETS.ui.quickTrophyUrl}" alt="" class="toy-ico-img w-3.5 h-3.5" />`
+    : '';
+  const coinMini = (POPMART_ASSETS.actionIconUrls[0] || POPMART_ASSETS.ui.quickMoneygunUrl)
+    ? `<img src="${POPMART_ASSETS.actionIconUrls[0] || POPMART_ASSETS.ui.quickMoneygunUrl}" alt="" class="toy-ico-img w-3.5 h-3.5" />`
+    : '';
+
   if (entry.kind === 'animal') {
     const ch = entry.data;
     if (tierPill) {
       tierPill.textContent = ch.isRivalBoss ? `NO.${String(ch.num).padStart(2, '0')} · BOSS EDITION` : `NO.${String(ch.num).padStart(2, '0')} · SIGNATURE 3D CLAY`;
       tierPill.className = 'kw-chip tone-gold !text-[10.5px]';
     }
-    if (nameEl) nameEl.textContent = `${ch.emoji} ${ch.name}`;
+    if (nameEl) nameEl.textContent = ch.name;
     if (descEl) descEl.textContent = ch.desc;
     if (chipsRow) {
       chipsRow.innerHTML = `
-        <span class="kw-chip tone-gold !text-[10.5px]">👑 ${ch.title}</span>
-        <span class="kw-chip tone-mint !text-[10.5px]">✨ 360° 3D 클레이 피규어</span>
+        <span class="kw-chip tone-gold !text-[10.5px]">${trophyMini}<span>${ch.title}</span></span>
+        <span class="kw-chip tone-mint !text-[10.5px]"><span>360° 3D 클레이 피규어</span></span>
       `;
     }
     if (actionBtn) {
       actionBtn.disabled = false;
       actionBtn.className = 'jelly-action-btn btn-gold-lip px-5 py-2.5 !text-[13.5px] shrink-0 shadow-lg';
       actionBtn.textContent = turntableState.fromTitle
-        ? '✨ 이 동물 주인공으로 타운 입장! ▶'
-        : '✨ 이 동물 주인공으로 변경 완료!';
+        ? '이 동물 주인공으로 타운 입장! ▶'
+        : '이 동물 주인공으로 변경 완료!';
     }
   } else if (entry.kind === 'flagship') {
     const it = entry.data;
@@ -21523,24 +21847,27 @@ function syncTurntableInfoAndStripUI() {
     const canAfford = (state.gold || 0) >= effCost;
 
     if (tierPill) {
-      tierPill.textContent = `${tierMeta.badge}${tNum >= 3 ? ' · 🌟 GOLDEN HALO' : ''}`;
+      tierPill.textContent = `${tierMeta.badge}${tNum >= 3 ? ' · GOLDEN HALO' : ''}`;
       tierPill.className = `kw-chip ${tNum >= 3 ? 'tone-gold' : 'tone-sky'} !text-[10.5px]`;
     }
+    if (ownedTagEl && invQty > 0) {
+      ownedTagEl.textContent = `창고 보유 ${invQty}개`;
+      ownedTagEl.classList.remove('hidden');
+    }
     if (nameEl) nameEl.textContent = it.name;
-    if (descEl) descEl.textContent = `세입자 방 배치 및 1:1 쇼룸 플렉스 결투 겸용 3D 인테리어 컬렉션 (현재 창고 보유: ${invQty}개)`;
+    if (descEl) descEl.textContent = `세입자 방 배치 및 1:1 쇼룸 플렉스 결투 겸용 3D 하이엔드 인테리어 컬렉션 (창고 보유: ${invQty}개)`;
     if (chipsRow) {
       chipsRow.innerHTML = `
         <span class="kw-chip tone-mint !text-[10.5px]">${it.chip}</span>
-        <span class="kw-chip tone-gold !text-[10.5px]">💎 럭셔리 +${it.luxuryPts ?? it.luxuryScore ?? (tNum * 100)}점</span>
-        ${invQty > 0 ? `<span class="kw-chip tone-sky !text-[10.5px]">📦 보유 ${invQty}개</span>` : ''}
+        <span class="kw-chip tone-gold !text-[10.5px]">${trophyMini}<span>럭셔리 +${it.luxuryPts ?? it.luxuryScore ?? (tNum * 100)}점</span></span>
       `;
     }
     if (actionBtn) {
       actionBtn.disabled = !canAfford;
       actionBtn.className = `jelly-action-btn ${tNum >= 3 ? 'btn-gold-lip' : 'btn-coral-lip'} px-5 py-2.5 !text-[13.5px] shrink-0 shadow-lg ${!canAfford ? 'opacity-50 cursor-not-allowed' : ''}`;
       actionBtn.textContent = canAfford
-        ? `🛍️ ${effCost.toLocaleString()}만 구매 · 창고 담기`
-        : `🔒 ${effCost.toLocaleString()}만 (보유자산 부족)`;
+        ? `${effCost.toLocaleString()}만 구매 · 창고 담기`
+        : `${effCost.toLocaleString()}만 (보유자산 부족)`;
     }
   } else if (entry.kind === 'garage') {
     const car = entry.data;
@@ -21550,27 +21877,31 @@ function syncTurntableInfoAndStripUI() {
     const canAfford = (state.gold || 0) >= car.cost;
 
     if (tierPill) {
-      tierPill.textContent = isEquipped ? '🏎️ 현재 탑승 차량' : isOwned ? '🔑 차고 보유중' : '✨ VIP 출고 대기';
+      tierPill.textContent = isEquipped ? '현재 탑승 차량' : isOwned ? '차고 보유중' : 'VIP 출고 대기';
       tierPill.className = `kw-chip ${isEquipped ? 'tone-coral' : isOwned ? 'tone-mint' : 'tone-gold'} !text-[10.5px]`;
+    }
+    if (ownedTagEl && isOwned) {
+      ownedTagEl.textContent = isEquipped ? '운행 중' : '보유 완료';
+      ownedTagEl.classList.remove('hidden');
     }
     if (nameEl) nameEl.textContent = car.name;
     if (descEl) descEl.textContent = `마을 순환도로 · 외곽 해안 아치교 · 트와일라잇 하버 전 구간 3인칭/1인칭 오픈카 주행 지원`;
     if (chipsRow) {
       chipsRow.innerHTML = `
         <span class="kw-chip tone-${car.tone || 'gold'} !text-[10.5px]">${car.chip}</span>
-        <span class="kw-chip tone-sky !text-[10.5px]">🧲 자석수금 +${car.driveTipPct}%</span>
+        <span class="kw-chip tone-sky !text-[10.5px]"><span>자석수금 +${car.driveTipPct}%</span></span>
       `;
     }
     if (actionBtn) {
       actionBtn.disabled = !isOwned && !canAfford;
       actionBtn.className = `jelly-action-btn ${isEquipped ? 'btn-coral-lip' : isOwned ? 'btn-mint-lip' : 'btn-gold-lip'} px-5 py-2.5 !text-[13.5px] shrink-0 shadow-lg ${(!isOwned && !canAfford) ? 'opacity-50 cursor-not-allowed' : ''}`;
       actionBtn.textContent = isEquipped
-        ? '🏎️ 이 차량으로 즉시 드라이브 출발!'
+        ? '이 차량으로 즉시 드라이브 출발!'
         : isOwned
-          ? '🔑 주차구역 배차 & 드라이브 출발!'
+          ? '주차구역 배차 & 드라이브 출발!'
           : canAfford
-            ? `💰 ${car.cost.toLocaleString()}만 VIP 출고 & 배차`
-            : `🔒 ${car.cost.toLocaleString()}만 (자산 부족)`;
+            ? `${car.cost.toLocaleString()}만 VIP 출고 & 배차`
+            : `${car.cost.toLocaleString()}만 (자산 부족)`;
     }
   } else if (entry.kind === 'recruit') {
     const cand = entry.data;
@@ -21580,18 +21911,18 @@ function syncTurntableInfoAndStripUI() {
     const canContract = roomStars >= reqStars;
 
     if (tierPill) {
-      tierPill.textContent = `${hDef.isVipTenant ? '👑 VIP 고액 세입자' : '🏡 일반 입주 희망'} · 필요 ★${reqStars}`;
+      tierPill.textContent = `${hDef.isVipTenant ? 'VIP 고액 세입자' : '일반 입주 희망'} · 필요 ★${reqStars}`;
       tierPill.className = `kw-chip ${hDef.isVipTenant ? 'tone-gold' : 'tone-mint'} !text-[10.5px]`;
     }
     if (nameEl) nameEl.textContent = `${cand.familyName} (${hDef.label})`;
     if (descEl) {
       descEl.textContent = canContract
         ? `현재 ${recruitRoomTarget?.name || ''}호 럭셔리 ★${roomStars} 달성! 즉시 입주 계약을 체결할 수 있습니다.`
-        : `🔒 현재 방 럭셔리 ★${roomStars} — Tier 3+ 하이엔드 침대·설비를 배치해 ★${reqStars}를 달성하면 계약이 해금됩니다!`;
+        : `현재 방 럭셔리 ★${roomStars} — Tier 3+ 하이엔드 침대·설비를 배치해 ★${reqStars}를 달성하면 계약이 해금됩니다!`;
     }
     if (chipsRow) {
       chipsRow.innerHTML = `
-        <span class="kw-chip tone-gold !text-[10.5px]">💰 희망 월세 한도 ${cand.maxBudget.toLocaleString()}만</span>
+        <span class="kw-chip tone-gold !text-[10.5px]">${coinMini}<span>희망 월세 한도 ${cand.maxBudget.toLocaleString()}만</span></span>
         <span class="kw-chip ${canContract ? 'tone-mint' : 'tone-coral'} !text-[10.5px]">현재 방 ★${roomStars} / 조건 ★${reqStars}</span>
       `;
     }
@@ -21599,22 +21930,36 @@ function syncTurntableInfoAndStripUI() {
       actionBtn.disabled = false;
       actionBtn.className = `jelly-action-btn ${canContract ? 'btn-gold-lip' : 'btn-sky-lip'} px-5 py-2.5 !text-[13.5px] shrink-0 shadow-lg`;
       actionBtn.textContent = canContract
-        ? `📜 ${cand.maxBudget.toLocaleString()}만 입주 계약 체결!`
-        : `🛋️ 방 가구 세팅으로 ★${reqStars} 맞추기`;
+        ? `${cand.maxBudget.toLocaleString()}만 입주 계약 체결!`
+        : `방 가구 세팅으로 ★${reqStars} 맞추기`;
     }
   }
 
-  // 하단 퀵 스트립 칩 렌더링
+  // 하단 고대비 퀵 스트립 칩 렌더링 (3D 아트토이 썸네일 적용, 평면 시스템 이모지 제거!)
   const stripEl = document.getElementById('tt-quick-strip');
   if (stripEl) {
     stripEl.innerHTML = turntableState.items.map((it, idx) => {
       const active = idx === turntableState.index;
+      let thumbUrl = null;
       let lbl = '';
-      if (it.kind === 'animal') lbl = `${it.data.emoji} ${it.data.name.split(' ').pop()}`;
-      else if (it.kind === 'flagship') lbl = `${(it.data.tier || 1) >= 3 ? '✨' : '🛋️'} ${it.data.name}`;
-      else if (it.kind === 'garage') lbl = `🏎️ ${it.data.name}`;
-      else if (it.kind === 'recruit') lbl = `${(HOUSEHOLD_TYPES[it.data.type]?.isVipTenant) ? '👑' : '🐾'} ${it.data.familyName}`;
-      return `<button type="button" data-tt-jump="${idx}" class="tt-strip-chip ${active ? 'active' : ''}">${lbl}</button>`;
+      if (it.kind === 'animal') {
+        thumbUrl = POPMART_ASSETS.characters[it.data.id]?.masterUrl || null;
+        lbl = it.data.name;
+      } else if (it.kind === 'flagship') {
+        thumbUrl = getPopMartCatalogThumbDataUrl(it.data.id) || POPMART_ASSETS.furniture.velvetSofaUrl || null;
+        lbl = `${(it.data.tier || 1) >= 3 ? 'T' + it.data.tier + ' · ' : ''}${it.data.name}`;
+      } else if (it.kind === 'garage') {
+        thumbUrl = getPopMartCatalogThumbDataUrl(it.data.id) || POPMART_ASSETS.ui.quickSupercarUrl || null;
+        lbl = it.data.name;
+      } else if (it.kind === 'recruit') {
+        const cid = resolveAnimalIdForRole(it.data.type, it.idx);
+        thumbUrl = cid ? POPMART_ASSETS.characters[cid]?.masterUrl : null;
+        lbl = `${(HOUSEHOLD_TYPES[it.data.type]?.isVipTenant) ? 'VIP · ' : ''}${it.data.familyName}`;
+      }
+      const thumbHtml = thumbUrl
+        ? `<img src="${thumbUrl}" alt="" class="toy-ico-img w-4 h-4 rounded-sm" />`
+        : '';
+      return `<button type="button" data-tt-jump="${idx}" class="tt-quick-pill ${active ? 'active' : ''}">${thumbHtml}<span>${lbl}</span></button>`;
     }).join('');
 
     stripEl.querySelectorAll('[data-tt-jump]').forEach((btn) => {
@@ -22086,57 +22431,175 @@ function tickWeatherSystem(dt, elapsed) {
   }
 }
 
+function createGlowingEmblemBadgeGroup3D(emblemMat, size = 2.05) {
+  const badgeGrp = new THREE.Group();
+  badgeGrp.name = 'popmart_shop_emblem_3d';
+  const goldMat = MAT.pureGold24k || MAT.gold;
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(size * 0.48, size * 0.036, 10, 32), goldMat);
+  ring.position.set(0, 0, -0.03);
+  const backing = new THREE.Mesh(
+    new THREE.CircleGeometry(size * 0.46, 32),
+    makeClayMat(0xFFFDF8, { emissive: 0xF59E0B, emissiveIntensity: 0.24, roughness: 0.35 })
+  );
+  backing.position.set(0, 0, -0.045);
+  const plane = new THREE.Mesh(new THREE.PlaneGeometry(size, size), emblemMat);
+  plane.position.set(0, 0, 0.02);
+  badgeGrp.add(backing, ring, plane);
+  return badgeGrp;
+}
+
+function attachPopMartShopEmblemByKind(parentGrp, kind, w = 7.6, h = 4.2, d = 6.8, isStage2 = false) {
+  if (!parentGrp || !POPMART_ASSETS.buildings) return;
+  const b = POPMART_ASSETS.buildings;
+  const matByKind = {
+    bakery: b.signBakeryMat || POPMART_ASSETS.shopSignMats[0],
+    roastery: b.signCafeRoasteryMat,
+    lobster: b.signHarborLobsterMat,
+    winelounge: b.signHarborWineMat,
+    marina: b.signHarborMarinaMat
+  };
+  const mat = matByKind[kind];
+  if (!mat) return;
+
+  const old = parentGrp.getObjectByName('popmart_shop_emblem_3d');
+  if (old) parentGrp.remove(old);
+
+  const size = isStage2 ? 2.25 : 2.05;
+  const badge = createGlowingEmblemBadgeGroup3D(mat, size);
+  const posY = isStage2 ? (h + 2.05) : (h + 1.55);
+  const posZ = d * 0.5 + (isStage2 ? 0.28 : 0.22);
+  badge.position.set(0, posY, posZ);
+  parentGrp.add(badge);
+}
+
 function applyPopMartWorldDecorations() {
-  // 1) UI 수첩 & 우측 하단 3대 퀵 아이콘 + 우측 상단 기어 아이콘 3D 아트토이 이미지 주입
-  if (POPMART_ASSETS.ui.pocketNotebookUrl) {
-    const fabSlot = document.getElementById('fab-svg-slot');
-    if (fabSlot) {
-      fabSlot.innerHTML = `<img src="${POPMART_ASSETS.ui.pocketNotebookUrl}" alt="notebook" class="w-9 h-9 object-contain drop-shadow-sm pointer-events-none" />`;
+  const injectToyIcon = (elId, url, sizeCls = 'w-7 h-7') => {
+    if (!url) return;
+    const slot = document.getElementById(elId);
+    if (slot) {
+      slot.innerHTML = `<img src="${url}" alt="" class="toy-ico-img ${sizeCls}" />`;
+    }
+  };
+
+  // 1) 전체 UI 평면 시스템 이모지 0%화 -> 초고화질 3D 아트토이 이미지 아이콘 일괄 주입!
+  const notebookUrl = POPMART_ASSETS.ui.notebookIconUrl || POPMART_ASSETS.ui.pocketNotebookUrl;
+  injectToyIcon('fab-svg-slot', notebookUrl, 'w-10 h-10');
+  injectToyIcon('pocket-header-mini-ico', notebookUrl, 'w-5 h-5');
+
+  const moneygunIco = POPMART_ASSETS.ui.quickMoneygunUrl || POPMART_ASSETS.quickIconUrls[0];
+  const supercarIco = POPMART_ASSETS.ui.quickSupercarUrl || POPMART_ASSETS.quickIconUrls[1];
+  const trophyIco = POPMART_ASSETS.ui.quickTrophyUrl || POPMART_ASSETS.quickIconUrls[2];
+  const gearIco = POPMART_ASSETS.quickIconUrls[3];
+
+  injectToyIcon('hud-ico-moneygun', moneygunIco, 'w-8 h-8');
+  injectToyIcon('hud-ico-drive', supercarIco, 'w-8 h-8');
+  injectToyIcon('hud-ico-forbes', trophyIco, 'w-8 h-8');
+  injectToyIcon('hud-ico-top-settings', gearIco, 'w-6 h-6');
+
+  // 날씨 3종 + 제1/제2마을 월드 탭 아이콘 (ui_weather_icons_sheet.png: 0 태양 / 1 우산 / 2 눈송이 / 3 하버 등대)
+  if (POPMART_ASSETS.weatherIconUrls.length === 4) {
+    injectToyIcon('w-ico-sun', POPMART_ASSETS.weatherIconUrls[0], 'w-4 h-4');
+    injectToyIcon('stg-ico-sun', POPMART_ASSETS.weatherIconUrls[0], 'w-4 h-4');
+    injectToyIcon('w-ico-rain', POPMART_ASSETS.weatherIconUrls[1], 'w-4 h-4');
+    injectToyIcon('w-ico-snow', POPMART_ASSETS.weatherIconUrls[2], 'w-4 h-4');
+    injectToyIcon('stg-ico-harbor', POPMART_ASSETS.weatherIconUrls[3], 'w-4 h-4');
+  }
+
+  // 건물주 포켓 수첩 액션 3종 + 1인칭 집들이 문 + 턴테이블 코인 아이콘 (ui_action_icons_sheet.png: 0 금화상자 / 1 안전모해머 / 2 결투검방패 / 3 아치방문)
+  if (POPMART_ASSETS.actionIconUrls.length === 4) {
+    injectToyIcon('hud-ico-collect', POPMART_ASSETS.actionIconUrls[0], 'w-7 h-7');
+    injectToyIcon('tt-ico-coin', POPMART_ASSETS.actionIconUrls[0], 'w-4 h-4');
+    injectToyIcon('hud-ico-expand', POPMART_ASSETS.actionIconUrls[1], 'w-7 h-7');
+    injectToyIcon('hud-ico-rival', POPMART_ASSETS.actionIconUrls[2], 'w-7 h-7');
+    injectToyIcon('ico-focus-cap-door', POPMART_ASSETS.actionIconUrls[3], 'w-4 h-4');
+  }
+
+  // 황금 망원경 & 가구 카테고리 3D 미니 아이콘
+  injectToyIcon('ico-telescope-hud', POPMART_ASSETS.ui.goldenTelescopeUrl, 'w-6 h-6');
+  injectToyIcon('ico-focus-cap-tele', POPMART_ASSETS.ui.goldenTelescopeUrl, 'w-5 h-5');
+  injectToyIcon('ico-focus-cap-sofa', POPMART_ASSETS.furniture.velvetSofaUrl, 'w-4 h-4');
+  injectToyIcon('tt-cat-ico-bed', POPMART_ASSETS.furniture.bedTier4Gold || POPMART_ASSETS.furniture.bedTier3Canopy, 'w-4 h-4');
+  injectToyIcon('tt-cat-ico-sofa', POPMART_ASSETS.furniture.velvetSofaUrl, 'w-4 h-4');
+  injectToyIcon('tt-cat-ico-app', POPMART_ASSETS.furniture.aquariumWallUrl || POPMART_ASSETS.furniture.wineBarUrl, 'w-4 h-4');
+  injectToyIcon('tt-cat-ico-decor', POPMART_ASSETS.furniture.chandelierUrl, 'w-4 h-4');
+
+  // 2) 제1마을 + 제2마을 전 상가(8종) 발광 3D 입체 엠블럼 간판 & 동측 노을빛 대문 자물쇠 & 착공 현장 부착!
+  const attachDirectBadge = (parentGrp, mat, lx, ly, lz, sc = 2.0) => {
+    if (!parentGrp || !mat) return;
+    const old = parentGrp.getObjectByName('popmart_shop_emblem_3d');
+    if (old) parentGrp.remove(old);
+    const badge = createGlowingEmblemBadgeGroup3D(mat, sc);
+    badge.position.set(lx, ly, lz);
+    parentGrp.add(badge);
+  };
+
+  for (const sEntry of Object.values(standaloneShop3D)) {
+    if (sEntry?.group && sEntry?.tpl && focusedShopId !== sEntry.tpl.shopId) {
+      attachPopMartShopEmblemByKind(sEntry.group, sEntry.tpl.kind, sEntry.tpl.w, sEntry.tpl.h, sEntry.tpl.d, sEntry.tpl.stage === 2);
     }
   }
-  if (POPMART_ASSETS.quickIconUrls.length === 4) {
-    const iconTargets = [
-      ['hud-ico-moneygun', POPMART_ASSETS.quickIconUrls[0], 'w-7 h-7'],
-      ['hud-ico-drive', POPMART_ASSETS.quickIconUrls[1], 'w-7 h-7'],
-      ['hud-ico-forbes', POPMART_ASSETS.quickIconUrls[2], 'w-7 h-7'],
-      ['hud-ico-top-settings', POPMART_ASSETS.quickIconUrls[3], 'w-6 h-6']
-    ];
-    for (const [elId, url, cls] of iconTargets) {
-      const slot = document.getElementById(elId);
-      if (slot && url) {
-        slot.innerHTML = `<img src="${url}" alt="${elId}" class="${cls} object-contain drop-shadow-sm pointer-events-none" />`;
+  attachDirectBadge(
+    firstFloorShop3D.shop_mart1f?.group,
+    POPMART_ASSETS.buildings.signConv24hMat || POPMART_ASSETS.shopSignMats[1],
+    -3.9,
+    3.55,
+    4.22,
+    1.85
+  );
+  attachDirectBadge(
+    firstFloorShop3D.shop_wash1f?.group,
+    POPMART_ASSETS.buildings.signLaundryBubbleMat || POPMART_ASSETS.shopSignMats[3],
+    3.9,
+    3.55,
+    4.22,
+    1.85
+  );
+  attachDirectBadge(
+    flagshipShop3DGroup,
+    POPMART_ASSETS.buildings.signFurnitureFlagshipMat || POPMART_ASSETS.shopSignMats[2],
+    0,
+    6.55,
+    4.72,
+    2.45
+  );
+
+  // 우측 트와일라잇 하버 봉인 대문 3D 황금 날개 자물쇠 엠블럼 부착
+  if (gatePortalState.padlockGroup && POPMART_ASSETS.buildings.propGrandGateLockMat) {
+    const oldLock = gatePortalState.padlockGroup.getObjectByName('popmart_gate_lock_emblem');
+    if (oldLock) gatePortalState.padlockGroup.remove(oldLock);
+    const lockPlane = new THREE.Mesh(new THREE.PlaneGeometry(2.95, 2.95), POPMART_ASSETS.buildings.propGrandGateLockMat);
+    lockPlane.name = 'popmart_gate_lock_emblem';
+    lockPlane.position.set(0, 0.25, 0.36);
+    gatePortalState.padlockGroup.add(lockPlane);
+  }
+
+  // 진행 중인 착공 현장에도 3D 크레인 안전 엠블럼 반영
+  if (POPMART_ASSETS.buildings.propConstructionCraneMat && constructionState?.sites) {
+    for (const site of Object.values(constructionState.sites)) {
+      const rigGrp = site?.rig?.grp;
+      if (rigGrp && !rigGrp.getObjectByName('popmart_construction_emblem')) {
+        const craneSign = new THREE.Mesh(new THREE.PlaneGeometry(2.15, 2.15), POPMART_ASSETS.buildings.propConstructionCraneMat);
+        craneSign.name = 'popmart_construction_emblem';
+        craneSign.position.set(1.25, 1.48, (site.spanD || 7.6) * 0.48 + 1.12);
+        rigGrp.add(craneSign);
       }
     }
   }
 
-  // 2) 상가 4종 입체 팝마트 돌출 간판 부착 (베이커리 / 1층 편의점 / 가구 백화점 / 1층 코인세탁소)
-  if (POPMART_ASSETS.shopSignMats.length === 4) {
-    const attachSignBadge = (parentGrp, mat, lx, ly, lz, sc = 1.95) => {
-      if (!parentGrp) return;
-      const old = parentGrp.getObjectByName('popmart_shop_emblem_3d');
-      if (old) parentGrp.remove(old);
-      const plane = new THREE.Mesh(new THREE.PlaneGeometry(sc, sc), mat);
-      plane.name = 'popmart_shop_emblem_3d';
-      plane.position.set(lx, ly, lz);
-      parentGrp.add(plane);
-    };
-    attachSignBadge(standaloneShop3D.shop_bakery?.group, POPMART_ASSETS.shopSignMats[0], 0, 5.15, 4.05, 2.05);
-    attachSignBadge(firstFloorShop3D.shop_mart1f?.group, POPMART_ASSETS.shopSignMats[1], -3.9, 3.35, 4.18, 1.75);
-    attachSignBadge(flagshipShop3DGroup, POPMART_ASSETS.shopSignMats[2], 0, 6.35, 4.65, 2.35);
-    attachSignBadge(firstFloorShop3D.shop_wash1f?.group, POPMART_ASSETS.shopSignMats[3], 3.9, 3.35, 4.18, 1.75);
+  // 3) 인테리어 벽지·바닥 2종(크림 웨인스코팅 / 칼라카타 화이트&골드 마블) 고해상도 심리스 텍스처 업그레이드 및 방 리빌드
+  const wainscotTex = POPMART_ASSETS.furniture.texWallWainscotTex || POPMART_ASSETS.furniture.wallpaperCreamTex;
+  const marbleTex = POPMART_ASSETS.furniture.texWallMarbleTex || POPMART_ASSETS.furniture.wallpaperMarbleTex;
+  if (wainscotTex) {
+    TEX.wallPeach = wainscotTex;
+    TEX.wallSage = wainscotTex;
+    TEX.wallCream = wainscotTex;
   }
-
-  // 3) 인테리어 벽지 2종(크림 웨인스코팅 / 로열 화이트&골드 마블) 3D 텍스처 업그레이드 및 방 리빌드
-  if (POPMART_ASSETS.furniture.wallpaperCreamTex) {
-    TEX.wallPeach = POPMART_ASSETS.furniture.wallpaperCreamTex;
-    TEX.wallSage = POPMART_ASSETS.furniture.wallpaperCreamTex;
-    TEX.wallCream = POPMART_ASSETS.furniture.wallpaperCreamTex;
+  if (marbleTex) {
+    TEX.wallButter = marbleTex;
+    TEX.wallLavender = marbleTex;
+    TEX.floorMarble = POPMART_ASSETS.furniture.texFloorMarbleTex || marbleTex;
   }
-  if (POPMART_ASSETS.furniture.wallpaperMarbleTex) {
-    TEX.wallButter = POPMART_ASSETS.furniture.wallpaperMarbleTex;
-    TEX.wallLavender = POPMART_ASSETS.furniture.wallpaperMarbleTex;
-  }
-  if (POPMART_ASSETS.furniture.wallpaperCreamTex || POPMART_ASSETS.furniture.wallpaperMarbleTex) {
+  if (wainscotTex || marbleTex) {
     for (const [lid, b] of Object.entries(state.buildings || {})) {
       if (!lot3D[lid]) continue;
       for (const rm of (b.rooms || [])) {
@@ -22168,6 +22631,9 @@ function applyPopMartWorldDecorations() {
 
   catalog3DPreviewCache.clear();
   syncHeroMiniHudAvatar();
+  if (turntableState?.active) {
+    rebuildTurntableSubject3D();
+  }
   if (duelState?.active) syncDuelScoreHUD();
   if (!document.getElementById('flagship-shop-drawer')?.classList.contains('hidden')) {
     renderFurnitureFlagshipDrawer();
@@ -22183,8 +22649,9 @@ async function initPopMartAssetsAsync() {
 
   const roster = window.ANIMAL_CHARACTER_ROSTER || [];
   const paths = window.POPMART_ASSET_PATHS || {};
+  const maxAniso = renderer?.capabilities?.getMaxAnisotropy ? renderer.capabilities.getMaxAnisotropy() : 8;
 
-  // 1) Batch 1: 동물 캐릭터 10종 단독 초고화질 마스터 PNG(char_01_bunny.png ~ char_10_panda_celeb.png) 로드 & 스튜디오 오프화이트 배경까지 100% 투명화
+  // 1) Batch 1: 동물 캐릭터 10종 단독 초고화질 마스터 PNG(char_01_bunny.png ~ char_10_panda_celeb.png) 로드 & 스튜디오 오프화이트 배경 100% 투명화
   await Promise.all(roster.map(async (ch) => {
     try {
       const srcPath = ch.imgPath || ch.sheetPath;
@@ -22205,49 +22672,82 @@ async function initPopMartAssetsAsync() {
   }
   syncHeroMiniHudAvatar();
 
-  // 2) Batch 2: 스킬 VFX 5종 & 차량/황금동상 4종 로드 & 누끼 전처리
-  const loadSingleCleanAsset = async (url, mode = 'single') => {
+  // 공통 단일 에셋 누끼 & 고해상도 이방성 필터링(Anisotropy + SRGBColorSpace) 텍스처 빌더
+  const loadSingleCleanAsset = async (url, mode = 'vfx', outSize = 512, makeGlowStdMat = false) => {
     if (!url) return null;
     const raw = await loadRawImagePromise(url);
-    const rawClean = removeWhiteBackground(raw, mode, 242);
-    const cv = cropTrimmedRegionToCanvas(rawClean, 0, 0, rawClean.width, rawClean.height, 448, 448, false);
+    const rawClean = removeWhiteBackground(raw, mode, 240);
+    const cv = cropTrimmedRegionToCanvas(rawClean, 0, 0, rawClean.width, rawClean.height, outSize, outSize, false);
     const tex = new THREE.CanvasTexture(cv);
     tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = maxAniso;
     tex.needsUpdate = true;
-    return { cv, url: cv.toDataURL('image/png'), tex };
+    const mat = makeGlowStdMat
+      ? new THREE.MeshStandardMaterial({
+          map: tex,
+          emissive: new THREE.Color(0xFFF3C4),
+          emissiveMap: tex,
+          emissiveIntensity: 0.34,
+          roughness: 0.32,
+          metalness: 0.08,
+          transparent: true,
+          alphaTest: 0.06,
+          side: THREE.DoubleSide
+        })
+      : new THREE.MeshBasicMaterial({
+          map: tex,
+          transparent: true,
+          alphaTest: 0.06,
+          side: THREE.DoubleSide
+        });
+    return { cv, url: cv.toDataURL('image/png'), tex, mat };
   };
 
+  const loadSeamlessRepeatTex = async (url, repX = 2.4, repY = 1.0) => {
+    if (!url) return null;
+    const raw = await loadRawImagePromise(url);
+    const tex = new THREE.Texture(raw);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(repX, repY);
+    tex.anisotropy = maxAniso;
+    tex.needsUpdate = true;
+    return tex;
+  };
+
+  // 2) Batch 2: 스킬 VFX · 머니건 신규 지폐/다이아 파티클 · 차량 · 황금동상 로드
   await Promise.all([
     (async () => {
       try {
-        const res = await loadSingleCleanAsset(paths.skills?.moneygunBlast, 'vfx');
+        const res = await loadSingleCleanAsset(paths.skills?.moneygunBlast, 'vfx', 448);
         if (res) POPMART_ASSETS.skills.moneygunBlast = res.url;
       } catch (e) {}
     })(),
     (async () => {
       try {
-        const raw = await loadRawImagePromise(paths.skills?.moneyRainParticles);
-        const clean = removeWhiteBackground(raw, '2x2', 242);
-        const sp = split2x2Sheet(clean);
+        const srcUrl = paths.skills?.moneyParticles || paths.skills?.moneyRainParticles;
+        const raw = await loadRawImagePromise(srcUrl);
+        const sp = split2x2Sheet(raw);
         POPMART_ASSETS.moneyRainUrls = sp.urls;
         POPMART_ASSETS.moneyRainMats = sp.mats;
       } catch (e) {}
     })(),
     (async () => {
       try {
-        const res = await loadSingleCleanAsset(paths.skills?.mansourFeverAura, 'vfx');
+        const res = await loadSingleCleanAsset(paths.skills?.mansourFeverAura, 'vfx', 448);
         if (res) POPMART_ASSETS.skills.mansourFeverAura = res.url;
       } catch (e) {}
     })(),
     (async () => {
       try {
-        const res = await loadSingleCleanAsset(paths.skills?.rentCollectBurst, 'vfx');
+        const res = await loadSingleCleanAsset(paths.skills?.rentCollectBurst, 'vfx', 448);
         if (res) POPMART_ASSETS.skills.rentCollectBurst = res.url;
       } catch (e) {}
     })(),
     (async () => {
       try {
-        const res = await loadSingleCleanAsset(paths.skills?.nitroBoostFlame, 'vfx');
+        const res = await loadSingleCleanAsset(paths.skills?.nitroBoostFlame, 'vfx', 448);
         if (res) {
           POPMART_ASSETS.skills.nitroBoostFlame = res.url;
           POPMART_ASSETS.nitroFlameTex = res.tex;
@@ -22256,25 +22756,25 @@ async function initPopMartAssetsAsync() {
     })(),
     (async () => {
       try {
-        const res = await loadSingleCleanAsset(paths.vehicles?.redSupercar);
+        const res = await loadSingleCleanAsset(paths.vehicles?.redSupercar, 'single', 512);
         if (res) POPMART_ASSETS.vehicles.redSupercar = res.url;
       } catch (e) {}
     })(),
     (async () => {
       try {
-        const res = await loadSingleCleanAsset(paths.vehicles?.purpleRival);
+        const res = await loadSingleCleanAsset(paths.vehicles?.purpleRival, 'single', 512);
         if (res) POPMART_ASSETS.vehicles.purpleRival = res.url;
       } catch (e) {}
     })(),
     (async () => {
       try {
-        const res = await loadSingleCleanAsset(paths.vehicles?.goldMansour);
+        const res = await loadSingleCleanAsset(paths.vehicles?.goldMansour, 'single', 512);
         if (res) POPMART_ASSETS.vehicles.goldMansour = res.url;
       } catch (e) {}
     })(),
     (async () => {
       try {
-        const res = await loadSingleCleanAsset(paths.vehicles?.goldStatue);
+        const res = await loadSingleCleanAsset(paths.vehicles?.goldStatue, 'single', 512);
         if (res) {
           POPMART_ASSETS.goldStatueUrl = res.url;
           POPMART_ASSETS.goldStatueTex = res.tex;
@@ -22283,86 +22783,223 @@ async function initPopMartAssetsAsync() {
     })()
   ]);
 
-  // 3) Batch 3: 가구/벽지 7종 & 상가 간판/UI 아이콘 3종 로드 & 전처리
+  // 3) Batch 3: 하이엔드 가구 10종 · 심리스 벽/바닥 텍스처 · 상가 3D 간판 8종 + 랜드마크 소품 2종 + 3D 토이 UI 아이콘 8종 병렬 로드!
   await Promise.all([
     (async () => {
       try {
-        const res = await loadSingleCleanAsset(paths.furniture?.bedTier1Wood);
+        const res = await loadSingleCleanAsset(paths.furniture?.bedTier1Wood, 'vfx', 512);
         if (res) POPMART_ASSETS.furniture.bedTier1Wood = res.url;
       } catch (e) {}
     })(),
     (async () => {
       try {
-        const res = await loadSingleCleanAsset(paths.furniture?.bedTier2Hotel);
+        const res = await loadSingleCleanAsset(paths.furniture?.bedTier2Hotel, 'vfx', 512);
         if (res) POPMART_ASSETS.furniture.bedTier2Hotel = res.url;
       } catch (e) {}
     })(),
     (async () => {
       try {
-        const res = await loadSingleCleanAsset(paths.furniture?.bedTier3Canopy);
+        const res = await loadSingleCleanAsset(paths.furniture?.bedTier3Canopy, 'vfx', 512);
         if (res) POPMART_ASSETS.furniture.bedTier3Canopy = res.url;
       } catch (e) {}
     })(),
     (async () => {
       try {
-        const res = await loadSingleCleanAsset(paths.furniture?.bedTier4Gold);
+        const res = await loadSingleCleanAsset(paths.furniture?.bedTier4Gold, 'vfx', 512);
         if (res) POPMART_ASSETS.furniture.bedTier4Gold = res.url;
       } catch (e) {}
     })(),
     (async () => {
       try {
-        const raw = await loadRawImagePromise(paths.furniture?.luxurySetSheet);
-        const clean = removeWhiteBackground(raw, '2x2', 242);
-        const sp = split2x2Sheet(clean);
-        POPMART_ASSETS.luxurySetUrls = sp.urls;
+        const res = await loadSingleCleanAsset(paths.furniture?.velvetSofa, 'vfx', 512);
+        if (res) {
+          POPMART_ASSETS.furniture.velvetSofaUrl = res.url;
+          POPMART_ASSETS.furniture.velvetSofaMat = res.mat;
+        }
       } catch (e) {}
     })(),
     (async () => {
       try {
-        const raw = await loadRawImagePromise(paths.furniture?.wallpaperCream);
-        const tex = new THREE.Texture(raw);
-        tex.colorSpace = THREE.SRGBColorSpace;
-        tex.wrapS = THREE.RepeatWrapping;
-        tex.wrapT = THREE.RepeatWrapping;
-        tex.repeat.set(2.2, 1.0);
-        tex.needsUpdate = true;
-        POPMART_ASSETS.furniture.wallpaperCreamTex = tex;
-        POPMART_ASSETS.furniture.wallpaperCreamUrl = paths.furniture.wallpaperCream;
+        const res = await loadSingleCleanAsset(paths.furniture?.goldPiano, 'vfx', 512);
+        if (res) {
+          POPMART_ASSETS.furniture.goldPianoUrl = res.url;
+          POPMART_ASSETS.furniture.goldPianoMat = res.mat;
+        }
       } catch (e) {}
     })(),
     (async () => {
       try {
-        const raw = await loadRawImagePromise(paths.furniture?.wallpaperMarble);
-        const tex = new THREE.Texture(raw);
-        tex.colorSpace = THREE.SRGBColorSpace;
-        tex.wrapS = THREE.RepeatWrapping;
-        tex.wrapT = THREE.RepeatWrapping;
-        tex.repeat.set(2.2, 1.0);
-        tex.needsUpdate = true;
-        POPMART_ASSETS.furniture.wallpaperMarbleTex = tex;
-        POPMART_ASSETS.furniture.wallpaperMarbleUrl = paths.furniture.wallpaperMarble;
+        const res = await loadSingleCleanAsset(paths.furniture?.spaJacuzzi, 'vfx', 512);
+        if (res) {
+          POPMART_ASSETS.furniture.spaJacuzziUrl = res.url;
+          POPMART_ASSETS.furniture.spaJacuzziMat = res.mat;
+        }
       } catch (e) {}
     })(),
     (async () => {
       try {
-        const raw = await loadRawImagePromise(paths.ui?.signsShopsSheet);
-        const clean = removeWhiteBackground(raw, '2x2', 242);
-        const sp = split2x2Sheet(clean);
-        POPMART_ASSETS.shopSignUrls = sp.urls;
-        POPMART_ASSETS.shopSignMats = sp.mats;
+        const res = await loadSingleCleanAsset(paths.furniture?.chandelier, 'vfx', 512, true);
+        if (res) {
+          POPMART_ASSETS.furniture.chandelierUrl = res.url;
+          POPMART_ASSETS.furniture.chandelierMat = res.mat;
+        }
       } catch (e) {}
     })(),
     (async () => {
       try {
-        const res = await loadSingleCleanAsset(paths.ui?.pocketNotebook);
-        if (res) POPMART_ASSETS.ui.pocketNotebookUrl = res.url;
+        const res = await loadSingleCleanAsset(paths.furniture?.aquariumWall, 'vfx', 512, true);
+        if (res) {
+          POPMART_ASSETS.furniture.aquariumWallUrl = res.url;
+          POPMART_ASSETS.furniture.aquariumWallMat = res.mat;
+        }
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const res = await loadSingleCleanAsset(paths.furniture?.wineBar, 'vfx', 512, true);
+        if (res) {
+          POPMART_ASSETS.furniture.wineBarUrl = res.url;
+          POPMART_ASSETS.furniture.wineBarMat = res.mat;
+        }
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const tex = await loadSeamlessRepeatTex(paths.furniture?.texWallWainscot || paths.furniture?.wallpaperCream, 2.4, 1.0);
+        if (tex) {
+          POPMART_ASSETS.furniture.texWallWainscotTex = tex;
+          POPMART_ASSETS.furniture.wallpaperCreamTex = tex;
+          POPMART_ASSETS.furniture.texWallWainscotUrl = paths.furniture?.texWallWainscot || paths.furniture?.wallpaperCream;
+          POPMART_ASSETS.furniture.wallpaperCreamUrl = POPMART_ASSETS.furniture.texWallWainscotUrl;
+        }
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const wallTex = await loadSeamlessRepeatTex(paths.furniture?.texWallMarble || paths.furniture?.wallpaperMarble, 2.2, 1.0);
+        const floorTex = await loadSeamlessRepeatTex(paths.furniture?.texWallMarble || paths.furniture?.wallpaperMarble, 2.6, 2.2);
+        if (wallTex) {
+          POPMART_ASSETS.furniture.texWallMarbleTex = wallTex;
+          POPMART_ASSETS.furniture.texFloorMarbleTex = floorTex;
+          POPMART_ASSETS.furniture.wallpaperMarbleTex = wallTex;
+          POPMART_ASSETS.furniture.texWallMarbleUrl = paths.furniture?.texWallMarble || paths.furniture?.wallpaperMarble;
+          POPMART_ASSETS.furniture.wallpaperMarbleUrl = POPMART_ASSETS.furniture.texWallMarbleUrl;
+        }
+      } catch (e) {}
+    })(),
+    // 상가 8종 + 랜드마크 2종 발광 3D 엠블럼 간판
+    (async () => {
+      try {
+        const res = await loadSingleCleanAsset(paths.buildings?.signBakery, 'vfx', 512, true);
+        if (res) POPMART_ASSETS.buildings.signBakeryMat = res.mat;
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const res = await loadSingleCleanAsset(paths.buildings?.signConv24h, 'vfx', 512, true);
+        if (res) POPMART_ASSETS.buildings.signConv24hMat = res.mat;
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const res = await loadSingleCleanAsset(paths.buildings?.signLaundryBubble, 'vfx', 512, true);
+        if (res) POPMART_ASSETS.buildings.signLaundryBubbleMat = res.mat;
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const res = await loadSingleCleanAsset(paths.buildings?.signFurnitureFlagship, 'vfx', 512, true);
+        if (res) POPMART_ASSETS.buildings.signFurnitureFlagshipMat = res.mat;
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const res = await loadSingleCleanAsset(paths.buildings?.signCafeRoastery, 'vfx', 512, true);
+        if (res) POPMART_ASSETS.buildings.signCafeRoasteryMat = res.mat;
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const res = await loadSingleCleanAsset(paths.buildings?.signHarborLobster, 'vfx', 512, true);
+        if (res) POPMART_ASSETS.buildings.signHarborLobsterMat = res.mat;
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const res = await loadSingleCleanAsset(paths.buildings?.signHarborWine, 'vfx', 512, true);
+        if (res) POPMART_ASSETS.buildings.signHarborWineMat = res.mat;
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const res = await loadSingleCleanAsset(paths.buildings?.signHarborMarina, 'vfx', 512, true);
+        if (res) POPMART_ASSETS.buildings.signHarborMarinaMat = res.mat;
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const res = await loadSingleCleanAsset(paths.buildings?.propGrandGateLock, 'vfx', 512, true);
+        if (res) POPMART_ASSETS.buildings.propGrandGateLockMat = res.mat;
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const res = await loadSingleCleanAsset(paths.buildings?.propConstructionCrane, 'vfx', 512, true);
+        if (res) POPMART_ASSETS.buildings.propConstructionCraneMat = res.mat;
+      } catch (e) {}
+    })(),
+    // 3D 토이 UI 아이콘 8종
+    (async () => {
+      try {
+        const res = await loadSingleCleanAsset(paths.ui?.goldenTelescope, 'vfx', 384);
+        if (res) POPMART_ASSETS.ui.goldenTelescopeUrl = res.url;
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const res = await loadSingleCleanAsset(paths.ui?.notebookIcon || paths.ui?.pocketNotebook, 'vfx', 384);
+        if (res) {
+          POPMART_ASSETS.ui.notebookIconUrl = res.url;
+          POPMART_ASSETS.ui.pocketNotebookUrl = res.url;
+        }
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const res = await loadSingleCleanAsset(paths.ui?.quickMoneygun, 'vfx', 384);
+        if (res) POPMART_ASSETS.ui.quickMoneygunUrl = res.url;
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const res = await loadSingleCleanAsset(paths.ui?.quickSupercar, 'vfx', 384);
+        if (res) POPMART_ASSETS.ui.quickSupercarUrl = res.url;
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const res = await loadSingleCleanAsset(paths.ui?.quickTrophy, 'vfx', 384);
+        if (res) POPMART_ASSETS.ui.quickTrophyUrl = res.url;
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const raw = await loadRawImagePromise(paths.ui?.weatherIconsSheet);
+        const sp = split2x2Sheet(raw);
+        POPMART_ASSETS.weatherIconUrls = sp.urls;
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const raw = await loadRawImagePromise(paths.ui?.actionIconsSheet);
+        const sp = split2x2Sheet(raw);
+        POPMART_ASSETS.actionIconUrls = sp.urls;
       } catch (e) {}
     })(),
     (async () => {
       try {
         const raw = await loadRawImagePromise(paths.ui?.quickIconsSheet);
-        const clean = removeWhiteBackground(raw, '2x2', 242);
-        const sp = split2x2Sheet(clean);
+        const sp = split2x2Sheet(raw);
         POPMART_ASSETS.quickIconUrls = sp.urls;
       } catch (e) {}
     })()
