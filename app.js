@@ -263,6 +263,8 @@ function createInitialState() {
     },
     furnitureInventory: {},
     duelTrophies: 0,
+    selectedHeroCharId: 'char_05_hamster',
+    hasChosenHeroAnimal: false,
     claimedQuests: [],
     lots,
     buildings,
@@ -4657,6 +4659,9 @@ function createChibiPerson3D(role = 'student', customShirtHex = null, variantOve
     auraMat,
     auraTimer: 0
   };
+  if (typeof attachPopMartAnimalSpriteToActor === 'function') {
+    attachPopMartAnimalSpriteToActor(grp, role, vIdx);
+  }
   return grp;
 }
 
@@ -8813,6 +8818,9 @@ function collectAllRentBubbles() {
   for (const b of copy) {
     collectRentBubble(b, 0);
   }
+  if (typeof spawnPopMartSkillBurstVFX === 'function') {
+    spawnPopMartSkillBurstVFX('rent_collect', { count: copy.length });
+  }
   showToast(`수익 ${copy.length}건을 일괄 수금했습니다!`, 'gold');
 }
 
@@ -9233,7 +9241,8 @@ function closeAllModalsImmediate(exceptId = null) {
     'forbes-modal',
     'harbor-chronicle-modal',
     'settings-modal',
-    'flagship-shop-drawer'
+    'flagship-shop-drawer',
+    'animal-select-modal'
   ];
   for (const id of modalIds) {
     if (id !== exceptId) {
@@ -9760,6 +9769,12 @@ function buildPreviewSubject3D(itemId) {
 }
 
 function getOrRender3DCatalogPreview(itemId, width = 220, height = 128) {
+  if (typeof getPopMartCatalogThumbDataUrl === 'function') {
+    const popThumbUrl = getPopMartCatalogThumbDataUrl(itemId);
+    if (popThumbUrl) {
+      return `<img src="${popThumbUrl}" alt="${itemId}" class="catalog-3d-preview-img object-contain" />`;
+    }
+  }
   if (!renderer) return createCatalogThumbnailSVG(itemId, width, height);
   const focusedTpl = focusedShopId ? STANDALONE_SHOPS_TEMPLATE.find((s) => s.shopId === focusedShopId) : null;
   const stageSuffix = (focusedTpl?.stage === 2 && itemId.startsWith('upg_')) ? '_harbor' : '';
@@ -9943,6 +9958,9 @@ function playHammerBuildSFX() {
 
 function playDropBouncePlacement3D(targetObj, wx, wy, wz) {
   if (!targetObj) return;
+  if (typeof triggerGlobalAnimalCheer === 'function') {
+    triggerGlobalAnimalCheer(2.6);
+  }
   const baseY = targetObj.position.y;
   const baseScale = targetObj.scale.clone();
   targetObj.position.y = baseY + 4.8;
@@ -10855,6 +10873,9 @@ function tickDriveMode(dt, elapsed) {
   const boostVib = isBoosting ? Math.sin(elapsed * 42) * 0.032 : Math.sin(elapsed * 22) * 0.015;
   driveState.carRootGroup.position.set(driveState.x, 0.22 + boostVib, driveState.z);
   driveState.carRootGroup.rotation.y = driveState.heading;
+  if (typeof updateDriveNitroFlameSprite3D === 'function') {
+    updateDriveNitroFlameSprite3D(isBoosting, elapsed);
+  }
 
   for (const w of driveState.wheels) {
     w.rotation.x += driveState.speed * dt * 1.6;
@@ -13581,7 +13602,16 @@ function spawnSingleFlutterBill3D(originX, originY, originZ, dirX, dirZ, spread 
 
   const isCoin = allowCoins && Math.random() < 0.24;
   let mesh;
-  if (isCoin) {
+  if (typeof POPMART_ASSETS !== 'undefined' && POPMART_ASSETS.moneyRainMats && POPMART_ASSETS.moneyRainMats.length === 4) {
+    if (!POPMART_ASSETS.sharedCurrencyGeo) {
+      POPMART_ASSETS.sharedCurrencyGeo = new THREE.PlaneGeometry(0.76, 0.76);
+    }
+    const matIdx = isCoin
+      ? (Math.random() < 0.72 ? 2 : 3)
+      : (Math.random() < 0.62 ? 0 : 1);
+    mesh = new THREE.Mesh(POPMART_ASSETS.sharedCurrencyGeo, POPMART_ASSETS.moneyRainMats[matIdx]);
+    mesh.scale.setScalar(isCoin ? (0.82 + Math.random() * 0.28) : (0.95 + Math.random() * 0.35));
+  } else if (isCoin) {
     mesh = new THREE.Mesh(GEO.coin, MAT.pureGold24k);
     mesh.scale.setScalar(0.95 + Math.random() * 0.35);
   } else {
@@ -13747,6 +13777,9 @@ function triggerMansourMakeItRain(customOpt = null) {
   if (dom.hudGold) dom.hudGold.textContent = Math.round(state.gold).toLocaleString();
 
   playMoneyGunFlutterSFX();
+  if (typeof spawnPopMartSkillBurstVFX === 'function') {
+    spawnPopMartSkillBurstVFX('moneygun', typeof opt !== 'undefined' ? opt : { billCount: 40, feverMult: 2.0 });
+  }
 
   if (opt.maxHappy) {
     state.townHappinessBoost = 80;
@@ -14103,7 +14136,8 @@ function create24KGoldenLandlordStatue3D() {
   grp.add(statueLight);
 
   // 초대형 24K 순금 건물주 조각상 본체 (머리부터 발끝·왕관·머니건까지 100% 눈부신 순금!)
-  const hero = createChibiPerson3D('landlord_avatar', 0);
+  const hero = createChibiPerson3D('golden_statue_hero', 0);
+  hero.userData.isGoldenStatueHero = true;
   hero.scale.setScalar(2.48);
   hero.position.set(0, 2.42, 0);
 
@@ -14131,6 +14165,9 @@ function create24KGoldenLandlordStatue3D() {
     hero.userData.armRPivot.rotation.z = -2.35;
   }
   grp.add(hero);
+  if (typeof attachGoldStatuePopMartSprite3D === 'function') {
+    attachGoldStatuePopMartSprite3D(grp, hero);
+  }
 
   // 동상 클릭 시 보너스 코인 샤워가 터지는 넉넉한 히트박스!
   const hit = new THREE.Mesh(
@@ -14150,6 +14187,9 @@ function clickGoldenLandlordStatue() {
   const sx = milestoneState.statueGroup.position.x;
   const sz = milestoneState.statueGroup.position.z;
   playMoneyGunFlutterSFX();
+  if (typeof spawnPopMartSkillBurstVFX === 'function') {
+    spawnPopMartSkillBurstVFX('moneygun', typeof opt !== 'undefined' ? opt : { billCount: 40, feverMult: 2.0 });
+  }
   triggerSquashStretch(milestoneState.statueGroup, 0.85);
   spawnShockwaveRing3D(sx, 0.42, sz, 0xFFD700, 10.5);
   spawnPoofParticles3D(sx, 5.2, sz, 0xFFD700, 22);
@@ -15608,6 +15648,9 @@ function resolveRivalPoachDefense(method = 'furn') {
     spawnPoofParticles3D(wx, wy, wz, 0xFF6B6B, 18);
   } else {
     playMoneyGunFlutterSFX();
+  if (typeof spawnPopMartSkillBurstVFX === 'function') {
+    spawnPopMartSkillBurstVFX('moneygun', typeof opt !== 'undefined' ? opt : { billCount: 40, feverMult: 2.0 });
+  }
     for (let i = 0; i < 26; i++) {
       spawnSingleFlutterBill3D(wx, wy + 1.8, wz + 0.8, (Math.random() - 0.5) * 2.5, -1.2, 1.4);
     }
@@ -15876,6 +15919,9 @@ function slamGoldenBriefcaseBuyout() {
 
   // 지폐 폭풍 & 강 회장 넉다운 연출!
   playMoneyGunFlutterSFX();
+  if (typeof spawnPopMartSkillBurstVFX === 'function') {
+    spawnPopMartSkillBurstVFX('moneygun', typeof opt !== 'undefined' ? opt : { billCount: 40, feverMult: 2.0 });
+  }
   for (let i = 0; i < 28; i++) {
     spawnSingleFlutterBill3D(tpl.x, 2.8, frontZ, (Math.random() - 0.5) * 3.0, (Math.random() - 0.5) * 2.4, 1.5);
   }
@@ -15968,6 +16014,9 @@ function triggerDoubleGoldenBellShowdown() {
 
   playGoldenBellSound();
   playMoneyGunFlutterSFX();
+  if (typeof spawnPopMartSkillBurstVFX === 'function') {
+    spawnPopMartSkillBurstVFX('moneygun', typeof opt !== 'undefined' ? opt : { billCount: 40, feverMult: 2.0 });
+  }
   fpState.bellSwingTimer = 4.5;
   fpState.cheerTimer = 6.5;
 
@@ -16325,6 +16374,9 @@ function launchTourFreeMoneyShowerDemo() {
   guidedTourState.demoGroup.add(gun);
 
   playMoneyGunFlutterSFX();
+  if (typeof spawnPopMartSkillBurstVFX === 'function') {
+    spawnPopMartSkillBurstVFX('moneygun', typeof opt !== 'undefined' ? opt : { billCount: 40, feverMult: 2.0 });
+  }
   for (let i = 0; i < 34; i++) {
     const ang = (i / 34) * Math.PI * 2;
     spawnSingleFlutterBill3D(
@@ -17782,6 +17834,1100 @@ function startShowroomDuelJudging() {
 }
 
 // =========================================================
+// 16F. [팝마트 & 동물의 숲 3D 아트토이 에셋 엔진]
+//  - removeWhiteBackground 캔버스 투명 누끼 전처리 로더 (R>242, G>242, B>242 외곽/분할선 시드 BFS Flood-Fill)
+//  - 10종 동물 캐릭터 가로 4프레임 액션 스프라이트 시트(Idle / Walk L / Walk R / Cheer Jump) 실시간 UV 애니메이터
+//  - 스타터 10종 동물 주인공 선택 쇼케이스 모달 & 상시 교체 시스템
+//  - 머니건·만수르 피버·월세 수금·슈퍼카 풀악셀 니트로 부스트 스킬 비주얼 VFX & 가구/차량/간판/UI 아이콘 연동
+// =========================================================
+const POPMART_ASSETS = {
+  loaded: false,
+  loading: false,
+  characters: {},
+  skills: {},
+  vehicles: {},
+  furniture: {},
+  ui: {},
+  moneyRainUrls: [],
+  moneyRainMats: [],
+  luxurySetUrls: [],
+  shopSignUrls: [],
+  shopSignMats: [],
+  quickIconUrls: [],
+  goldStatueTex: null,
+  goldStatueUrl: null,
+  nitroFlameTex: null,
+  nitroFlameSprite: null,
+  prevBoosting: false,
+  sharedCurrencyGeo: null
+};
+
+const popMartActorRegistry = [];
+let globalCharacterCheerTimer = 0;
+let animalSelectPendingStart = false;
+const animalModalLiveCanvases = [];
+const origCreateHouseholdAvatarSVG = typeof window.createHouseholdAvatarSVG === 'function'
+  ? window.createHouseholdAvatarSVG
+  : null;
+
+function triggerGlobalAnimalCheer(durationSec = 3.0) {
+  globalCharacterCheerTimer = Math.max(globalCharacterCheerTimer, durationSec);
+}
+
+function removeWhiteBackground(img, mode = 'single', threshold = 242) {
+  const w = Math.max(1, img.naturalWidth || img.width || 512);
+  const h = Math.max(1, img.naturalHeight || img.height || 512);
+  const cv = document.createElement('canvas');
+  cv.width = w;
+  cv.height = h;
+  const ctx = cv.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(img, 0, 0, w, h);
+
+  const imgData = ctx.getImageData(0, 0, w, h);
+  const data = imgData.data;
+  const total = w * h;
+  const visited = new Uint8Array(total);
+  const queue = new Int32Array(total);
+  let head = 0;
+  let tail = 0;
+
+  const isBgWhite = (idx4) => {
+    if (data[idx4 + 3] === 0) return false;
+    const r = data[idx4];
+    const g = data[idx4 + 1];
+    const b = data[idx4 + 2];
+    if (r > threshold && g > threshold && b > threshold) return true;
+    if (mode === 'vfx') {
+      const maxC = Math.max(r, g, b);
+      const minC = Math.min(r, g, b);
+      // 스튜디오 바닥 연회색 그림자(채도가 거의 없는 무채색 밝은 회색)까지 깔끔하게 투명화!
+      if (minC > 162 && (maxC - minC) < 24) return true;
+    }
+    return false;
+  };
+
+  const trySeed = (x, y) => {
+    if (x < 0 || x >= w || y < 0 || y >= h) return;
+    const p = y * w + x;
+    if (visited[p]) return;
+    const i4 = p * 4;
+    if (isBgWhite(i4)) {
+      visited[p] = 1;
+      queue[tail++] = p;
+    }
+  };
+
+  for (let x = 0; x < w; x++) {
+    trySeed(x, 0);
+    trySeed(x, 1);
+    trySeed(x, h - 1);
+    trySeed(x, h - 2);
+  }
+  for (let y = 0; y < h; y++) {
+    trySeed(0, y);
+    trySeed(1, y);
+    trySeed(w - 1, y);
+    trySeed(w - 2, y);
+  }
+
+  if (mode === '4frame') {
+    for (const frac of [0.25, 0.5, 0.75]) {
+      const cx = Math.floor(w * frac);
+      for (let y = 0; y < h; y++) {
+        trySeed(cx - 1, y);
+        trySeed(cx, y);
+        trySeed(cx + 1, y);
+      }
+    }
+  } else if (mode === '2x2') {
+    const mx = Math.floor(w * 0.5);
+    const my = Math.floor(h * 0.5);
+    for (let y = 0; y < h; y++) {
+      trySeed(mx - 1, y);
+      trySeed(mx, y);
+      trySeed(mx + 1, y);
+    }
+    for (let x = 0; x < w; x++) {
+      trySeed(x, my - 1);
+      trySeed(x, my);
+      trySeed(x, my + 1);
+    }
+  }
+
+  while (head < tail) {
+    const p = queue[head++];
+    const i4 = p * 4;
+    data[i4 + 3] = 0;
+
+    const px = p % w;
+    const py = (p - px) / w;
+
+    if (px > 0) {
+      const np = p - 1;
+      if (!visited[np] && isBgWhite(np * 4)) { visited[np] = 1; queue[tail++] = np; }
+    }
+    if (px + 1 < w) {
+      const np = p + 1;
+      if (!visited[np] && isBgWhite(np * 4)) { visited[np] = 1; queue[tail++] = np; }
+    }
+    if (py > 0) {
+      const np = p - w;
+      if (!visited[np] && isBgWhite(np * 4)) { visited[np] = 1; queue[tail++] = np; }
+    }
+    if (py + 1 < h) {
+      const np = p + w;
+      if (!visited[np] && isBgWhite(np * 4)) { visited[np] = 1; queue[tail++] = np; }
+    }
+  }
+
+  // 팔다리 사이 닫힌 순백색(#FFFFFF 부근 >=251) 홀 제거 및 경계 안티앨리어싱 소프트 페더링
+  for (let y = 1; y < h - 1; y++) {
+    const row = y * w;
+    for (let x = 1; x < w - 1; x++) {
+      const p = row + x;
+      if (visited[p]) continue;
+      const i4 = p * 4;
+      const r = data[i4];
+      const g = data[i4 + 1];
+      const b = data[i4 + 2];
+      if (r >= 251 && g >= 251 && b >= 251) {
+        data[i4 + 3] = 0;
+        visited[p] = 1;
+        continue;
+      }
+      if (visited[p - 1] || visited[p + 1] || visited[p - w] || visited[p + w]) {
+        const minCh = Math.min(r, g, b);
+        if (minCh > 228) {
+          const softFactor = Math.max(0.08, Math.min(1, (245 - minCh) / 17));
+          data[i4 + 3] = Math.round(data[i4 + 3] * softFactor);
+        }
+      }
+    }
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+  return cv;
+}
+
+function cropTrimmedRegionToCanvas(srcCanvas, sx, sy, sw, sh, outW = 512, outH = 512, alignBottom = false) {
+  const sCtx = srcCanvas.getContext('2d', { willReadFrequently: true });
+  const sub = sCtx.getImageData(sx, sy, sw, sh);
+  const d = sub.data;
+
+  // 미세 먼지 픽셀(주변 5x5 내 불투명 이웃이 6개 미만인 고립 점) 제거로 판다·양 크기 정규화 완벽 보장!
+  for (let y = 2; y < sh - 2; y++) {
+    const row = y * sw;
+    for (let x = 2; x < sw - 2; x++) {
+      const idx = (row + x) * 4;
+      if (d[idx + 3] === 0) continue;
+      let neighbors = 0;
+      for (let dy = -2; dy <= 2; dy++) {
+        const nr = (y + dy) * sw;
+        for (let dx = -2; dx <= 2; dx++) {
+          if (d[(nr + x + dx) * 4 + 3] > 32) neighbors++;
+        }
+      }
+      if (neighbors < 6) {
+        d[idx + 3] = 0;
+      }
+    }
+  }
+  sCtx.putImageData(sub, sx, sy);
+
+  let minX = sw;
+  let minY = sh;
+  let maxX = -1;
+  let maxY = -1;
+
+  for (let y = 0; y < sh; y++) {
+    const row = y * sw;
+    for (let x = 0; x < sw; x++) {
+      if (d[(row + x) * 4 + 3] > 28) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+
+  const out = document.createElement('canvas');
+  out.width = outW;
+  out.height = outH;
+  const oCtx = out.getContext('2d');
+  oCtx.imageSmoothingEnabled = true;
+  oCtx.imageSmoothingQuality = 'high';
+
+  if (maxX < minX || maxY < minY) {
+    oCtx.drawImage(srcCanvas, sx, sy, sw, sh, 0, 0, outW, outH);
+    return out;
+  }
+
+  const bw = Math.max(1, maxX - minX + 1);
+  const bh = Math.max(1, maxY - minY + 1);
+  const padFrac = alignBottom ? 0.88 : 0.88;
+  const scale = Math.min((outW * padFrac) / bw, (outH * padFrac) / bh);
+  const dw = bw * scale;
+  const dh = bh * scale;
+  const dx = (outW - dw) * 0.5;
+  const dy = alignBottom ? (outH * 0.94 - dh) : ((outH - dh) * 0.5);
+
+  oCtx.drawImage(srcCanvas, sx + minX, sy + minY, bw, bh, dx, dy, dw, dh);
+  return out;
+}
+
+function normalize4FrameSpriteSheet(cleanCanvas) {
+  const w = cleanCanvas.width;
+  const h = cleanCanvas.height;
+  const colW = Math.floor(w / 4);
+  const cellW = 512;
+  const cellH = 600;
+
+  const master = document.createElement('canvas');
+  master.width = cellW * 4;
+  master.height = cellH;
+  const mCtx = master.getContext('2d');
+  mCtx.imageSmoothingEnabled = true;
+  mCtx.imageSmoothingQuality = 'high';
+
+  const frameCanvases = [];
+  const frameUrls = [];
+
+  for (let f = 0; f < 4; f++) {
+    const sx = f * colW;
+    const sw = f === 3 ? (w - sx) : colW;
+    const fCv = cropTrimmedRegionToCanvas(cleanCanvas, sx, 0, sw, h, cellW, cellH, f !== 3);
+    if (f === 3) {
+      // 4번 환호·점프 포즈는 살짝 위로 띄워 역동적인 체공감 부여
+      mCtx.drawImage(fCv, f * cellW, -16);
+    } else {
+      mCtx.drawImage(fCv, f * cellW, 0);
+    }
+    frameCanvases.push(fCv);
+    frameUrls.push(fCv.toDataURL('image/png'));
+  }
+
+  const baseTex = new THREE.CanvasTexture(master);
+  baseTex.colorSpace = THREE.SRGBColorSpace;
+  baseTex.wrapS = THREE.ClampToEdgeWrapping;
+  baseTex.wrapT = THREE.ClampToEdgeWrapping;
+  baseTex.repeat.set(0.25, 1.0);
+  baseTex.offset.set(0, 0);
+  baseTex.needsUpdate = true;
+
+  return {
+    canvas: master,
+    baseTex,
+    frameCanvases,
+    frameUrls
+  };
+}
+
+function split2x2Sheet(cleanCanvas) {
+  const hw = Math.floor(cleanCanvas.width * 0.5);
+  const hh = Math.floor(cleanCanvas.height * 0.5);
+  const quads = [
+    [0, 0, hw, hh],
+    [hw, 0, cleanCanvas.width - hw, hh],
+    [0, hh, hw, cleanCanvas.height - hh],
+    [hw, hh, cleanCanvas.width - hw, cleanCanvas.height - hh]
+  ];
+  const urls = [];
+  const textures = [];
+  const mats = [];
+
+  for (const [sx, sy, sw, sh] of quads) {
+    const subCv = cropTrimmedRegionToCanvas(cleanCanvas, sx, sy, sw, sh, 384, 384, false);
+    urls.push(subCv.toDataURL('image/png'));
+    const tex = new THREE.CanvasTexture(subCv);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.needsUpdate = true;
+    textures.push(tex);
+    mats.push(new THREE.MeshBasicMaterial({
+      map: tex,
+      transparent: true,
+      alphaTest: 0.06,
+      side: THREE.DoubleSide
+    }));
+  }
+  return { urls, textures, mats };
+}
+
+function loadRawImagePromise(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = (err) => reject(err);
+    img.src = src;
+  });
+}
+
+function resolveAnimalIdForRole(role = 'student', vIdx = 0) {
+  if (role === 'golden_statue_hero') return null;
+  if (role === 'landlord_avatar' || role === 'landlord' || role === 'landlord_driver') {
+    return state?.selectedHeroCharId || 'char_05_hamster';
+  }
+  if (role === 'rival_kang' || role === 'chairman_kang') {
+    return 'char_06_panther';
+  }
+  const mapByRole = {
+    baker: 'char_01_bunny',
+    newlywed: 'char_01_bunny',
+    elderly: 'char_02_sheep',
+    wash_clerk: 'char_02_sheep',
+    mart_clerk: 'char_03_shiba',
+    manager: 'char_03_shiba',
+    student: 'char_04_duck',
+    family4: 'char_04_duck',
+    hikikomori: 'char_04_duck',
+    cruise_captain: 'char_05_hamster',
+    movie_star: 'char_07_cat',
+    florist: 'char_07_cat',
+    barista: 'char_08_bear',
+    chef: 'char_08_bear',
+    fund_manager: 'char_09_fox',
+    it_ceo: 'char_09_fox',
+    developer: 'char_09_fox',
+    mansour: 'char_09_fox',
+    streamer: 'char_10_panda',
+    musician: 'char_10_panda',
+    petlover: 'char_10_panda'
+  };
+  if (vIdx !== null && vIdx !== undefined && Number(vIdx) > 0 && (role === 'student' || role === 'pedestrian')) {
+    const townPool = [
+      'char_01_bunny',
+      'char_02_sheep',
+      'char_03_shiba',
+      'char_04_duck',
+      'char_05_hamster',
+      'char_07_cat',
+      'char_08_bear',
+      'char_09_fox',
+      'char_10_panda'
+    ];
+    return townPool[Math.abs(Number(vIdx)) % townPool.length];
+  }
+  return mapByRole[role] || 'char_01_bunny';
+}
+
+function hideGeometricBodyKeepProps(grp) {
+  const ud = grp?.userData;
+  if (!ud || !ud.bodyRig || ud.isGoldenStatueHero) return;
+  const keepSet = new Set([ud.carryBag, ud.phoneProp, ud.cupProp, ud.megaphoneProp].filter(Boolean));
+  for (const child of ud.bodyRig.children) {
+    if (!keepSet.has(child)) {
+      child.visible = false;
+    }
+  }
+}
+
+function applyLoadedSheetToActor(entry) {
+  if (!entry || !entry.grp || entry.grp.userData?.isGoldenStatueHero) return;
+  const charId = (entry.role === 'landlord_avatar' || entry.role === 'landlord' || entry.role === 'landlord_driver')
+    ? (state?.selectedHeroCharId || 'char_05_hamster')
+    : entry.charId;
+  entry.charId = charId;
+
+  const sheetData = POPMART_ASSETS.characters[charId];
+  if (!sheetData || !sheetData.baseTex) return;
+
+  const actorTex = sheetData.baseTex.clone();
+  actorTex.colorSpace = THREE.SRGBColorSpace;
+  actorTex.wrapS = THREE.ClampToEdgeWrapping;
+  actorTex.wrapT = THREE.ClampToEdgeWrapping;
+  actorTex.repeat.set(0.25, 1.0);
+  actorTex.offset.set(0, 0);
+  actorTex.needsUpdate = true;
+
+  if (!entry.sprite) {
+    const mat = new THREE.SpriteMaterial({
+      map: actorTex,
+      transparent: true,
+      alphaTest: 0.04,
+      depthWrite: true
+    });
+    const sp = new THREE.Sprite(mat);
+    const isBoss = entry.role === 'rival_kang' || entry.role === 'chairman_kang';
+    const baseW = isBoss ? 2.02 : 1.84;
+    const baseH = isBoss ? 2.34 : 2.14;
+    sp.scale.set(baseW, baseH, 1);
+    sp.position.set(0, baseH * 0.49, 0.04);
+    sp.userData = { baseW, baseH, isPopMartSprite: true };
+    entry.grp.add(sp);
+    entry.sprite = sp;
+  } else {
+    if (entry.tex && entry.tex !== actorTex) entry.tex.dispose();
+    entry.sprite.material.map = actorTex;
+    entry.sprite.material.needsUpdate = true;
+  }
+
+  entry.tex = actorTex;
+  entry.frameIdx = 0;
+  hideGeometricBodyKeepProps(entry.grp);
+}
+
+function attachPopMartAnimalSpriteToActor(grp, role = 'student', vIdx = 0) {
+  if (!grp || role === 'golden_statue_hero') return;
+  const charId = resolveAnimalIdForRole(role, vIdx);
+  if (!charId) return;
+
+  const entry = {
+    grp,
+    role,
+    vIdx: Number(vIdx) || 0,
+    charId,
+    sprite: null,
+    tex: null,
+    frameIdx: 0,
+    walkPhase: Math.random() * 10,
+    prevWX: null,
+    prevWZ: null
+  };
+  grp.userData.popMartEntry = entry;
+  popMartActorRegistry.push(entry);
+
+  if (POPMART_ASSETS.characters[charId]) {
+    applyLoadedSheetToActor(entry);
+  }
+}
+
+const _tmpActorWorldVec = new THREE.Vector3();
+
+function tickPopMartCharacterSprites(dt, elapsed) {
+  if (globalCharacterCheerTimer > 0) {
+    globalCharacterCheerTimer = Math.max(0, globalCharacterCheerTimer - dt);
+  }
+  if (popMartActorRegistry.length === 0) return;
+
+  for (let i = popMartActorRegistry.length - 1; i >= 0; i--) {
+    const entry = popMartActorRegistry[i];
+    const grp = entry.grp;
+    if (!grp) {
+      popMartActorRegistry.splice(i, 1);
+      continue;
+    }
+    if (!entry.sprite || !entry.tex) {
+      if (POPMART_ASSETS.characters[entry.charId]) {
+        applyLoadedSheetToActor(entry);
+      }
+      continue;
+    }
+    if (!grp.visible) continue;
+
+    grp.getWorldPosition(_tmpActorWorldVec);
+    let movedDist = 0;
+    if (entry.prevWX !== null) {
+      movedDist = Math.hypot(_tmpActorWorldVec.x - entry.prevWX, _tmpActorWorldVec.z - entry.prevWZ);
+    }
+    entry.prevWX = _tmpActorWorldVec.x;
+    entry.prevWZ = _tmpActorWorldVec.z;
+
+    const ud = grp.userData || {};
+    const legSwing = ud.legL ? Math.abs(ud.legL.rotation.x) : 0;
+    const isWalking = (movedDist / Math.max(0.008, dt)) > 0.32 || (legSwing > 0.06 && legSwing < 0.92);
+    const isCheering = (
+      globalCharacterCheerTimer > 0 ||
+      makeItRainState.active ||
+      (ud.auraTimer && ud.auraTimer > 0.1)
+    );
+
+    const baseW = entry.sprite.userData.baseW || 1.84;
+    const baseH = entry.sprite.userData.baseH || 2.14;
+    let targetFrame = 0;
+    let bounceY = 0;
+    let squashX = 1.0;
+    let squashY = 1.0;
+
+    if (isCheering) {
+      targetFrame = 3;
+      const jumpWave = Math.abs(Math.sin(elapsed * 9.2 + i * 0.7));
+      bounceY = jumpWave * 0.28;
+      squashX = 1.0 - jumpWave * 0.05;
+      squashY = 1.0 + jumpWave * 0.08;
+    } else if (isWalking) {
+      entry.walkPhase += dt * 7.2;
+      targetFrame = (Math.floor(entry.walkPhase) % 2 === 0) ? 1 : 2;
+      const waddle = Math.abs(Math.sin(entry.walkPhase * Math.PI));
+      bounceY = waddle * 0.12;
+      squashX = 1.0 + (1 - waddle) * 0.03;
+      squashY = 1.0 + waddle * 0.04;
+    } else {
+      targetFrame = 0;
+      const breath = Math.sin(elapsed * 2.8 + i * 0.9);
+      squashX = 1.0 + breath * 0.015;
+      squashY = 1.0 - breath * 0.015;
+    }
+
+    if (entry.frameIdx !== targetFrame) {
+      entry.frameIdx = targetFrame;
+      entry.tex.offset.x = targetFrame * 0.25;
+    }
+    entry.sprite.position.y = baseH * 0.49 + bounceY;
+    entry.sprite.scale.set(baseW * squashX, baseH * squashY, 1);
+  }
+}
+
+function attachGoldStatuePopMartSprite3D(statueGrp, fallbackHeroMesh) {
+  if (!statueGrp) return;
+  statueGrp.userData.fallbackHeroMesh = fallbackHeroMesh;
+  if (!POPMART_ASSETS.goldStatueTex) return;
+
+  const existing = statueGrp.getObjectByName('popmart_gold_statue_sprite');
+  if (existing) statueGrp.remove(existing);
+
+  const spMat = new THREE.SpriteMaterial({
+    map: POPMART_ASSETS.goldStatueTex,
+    transparent: true,
+    alphaTest: 0.04
+  });
+  const sp = new THREE.Sprite(spMat);
+  sp.name = 'popmart_gold_statue_sprite';
+  sp.scale.set(4.5, 4.8, 1);
+  sp.position.set(0, 4.65, 0.05);
+  statueGrp.add(sp);
+  if (fallbackHeroMesh) fallbackHeroMesh.visible = false;
+}
+
+function updateDriveNitroFlameSprite3D(isBoosting, elapsed) {
+  if (!driveState.active || !driveState.carRootGroup || !POPMART_ASSETS.nitroFlameTex) return;
+
+  if (!POPMART_ASSETS.nitroFlameSprite || POPMART_ASSETS.nitroFlameSprite.parent !== driveState.carRootGroup) {
+    if (POPMART_ASSETS.nitroFlameSprite?.parent) {
+      POPMART_ASSETS.nitroFlameSprite.parent.remove(POPMART_ASSETS.nitroFlameSprite);
+    }
+    const mat = new THREE.SpriteMaterial({
+      map: POPMART_ASSETS.nitroFlameTex,
+      transparent: true,
+      alphaTest: 0.06,
+      depthWrite: false
+    });
+    const sp = new THREE.Sprite(mat);
+    sp.position.set(0, 0.56, -2.32);
+    driveState.carRootGroup.add(sp);
+    POPMART_ASSETS.nitroFlameSprite = sp;
+  }
+
+  const sp = POPMART_ASSETS.nitroFlameSprite;
+  sp.visible = !!isBoosting && !driveState.cockpitView;
+  if (isBoosting) {
+    const pulse = 1.0 + Math.sin(elapsed * 38) * 0.16;
+    sp.scale.set(1.85 * pulse, 1.32 * pulse, 1);
+    if (!POPMART_ASSETS.prevBoosting) {
+      spawnPopMartSkillBurstVFX('nitro_boost', {});
+    }
+  }
+  POPMART_ASSETS.prevBoosting = !!isBoosting;
+}
+
+function spawnPopMartSkillBurstVFX(kind = 'moneygun', opt = {}) {
+  const layer = document.getElementById('skill-vfx-burst-layer');
+  if (!layer) return;
+
+  const popCutinImg = (url, sizePx, topPct, leftPct, durMs = 1350) => {
+    if (!url) return;
+    const img = document.createElement('img');
+    img.src = url;
+    img.alt = kind;
+    img.className = 'skill-cutin-burst';
+    img.style.width = `${sizePx}px`;
+    img.style.height = `${sizePx}px`;
+    img.style.objectFit = 'contain';
+    img.style.left = `${leftPct}%`;
+    img.style.top = `${topPct}%`;
+    layer.appendChild(img);
+    setTimeout(() => img.remove(), durMs);
+  };
+
+  if (kind === 'moneygun') {
+    triggerGlobalAnimalCheer(6.2);
+    const isMansourTier = !!(opt?.skyFireworks || (opt?.feverMult && opt.feverMult >= 3.0));
+    if (isMansourTier && POPMART_ASSETS.skills.mansourFeverAura) {
+      popCutinImg(POPMART_ASSETS.skills.mansourFeverAura, 310, 46, 50, 1550);
+    }
+    if (POPMART_ASSETS.skills.moneygunBlast) {
+      popCutinImg(POPMART_ASSETS.skills.moneygunBlast, isMansourTier ? 250 : 205, 52, isMansourTier ? 38 : 50, 1380);
+    }
+    if (POPMART_ASSETS.moneyRainUrls.length > 0) {
+      const dropCount = Math.min(28, Math.max(10, Math.round((opt?.billCount || 60) * 0.2)));
+      for (let i = 0; i < dropCount; i++) {
+        const drop = document.createElement('img');
+        drop.src = POPMART_ASSETS.moneyRainUrls[i % POPMART_ASSETS.moneyRainUrls.length];
+        drop.alt = 'currency';
+        drop.className = 'skill-currency-rain-drop';
+        const sz = 38 + (i % 3) * 12;
+        drop.style.width = `${sz}px`;
+        drop.style.height = `${sz}px`;
+        drop.style.objectFit = 'contain';
+        drop.style.left = `${6 + Math.random() * 88}%`;
+        drop.style.animationDuration = `${1.35 + Math.random() * 0.95}s`;
+        drop.style.animationDelay = `${(i % 7) * 0.06}s`;
+        layer.appendChild(drop);
+        setTimeout(() => drop.remove(), 2500);
+      }
+    }
+  } else if (kind === 'rent_collect') {
+    triggerGlobalAnimalCheer(2.8);
+    if (POPMART_ASSETS.skills.rentCollectBurst) {
+      popCutinImg(POPMART_ASSETS.skills.rentCollectBurst, 215, 48, 50, 1320);
+    }
+  } else if (kind === 'nitro_boost') {
+    if (POPMART_ASSETS.skills.nitroBoostFlame) {
+      popCutinImg(POPMART_ASSETS.skills.nitroBoostFlame, 136, 56, 50, 720);
+    }
+  }
+}
+
+function getPopMartCatalogThumbDataUrl(itemId) {
+  if (!itemId) return null;
+  const f = POPMART_ASSETS.furniture;
+  const v = POPMART_ASSETS.vehicles;
+  const lux = POPMART_ASSETS.luxurySetUrls || [];
+
+  switch (itemId) {
+    case 'bed_iron':
+    case 'bed_wood_single':
+      return f.bedTier1Wood || null;
+    case 'bed_queen':
+    case 'bed_bunk':
+      return f.bedTier2Hotel || null;
+    case 'bed_canopy':
+      return f.bedTier3Canopy || null;
+    case 'bed_jacuzzi':
+      return lux[2] || f.bedTier3Canopy || null;
+    case 'bed_golden_float':
+      return f.bedTier4Gold || null;
+    case 'sofa_mint2':
+    case 'sofa_leather_l':
+      return lux[0] || null;
+    case 'sofa_piano':
+    case 'sofa_gold_piano':
+      return lux[1] || null;
+    case 'app_winecellar':
+    case 'dec_harbor_royal':
+    case 'dec_diamond_art':
+      return lux[3] || null;
+    case 'dec_peach':
+    case 'dec_basic_shelf':
+    case 'dec_sage':
+      return f.wallpaperCreamUrl || null;
+    case 'dec_butter':
+    case 'dec_lavender':
+      return f.wallpaperMarbleUrl || null;
+    case 'car_supercar':
+      return v.redSupercar || null;
+    case 'car_sedan':
+      return v.purpleRival || null;
+    case 'car_limo':
+      return v.goldMansour || null;
+    default:
+      return null;
+  }
+}
+
+function syncHeroMiniHudAvatar() {
+  const heroId = state?.selectedHeroCharId || 'char_05_hamster';
+  const roster = window.ANIMAL_CHARACTER_ROSTER || [];
+  const def = roster.find((c) => c.id === heroId) || roster[4] || roster[0];
+  const cv = document.getElementById('hud-hero-mini-canvas');
+  if (cv) {
+    const ctx = cv.getContext('2d');
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    const sheet = POPMART_ASSETS.characters[heroId];
+    if (sheet?.frameCanvases?.[0]) {
+      ctx.drawImage(sheet.frameCanvases[0], 0, 0, cv.width, cv.height);
+    } else if (def) {
+      ctx.font = '22px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(def.emoji || '🐹', cv.width * 0.5, cv.height * 0.54);
+    }
+  }
+  const titlePickBtn = document.getElementById('btn-title-pick-animal');
+  if (titlePickBtn && def) {
+    titlePickBtn.textContent = `${def.emoji} 주인공: ${def.name}`;
+  }
+}
+
+function selectHeroAnimalId(charId) {
+  const roster = window.ANIMAL_CHARACTER_ROSTER || [];
+  const picked = roster.find((c) => c.id === charId);
+  if (!picked) return;
+
+  state.selectedHeroCharId = picked.id;
+  syncHeroMiniHudAvatar();
+
+  for (const entry of popMartActorRegistry) {
+    if (entry.role === 'landlord_avatar' || entry.role === 'landlord' || entry.role === 'landlord_driver') {
+      applyLoadedSheetToActor(entry);
+    }
+  }
+
+  const sumEl = document.getElementById('animal-selected-summary');
+  if (sumEl) {
+    sumEl.textContent = `선택됨: ${picked.emoji} ${picked.name} (${picked.title}) — ${picked.desc}`;
+  }
+  document.querySelectorAll('#animal-roster-grid .animal-blindbox-card').forEach((el) => {
+    el.classList.toggle('selected', el.getAttribute('data-animal-id') === picked.id);
+  });
+  saveGameState();
+}
+
+function openAnimalSelectModal(fromTitleStart = false) {
+  animalSelectPendingStart = !!fromTitleStart;
+  closeAllModalsImmediate('animal-select-modal');
+  const modal = document.getElementById('animal-select-modal');
+  const grid = document.getElementById('animal-roster-grid');
+  if (!modal || !grid) return;
+
+  const roster = window.ANIMAL_CHARACTER_ROSTER || [];
+  const curId = state?.selectedHeroCharId || 'char_05_hamster';
+  animalModalLiveCanvases.length = 0;
+
+  grid.innerHTML = roster.map((ch) => {
+    const isSel = ch.id === curId;
+    return `
+      <button type="button" data-animal-id="${ch.id}" class="animal-blindbox-card text-left ${isSel ? 'selected' : ''}">
+        <div class="w-full flex items-center justify-between text-[10px] font-extrabold text-[#7C5836] mb-0.5">
+          <span>NO.${String(ch.num).padStart(2, '0')}</span>
+          <span>${ch.isRivalBoss ? '🔥 BOSS' : '✨ 4-FRAME'}</span>
+        </div>
+        <div class="w-[74px] h-[74px] rounded-2xl bg-gradient-to-b from-[#FFFDF9] to-[#FDEFD9] border border-[#E8CCB0] flex items-center justify-center overflow-hidden">
+          <canvas data-live-animal="${ch.id}" width="96" height="96" class="w-[70px] h-[70px]"></canvas>
+        </div>
+        <div class="font-title text-[12.5px] text-[#3A2E2B] mt-1 leading-tight text-center">${ch.emoji} ${ch.name}</div>
+        <div class="px-2 py-0.5 rounded-full text-[9.5px] font-extrabold mt-0.5" style="background:#FEF3C7;color:#92400E;">${ch.title}</div>
+      </button>
+    `;
+  }).join('');
+
+  grid.querySelectorAll('[data-live-animal]').forEach((cv) => {
+    const cid = cv.getAttribute('data-live-animal');
+    animalModalLiveCanvases.push({ id: cid, canvas: cv, ctx: cv.getContext('2d') });
+  });
+
+  grid.querySelectorAll('[data-animal-id]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      selectHeroAnimalId(btn.getAttribute('data-animal-id'));
+    });
+  });
+
+  selectHeroAnimalId(curId);
+  const confirmBtn = document.getElementById('btn-confirm-animal-hero');
+  if (confirmBtn) {
+    confirmBtn.textContent = fromTitleStart
+      ? '✨ 이 동물 주인공으로 타운 입장! ▶'
+      : '✨ 이 동물 주인공으로 변경 완료!';
+  }
+  modal.classList.remove('hidden');
+}
+
+function closeAnimalSelectModal() {
+  document.getElementById('animal-select-modal')?.classList.add('hidden');
+  animalModalLiveCanvases.length = 0;
+}
+
+function tickAnimalModalLiveCanvases(elapsed) {
+  const modal = document.getElementById('animal-select-modal');
+  if (!modal || modal.classList.contains('hidden') || animalModalLiveCanvases.length === 0) return;
+
+  // 0(기본) -> 1(왼발) -> 2(오른발) -> 1(왼발) -> 3(만세 점프) 4프레임 프리뷰 루프
+  const seq = [0, 1, 2, 1, 2, 3];
+  const stepFrame = seq[Math.floor(elapsed * 4.5) % seq.length];
+
+  for (const item of animalModalLiveCanvases) {
+    const { id, canvas, ctx } = item;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const sheet = POPMART_ASSETS.characters[id];
+    if (sheet?.frameCanvases?.[stepFrame]) {
+      const bob = stepFrame === 3 ? -5 : (stepFrame === 1 || stepFrame === 2 ? -2 : 0);
+      ctx.drawImage(sheet.frameCanvases[stepFrame], 0, bob, canvas.width, canvas.height);
+    }
+  }
+}
+
+function applyPopMartWorldDecorations() {
+  // 1) UI 수첩 & 우측 하단 3대 퀵 아이콘 + 우측 상단 기어 아이콘 3D 아트토이 이미지 주입
+  if (POPMART_ASSETS.ui.pocketNotebookUrl) {
+    const fabSlot = document.getElementById('fab-svg-slot');
+    if (fabSlot) {
+      fabSlot.innerHTML = `<img src="${POPMART_ASSETS.ui.pocketNotebookUrl}" alt="notebook" class="w-9 h-9 object-contain drop-shadow-sm pointer-events-none" />`;
+    }
+  }
+  if (POPMART_ASSETS.quickIconUrls.length === 4) {
+    const iconTargets = [
+      ['hud-ico-moneygun', POPMART_ASSETS.quickIconUrls[0], 'w-7 h-7'],
+      ['hud-ico-drive', POPMART_ASSETS.quickIconUrls[1], 'w-7 h-7'],
+      ['hud-ico-forbes', POPMART_ASSETS.quickIconUrls[2], 'w-7 h-7'],
+      ['hud-ico-top-settings', POPMART_ASSETS.quickIconUrls[3], 'w-6 h-6']
+    ];
+    for (const [elId, url, cls] of iconTargets) {
+      const slot = document.getElementById(elId);
+      if (slot && url) {
+        slot.innerHTML = `<img src="${url}" alt="${elId}" class="${cls} object-contain drop-shadow-sm pointer-events-none" />`;
+      }
+    }
+  }
+
+  // 2) 상가 4종 입체 팝마트 돌출 간판 부착 (베이커리 / 1층 편의점 / 가구 백화점 / 1층 코인세탁소)
+  if (POPMART_ASSETS.shopSignMats.length === 4) {
+    const attachSignBadge = (parentGrp, mat, lx, ly, lz, sc = 1.95) => {
+      if (!parentGrp) return;
+      const old = parentGrp.getObjectByName('popmart_shop_emblem_3d');
+      if (old) parentGrp.remove(old);
+      const plane = new THREE.Mesh(new THREE.PlaneGeometry(sc, sc), mat);
+      plane.name = 'popmart_shop_emblem_3d';
+      plane.position.set(lx, ly, lz);
+      parentGrp.add(plane);
+    };
+    attachSignBadge(standaloneShop3D.shop_bakery?.group, POPMART_ASSETS.shopSignMats[0], 0, 5.15, 4.05, 2.05);
+    attachSignBadge(firstFloorShop3D.shop_mart1f?.group, POPMART_ASSETS.shopSignMats[1], -3.9, 3.35, 4.18, 1.75);
+    attachSignBadge(flagshipShop3DGroup, POPMART_ASSETS.shopSignMats[2], 0, 6.35, 4.65, 2.35);
+    attachSignBadge(firstFloorShop3D.shop_wash1f?.group, POPMART_ASSETS.shopSignMats[3], 3.9, 3.35, 4.18, 1.75);
+  }
+
+  // 3) 인테리어 벽지 2종(크림 웨인스코팅 / 로열 화이트&골드 마블) 3D 텍스처 업그레이드 및 방 리빌드
+  if (POPMART_ASSETS.furniture.wallpaperCreamTex) {
+    TEX.wallPeach = POPMART_ASSETS.furniture.wallpaperCreamTex;
+    TEX.wallSage = POPMART_ASSETS.furniture.wallpaperCreamTex;
+    TEX.wallCream = POPMART_ASSETS.furniture.wallpaperCreamTex;
+  }
+  if (POPMART_ASSETS.furniture.wallpaperMarbleTex) {
+    TEX.wallButter = POPMART_ASSETS.furniture.wallpaperMarbleTex;
+    TEX.wallLavender = POPMART_ASSETS.furniture.wallpaperMarbleTex;
+  }
+  if (POPMART_ASSETS.furniture.wallpaperCreamTex || POPMART_ASSETS.furniture.wallpaperMarbleTex) {
+    for (const [lid, b] of Object.entries(state.buildings || {})) {
+      if (!lot3D[lid]) continue;
+      for (const rm of (b.rooms || [])) {
+        if (rm.unlocked) rebuildRoom3D(lid, rm);
+      }
+    }
+    if (duelState.active) {
+      rebuildSingleDuelShowroom3D(false, null);
+      rebuildSingleDuelShowroom3D(true, null);
+    }
+  }
+
+  // 4) 광장 24K 황금 건물주 동상 3D 팝마트 피규어 적용
+  if (milestoneState.statueGroup && POPMART_ASSETS.goldStatueTex) {
+    attachGoldStatuePopMartSprite3D(milestoneState.statueGroup, milestoneState.statueGroup.userData?.fallbackHeroMesh);
+  }
+
+  // 5) 세입자·지배인·라이벌·포브스 2D 초상화를 10종 팝마트 동물 캐릭터 렌더링으로 업그레이드
+  if (origCreateHouseholdAvatarSVG) {
+    window.createHouseholdAvatarSVG = (roleKey = 'student', size = 44) => {
+      const cid = resolveAnimalIdForRole(roleKey, 0);
+      const frame0 = cid ? POPMART_ASSETS.characters[cid]?.frameUrls?.[0] : null;
+      if (frame0) {
+        return `<span class="inline-flex items-center justify-center rounded-2xl bg-[#FFFDF8] border border-[#E8CCB0] overflow-hidden shrink-0 shadow-sm" style="width:${size}px;height:${size}px;"><img src="${frame0}" alt="${roleKey}" style="width:94%;height:94%;object-fit:contain;" /></span>`;
+      }
+      return origCreateHouseholdAvatarSVG(roleKey, size);
+    };
+  }
+
+  catalog3DPreviewCache.clear();
+  syncHeroMiniHudAvatar();
+  if (!document.getElementById('flagship-shop-drawer')?.classList.contains('hidden')) {
+    renderFurnitureFlagshipDrawer();
+  }
+  if (focusedRoomId && focusRevealState.revealed) {
+    renderFocusedRoomInspector();
+  }
+}
+
+async function initPopMartAssetsAsync() {
+  if (POPMART_ASSETS.loading || POPMART_ASSETS.loaded) return;
+  POPMART_ASSETS.loading = true;
+
+  const roster = window.ANIMAL_CHARACTER_ROSTER || [];
+  const paths = window.POPMART_ASSET_PATHS || {};
+
+  // 1) Batch 1: 동물 캐릭터 10종 4프레임 액션 스프라이트 시트 로드 & 누끼 전처리
+  await Promise.all(roster.map(async (ch) => {
+    try {
+      const rawImg = await loadRawImagePromise(ch.sheetPath);
+      const cleanCv = removeWhiteBackground(rawImg, '4frame', 242);
+      POPMART_ASSETS.characters[ch.id] = normalize4FrameSpriteSheet(cleanCv);
+    } catch (e) {
+      // 개별 시트 로드 실패 시 안전 폴백 유지
+    }
+  }));
+
+  for (const entry of popMartActorRegistry) {
+    applyLoadedSheetToActor(entry);
+  }
+  syncHeroMiniHudAvatar();
+
+  // 2) Batch 2: 스킬 VFX 5종 & 차량/황금동상 4종 로드 & 누끼 전처리
+  const loadSingleCleanAsset = async (url, mode = 'single') => {
+    if (!url) return null;
+    const raw = await loadRawImagePromise(url);
+    const rawClean = removeWhiteBackground(raw, mode, 242);
+    const cv = cropTrimmedRegionToCanvas(rawClean, 0, 0, rawClean.width, rawClean.height, 448, 448, false);
+    const tex = new THREE.CanvasTexture(cv);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.needsUpdate = true;
+    return { cv, url: cv.toDataURL('image/png'), tex };
+  };
+
+  await Promise.all([
+    (async () => {
+      try {
+        const res = await loadSingleCleanAsset(paths.skills?.moneygunBlast, 'vfx');
+        if (res) POPMART_ASSETS.skills.moneygunBlast = res.url;
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const raw = await loadRawImagePromise(paths.skills?.moneyRainParticles);
+        const clean = removeWhiteBackground(raw, '2x2', 242);
+        const sp = split2x2Sheet(clean);
+        POPMART_ASSETS.moneyRainUrls = sp.urls;
+        POPMART_ASSETS.moneyRainMats = sp.mats;
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const res = await loadSingleCleanAsset(paths.skills?.mansourFeverAura, 'vfx');
+        if (res) POPMART_ASSETS.skills.mansourFeverAura = res.url;
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const res = await loadSingleCleanAsset(paths.skills?.rentCollectBurst, 'vfx');
+        if (res) POPMART_ASSETS.skills.rentCollectBurst = res.url;
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const res = await loadSingleCleanAsset(paths.skills?.nitroBoostFlame, 'vfx');
+        if (res) {
+          POPMART_ASSETS.skills.nitroBoostFlame = res.url;
+          POPMART_ASSETS.nitroFlameTex = res.tex;
+        }
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const res = await loadSingleCleanAsset(paths.vehicles?.redSupercar);
+        if (res) POPMART_ASSETS.vehicles.redSupercar = res.url;
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const res = await loadSingleCleanAsset(paths.vehicles?.purpleRival);
+        if (res) POPMART_ASSETS.vehicles.purpleRival = res.url;
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const res = await loadSingleCleanAsset(paths.vehicles?.goldMansour);
+        if (res) POPMART_ASSETS.vehicles.goldMansour = res.url;
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const res = await loadSingleCleanAsset(paths.vehicles?.goldStatue);
+        if (res) {
+          POPMART_ASSETS.goldStatueUrl = res.url;
+          POPMART_ASSETS.goldStatueTex = res.tex;
+        }
+      } catch (e) {}
+    })()
+  ]);
+
+  // 3) Batch 3: 가구/벽지 7종 & 상가 간판/UI 아이콘 3종 로드 & 전처리
+  await Promise.all([
+    (async () => {
+      try {
+        const res = await loadSingleCleanAsset(paths.furniture?.bedTier1Wood);
+        if (res) POPMART_ASSETS.furniture.bedTier1Wood = res.url;
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const res = await loadSingleCleanAsset(paths.furniture?.bedTier2Hotel);
+        if (res) POPMART_ASSETS.furniture.bedTier2Hotel = res.url;
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const res = await loadSingleCleanAsset(paths.furniture?.bedTier3Canopy);
+        if (res) POPMART_ASSETS.furniture.bedTier3Canopy = res.url;
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const res = await loadSingleCleanAsset(paths.furniture?.bedTier4Gold);
+        if (res) POPMART_ASSETS.furniture.bedTier4Gold = res.url;
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const raw = await loadRawImagePromise(paths.furniture?.luxurySetSheet);
+        const clean = removeWhiteBackground(raw, '2x2', 242);
+        const sp = split2x2Sheet(clean);
+        POPMART_ASSETS.luxurySetUrls = sp.urls;
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const raw = await loadRawImagePromise(paths.furniture?.wallpaperCream);
+        const tex = new THREE.Texture(raw);
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(2.2, 1.0);
+        tex.needsUpdate = true;
+        POPMART_ASSETS.furniture.wallpaperCreamTex = tex;
+        POPMART_ASSETS.furniture.wallpaperCreamUrl = paths.furniture.wallpaperCream;
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const raw = await loadRawImagePromise(paths.furniture?.wallpaperMarble);
+        const tex = new THREE.Texture(raw);
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(2.2, 1.0);
+        tex.needsUpdate = true;
+        POPMART_ASSETS.furniture.wallpaperMarbleTex = tex;
+        POPMART_ASSETS.furniture.wallpaperMarbleUrl = paths.furniture.wallpaperMarble;
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const raw = await loadRawImagePromise(paths.ui?.signsShopsSheet);
+        const clean = removeWhiteBackground(raw, '2x2', 242);
+        const sp = split2x2Sheet(clean);
+        POPMART_ASSETS.shopSignUrls = sp.urls;
+        POPMART_ASSETS.shopSignMats = sp.mats;
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const res = await loadSingleCleanAsset(paths.ui?.pocketNotebook);
+        if (res) POPMART_ASSETS.ui.pocketNotebookUrl = res.url;
+      } catch (e) {}
+    })(),
+    (async () => {
+      try {
+        const raw = await loadRawImagePromise(paths.ui?.quickIconsSheet);
+        const clean = removeWhiteBackground(raw, '2x2', 242);
+        const sp = split2x2Sheet(clean);
+        POPMART_ASSETS.quickIconUrls = sp.urls;
+      } catch (e) {}
+    })()
+  ]);
+
+  POPMART_ASSETS.loaded = true;
+  POPMART_ASSETS.loading = false;
+  applyPopMartWorldDecorations();
+}
+
+// =========================================================
 // 17. LocalStorage 자동 저장/불러오기 & Three.js 씬 초기화 & 입력 바인딩
 // =========================================================
 let isResettingGame = false;
@@ -17854,6 +19000,8 @@ function loadGameState() {
       rivalKangPenalty: Number(parsed.rivalKangPenalty) || 0,
       bestForbesRank: typeof parsed.bestForbesRank === 'number' ? parsed.bestForbesRank : 10,
       vipTitle: parsed.vipTitle || '🌱 코지 타운 명예 동장',
+      selectedHeroCharId: parsed.selectedHeroCharId || 'char_05_hamster',
+      hasChosenHeroAnimal: !!parsed.hasChosenHeroAnimal,
       furnitureInventory: {
         ...(fresh.furnitureInventory || {}),
         ...(parsed.furnitureInventory || {})
@@ -18246,6 +19394,7 @@ function bindAllUIEvents() {
     '#drive-proximity-bar',
     '#drive-mode-hud',
     '#fp-mode-hud',
+    '#animal-select-modal',
     '.slim-right-drawer-modal'
   ];
   for (const sel of uiShieldSelectors) {
@@ -18346,13 +19495,39 @@ function bindAllUIEvents() {
     }
   });
 
-  // 타이틀 화면 버튼 바인딩 (시작하기 > / 이어하기 / 환경설정)
+  // 타이틀 화면 버튼 & 10종 동물 주인공 아바타 선택 바인딩
   document.getElementById('btn-start-game')?.addEventListener('click', () => {
+    if (!state.hasChosenHeroAnimal) {
+      openAnimalSelectModal(true);
+      return;
+    }
     const firstPlay = !localStorage.getItem('god_landlord_tour_seen_v1');
     enterTownFromTitleScreen(firstPlay);
   });
   document.getElementById('btn-continue-game')?.addEventListener('click', () => {
     enterTownFromTitleScreen(false);
+  });
+  document.getElementById('btn-title-pick-animal')?.addEventListener('click', () => {
+    openAnimalSelectModal(false);
+  });
+  document.getElementById('hud-hero-avatar-btn')?.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    openAnimalSelectModal(false);
+  });
+  document.getElementById('btn-close-animal-modal')?.addEventListener('click', () => {
+    closeAnimalSelectModal();
+  });
+  document.getElementById('btn-confirm-animal-hero')?.addEventListener('click', () => {
+    const shouldEnter = animalSelectPendingStart;
+    state.hasChosenHeroAnimal = true;
+    saveGameState();
+    closeAnimalSelectModal();
+    triggerGlobalAnimalCheer(3.5);
+    showToast('귀여운 동물 주인공 아바타가 설정되었습니다!', 'gold');
+    if (shouldEnter && titleScreenState.active) {
+      const firstPlay = !localStorage.getItem('god_landlord_tour_seen_v1');
+      enterTownFromTitleScreen(firstPlay);
+    }
   });
 
   const openSettingsModal = () => {
@@ -18706,6 +19881,7 @@ function bindAllUIEvents() {
         return;
       }
       const anyOpenModal = [
+        document.getElementById('animal-select-modal'),
         document.getElementById('flagship-shop-drawer'),
         document.getElementById('harbor-chronicle-modal'),
         document.getElementById('settings-modal'),
@@ -18850,6 +20026,8 @@ window.addEventListener('DOMContentLoaded', () => {
   setOverviewCamera(false);
   initTitleScreenUI();
   bindAllUIEvents();
+  syncHeroMiniHudAvatar();
+  initPopMartAssetsAsync();
 
   setInterval(() => saveGameState(), 3000);
 
@@ -18872,6 +20050,8 @@ window.addEventListener('DOMContentLoaded', () => {
     tickDriveMode(dt, elapsed);
     tickCrashedStreetPropsRecovery(dt);
     tickFirstPersonMode(dt, elapsed);
+    tickPopMartCharacterSprites(dt, elapsed);
+    tickAnimalModalLiveCanvases(elapsed);
     tickAnimationsAndEffects(dt, elapsed, uiDt);
 
     if (!titleScreenState.active && !driveState.active && !fpState.active) {

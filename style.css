@@ -2810,3 +2810,106 @@ input[type='range'].golden-coin-range::-webkit-slider-thumb {
   box-shadow: 0 1px 0 #881337 !important;
   filter: brightness(1.12);
 }
+
+/* ==================== 19. 팝마트 10종 동물 블라인드박스 선택창 & 스킬 VFX 컷인 연출 ==================== */
+.hud-hero-mini-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin: -3px -2px -3px -6px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #FFFBEB 0%, #FDE68A 100%);
+  border: 1.5px solid #F59E0B;
+  box-shadow: 0 2px 6px rgba(217, 119, 6, 0.22);
+  cursor: pointer;
+  transition: transform 0.14s ease, filter 0.14s ease;
+}
+
+.hud-hero-mini-chip:hover {
+  transform: scale(1.08);
+  filter: brightness(1.05);
+}
+
+.animal-blindbox-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 8px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #FFFDF9 0%, #F8EFE4 100%);
+  border: 2px solid #E8D5C0;
+  box-shadow: 0 4px 12px rgba(58, 46, 43, 0.06);
+  cursor: pointer;
+  transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.animal-blindbox-card:hover {
+  transform: translateY(-2px);
+  border-color: #F59E0B;
+}
+
+.animal-blindbox-card.selected {
+  background: linear-gradient(180deg, #FFFBEB 0%, #FEF3C7 100%);
+  border: 2.8px solid #F59E0B;
+  box-shadow: 0 4px 0 #D97706, 0 10px 22px rgba(245, 158, 11, 0.28);
+  transform: translateY(-3px);
+}
+
+.skill-cutin-burst {
+  position: absolute;
+  pointer-events: none;
+  filter: drop-shadow(0 14px 28px rgba(44, 34, 30, 0.28));
+  animation: skillCutinPop 1.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes skillCutinPop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -42%) scale(0.45) rotate(-8deg);
+  }
+  18% {
+    opacity: 1;
+    transform: translate(-50%, -52%) scale(1.08) rotate(3deg);
+  }
+  32% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.98) rotate(0deg);
+  }
+  78% {
+    opacity: 1;
+    transform: translate(-50%, -54%) scale(1.02) rotate(1deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -68%) scale(0.84) rotate(4deg);
+  }
+}
+
+.skill-currency-rain-drop {
+  position: absolute;
+  pointer-events: none;
+  will-change: transform, opacity;
+  filter: drop-shadow(0 6px 12px rgba(44, 34, 30, 0.2));
+  animation: currencyCascadeFall var(--fall-dur, 2.2s) cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+@keyframes currencyCascadeFall {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -40px, 0) scale(0.65) rotate(var(--rot-start, -25deg));
+  }
+  14% {
+    opacity: 1;
+    transform: translate3d(calc(var(--drift-x, 30px) * 0.3), 12vh, 0) scale(1.05) rotate(0deg);
+  }
+  82% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--drift-x, 30px), 88vh, 0) scale(0.92) rotate(var(--rot-end, 220deg));
+  }
+}

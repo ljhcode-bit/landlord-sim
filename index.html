@@ -72,8 +72,10 @@
         </button>
       </div>
 
-      <!-- 하단 서브 메뉴 (이어하기 / 환경설정) -->
+      <!-- 하단 서브 메뉴 (주인공 동물 선택 / 이어하기 / 환경설정) -->
       <nav class="title-sub-nav" aria-label="타이틀 서브 메뉴">
+        <button id="btn-title-pick-animal" type="button" class="title-sub-link">🐾 동물 아바타 선택</button>
+        <span class="title-sub-divider" aria-hidden="true"></span>
         <button id="btn-continue-game" type="button" class="title-sub-link">이어하기</button>
         <span class="title-sub-divider" aria-hidden="true"></span>
         <button id="btn-title-settings" type="button" class="title-sub-link">환경설정</button>
@@ -81,14 +83,19 @@
     </div>
   </section>
 
-  <!-- 코인 비행 & HUD 플로팅 텍스트 레이어 -->
+  <!-- 코인 비행 & HUD 플로팅 텍스트 & 팝마트 스킬 VFX 연출 레이어 -->
   <div id="flying-coin-layer" class="fixed inset-0 z-40 pointer-events-none overflow-hidden"></div>
+  <div id="skill-vfx-burst-layer" class="fixed inset-0 z-[43] pointer-events-none overflow-hidden"></div>
 
   <!-- ==================== 3. 미니멀 수첩 인덱스 상단 라벨 (좌상단 20px, 촌스러운 테두리 제로) ==================== -->
   <header id="main-game-header" class="hidden fixed top-[20px] left-[20px] z-30 flex flex-col items-start gap-2 pointer-events-none">
     <!-- 단 하나의 깔끔한 크림 화이트 수첩 인덱스 캡슐 (+ 3일 차 해금 시에만 옆에 붙는 [ ☀️ 본점 ⇄ 🌅 하버 ] 미니 알약 스위치) -->
     <div class="flex items-center gap-2 flex-wrap">
       <div id="hud-badge-gold" class="hud-minimal-index-pill pointer-events-auto relative">
+        <button id="hud-hero-avatar-btn" type="button" title="내 동물 건물주 캐릭터 변경 (10종 팝마트 피규어)" class="hud-hero-mini-chip">
+          <canvas id="hud-hero-mini-canvas" width="56" height="56" class="w-6 h-6 object-contain"></canvas>
+        </button>
+        <span class="hud-minimal-sep" aria-hidden="true"></span>
         <div id="hud-gold-wrap" class="hud-minimal-stat">
           <span id="hud-gold">1,250</span><span>만</span>
         </div>
@@ -1153,6 +1160,35 @@
       <div class="text-[11px] font-extrabold tracking-widest text-[#B45309]">ROYAL HARBOR CORONATION · DAY 3 AWAKENED</div>
       <div class="mt-1 text-[18px] sm:text-[20px] font-extrabold text-[#2C221E]">👑 [로열 하버 개발 총독] 칭호 각성 &amp; 빨간 해안 아치교 개통!</div>
       <div class="mt-1 text-[12.5px] font-bold text-[#5C4938]">제2마을 ‘트와일라잇 하버 리조트 타운’ 양방향 자유 왕래 및 VIP 리조트 투자가 영구 해금되었습니다!</div>
+    </div>
+  </div>
+
+  <!-- ==================== 28. 『🐾 팝마트 10종 동물 건물주 캐릭터 선택 쇼케이스 (실시간 4프레임 모션 프리뷰)』 ==================== -->
+  <div id="animal-select-modal" class="hidden fixed inset-0 z-[95] pastel-modal-backdrop flex items-center justify-center p-3">
+    <div class="cozy-planner-shell w-full max-w-[920px] max-h-[88vh]">
+      <div class="cozy-planner-inner flex flex-col overflow-hidden">
+        <div class="px-4 py-3 flex items-center justify-between border-b border-[#EED6BE] shrink-0" style="background: linear-gradient(90deg, #FFFDF7 0%, #FFE8EE 50%, #FEF3C7 100%);">
+          <div class="flex items-center gap-2.5 flex-wrap">
+            <span class="text-[22px]">🐾</span>
+            <div>
+              <div class="diary-modal-title !text-[16.5px]">팝마트 &amp; 동물의 숲 에디션 · 내 동물 건물주 선택 (10종)</div>
+              <div class="font-body text-[11.5px] font-bold text-[#69544C]">4프레임 실시간 아장아장 걸음걸이 &amp; 만세 점프 모션 시트 적용! 원하는 동물 주인공을 골라주세요.</div>
+            </div>
+          </div>
+          <button id="btn-close-animal-modal" type="button" class="btn-close-round" aria-label="닫기">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M3.5 3.5L10.5 10.5M10.5 3.5L3.5 10.5" stroke="#3A2E2B" stroke-width="2.3" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+
+        <div id="animal-roster-grid" class="p-3.5 grid grid-cols-2 sm:grid-cols-5 gap-2.5 overflow-y-auto custom-scroll flex-1"></div>
+
+        <div class="px-4 py-2.5 bg-[#FFFDF7] border-t border-[#EED6BE] flex items-center justify-between gap-3 shrink-0">
+          <div id="animal-selected-summary" class="font-title text-[13.5px] text-[#3A2E2B] truncate">🐰 바닐라 토끼 · 파티시에 주인공 선택됨</div>
+          <button id="btn-confirm-animal-hero" type="button" class="jelly-action-btn btn-coral-lip px-5 py-2 !text-[13px] shrink-0">
+            <span>✨ 이 동물 건물주로 출발하기!</span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 

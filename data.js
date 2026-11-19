@@ -3307,3 +3307,153 @@ window.MONEYGUN_FLEX_TIERS = MONEYGUN_FLEX_TIERS;
 window.SHOWROOM_DUEL_OPPONENTS = SHOWROOM_DUEL_OPPONENTS;
 window.CHRONICLE_DAY_TIERS = CHRONICLE_DAY_TIERS;
 window.HARBOR_SHOP_UPGRADE_CATALOG = HARBOR_SHOP_UPGRADE_CATALOG;
+
+// =========================================================
+// 12. 팝마트 & 동물의 숲 감성 3D 미니어처 토이 10종 동물 캐릭터 (4프레임 모션 시트) & 스킬/가구/UI 에셋 매니페스트
+// =========================================================
+const ANIMAL_CHARACTER_ROSTER = [
+  {
+    id: 'char_01_bunny',
+    num: 1,
+    emoji: '🐰',
+    name: '바닐라 토끼',
+    title: '파티시에 주인공',
+    desc: '따끈한 크루아상을 굽는 러블리 토끼 건물주',
+    accentHex: '#FB7185',
+    sheetPath: './assets/characters/char_01_bunny_sheet.png',
+    roles: ['baker', 'newlywed']
+  },
+  {
+    id: 'char_02_sheep',
+    num: 2,
+    emoji: '🐑',
+    name: '파자마 양',
+    title: '포근 힐링러',
+    desc: '구름처럼 폭신한 파자마를 입은 코지 양',
+    accentHex: '#A78BFA',
+    sheetPath: './assets/characters/char_02_sheep_sheet.png',
+    roles: ['elderly', 'wash_clerk']
+  },
+  {
+    id: 'char_03_shiba',
+    num: 3,
+    emoji: '🐕',
+    name: '해피 시바견',
+    title: '편의점 매니저',
+    desc: '눈썹 점이 매력적인 성실 만점 시바견',
+    accentHex: '#38BDF8',
+    sheetPath: './assets/characters/char_03_shiba_sheet.png',
+    roles: ['mart_clerk', 'manager']
+  },
+  {
+    id: 'char_04_duck',
+    num: 4,
+    emoji: '🐥',
+    name: '배낭 아기오리',
+    title: '아장아장 입주자',
+    desc: '컬러풀 미니 배낭을 멘 호기심 대장 오리',
+    accentHex: '#FACC15',
+    sheetPath: './assets/characters/char_04_duck_sheet.png',
+    roles: ['student', 'family4', 'hikikomori']
+  },
+  {
+    id: 'char_05_hamster',
+    num: 5,
+    emoji: '🐹',
+    name: '로열 햄스터',
+    title: '황금열쇠 VIP',
+    desc: '24K 미니 왕관과 황금열쇠를 든 갓물주 햄스터',
+    accentHex: '#F59E0B',
+    sheetPath: './assets/characters/char_05_hamster_sheet.png',
+    roles: ['landlord_avatar', 'landlord', 'landlord_driver', 'cruise_captain']
+  },
+  {
+    id: 'char_06_panther',
+    num: 6,
+    emoji: '🐆',
+    name: '블랙팬서 강 회장',
+    title: '숙명의 라이벌 보스',
+    desc: '보라 벨벳 수트와 금목걸이를 두른 라이벌 회장',
+    accentHex: '#7E22CE',
+    isRivalBoss: true,
+    sheetPath: './assets/characters/char_06_panther_rival_sheet.png',
+    roles: ['rival_kang']
+  },
+  {
+    id: 'char_07_cat',
+    num: 7,
+    emoji: '🐱',
+    name: '청담 폴드 고양이',
+    title: '청담 VIP 세입자',
+    desc: '명품 트위드 재킷과 진주 목걸이의 럭셔리 냥이',
+    accentHex: '#F472B6',
+    sheetPath: './assets/characters/char_07_cat_rich_sheet.png',
+    roles: ['movie_star', 'florist']
+  },
+  {
+    id: 'char_08_bear',
+    num: 8,
+    emoji: '🐻',
+    name: '테디베어 바리스타',
+    title: '로스터리 카페 사장',
+    desc: '향긋한 스페셜티 커피를 내리는 다정한 곰돌이',
+    accentHex: '#B45309',
+    sheetPath: './assets/characters/char_08_bear_barista_sheet.png',
+    roles: ['barista', 'chef']
+  },
+  {
+    id: 'char_09_fox',
+    num: 9,
+    emoji: '🦊',
+    name: '월스트리트 여우',
+    title: '플렉스 큰손',
+    desc: '네이비 수트와 선글라스로 무장한 금융 엘리트 여우',
+    accentHex: '#2563EB',
+    sheetPath: './assets/characters/char_09_fox_flex_sheet.png',
+    roles: ['fund_manager', 'it_ceo', 'developer', 'mansour']
+  },
+  {
+    id: 'char_10_panda',
+    num: 10,
+    emoji: '🐼',
+    name: '슈스 아기판다',
+    title: '슈퍼스타 셀럽 VIP',
+    desc: '골드 헤드폰과 민트 후디를 입은 글로벌 인플루언서',
+    accentHex: '#10B981',
+    sheetPath: './assets/characters/char_10_panda_celeb_sheet.png',
+    roles: ['streamer', 'musician', 'petlover']
+  }
+];
+
+const POPMART_ASSET_PATHS = {
+  skills: {
+    moneygunBlast: './assets/skills/skill_moneygun_blast.png',
+    moneyRainParticles: './assets/skills/skill_money_rain_particles.png',
+    mansourFeverAura: './assets/skills/skill_mansour_fever_aura.png',
+    rentCollectBurst: './assets/skills/skill_rent_collect_burst.png',
+    nitroBoostFlame: './assets/skills/skill_nitro_boost_flame.png'
+  },
+  vehicles: {
+    redSupercar: './assets/vehicles/car_red_supercar.png',
+    purpleRival: './assets/vehicles/car_purple_rival.png',
+    goldMansour: './assets/vehicles/car_gold_mansour.png',
+    goldStatue: './assets/vehicles/prop_gold_statue.png'
+  },
+  furniture: {
+    bedTier1Wood: './assets/furniture/bed_tier1_wood.png',
+    bedTier2Hotel: './assets/furniture/bed_tier2_hotel.png',
+    bedTier3Canopy: './assets/furniture/bed_tier3_canopy.png',
+    bedTier4Gold: './assets/furniture/bed_tier4_gold.png',
+    luxurySetSheet: './assets/furniture/furn_luxury_set_sheet.png',
+    wallpaperCream: './assets/furniture/wallpaper_cream_wainscot.png',
+    wallpaperMarble: './assets/furniture/wallpaper_royal_marble.png'
+  },
+  ui: {
+    signsShopsSheet: './assets/ui/signs_shops_sheet.png',
+    pocketNotebook: './assets/ui/ui_pocket_notebook.png',
+    quickIconsSheet: './assets/ui/ui_quick_icons_sheet.png'
+  }
+};
+
+window.ANIMAL_CHARACTER_ROSTER = ANIMAL_CHARACTER_ROSTER;
+window.POPMART_ASSET_PATHS = POPMART_ASSET_PATHS;
