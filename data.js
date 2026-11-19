@@ -1371,13 +1371,15 @@ const GAME_BALANCE = {
   roomDepth: 7.5,
   wallHeight: 4.25,
   evictionGraceSec: 32,
-  managerHireFee: 50,
-  managerSalaryPerCycle: 95,
+  managerHireFee: 0,
+  managerSalaryPerCycle: 2,
   managerCycleSec: 14,
-  specialCleanCost: 45,
-  soundproofCost: 75,
-  mediationGiftCost: 28,
-  relocateCost: 20
+  specialCleanCost: 30,
+  soundproofCost: 85,
+  mediationGiftCost: 24,
+  relocateCost: 20,
+  duelRetryCooldownSec: 22,
+  duelInstantRetryBaseFee: 25
 };
 
 const BUILDING_NAME_PRESETS = [
@@ -1684,7 +1686,7 @@ const ROOM_SLOTS_TEMPLATE = [
     rd: 7.5,
     rh: 4.25,
     rentBonus: 0,
-    cycleSec: 9.5,
+    cycleSec: 10.5,
     unlockCost: 0,
     defaultUnlocked: true,
     defaultDecor: 'dec_peach'
@@ -1702,10 +1704,10 @@ const ROOM_SLOTS_TEMPLATE = [
     rw: 14.5,
     rd: 7.5,
     rh: 4.25,
-    rentBonus: 36,
-    cycleSec: 10.4,
-    unlockCost: 0,
-    defaultUnlocked: true,
+    rentBonus: 14,
+    cycleSec: 11.2,
+    unlockCost: 95,
+    defaultUnlocked: false,
     defaultDecor: 'dec_sage'
   },
   {
@@ -1721,9 +1723,9 @@ const ROOM_SLOTS_TEMPLATE = [
     rw: 23.6,
     rd: 7.5,
     rh: 4.45,
-    rentBonus: 95,
-    cycleSec: 11.2,
-    unlockCost: 190,
+    rentBonus: 48,
+    cycleSec: 11.8,
+    unlockCost: 340,
     defaultUnlocked: false,
     defaultDecor: 'dec_butter'
   },
@@ -1740,9 +1742,9 @@ const ROOM_SLOTS_TEMPLATE = [
     rw: 10.2,
     rd: 7.5,
     rh: 4.3,
-    rentBonus: 24,
-    cycleSec: 10.2,
-    unlockCost: 160,
+    rentBonus: 22,
+    cycleSec: 11.0,
+    unlockCost: 560,
     defaultUnlocked: false,
     defaultDecor: 'dec_lavender'
   },
@@ -1759,9 +1761,9 @@ const ROOM_SLOTS_TEMPLATE = [
     rw: 13.2,
     rd: 7.5,
     rh: 7.65,
-    rentBonus: 78,
-    cycleSec: 10.8,
-    unlockCost: 230,
+    rentBonus: 75,
+    cycleSec: 11.5,
+    unlockCost: 890,
     defaultUnlocked: false,
     defaultDecor: 'dec_butter'
   }
@@ -1783,40 +1785,41 @@ const FURNITURE_TIER_META = {
 
 const FURNITURE_CATALOG = {
   bed: [
-    { id: 'bed_iron', category: 'bed', tier: 1, luxuryPts: 40, name: '심플 스카이 침대', cost: 8, rentAdd: 6, happyAdd: 5, chip: 'T1 · 월세 +6만', tone: 'sky', reaction: '깔끔한 스카이블루 철제 침대가 실용적이에요!' },
-    { id: 'bed_wood_single', category: 'bed', tier: 1, luxuryPts: 65, name: '코지 원목 싱글 침대', cost: 12, rentAdd: 12, happyAdd: 8, chip: 'T1 · 월세 +12만', tone: 'mint', reaction: '따뜻한 코지 원목 싱글 침대가 아늑해요!' },
-    { id: 'bed_queen', category: 'bed', tier: 2, luxuryPts: 160, name: '호텔식 원목 퀸 침대', cost: 55, rentAdd: 28, happyAdd: 14, chip: 'T2 · 월세 +28만', tone: 'mint', reaction: '따뜻한 호텔식 원목 퀸침대라 꿀잠 예약이에요!' },
-    { id: 'bed_bunk', category: 'bed', tier: 2, luxuryPts: 195, name: '패밀리 원목 2층침대', cost: 75, rentAdd: 38, happyAdd: 18, chip: 'T2 · 월세 +38만', tone: 'gold', reaction: '튼튼한 원목 2층 침대 사다리 타기가 신나요!' },
-    { id: 'bed_canopy', category: 'bed', tier: 3, luxuryPts: 420, name: '구스다운 캐노피 킹 침대', cost: 180, rentAdd: 88, happyAdd: 26, chip: 'T3 VIP · +88만', tone: 'coral', reaction: '이탈리아 구스다운 캐노피 킹 침대라니 왕족이 된 기분이에요!' },
-    { id: 'bed_jacuzzi', category: 'bed', tier: 3, luxuryPts: 580, harborTier: true, name: '오션뷰 스파 자쿠지 스위트', cost: 290, rentAdd: 165, happyAdd: 34, chip: 'T3 VIP · +165만', tone: 'sky', reaction: '오션뷰 월풀 스파 자쿠지에서 반신욕이라니 천국이에요!' },
-    { id: 'bed_golden_float', category: 'bed', tier: 4, luxuryPts: 1450, isMansourLimited: true, name: '24K 황금 플로팅 베드', cost: 1400, rentAdd: 620, happyAdd: 55, chip: '👑 T4 · 월세 +620만', tone: 'gold', reaction: '세상에!! 공중에 떠오른 24K 순금 플로팅 킹 베드라니 만수르 궁전이에요!!' }
+    { id: 'bed_iron', category: 'bed', tier: 1, luxuryPts: 45, name: '심플 스카이 침대', cost: 0, rentAdd: 2, happyAdd: 4, chip: '기본 제공 · +2만', tone: 'sky', reaction: '깔끔한 스카이블루 철제 침대가 실용적이에요!' },
+    { id: 'bed_wood_single', category: 'bed', tier: 1, luxuryPts: 78, name: '코지 원목 싱글 침대', cost: 24, rentAdd: 8, happyAdd: 8, chip: 'T1 · 월세 +8만', tone: 'mint', reaction: '따뜻한 코지 원목 싱글 침대가 아늑해요!' },
+    { id: 'bed_queen', category: 'bed', tier: 2, luxuryPts: 175, name: '호텔식 원목 퀸 침대', cost: 88, rentAdd: 22, happyAdd: 14, chip: 'T2 · 월세 +22만', tone: 'mint', reaction: '따뜻한 호텔식 원목 퀸침대라 꿀잠 예약이에요!' },
+    { id: 'bed_bunk', category: 'bed', tier: 2, luxuryPts: 225, name: '패밀리 원목 2층침대', cost: 135, rentAdd: 32, happyAdd: 18, chip: 'T2 · 월세 +32만', tone: 'gold', reaction: '튼튼한 원목 2층 침대 사다리 타기가 신나요!' },
+    { id: 'bed_canopy', category: 'bed', tier: 3, luxuryPts: 480, unlockRank: 80, name: '구스다운 캐노피 킹 침대', cost: 340, rentAdd: 78, happyAdd: 26, chip: 'T3 VIP(80위) · +78만', tone: 'coral', reaction: '이탈리아 구스다운 캐노피 킹 침대라니 왕족이 된 기분이에요!' },
+    { id: 'bed_jacuzzi', category: 'bed', tier: 3, luxuryPts: 690, unlockRank: 65, harborTier: true, name: '오션뷰 스파 자쿠지 스위트', cost: 620, rentAdd: 145, happyAdd: 34, chip: 'T3 시크릿(65위) · +145만', tone: 'sky', reaction: '오션뷰 월풀 스파 자쿠지에서 반신욕이라니 천국이에요!' },
+    { id: 'bed_golden_float', category: 'bed', tier: 4, luxuryPts: 1850, unlockRank: 30, isSecretLuxury: true, isMansourLimited: true, name: '24K 황금 플로팅 베드', cost: 3200, rentAdd: 680, happyAdd: 55, chip: '시크릿 T4(30위) · +680만', tone: 'gold', reaction: '세상에!! 공중에 떠오른 24K 순금 플로팅 킹 베드라니 만수르 궁전이에요!!' }
   ],
   sofa: [
-    { id: 'sofa_beanbag', category: 'sofa', tier: 1, luxuryPts: 35, name: '버터 옐로우 빈백', cost: 6, rentAdd: 5, happyAdd: 5, chip: 'T1 · 월세 +5만', tone: 'gold', reaction: '말랑말랑 노란 빈백에 파묻히면 피로가 싹 풀려요!' },
-    { id: 'sofa_simple_lamp', category: 'sofa', tier: 1, luxuryPts: 60, name: '심플 스탠드 & 우드 스툴', cost: 10, rentAdd: 10, happyAdd: 8, chip: 'T1 · 월세 +10만', tone: 'mint', reaction: '은은한 심플 플로어 스탠드 조명이 방 분위기를 살려줘요!' },
-    { id: 'sofa_mint2', category: 'sofa', tier: 2, luxuryPts: 150, name: '벨벳 모듈 2인 소파', cost: 48, rentAdd: 26, happyAdd: 14, chip: 'T2 · 월세 +26만', tone: 'mint', reaction: '벨벳 모듈 소파로 거실이 부티크 호텔처럼 화사해졌어요!' },
-    { id: 'sofa_rocker', category: 'sofa', tier: 2, luxuryPts: 185, name: '원목 흔들의자 다과셋', cost: 68, rentAdd: 36, happyAdd: 18, chip: 'T2 · 월세 +36만', tone: 'coral', reaction: '원목 흔들의자에 앉아 따뜻한 차 한 잔 마시니 천국이구려~' },
-    { id: 'sofa_leather_l', category: 'sofa', tier: 3, luxuryPts: 390, name: '이탈리아 가죽 L소파', cost: 165, rentAdd: 82, happyAdd: 24, chip: 'T3 VIP · +82만', tone: 'gold', reaction: '고급 가죽 L자형 소파가 펜트하우스 거실처럼 럭셔리해요!' },
-    { id: 'sofa_piano', category: 'sofa', tier: 3, luxuryPts: 560, harborTier: true, name: '콘서트 그랜드 피아노', cost: 320, rentAdd: 185, happyAdd: 36, chip: 'T3 VIP · +185만', tone: 'gold', reaction: '클래식 그랜드 피아노 선율이 거실에 울려 퍼져요!' },
-    { id: 'sofa_gold_piano', category: 'sofa', tier: 4, luxuryPts: 1280, isMansourLimited: true, name: '24K 순금 그랜드 피아노', cost: 950, rentAdd: 460, happyAdd: 50, chip: '👑 T4 · 월세 +460만', tone: 'gold', reaction: '눈부신 24K 순금 그랜드 피아노라니 전 세계 10대 한정판 플렉스 대박!!' }
+    { id: 'sofa_beanbag', category: 'sofa', tier: 1, luxuryPts: 40, name: '버터 옐로우 빈백', cost: 0, rentAdd: 2, happyAdd: 4, chip: '기본 제공 · +2만', tone: 'gold', reaction: '말랑말랑 노란 빈백에 파묻히면 피로가 싹 풀려요!' },
+    { id: 'sofa_simple_lamp', category: 'sofa', tier: 1, luxuryPts: 72, name: '심플 스탠드 & 우드 스툴', cost: 20, rentAdd: 7, happyAdd: 8, chip: 'T1 · 월세 +7만', tone: 'mint', reaction: '은은한 심플 플로어 스탠드 조명이 방 분위기를 살려줘요!' },
+    { id: 'sofa_mint2', category: 'sofa', tier: 2, luxuryPts: 165, name: '벨벳 모듈 2인 소파', cost: 78, rentAdd: 20, happyAdd: 14, chip: 'T2 · 월세 +20만', tone: 'mint', reaction: '벨벳 모듈 소파로 거실이 부티크 호텔처럼 화사해졌어요!' },
+    { id: 'sofa_rocker', category: 'sofa', tier: 2, luxuryPts: 210, name: '원목 흔들의자 다과셋', cost: 118, rentAdd: 29, happyAdd: 18, chip: 'T2 · 월세 +29만', tone: 'coral', reaction: '원목 흔들의자에 앉아 따뜻한 차 한 잔 마시니 천국이구려~' },
+    { id: 'sofa_leather_l', category: 'sofa', tier: 3, luxuryPts: 440, name: '이탈리아 벨벳 L소파', cost: 310, rentAdd: 72, happyAdd: 24, chip: 'T3 VIP · +72만', tone: 'gold', reaction: '고급 벨벳 L자형 소파가 펜트하우스 거실처럼 럭셔리해요!' },
+    { id: 'sofa_emerald_royal', category: 'sofa', tier: 3, luxuryPts: 640, unlockRank: 80, isSecretLuxury: true, name: '시크릿 에메랄드 황실 소파', cost: 540, rentAdd: 132, happyAdd: 32, chip: '시크릿 T3(80위) · +132만', tone: 'mint', reaction: '80위 명성 돌파로 해금된 에메랄드 벨벳 & 24K 크라운 소파라니 황홀해요!' },
+    { id: 'sofa_piano', category: 'sofa', tier: 3, luxuryPts: 720, unlockRank: 65, harborTier: true, name: '콘서트 그랜드 피아노', cost: 680, rentAdd: 168, happyAdd: 36, chip: 'T3 VIP(65위) · +168만', tone: 'gold', reaction: '클래식 그랜드 피아노 선율이 거실에 울려 퍼져요!' },
+    { id: 'sofa_gold_piano', category: 'sofa', tier: 4, luxuryPts: 1580, unlockRank: 50, isSecretLuxury: true, isMansourLimited: true, name: '24K 순금 그랜드 피아노', cost: 2100, rentAdd: 480, happyAdd: 50, chip: '시크릿 T4(50위) · +480만', tone: 'gold', reaction: '눈부신 24K 순금 그랜드 피아노라니 전 세계 10대 한정판 플렉스 대박!!' }
   ],
   appliance: [
-    { id: 'app_fan', category: 'appliance', tier: 1, luxuryPts: 35, name: '스탠드 서큘레이터', cost: 7, rentAdd: 5, happyAdd: 5, chip: 'T1 · 월세 +5만', tone: 'sky', reaction: '솔솔 부는 서큘레이터 바람이 시원해요~' },
-    { id: 'app_mini_fridge', category: 'appliance', tier: 1, luxuryPts: 70, name: '코지 미니 냉장고', cost: 14, rentAdd: 13, happyAdd: 9, chip: 'T1 · 월세 +13만', tone: 'mint', reaction: '귀여운 파스텔 미니 냉장고에 시원한 음료가 가득해요!' },
-    { id: 'app_ac', category: 'appliance', tier: 2, luxuryPts: 170, name: '75인치 OLED & 빔프로젝터', cost: 65, rentAdd: 34, happyAdd: 15, chip: 'T2 · 월세 +34만', tone: 'mint', reaction: '75인치 시네마 빔프로젝터 풀옵션이라니 갓물주님 최고!' },
-    { id: 'app_soundmat', category: 'appliance', tier: 2, luxuryPts: 205, name: '프리미엄 에스프레소 & 방음바', cost: 78, rentAdd: 40, happyAdd: 18, grantsSoundproof: true, chip: 'T2 방음 · +40만', tone: 'sky', reaction: '향긋한 에스프레소 머신과 LP 방음 매트로 완벽해요!' },
-    { id: 'app_rgb_desk', category: 'appliance', tier: 3, luxuryPts: 380, name: 'RGB 방송 스튜디오 데스크', cost: 170, rentAdd: 84, happyAdd: 25, chip: 'T3 VIP · +84만', tone: 'coral', reaction: '영롱한 RGB 트리플 모니터 스튜디오라니 조회수 폭발!' },
-    { id: 'app_winecellar', category: 'appliance', tier: 3, luxuryPts: 610, harborTier: true, name: '대리석 홈바 & 와인셀러', cost: 340, rentAdd: 215, happyAdd: 40, grantsSoundproof: true, chip: 'T3 VIP · +215만', tone: 'coral', reaction: '대리석 홈바와 오크 와인셀러, 천장 샹들리에 품격에 반했어요!' },
-    { id: 'app_aquarium', category: 'appliance', tier: 4, luxuryPts: 1380, isMansourLimited: true, grantsSoundproof: true, name: '대형 산호초 아쿠아리움 수조', cost: 1250, rentAdd: 580, happyAdd: 52, chip: '👑 T4 · 월세 +580만', tone: 'sky', reaction: '방 한쪽 벽이 통째로 열대어와 산호초가 유영하는 대형 아쿠아리움이라니 환상적이에요!!' }
+    { id: 'app_fan', category: 'appliance', tier: 1, luxuryPts: 40, name: '스탠드 서큘레이터', cost: 0, rentAdd: 2, happyAdd: 4, chip: '기본 제공 · +2만', tone: 'sky', reaction: '솔솔 부는 서큘레이터 바람이 시원해요~' },
+    { id: 'app_mini_fridge', category: 'appliance', tier: 1, luxuryPts: 76, name: '코지 미니 냉장고', cost: 25, rentAdd: 8, happyAdd: 9, chip: 'T1 · 월세 +8만', tone: 'mint', reaction: '귀여운 파스텔 미니 냉장고에 시원한 음료가 가득해요!' },
+    { id: 'app_ac', category: 'appliance', tier: 2, luxuryPts: 185, name: '75인치 홈시네마 빔프로젝터', cost: 96, rentAdd: 25, happyAdd: 15, chip: 'T2 · 월세 +25만', tone: 'mint', reaction: '75인치 시네마 빔프로젝터 풀옵션이라니 갓물주님 최고!' },
+    { id: 'app_soundmat', category: 'appliance', tier: 2, luxuryPts: 230, name: 'LP 턴테이블 & 에스프레소 바', cost: 142, rentAdd: 35, happyAdd: 18, grantsSoundproof: true, chip: 'T2 방음 · +35만', tone: 'sky', reaction: '향긋한 에스프레소 머신과 LP 방음 매트로 완벽해요!' },
+    { id: 'app_rgb_desk', category: 'appliance', tier: 3, luxuryPts: 460, name: 'RGB 방송 스튜디오 데스크', cost: 330, rentAdd: 76, happyAdd: 25, chip: 'T3 VIP · +76만', tone: 'coral', reaction: '영롱한 RGB 트리플 모니터 스튜디오라니 조회수 폭발!' },
+    { id: 'app_winecellar', category: 'appliance', tier: 3, luxuryPts: 710, unlockRank: 65, harborTier: true, name: '대리석 홈바 & 와인셀러', cost: 660, rentAdd: 165, happyAdd: 40, grantsSoundproof: true, chip: 'T3 VIP(65위) · +165만', tone: 'coral', reaction: '대리석 홈바와 오크 와인셀러, 천장 샹들리에 품격에 반했어요!' },
+    { id: 'app_aquarium', category: 'appliance', tier: 4, luxuryPts: 1680, unlockRank: 50, isSecretLuxury: true, isMansourLimited: true, grantsSoundproof: true, name: '대형 산호초 아쿠아리움 수조', cost: 2500, rentAdd: 560, happyAdd: 52, chip: '시크릿 T4(50위) · +560만', tone: 'sky', reaction: '방 한쪽 벽이 통째로 열대어와 산호초가 유영하는 대형 아쿠아리움이라니 환상적이에요!!' }
   ],
   decor: [
-    { id: 'dec_peach', category: 'decor', tier: 1, luxuryPts: 35, name: '피치 베이지 & 기본 진열대', wallKey: 'wallPeach', floorKey: 'floor1', stairStyle: 'oak', cost: 8, rentAdd: 6, happyAdd: 5, chip: 'T1 · 월세 +6만', tone: 'coral', reaction: '포근한 피치 벽지와 깔끔한 진열대가 마음을 따뜻하게 해줘요!' },
-    { id: 'dec_basic_shelf', category: 'decor', tier: 1, luxuryPts: 65, name: '내추럴 우드 진열장 & 메이플', wallKey: 'wallPeach', floorKey: 'floor2', stairStyle: 'oak', cost: 13, rentAdd: 12, happyAdd: 8, chip: 'T1 · 월세 +12만', tone: 'mint', reaction: '원목 오픈 진열장이 생겨서 소품 정리가 깔끔해졌어요!' },
-    { id: 'dec_sage', category: 'decor', tier: 2, luxuryPts: 155, name: '모던 세이지 & 헤링본 오크', wallKey: 'wallSage', floorKey: 'floor2', stairStyle: 'walnut', cost: 48, rentAdd: 26, happyAdd: 13, chip: 'T2 · 월세 +26만', tone: 'mint', reaction: '싱그러운 세이지 벽지와 헤링본 오크 마루 조합이 세련됐어요!' },
-    { id: 'dec_butter', category: 'decor', tier: 2, luxuryPts: 195, name: '버터 크림 & 골드 몰딩', wallKey: 'wallButter', floorKey: 'floor3', stairStyle: 'gold', cost: 72, rentAdd: 38, happyAdd: 16, chip: 'T2 · 월세 +38만', tone: 'gold', reaction: '햇살 같은 버터 크림 벽지 덕분에 집이 두 배 넓어 보여요!' },
-    { id: 'dec_lavender', category: 'decor', tier: 3, luxuryPts: 400, name: '로얄 라벤더 갤러리 홀', wallKey: 'wallLavender', floorKey: 'floor3', stairStyle: 'coral', cost: 185, rentAdd: 90, happyAdd: 24, chip: 'T3 VIP · +90만', tone: 'coral', reaction: '로얄 라벤더 갤러리 벽지와 부티크 마감이 예술 작품 같아요!' },
-    { id: 'dec_harbor_royal', category: 'decor', tier: 3, luxuryPts: 540, harborTier: true, name: '크리스탈 샹들리에 & 로열 월넛', wallKey: 'wallButter', floorKey: 'floor2', stairStyle: 'gold', cost: 270, rentAdd: 150, happyAdd: 32, chip: 'T3 VIP · +150만', tone: 'gold', reaction: '크리스탈 샹들리에와 유럽풍 로열 월넛 마감이 5성급 스위트네요!' },
-    { id: 'dec_diamond_art', category: 'decor', tier: 4, luxuryPts: 1650, isMansourLimited: true, name: '다이아몬드 명화 컬렉션 홀', wallKey: 'wallButter', floorKey: 'floor3', stairStyle: 'gold', cost: 1800, rentAdd: 780, happyAdd: 60, chip: '👑 T4 · 월세 +780만', tone: 'gold', reaction: '황금 액자 명화 컬렉션과 블루 다이아몬드 좌대라니 루브르 미술관 VIP실 같아요!!' }
+    { id: 'dec_peach', category: 'decor', tier: 1, luxuryPts: 40, name: '피치 웨인스코팅 & 오크 마루', wallKey: 'wallPeach', floorKey: 'floor1', stairStyle: 'oak', cost: 0, rentAdd: 2, happyAdd: 4, chip: '기본 제공 · +2만', tone: 'coral', reaction: '포근한 크림 웨인스코팅 벽지와 헤링본 마루가 따뜻해요!' },
+    { id: 'dec_basic_shelf', category: 'decor', tier: 1, luxuryPts: 74, name: '내추럴 우드 진열장 & 메이플', wallKey: 'wallPeach', floorKey: 'floor2', stairStyle: 'oak', cost: 24, rentAdd: 8, happyAdd: 8, chip: 'T1 · 월세 +8만', tone: 'mint', reaction: '원목 오픈 진열장이 생겨서 소품 정리가 깔끔해졌어요!' },
+    { id: 'dec_sage', category: 'decor', tier: 2, luxuryPts: 170, name: '모던 세이지 & 헤링본 오크', wallKey: 'wallSage', floorKey: 'floor1', stairStyle: 'walnut', cost: 82, rentAdd: 21, happyAdd: 13, chip: 'T2 · 월세 +21만', tone: 'mint', reaction: '싱그러운 세이지 몰딩과 헤링본 오크 마루 조합이 세련됐어요!' },
+    { id: 'dec_butter', category: 'decor', tier: 2, luxuryPts: 220, name: '버터 크림 & 칼라카타 마블', wallKey: 'wallButter', floorKey: 'floor3', stairStyle: 'gold', cost: 128, rentAdd: 32, happyAdd: 16, chip: 'T2 · 월세 +32만', tone: 'gold', reaction: '햇살 같은 크림 대리석 마감 덕분에 집이 두 배 넓어 보여요!' },
+    { id: 'dec_lavender', category: 'decor', tier: 3, luxuryPts: 470, name: '로얄 라벤더 마블 갤러리 홀', wallKey: 'wallLavender', floorKey: 'floor3', stairStyle: 'coral', cost: 340, rentAdd: 80, happyAdd: 24, chip: 'T3 VIP · +80만', tone: 'coral', reaction: '로얄 마블 갤러리 벽지와 부티크 마감이 예술 작품 같아요!' },
+    { id: 'dec_harbor_royal', category: 'decor', tier: 3, luxuryPts: 660, unlockRank: 65, harborTier: true, name: '크리스탈 샹들리에 & 로열 월넛', wallKey: 'wallButter', floorKey: 'floor1', stairStyle: 'gold', cost: 580, rentAdd: 142, happyAdd: 32, chip: 'T3 VIP(65위) · +142만', tone: 'gold', reaction: '크리스탈 샹들리에와 유럽풍 로열 월넛 마감이 5성급 스위트네요!' },
+    { id: 'dec_diamond_art', category: 'decor', tier: 4, luxuryPts: 2100, unlockRank: 30, isSecretLuxury: true, isMansourLimited: true, name: '다이아몬드 명화 컬렉션 홀', wallKey: 'wallButter', floorKey: 'floor3', stairStyle: 'gold', cost: 3900, rentAdd: 880, happyAdd: 60, chip: '시크릿 T4(30위) · +880만', tone: 'gold', reaction: '황금 액자 명화 컬렉션과 블루 다이아몬드 좌대라니 루브르 미술관 VIP실 같아요!!' }
   ]
 };
 
@@ -1870,10 +1873,10 @@ const DEVELOPMENT_CATALOG = {
     name: '럭키 팰리스',
     svgIcon: 'blueprint_hammer',
     artKey: 'shop_mart',
-    buildCost: 780,
+    buildCost: 1450,
     isResidential: true,
-    baseRoomRent: 56,
-    rentSynergyPct: 10
+    baseRoomRent: 34,
+    rentSynergyPct: 12
   },
   mixed_1: {
     type: 'mixed_1',
@@ -1882,7 +1885,7 @@ const DEVELOPMENT_CATALOG = {
     artKey: 'shop_mart',
     buildCost: 0,
     isResidential: true,
-    baseRoomRent: 38,
+    baseRoomRent: 11,
     rentSynergyPct: 0
   },
   harbor_hotel: {
@@ -1890,11 +1893,11 @@ const DEVELOPMENT_CATALOG = {
     name: '하버 부티크 호텔 & 오션뷰 펜트하우스',
     svgIcon: 'yacht_ico',
     artKey: 'shop_mart',
-    buildCost: 1850,
+    buildCost: 3400,
     isResidential: true,
     isHarborHotel: true,
-    baseRoomRent: 165,
-    rentSynergyPct: 20
+    baseRoomRent: 140,
+    rentSynergyPct: 22
   }
 };
 
@@ -1939,9 +1942,9 @@ const PUBLIC_INFRA_CATALOG = {
 
 const ROOM_INTERIOR_TIERS = [
   { level: 0, name: '기본 인테리어', cost: 0, rentAdd: 0, chip: '기본 마감' },
-  { level: 1, name: '파스텔 커스텀', cost: 65, rentAdd: 18, chip: '가구 1종+' },
-  { level: 2, name: '코지 부티크', cost: 160, rentAdd: 36, chip: '가구 2종+' },
-  { level: 3, name: '로얄 풀옵션', cost: 340, rentAdd: 65, chip: '풀세트 +20%' }
+  { level: 1, name: '파스텔 커스텀', cost: 65, rentAdd: 6, chip: '가구 1종+' },
+  { level: 2, name: '코지 부티크', cost: 160, rentAdd: 18, chip: '가구 2종+' },
+  { level: 3, name: '로얄 풀옵션', cost: 340, rentAdd: 42, chip: '풀세트 +20%' }
 ];
 
 const HOUSEHOLD_TYPES = {
@@ -1950,8 +1953,8 @@ const HOUSEHOLD_TYPES = {
     label: '대학생',
     accentHex: '#0B84D8',
     memberCount: 1,
-    minRent: 68,
-    maxRent: 135,
+    minRent: 12,
+    maxRent: 28,
     noiseOutput: 48,
     noiseLv: 2,
     noiseSensitivity: 25,
@@ -1969,8 +1972,8 @@ const HOUSEHOLD_TYPES = {
     label: '신혼부부',
     accentHex: '#E04666',
     memberCount: 2,
-    minRent: 135,
-    maxRent: 245,
+    minRent: 36,
+    maxRent: 78,
     noiseOutput: 18,
     noiseLv: 1,
     noiseSensitivity: 58,
@@ -1988,8 +1991,8 @@ const HOUSEHOLD_TYPES = {
     label: '4인 가족',
     accentHex: '#179E29',
     memberCount: 4,
-    minRent: 210,
-    maxRent: 380,
+    minRent: 85,
+    maxRent: 165,
     noiseOutput: 88,
     noiseLv: 3,
     noiseSensitivity: 30,
@@ -2007,8 +2010,8 @@ const HOUSEHOLD_TYPES = {
     label: '노부부',
     accentHex: '#C97A05',
     memberCount: 2,
-    minRent: 125,
-    maxRent: 220,
+    minRent: 32,
+    maxRent: 68,
     noiseOutput: 8,
     noiseLv: 1,
     noiseSensitivity: 92,
@@ -2025,11 +2028,12 @@ const HOUSEHOLD_TYPES = {
     type: 'streamer',
     isVipTenant: true,
     minLuxuryStars: 3,
+    unlockRank: 80,
     label: '스타 유튜버 VIP',
     accentHex: '#8B3DFF',
     memberCount: 1,
-    minRent: 340,
-    maxRent: 580,
+    minRent: 180,
+    maxRent: 360,
     noiseOutput: 55,
     noiseLv: 2,
     noiseSensitivity: 40,
@@ -2046,11 +2050,12 @@ const HOUSEHOLD_TYPES = {
     type: 'it_ceo',
     isVipTenant: true,
     minLuxuryStars: 3,
+    unlockRank: 80,
     label: 'IT 기업 대표 VIP',
     accentHex: '#0284C7',
     memberCount: 1,
-    minRent: 480,
-    maxRent: 840,
+    minRent: 320,
+    maxRent: 580,
     noiseOutput: 12,
     noiseLv: 1,
     noiseSensitivity: 45,
@@ -2067,8 +2072,8 @@ const HOUSEHOLD_TYPES = {
     label: '프리랜서 은둔러',
     accentHex: '#6D28D9',
     memberCount: 1,
-    minRent: 145,
-    maxRent: 255,
+    minRent: 24,
+    maxRent: 52,
     noiseOutput: 15,
     noiseLv: 1,
     noiseSensitivity: 20,
@@ -2085,11 +2090,12 @@ const HOUSEHOLD_TYPES = {
     isHarborVip: true,
     isVipTenant: true,
     minLuxuryStars: 3,
+    unlockRank: 50,
     label: '글로벌 영화배우 VIP',
     accentHex: '#F59E0B',
     memberCount: 2,
     minRent: 580,
-    maxRent: 980,
+    maxRent: 1050,
     noiseOutput: 22,
     noiseLv: 1,
     noiseSensitivity: 55,
@@ -2105,12 +2111,13 @@ const HOUSEHOLD_TYPES = {
     type: 'fund_manager',
     isHarborVip: true,
     isVipTenant: true,
-    minLuxuryStars: 3,
+    minLuxuryStars: 4,
+    unlockRank: 30,
     label: '월스트리트 펀드매니저',
     accentHex: '#0EA5E9',
     memberCount: 1,
-    minRent: 650,
-    maxRent: 1120,
+    minRent: 980,
+    maxRent: 1850,
     noiseOutput: 12,
     noiseLv: 1,
     noiseSensitivity: 45,
@@ -2127,10 +2134,11 @@ const HOUSEHOLD_TYPES = {
     isHarborVip: true,
     isVipTenant: true,
     minLuxuryStars: 3,
+    unlockRank: 50,
     label: '럭셔리 크루즈 선장',
     accentHex: '#10B981',
     memberCount: 2,
-    minRent: 540,
+    minRent: 520,
     maxRent: 920,
     noiseOutput: 15,
     noiseLv: 1,
@@ -2149,120 +2157,178 @@ const FAMILY_LAST_NAMES = ['김', '이', '박', '최', '정', '강', '조', '윤
 const GIVEN_NAMES = ['민준', '서연', '도윤', '지우', '하은', '지호', '수빈', '현우', '소율', '연우', '다은', '태오', '영숙', '철수'];
 
 const QUEST_LIST = [
+  // ==================== Ch.1 (99위~85위): 바닥부터 시작하는 원룸촌 임대업 ====================
   {
-    id: 'mq1',
+    id: 'ep1_q1',
+    chapter: 1,
     icon: 'bed_ico',
-    title: '101호 인테리어 가구 시공 1회',
-    desc: '가구 카탈로그에서 마음에 드는 가구를 배치해 호실 가치를 높이세요.',
-    reward: 160,
+    title: '[Ch.1] 낡은 101호 설비 수리 & 가구 시공',
+    desc: '101호 원룸을 클릭해 베이직 침대나 소파·설비를 1개 이상 새로 세팅하세요.',
+    reward: 32,
+    fameReward: 18,
     focusLot: 'lot_main',
     focusSubRoom: '101',
     progress: (st) => {
-      const lv = st.buildings.lot_main?.rooms.find((x) => x.subId === '101')?.interiorLv || 0;
-      return { cur: Math.min(1, lv), max: 1 };
-    },
-    check: (st) => (st.buildings.lot_main?.rooms.find((x) => x.subId === '101')?.interiorLv || 0) >= 1
-  },
-  {
-    id: 'mq2',
-    icon: 'contract_scroll',
-    title: '101호 원룸 스튜디오 입주 계약',
-    desc: '새로 단장한 101호에 첫 세입자를 맞이하세요.',
-    reward: 180,
-    focusLot: 'lot_main',
-    focusSubRoom: '101',
-    progress: (st) => ({ cur: st.buildings.lot_main?.rooms.find((x) => x.subId === '101')?.household ? 1 : 0, max: 1 }),
-    check: (st) => !!st.buildings.lot_main?.rooms.find((x) => x.subId === '101')?.household
-  },
-  {
-    id: 'mq3',
-    icon: 'bakery_ico',
-    title: '부티크 단독 상가 1곳 직영 인수',
-    desc: '바게트 하우스, 미니미 로스터스, 플로레스 중 한 곳을 인수하세요.',
-    reward: 280,
-    focusShop: 'shop_bakery',
-    progress: (st) => ({ cur: Math.min(1, Object.values(st.standaloneShops || {}).filter((s) => s.owned).length), max: 1 }),
-    check: (st) => Object.values(st.standaloneShops || {}).some((s) => s.owned)
-  },
-  {
-    id: 'mq4',
-    icon: 'steering_supercar',
-    title: 'VIP 차고 신규 차량 1대 출고',
-    desc: '빈티지 세단, 레드 오픈 슈퍼카, 리무진 중 원하는 드림카를 출고하세요.',
-    reward: 350,
-    openGarage: true,
-    progress: (st) => ({ cur: Math.min(1, Math.max(0, (st.garage?.ownedCars?.length || 1) - 1)), max: 1 }),
-    check: (st) => (st.garage?.ownedCars?.length || 1) >= 2
-  },
-  {
-    id: 'mq5',
-    icon: 'blueprint_hammer',
-    title: '201호 쓰리룸 개방 & 승강기 시공',
-    desc: '패밀리 펜트하우스를 개방하고 파노라마 유리 승강기를 설치하세요.',
-    reward: 380,
-    focusLot: 'lot_main',
-    focusSubRoom: '201',
-    progress: (st) => {
-      const b = st.buildings.lot_main;
-      const p1 = b?.rooms.find((x) => x.subId === '201')?.unlocked ? 1 : 0;
-      const p2 = b?.infra.elevator ? 1 : 0;
-      return { cur: p1 + p2, max: 2 };
+      const rm = st.buildings.lot_main?.rooms.find((x) => x.subId === '101');
+      const cnt = rm ? Object.values(rm.ownedFurniture || {}).reduce((acc, arr) => acc + Math.max(0, (arr?.length || 1) - 1), 0) : 0;
+      return { cur: Math.min(1, cnt + (rm?.interiorLv || 0)), max: 1 };
     },
     check: (st) => {
-      const b = st.buildings.lot_main;
-      return !!b?.rooms.find((x) => x.subId === '201')?.unlocked && !!b?.infra.elevator;
+      const rm = st.buildings.lot_main?.rooms.find((x) => x.subId === '101');
+      const cnt = rm ? Object.values(rm.ownedFurniture || {}).reduce((acc, arr) => acc + Math.max(0, (arr?.length || 1) - 1), 0) : 0;
+      return (cnt + (rm?.interiorLv || 0)) >= 1;
     }
   },
   {
-    id: 'mq6',
-    icon: 'loft_stairs',
-    title: '302호 복층 로프트 하우스 개방',
-    desc: '원목 실내 계단과 2층 다락방이 있는 복층 로프트를 오픈하세요.',
-    reward: 450,
-    focusLot: 'lot_main',
-    focusSubRoom: '302',
-    progress: (st) => ({ cur: st.buildings.lot_main?.rooms.find((x) => x.subId === '302')?.unlocked ? 1 : 0, max: 1 }),
-    check: (st) => !!st.buildings.lot_main?.rooms.find((x) => x.subId === '302')?.unlocked
-  },
-  {
-    id: 'mq7',
-    icon: 'roastery_ico',
-    title: '부티크 거리 단독 상가 3곳 석권',
-    desc: '빵집·로스터리·플라워샵 3곳을 모두 직영으로 인수하세요.',
-    reward: 550,
-    focusShop: 'shop_roastery',
-    progress: (st) => ({ cur: Math.min(3, Object.values(st.standaloneShops || {}).filter((s) => s.owned).length), max: 3 }),
-    check: (st) => Object.values(st.standaloneShops || {}).filter((s) => s.owned).length >= 3
-  },
-  {
-    id: 'mq8',
-    icon: 'soundproof_hammer',
-    title: '방음·청소·세대 케어 1회 달성',
-    desc: '쾌적한 주거 환경을 위해 방음 시공 또는 청결 케어를 진행하세요.',
-    reward: 480,
-    openTab: 'tenants',
-    progress: (st) => ({ cur: Math.min(1, (st.stats.crisisResolved || 0) + (st.stats.evictions || 0)), max: 1 }),
-    check: (st) => st.stats.crisisResolved >= 1 || st.stats.evictions >= 1
-  },
-  {
-    id: 'mq9',
+    id: 'ep1_q2',
+    chapter: 1,
     icon: 'manager_cap',
-    title: '1층 총괄 지배인 정식 선임',
-    desc: '수첩의 관리인 탭에서 자동 월세 수금을 전담할 지배인을 고용하세요.',
-    reward: 600,
+    title: '[Ch.1] 라쿤 관리소장 급여 Lv.2 인상',
+    desc: '수첩의 [관리인 급여·인사 관리]에서 라쿤 김소장의 월급을 Lv.2로 올려 월세 상한선(26만)을 뚫어주세요!',
+    reward: 45,
+    fameReward: 25,
     openTab: 'manager',
-    progress: (st) => ({ cur: Object.values(st.buildings).some((b) => b.manager.hired) ? 1 : 0, max: 1 }),
-    check: (st) => Object.values(st.buildings).some((b) => b.manager.hired)
+    progress: (st) => {
+      const lv = st.buildings.lot_main?.manager?.salaryLv || 1;
+      return { cur: Math.min(2, lv), max: 2 };
+    },
+    check: (st) => (st.buildings.lot_main?.manager?.salaryLv || 1) >= 2
   },
   {
-    id: 'mq10',
-    icon: 'crown_badge',
-    title: '레드 슈퍼카 또는 골드 리무진 오너 등극',
-    desc: '건물주의 로망인 오픈 슈퍼카 또는 골드 크라운 리무진을 보유하세요.',
+    id: 'ep1_q3',
+    chapter: 1,
+    icon: 'duel_versus_ico',
+    title: '[Ch.1] 90위 불독 황 사장 격파 & 85위권 진입',
+    desc: '1:1 럭셔리 쇼룸 결투에서 승리해 명성도(Fame)를 쌓고 부자 서열 85위 이내로 진입하세요!',
+    reward: 110,
+    fameReward: 55,
+    openDuel: true,
+    progress: (st) => {
+      const curRank = st.bestForbesRank || 99;
+      const done = (st.duelTrophies || 0) >= 1 && curRank <= 85;
+      return { cur: done ? 2 : ((st.duelTrophies || 0) >= 1 ? 1 : 0), max: 2 };
+    },
+    check: (st) => (st.duelTrophies || 0) >= 1 && (st.bestForbesRank || 99) <= 85
+  },
+
+  // ==================== Ch.2 (84위~65위): 상권 부활과 상가 프랜차이즈 전쟁 ====================
+  {
+    id: 'ep2_q1',
+    chapter: 2,
+    icon: 'bakery_ico',
+    title: '[Ch.2] 102호 투룸 개방 & 1층 상가 업그레이드',
+    desc: '102호 투룸을 개방하고 1층 미니미 마트24 또는 코인세탁소 설비를 1회 이상 증설하세요.',
+    reward: 165,
+    fameReward: 65,
+    focusLot: 'lot_main',
+    focusSubRoom: '102',
+    progress: (st) => {
+      const r102 = st.buildings.lot_main?.rooms.find((x) => x.subId === '102')?.unlocked ? 1 : 0;
+      const upgCnt = Object.values(st.firstFloorShops || {}).reduce((acc, s) => acc + Object.values(s?.upgrades || {}).filter(Boolean).length, 0);
+      return { cur: r102 + Math.min(1, upgCnt), max: 2 };
+    },
+    check: (st) => {
+      const r102 = !!st.buildings.lot_main?.rooms.find((x) => x.subId === '102')?.unlocked;
+      const upgCnt = Object.values(st.firstFloorShops || {}).reduce((acc, s) => acc + Object.values(s?.upgrades || {}).filter(Boolean).length, 0);
+      return r102 && upgCnt >= 1;
+    }
+  },
+  {
+    id: 'ep2_q2',
+    chapter: 2,
+    icon: 'manager_cap',
+    title: '[Ch.2] 라쿤 관리소장 Lv.5 정식 소장 승급',
+    desc: '관리인 급여를 Lv.5(월급 15만 · 한도 80만)로 인상해 전 호실 무인 자동 수금 & 자동 수리를 개통하세요!',
+    reward: 240,
+    fameReward: 95,
+    openTab: 'manager',
+    progress: (st) => ({ cur: Math.min(5, st.buildings.lot_main?.manager?.salaryLv || 1), max: 5 }),
+    check: (st) => (st.buildings.lot_main?.manager?.salaryLv || 1) >= 5
+  },
+  {
+    id: 'ep2_q3',
+    chapter: 2,
+    icon: 'quest_trophy',
+    title: '[Ch.2] 부티크 단독상가 인수 & 65위 돌파!',
+    desc: '바게트 하우스·로스터리·플라워샵 중 1곳 이상 인수하고 강 회장 파벌을 꺾어 65위 이내에 등극하세요!',
+    reward: 420,
+    fameReward: 160,
+    focusShop: 'shop_bakery',
+    progress: (st) => {
+      const sOwn = Object.values(st.standaloneShops || {}).some((s) => s.owned) ? 1 : 0;
+      const rOk = (st.bestForbesRank || 99) <= 65 ? 1 : 0;
+      return { cur: sOwn + rOk, max: 2 };
+    },
+    check: (st) => Object.values(st.standaloneShops || {}).some((s) => s.owned) && (st.bestForbesRank || 99) <= 65
+  },
+
+  // ==================== Ch.3 (64위~40위 · 1주일 목표): 로열 하버 게이트 개방과 중견 재벌 등극 ====================
+  {
+    id: 'ep3_q1',
+    chapter: 3,
+    icon: 'harbor_map',
+    title: '[Ch.3] 해안 신도시 대문 개방 & 하버 진출',
+    desc: '64위 달성 또는 3일 차 총독 각성으로 우측 노을빛 대문을 열고 트와일라잇 하버 시티에 입성하세요!',
+    reward: 680,
+    fameReward: 260,
+    progress: (st) => ({ cur: st.harborUnlocked ? 1 : 0, max: 1 }),
+    check: (st) => !!st.harborUnlocked
+  },
+  {
+    id: 'ep3_q2',
+    chapter: 3,
+    icon: 'manager_cap',
+    title: '[Ch.3] Lv.10 호텔급 컨시어지 디렉터 임명',
+    desc: '관리인 급여 Lv.10(월급 100만 · 한도 500만 · VIP 케어 +30%)을 달성해 초고액 임대 시대를 여세요!',
     reward: 1200,
-    openGarage: true,
-    progress: (st) => ({ cur: (st.garage?.ownedCars || []).some((c) => c === 'car_supercar' || c === 'car_limo') ? 1 : 0, max: 1 }),
-    check: (st) => (st.garage?.ownedCars || []).some((c) => c === 'car_supercar' || c === 'car_limo')
+    fameReward: 420,
+    openTab: 'manager',
+    progress: (st) => {
+      const maxLv = Math.max(...Object.values(st.buildings || {}).map((b) => b.manager?.salaryLv || 1));
+      return { cur: Math.min(10, maxLv), max: 10 };
+    },
+    check: (st) => Math.max(...Object.values(st.buildings || {}).map((b) => b.manager?.salaryLv || 1)) >= 10
+  },
+  {
+    id: 'ep3_q3',
+    chapter: 3,
+    icon: 'crown_badge',
+    title: '[Ch.3] 1주일 대목표 · 50위 중견 부티크 재벌 등극!',
+    desc: '꾸준한 임대·상가 경영과 쇼룸 결투 승리로 글로벌 부자 서열 50위권에 진입하세요!',
+    reward: 2500,
+    fameReward: 750,
+    openForbes: true,
+    progress: (st) => {
+      const r = st.bestForbesRank || 99;
+      return { cur: Math.max(0, 100 - r), max: 50 };
+    },
+    check: (st) => (st.bestForbesRank || 99) <= 50
+  },
+
+  // ==================== Ch.4 (39위~1위): 다이아몬드 리그 제패와 만수르 사자 왕 대관식 ====================
+  {
+    id: 'ep4_q1',
+    chapter: 4,
+    icon: 'steering_supercar',
+    title: '[Ch.4] 30위 돌파 & 시크릿 24K 명품 컬렉션 해금',
+    desc: '글로벌 서열 30위를 돌파해 전설의 24K 황금 플로팅 베드와 다이아몬드 명화 홀을 해금하세요!',
+    reward: 6500,
+    fameReward: 1800,
+    openForbes: true,
+    progress: (st) => ({ cur: Math.max(0, 100 - (st.bestForbesRank || 99)), max: 70 }),
+    check: (st) => (st.bestForbesRank || 99) <= 30
+  },
+  {
+    id: 'ep4_q2',
+    chapter: 4,
+    icon: 'crown_badge',
+    title: '[Ch.4] 10위 강 회장 본진 격파 & 글로벌 1위 대관식!',
+    desc: '10위 블랙타워 강 회장과 1위 만수르 사자 왕을 모두 넘어 세계 제1의 갓물주 왕좌에 오르세요!',
+    reward: 25000,
+    fameReward: 8000,
+    openForbes: true,
+    progress: (st) => ({ cur: Math.max(0, 100 - (st.bestForbesRank || 99)), max: 99 }),
+    check: (st) => (st.bestForbesRank || 99) <= 1
   }
 ];
 
@@ -2652,8 +2718,8 @@ const FIRST_FLOOR_SHOPS_TEMPLATE = [
     h: 4.3,
     owned: true,
     buyCost: 0,
-    baseVisitRevenue: 16,
-    passiveCycleProfit: 28,
+    baseVisitRevenue: 5,
+    passiveCycleProfit: 8,
     staffRole: 'mart_clerk',
     staffName: '알바생 민수',
     upgradesCatalog: [
@@ -2706,8 +2772,8 @@ const FIRST_FLOOR_SHOPS_TEMPLATE = [
     h: 4.3,
     owned: true,
     buyCost: 0,
-    baseVisitRevenue: 15,
-    passiveCycleProfit: 26,
+    baseVisitRevenue: 5,
+    passiveCycleProfit: 7,
     staffRole: 'wash_clerk',
     staffName: '라운지 매니저 소망',
     upgradesCatalog: [
@@ -2816,129 +2882,198 @@ const CHARACTER_STYLE_PRESETS = [
 ];
 
 // =========================================================
-// 11. 포브스(FORBES) 대한민국 갓물주 자산 순위 보드 10인 거물 랭커 데이터
+// 11. [하드코어 장기 성장 시스템]
+//  - 100인 글로벌 동물 재벌 서열 (Rank 1 만수르 사자 왕 ~ Rank 100 동네 고시원 총무 · 기하급수 로그 곡선 Base * 1.12^(100 - Rank))
+//  - 명성도(Fame) 영구 월세·상가 프리미엄 배율 (+5% ➔ +25% ➔ +50% ➔ +150% ➔ +500% MAX) & 시크릿 명품 해금
+//  - 라쿤 관리소장 급여 레벨(Lv.1~Lv.20) 기반 호실 최대 월세 상한선(Rent Cap) & 사기(Morale) 태업 스토리
+//  - 장기 플레이용 에피소드 스토리 퀘스트 (Ch.1 ~ Ch.4)
 // =========================================================
-const FORBES_RIVAL_RANKERS = [
+
+const FAME_PRESTIGE_TIERS = [
+  { minFame: 0,     bonusPct: 5,   crestIdx: 0, badge: '브론즈 초보 임대업자',     title: '🌱 99위 벼락치기 초보 임대업자', unlockNote: '기본 명성 프리미엄 +5%' },
+  { minFame: 60,    bonusPct: 15,  crestIdx: 0, badge: '원룸촌 실속 건물주',       title: '🏠 골목상권 실속 임대인',       unlockNote: '전 호실·1층상가 수익 +15%' },
+  { minFame: 180,   bonusPct: 25,  crestIdx: 0, badge: '80위 신흥 부티크 오너',     title: '✨ 부티크 스트리트 루키',        unlockNote: '+25% · 시크릿 황실소파 & VIP 세입자 해금' },
+  { minFame: 480,   bonusPct: 50,  crestIdx: 1, badge: '실버 상권 프랜차이즈장',    title: '🏢 상권 부활 프랜차이즈 오너',    unlockNote: '+50% · 상위 IT 대표 VIP 해금' },
+  { minFame: 1250,  bonusPct: 100, crestIdx: 1, badge: '50위 중견 부티크 재벌',     title: '💎 중견 부티크 부동산 재벌',     unlockNote: '+100% · T4 순금피아노·아쿠아리움 & 하버 VIP 해금' },
+  { minFame: 3000,  bonusPct: 150, crestIdx: 2, badge: '30위 전국구 랜드마크 거물', title: '👑 로열 하버 랜드마크 총수',     unlockNote: '+150% · T4 플로팅베드·명화홀 & 월스트리트 VIP 해금' },
+  { minFame: 8200,  bonusPct: 300, crestIdx: 2, badge: '10위 다이아몬드 타워 제왕', title: '💠 다이아몬드 스카이라인 제왕',  unlockNote: '+300% · 최상위 다이아몬드 리그 입성' },
+  { minFame: 22000, bonusPct: 500, crestIdx: 3, badge: '1위 글로벌 만수르 절대성군', title: '🦁 세계관 최강 만수르 대제',     unlockNote: '+500% MAX · 전 세계 부자 서열 1위 정복!' }
+];
+
+const MANAGER_SALARY_TABLE = [
+  { level: 1,  roleTitle: '수습 라쿤 관리인',         staffName: '라쿤 김수습',     salary: 2,    rentCap: 15,    raiseCost: 0,     autoCollect: false, autoRepair: false, vipCarePct: 0,   perkDesc: '호실당 최대 월세 15만 한도 (수동 수금)' },
+  { level: 2,  roleTitle: '초급 라쿤 관리주임',       staffName: '라쿤 김주임',     salary: 4,    rentCap: 32,    raiseCost: 18,    autoCollect: false, autoRepair: false, vipCarePct: 0,   perkDesc: '호실당 최대 월세 32만 한도 확장' },
+  { level: 3,  roleTitle: '성실 라쿤 관리계장',       staffName: '라쿤 김계장',     salary: 7,    rentCap: 46,    raiseCost: 44,    autoCollect: false, autoRepair: true,  vipCarePct: 0,   perkDesc: '호실당 최대 월세 46만 · 쓰레기 자동 청소 시작' },
+  { level: 4,  roleTitle: '숙련 라쿤 시설과장',       staffName: '라쿤 김과장',     salary: 11,   rentCap: 60,    raiseCost: 88,    autoCollect: false, autoRepair: true,  vipCarePct: 0,   perkDesc: '호실당 최대 월세 60만 · 복도 광택 유지' },
+  { level: 5,  roleTitle: '정식 라쿤 관리소장',       staffName: '라쿤 김소장',     salary: 15,   rentCap: 80,    raiseCost: 165,   autoCollect: true,  autoRepair: true,  vipCarePct: 5,   perkDesc: '호실당 80만 한도 · 전 호실 자동 수금 & 고장 수리!' },
+  { level: 6,  roleTitle: '선임 관리소장 (+비버팀장)', staffName: '김소장 & 비버박', salary: 24,   rentCap: 125,   raiseCost: 290,   autoCollect: true,  autoRepair: true,  vipCarePct: 8,   perkDesc: '호실당 125만 한도 · 비버 시설팀장 합류 (+VIP 8%)' },
+  { level: 7,  roleTitle: '수석 단지 관리소장',       staffName: '김소장 & 비버박', salary: 36,   rentCap: 185,   raiseCost: 480,   autoCollect: true,  autoRepair: true,  vipCarePct: 12,  perkDesc: '호실당 185만 한도 · VIP 케어 +12%' },
+  { level: 8,  roleTitle: '부티크 하우스 총지배인',    staffName: '김소장 & 비버박', salary: 52,   rentCap: 265,   raiseCost: 780,   autoCollect: true,  autoRepair: true,  vipCarePct: 18,  perkDesc: '호실당 265만 한도 · VIP 케어 +18%' },
+  { level: 9,  roleTitle: '수석 호텔리어 매니저',      staffName: '김소장 & 비버박', salary: 74,   rentCap: 370,   raiseCost: 1220,  autoCollect: true,  autoRepair: true,  vipCarePct: 24,  perkDesc: '호실당 370만 한도 · VIP 케어 +24%' },
+  { level: 10, roleTitle: '호텔급 컨시어지 디렉터',    staffName: '디렉터 라쿤 킴',  salary: 100,  rentCap: 500,   raiseCost: 1850,  autoCollect: true,  autoRepair: true,  vipCarePct: 30,  perkDesc: '호실당 500만 한도 · VIP 세입자 특별 케어 +30%!' },
+  { level: 11, roleTitle: '로열 스위트 수석 컨시어지', staffName: '디렉터 라쿤 킴',  salary: 140,  rentCap: 720,   raiseCost: 2750,  autoCollect: true,  autoRepair: true,  vipCarePct: 36,  perkDesc: '호실당 720만 한도 · VIP 케어 +36%' },
+  { level: 12, roleTitle: '그랜드 하버 총괄 지배인',   staffName: '디렉터 라쿤 킴',  salary: 195,  rentCap: 1050,  raiseCost: 4100,  autoCollect: true,  autoRepair: true,  vipCarePct: 42,  perkDesc: '호실당 1,050만 한도 · VIP 케어 +42%' },
+  { level: 13, roleTitle: '펜트하우스 수석 버틀러',    staffName: '버틀러 라쿤 킴',  salary: 270,  rentCap: 1520,  raiseCost: 6100,  autoCollect: true,  autoRepair: true,  vipCarePct: 50,  perkDesc: '호실당 1,520만 한도 · VIP 케어 +50%' },
+  { level: 14, roleTitle: '메종 드 럭셔리 하우스장',   staffName: '버틀러 라쿤 킴',  salary: 375,  rentCap: 2200,  raiseCost: 9000,  autoCollect: true,  autoRepair: true,  vipCarePct: 58,  perkDesc: '호실당 2,200만 한도 · VIP 케어 +58%' },
+  { level: 15, roleTitle: '다이아몬드 타워 총집사',    staffName: '총집사 라쿤 킴',  salary: 520,  rentCap: 3200,  raiseCost: 13500, autoCollect: true,  autoRepair: true,  vipCarePct: 66,  perkDesc: '호실당 3,200만 한도 · VIP 케어 +66%' },
+  { level: 16, roleTitle: '글로벌 리츠 운영 본부장',   staffName: '본부장 라쿤 킴',  salary: 720,  rentCap: 4600,  raiseCost: 20000, autoCollect: true,  autoRepair: true,  vipCarePct: 74,  perkDesc: '호실당 4,600만 한도 · VIP 케어 +74%' },
+  { level: 17, roleTitle: '초고층 랜드마크 부사장',    staffName: '부사장 라쿤 킴',  salary: 990,  rentCap: 6600,  raiseCost: 29500, autoCollect: true,  autoRepair: true,  vipCarePct: 82,  perkDesc: '호실당 6,600만 한도 · VIP 케어 +82%' },
+  { level: 18, roleTitle: '로열 패밀리 수석 시종장',   staffName: '시종장 라쿤 킴',  salary: 1350, rentCap: 9400,  raiseCost: 43000, autoCollect: true,  autoRepair: true,  vipCarePct: 90,  perkDesc: '호실당 9,400만 한도 · VIP 케어 +90%' },
+  { level: 19, roleTitle: '아부다비 팰리스 총괄원장',  staffName: '원장 라쿤 킴',    salary: 1820, rentCap: 13500, raiseCost: 64000, autoCollect: true,  autoRepair: true,  vipCarePct: 95,  perkDesc: '호실당 13,500만 한도 · VIP 케어 +95%' },
+  { level: 20, roleTitle: '만수르 황실 수석 총괄집사장', staffName: '마스터 라쿤 킴', salary: 2450, rentCap: 25000, raiseCost: 95000, autoCollect: true,  autoRepair: true,  vipCarePct: 100, perkDesc: '호실당 25,000만 무제한급 한도 · VIP 케어 +100% MAX!' }
+];
+
+function generateForbes100Rankers() {
+  // 정확히 99위 스타트 & 7일 차 50~40위권 진입을 위한 기하급수 로그 곡선: RequiredScore = 215 * Math.pow(1.12, 100 - Rank)
+  const specialNamed = {
+    1:   { name: '두바이 만수르 사자 왕',       badge: '1위 · 글로벌 절대성군',   role: 'lion_mansour', tone: 'gold',  titleUnlock: '세계관 최강 만수르 대제',         desc: '유전과 황금 사자 타워를 지배하는 전 세계 부자 서열 1위 절대 군주' },
+    2:   { name: '모나코 슈퍼요트 백조 여제',    badge: '2위 · 지중해 해운여제',   role: 'movie_star',   tone: 'sky',   titleUnlock: '모나코 오션뷰 제왕',             desc: '지중해와 트와일라잇 하버 리조트 지분을 쥐고 있는 해운 재벌' },
+    3:   { name: '월스트리트 황금여우 회장의장', badge: '3위 · 글로벌 금융황제',   role: 'fund_manager', tone: 'gold',  titleUnlock: '글로벌 월스트리트 지배자',        desc: '전 세계 프라임 오피스 빌딩 120채를 보유한 글로벌 리츠 총수' },
+    5:   { name: '강남 테헤란로 베어 대총수',    badge: '5위 · 테헤란로 제왕',     role: 'barista',      tone: 'gold',  titleUnlock: '테헤란로 마천루 총수',           desc: '역세권 50층 마천루 타워 벨트를 독점한 부동산 거물' },
+    10:  { name: '블랙타워 강 회장 (본진)',      badge: '10위 · 숙명의 라이벌 보스!', role: 'rival_kang', tone: 'coral', isArchRival: true, titleUnlock: '강 회장 본진 참교육자 · TOP 10', desc: '보라색 하이퍼카와 초고층 블랙타워 본진을 거느린 최대 숙적!' },
+    20:  { name: '한남 더힐 폴드냥 컬렉터',      badge: '20위 · 명품 갤러리 재벌', role: 'movie_star',   tone: 'coral', titleUnlock: '한남 하이엔드 컬렉터',           desc: '다이아몬드 명화와 최고급 펜트하우스만 수집하는 상위 20위 거물' },
+    30:  { name: '해운대 마리나 판다 총재',      badge: '30위 · 시크릿 해금 관문!', role: 'streamer',    tone: 'mint',  titleUnlock: '전국구 30대 부동산 거물',        desc: '30위 돌파 시 최상위 24K 시크릿 가구 & 월스트리트 VIP가 해금됩니다!' },
+    40:  { name: '로열 하버 크루즈 캡틴 햄회장', badge: '40위 · 1주일 마스터 목표', role: 'cruise_captain', tone: 'sky', titleUnlock: '로열 하버 마리나 대주주',         desc: '일주일간 정교한 경영과 결투 끝에 도달하는 상위 40위권 재벌!' },
+    50:  { name: '청담 부티크 여우 한 의장',     badge: '50위 · 중견 부티크 재벌!', role: 'it_ceo',      tone: 'gold',  titleUnlock: '50위 중견 부티크 재벌',          desc: '50위 돌파 시 T4 순금 피아노·아쿠아리움 및 하버 VIP 계약권이 해금됩니다!' },
+    65:  { name: '블랙타워 강 회장 (지사장)',    badge: '65위 · Ch.2 승급 관문!',  role: 'rival_kang',   tone: 'coral', isSubRival: true, titleUnlock: '스트리트 상권 수호자',   desc: '제1마을 상권을 호시탐탐 노리는 블랙타워 강 회장의 지역 전초기지' },
+    75:  { name: '성수 브릭타운 비버 박 대표',   badge: '75위 · 리모델링 큰손',    role: 'beaver_chief', tone: 'mint',  titleUnlock: '성수 붉은벽돌 명인',             desc: '구옥 공장을 힙한 카페와 로프트로 개조해 자수성가한 건축가 건물주' },
+    80:  { name: '압구정 로즈가든 토끼 사모님',  badge: '80위 · 시크릿 1차 관문!', role: 'baker',        tone: 'coral', titleUnlock: '80위 신흥 부티크 오너',          desc: '80위 돌파 시 시크릿 에메랄드 소파 & 유튜버·IT대표 VIP가 해금됩니다!' },
+    85:  { name: '홍대 루프탑 시바 윤 사장',     badge: '85위 · Ch.1 졸업 관문',   role: 'mart_clerk',   tone: 'sky',   titleUnlock: '원룸촌 탈출 신예 건물주',        desc: '원룸촌에서 시작해 홍대 상가주택으로 체급을 키운 선배 건물주' },
+    90:  { name: '동네 졸부 불독 황 사장',       badge: '90위 · Ch.1 첫 결투 보스!', role: 'bulldog_boss', tone: 'coral', isChapterBoss: true, titleUnlock: '불독 사장 참교육자', desc: '"크하하! 99위 벼락치기 초짜가 감히 내 원룸 인테리어에 도전하겠다고?!"' },
+    95:  { name: '역전 상가 오리 최 소장',       badge: '95위 · 골목 상가주',      role: 'student',      tone: 'mint',  titleUnlock: '골목 상가 유망주',               desc: '역 앞 조그만 2층 상가주택을 알뜰하게 굴리는 소형 임대업자' },
+    98:  { name: '옥탑방 빌라 양 할머니',        badge: '98위 · 첫 추월 타깃!',    role: 'elderly',      tone: 'cream', titleUnlock: '98위 탈꼴찌 임대인',             desc: '포근한 다세대 빌라 한 채로 노후를 보내는 옆집 임대인 (첫 결투 추천!)' },
+    100: { name: '동네 고시원 박 총무',          badge: '100위 · 만년 꼴찌',       role: 'raccoon_manager', tone: 'cream', titleUnlock: '고시원 총무',                 desc: '보증금 없는 고시원 총무로 일하며 건물주의 꿈을 키우는 100위 막내' }
+  };
+
+  const regionPrefixes = [
+    '강남', '서초', '판교', '성수', '한남', '청담', '여의도', '해운대', '송도', '용산',
+    '연남', '망원', '이태원', '광교', '분당', '마포', '잠실', '압구정', '익선동', '가로수길'
+  ];
+  const animalTitles = [
+    { label: '불독 사장', role: 'bulldog_boss', tone: 'coral' },
+    { label: '여우 대표', role: 'it_ceo', tone: 'sky' },
+    { label: '폴드냥 원장', role: 'florist', tone: 'coral' },
+    { label: '테디 사장', role: 'barista', tone: 'gold' },
+    { label: '판다 건물주', role: 'streamer', tone: 'mint' },
+    { label: '비버 소장', role: 'beaver_chief', tone: 'sky' },
+    { label: '토끼 오너', role: 'baker', tone: 'coral' },
+    { label: '시바 지주', role: 'mart_clerk', tone: 'gold' },
+    { label: '양 여사', role: 'elderly', tone: 'cream' },
+    { label: '오리 투자자', role: 'student', tone: 'mint' }
+  ];
+  const lastNames = ['김', '이', '박', '최', '정', '황', '조', '윤', '장', '임', '한', '오', '서', '신', '권', '송'];
+
+  const list = [];
+  for (let r = 1; r <= 100; r++) {
+    // 99위는 플레이어 스타트 슬롯과 겹치지 않도록 99명의 라이벌 + 플레이어 = 총 100인 서열 구성!
+    if (r === 99) continue;
+
+    const rawScore = r === 100
+      ? 165
+      : Math.round(215 * Math.pow(1.12, 100 - r));
+
+    const sp = specialNamed[r];
+    const reg = regionPrefixes[(r * 7) % regionPrefixes.length];
+    const ani = animalTitles[(r * 3) % animalTitles.length];
+    const ln = lastNames[(r * 5) % lastNames.length];
+
+    let tierBadge = '동네 원룸촌 리그';
+    let aiPool = ['bed_iron', 'sofa_beanbag', 'app_fan', 'dec_peach'];
+    if (r <= 10) {
+      tierBadge = 'TOP 10 다이아몬드 제왕';
+      aiPool = ['bed_golden_float', 'sofa_gold_piano', 'app_aquarium', 'dec_diamond_art'];
+    } else if (r <= 30) {
+      tierBadge = '로열 마천루 거물';
+      aiPool = ['bed_golden_float', 'sofa_gold_piano', 'app_winecellar', 'dec_harbor_royal'];
+    } else if (r <= 50) {
+      tierBadge = '중견 부티크 재벌';
+      aiPool = ['bed_jacuzzi', 'sofa_piano', 'app_winecellar', 'dec_lavender'];
+    } else if (r <= 70) {
+      tierBadge = '신흥 상권 프랜차이즈';
+      aiPool = ['bed_canopy', 'sofa_leather_l', 'app_rgb_desk', 'dec_butter'];
+    } else if (r <= 85) {
+      tierBadge = '스트리트 상가주';
+      aiPool = ['bed_queen', 'sofa_mint2', 'app_ac', 'dec_sage'];
+    } else if (r <= 94) {
+      tierBadge = '원룸촌 졸부 리그';
+      aiPool = ['bed_wood_single', 'sofa_simple_lamp', 'app_mini_fridge', 'dec_basic_shelf'];
+    }
+
+    const fameGain = Math.max(12, Math.round(14 + Math.pow(100 - r, 1.38) * 1.15));
+    const dividendReward = Math.max(10, Math.min(420, Math.round(8 + Math.pow(100 - r, 1.32) * 0.72)));
+    const duelPrize = Math.max(12, Math.min(460, Math.round(10 + Math.pow(100 - r, 1.32) * 0.82)));
+
+    list.push({
+      baseRank: r,
+      id: r === 10 ? 'rival_kang' : `rank100_${r}`,
+      name: sp ? sp.name : `${reg} ${ln} ${ani.label}`,
+      badge: sp ? sp.badge : `${r}위 · ${tierBadge}`,
+      titleUnlock: sp?.titleUnlock || `${r}위권 ${tierBadge} 정복자`,
+      netWorth: rawScore,
+      requiredScore: rawScore,
+      fameGain,
+      dividendReward,
+      stakePrize: duelPrize,
+      aiBuildPool: aiPool,
+      tone: sp ? sp.tone : ani.tone,
+      isArchRival: !!sp?.isArchRival,
+      isSubRival: !!sp?.isSubRival,
+      isChapterBoss: !!sp?.isChapterBoss,
+      avatarRole: sp ? sp.role : ani.role,
+      desc: sp
+        ? sp.desc
+        : `${reg} 일대 수익형 부동산과 상가를 운영하는 글로벌 서열 ${r}위 자산가`
+    });
+  }
+  return list;
+}
+
+const FORBES_RIVAL_RANKERS = generateForbes100Rankers();
+
+const EPISODE_CHAPTERS = [
   {
-    baseRank: 1,
-    id: 'rank_mansour',
-    name: '두바이 오일머니 만수르 셰이크',
-    badge: '글로벌 절대성군',
-    titleUnlock: '세계관 최강 만수르 대제',
-    netWorth: 18500,
-    dividendReward: 1200,
-    tone: 'gold',
-    avatarRole: 'mansour',
-    desc: '유전과 초고층 골드 랜드마크를 소유한 전설의 최정점 자산가'
+    chapter: 1,
+    code: 'Ch.1',
+    rankRange: '99위 ~ 85위',
+    minRankTarget: 85,
+    iconIdx: 0,
+    title: '바닥부터 시작하는 원룸촌 임대업',
+    subtitle: '낡은 101호 수리 · 라쿤 관리소장 급여 인상 · 90위 불독 사장과의 첫 결투!',
+    storyQuote: '🦝 라쿤 김수습: "회장님! 지금은 우리가 100명 중 99위 벼락치기 초보지만, 제 월급 한도(Rent Cap)를 올리고 가구를 채우면 90위 불독 황 사장 코를 납작하게 해줄 수 있어요!"',
+    questIds: ['ep1_q1', 'ep1_q2', 'ep1_q3']
   },
   {
-    baseRank: 2,
-    id: 'rank_yeouido',
-    name: '여의도 월스트리트 한 회장',
-    badge: '금융타워 거물',
-    titleUnlock: '여의도 스카이라인 지배자',
-    netWorth: 12800,
-    dividendReward: 750,
-    tone: 'sky',
-    avatarRole: 'manager',
-    desc: '여의도 초고층 프라임 오피스와 글로벌 리츠를 굴리는 큰손'
+    chapter: 2,
+    code: 'Ch.2',
+    rankRange: '84위 ~ 65위',
+    minRankTarget: 65,
+    iconIdx: 1,
+    title: '상권 부활과 상가 프랜차이즈 전쟁',
+    subtitle: '1층 마트·베이커리 골든벨 홍보 · Lv.5 정식 소장 승급 · 강 회장 방어전!',
+    storyQuote: '🐆 블랙타워 강 회장: "호오~ 원룸촌 흙수저가 감히 상가 상권에 발을 들여? 내 스카우트 공세와 쇼룸 결투를 버텨낼 수 있을까!"',
+    questIds: ['ep2_q1', 'ep2_q2', 'ep2_q3']
   },
   {
-    baseRank: 3,
-    id: 'rank_gangnam',
-    name: '강남 테헤란로 타워 백 총수',
-    badge: '강남 빌딩왕',
-    titleUnlock: '테헤란로 프라임 건물주',
-    netWorth: 9200,
-    dividendReward: 550,
-    tone: 'mint',
-    avatarRole: 'developer',
-    desc: '테헤란로 역세권 코너 빌딩 5채를 보유한 전통의 빌딩 재벌'
+    chapter: 3,
+    code: 'Ch.3',
+    rankRange: '64위 ~ 40위 (1주일 목표)',
+    minRankTarget: 40,
+    iconIdx: 2,
+    title: '로열 하버 게이트 개방과 중견 재벌 등극',
+    subtitle: '해안 신도시 노을빛 대문 개방 · Lv.10 호텔 컨시어지 · 50위권 명성 리그 진입!',
+    storyQuote: '🦫 비버 박 팀장: "우측 끝 거대한 노을빛 대문이 열렸습니다! 트와일라잇 하버 호텔과 요트 마리나를 개발해 대망의 50위~40위 중견 재벌 리그로 도약합시다!"',
+    questIds: ['ep3_q1', 'ep3_q2', 'ep3_q3']
   },
   {
-    baseRank: 4,
-    id: 'rival_kang',
-    name: '블랙타워 강 회장',
-    badge: '숙명의 라이벌!',
-    titleUnlock: '강 회장 참교육자 · 4대 천왕',
-    netWorth: 6400,
-    dividendReward: 500,
-    tone: 'coral',
-    isArchRival: true,
-    avatarRole: 'rival_kang',
-    desc: '보라색 슈퍼카를 몰고 다니며 우량 세입자와 상가 매물을 노리는 야심가'
-  },
-  {
-    baseRank: 5,
-    id: 'rank_haeundae',
-    name: '해운대 오션뷰 마 회장',
-    badge: '마린시티 큰손',
-    titleUnlock: '오션뷰 리조트 타이쿤',
-    netWorth: 5100,
-    dividendReward: 340,
-    tone: 'sky',
-    avatarRole: 'barista',
-    desc: '해운대 해안 상권과 오션뷰 펜트하우스를 싹쓸이한 리조트 재벌'
-  },
-  {
-    baseRank: 6,
-    id: 'rank_apgujeong',
-    name: '압구정 로데오 정 사모님',
-    badge: '청담 부티크 여왕',
-    titleUnlock: '로데오 플래그십 오너',
-    netWorth: 4200,
-    dividendReward: 280,
-    tone: 'coral',
-    avatarRole: 'florist',
-    desc: '청담·압구정 명품 부티크 상가 거리를 장악한 패션 부동산 큰손'
-  },
-  {
-    baseRank: 7,
-    id: 'rank_pangyo',
-    name: '판교 코인졸부 최 이사',
-    badge: '테크밸리 신흥부자',
-    titleUnlock: '스마트 밸리 건물주',
-    netWorth: 3450,
-    dividendReward: 220,
-    tone: 'mint',
-    avatarRole: 'streamer',
-    desc: '스타트업 엑싯 자금으로 주상복합 상가를 사 모으는 신흥 영앤리치'
-  },
-  {
-    baseRank: 8,
-    id: 'rank_seongsu',
-    name: '성수동 붉은벽돌 김 사장',
-    badge: '핫플 리모델링 장인',
-    titleUnlock: '성수 브릭타운 명인',
-    netWorth: 2850,
-    dividendReward: 180,
-    tone: 'gold',
-    avatarRole: 'baker',
-    desc: '구옥 공장을 감성 베이커리와 로스터리 상가로 탈바꿈시킨 고수'
-  },
-  {
-    baseRank: 9,
-    id: 'rank_hongdae',
-    name: '홍대 힙스터 윤 대표',
-    badge: '상권 트렌드세터',
-    titleUnlock: '부티크 스트리트 메이커',
-    netWorth: 2380,
-    dividendReward: 140,
-    tone: 'sky',
-    avatarRole: 'newlywed',
-    desc: '개성 넘치는 원룸·복층 스튜디오와 디저트 샵을 운영하는 젊은 건물주'
-  },
-  {
-    baseRank: 10,
-    id: 'rank_park',
-    name: '복덕방 박 영감',
-    badge: '동네 터줏대감',
-    titleUnlock: '미니미 타운 신예 갓물주',
-    netWorth: 1850,
-    dividendReward: 100,
-    tone: 'cream',
-    avatarRole: 'elderly',
-    desc: '30년째 동네 알짜 상가주택을 지키고 있는 노련한 원로 임대인'
+    chapter: 4,
+    code: 'Ch.4',
+    rankRange: '39위 ~ 1위 (최종 대관식)',
+    minRankTarget: 1,
+    iconIdx: 3,
+    title: '다이아몬드 리그 제패와 만수르 사자 왕 대관식',
+    subtitle: '30위 시크릿 명품 해금 · 10위 강 회장 본진 격파 · 글로벌 서열 1위 등극!',
+    storyQuote: '🦁 만수르 사자 왕: "99위 바닥에서 출발해 내 황금 왕좌 앞까지 올라오다니... 진정한 글로벌 제1의 성군 건물주가 누구인지 마지막 쇼룸에서 가려보자!"',
+    questIds: ['ep4_q1', 'ep4_q2']
   }
 ];
 
@@ -3307,10 +3442,44 @@ window.MONEYGUN_FLEX_TIERS = MONEYGUN_FLEX_TIERS;
 window.SHOWROOM_DUEL_OPPONENTS = SHOWROOM_DUEL_OPPONENTS;
 window.CHRONICLE_DAY_TIERS = CHRONICLE_DAY_TIERS;
 window.HARBOR_SHOP_UPGRADE_CATALOG = HARBOR_SHOP_UPGRADE_CATALOG;
+window.FAME_PRESTIGE_TIERS = FAME_PRESTIGE_TIERS;
+window.MANAGER_SALARY_TABLE = MANAGER_SALARY_TABLE;
+window.EPISODE_CHAPTERS = EPISODE_CHAPTERS;
 
 // =========================================================
-// 12. 팝마트 & 동물의 숲 감성 360도 3D 매트 클레이 피규어 10종 동물 캐릭터 & 초고화질 마스터 이미지 매니페스트
+// 12. 팝마트 & 동물의 숲 감성 360도 3D 매트 클레이 피규어 캐릭터 로스터 & 초고화질 마스터 이미지 매니페스트
 // =========================================================
+const NPC_SPECIAL_CHARACTERS = [
+  {
+    id: 'char_11_raccoon',
+    emoji: '🦝',
+    name: '꼼꼼한 라쿤 관리소장',
+    imgPath: './assets/characters/char_11_raccoon_manager.png',
+    roles: ['raccoon_manager', 'manager']
+  },
+  {
+    id: 'char_12_beaver',
+    emoji: '🦫',
+    name: '베테랑 비버 시설팀장',
+    imgPath: './assets/characters/char_12_beaver_chief.png',
+    roles: ['beaver_chief']
+  },
+  {
+    id: 'char_13_bulldog',
+    emoji: '🐶',
+    name: '동네 졸부 불독 황 사장',
+    imgPath: './assets/characters/char_13_bulldog_boss.png',
+    roles: ['bulldog_boss']
+  },
+  {
+    id: 'char_14_lion',
+    emoji: '🦁',
+    name: '두바이 만수르 사자 왕',
+    imgPath: './assets/characters/char_14_lion_mansour.png',
+    roles: ['lion_mansour']
+  }
+];
+window.NPC_SPECIAL_CHARACTERS = NPC_SPECIAL_CHARACTERS;
 const ANIMAL_CHARACTER_ROSTER = [
   {
     id: 'char_01_bunny',
@@ -3445,39 +3614,60 @@ const POPMART_ASSET_PATHS = {
     nitroBoostFlame: './assets/skills/skill_nitro_boost_flame.png'
   },
   vehicles: {
+    mintScooter: './assets/vehicles/car_mint_scooter.png',
     redSupercar: './assets/vehicles/car_red_supercar.png',
     purpleRival: './assets/vehicles/car_purple_rival.png',
     goldMansour: './assets/vehicles/car_gold_mansour.png',
     goldStatue: './assets/vehicles/prop_gold_statue.png'
   },
   furniture: {
+    bedSkyIron: './assets/furniture/furn_sky_iron_bed.png',
     bedTier1Wood: './assets/furniture/bed_tier1_wood.png',
     bedTier2Hotel: './assets/furniture/bed_tier2_hotel.png',
+    bunkBed: './assets/furniture/furn_bunk_bed.png',
     bedTier3Canopy: './assets/furniture/bed_tier3_canopy.png',
     bedTier4Gold: './assets/furniture/bed_tier4_gold.png',
+    butterBeanbag: './assets/furniture/furn_butter_beanbag.png',
+    lampStool: './assets/furniture/furn_lamp_stool.png',
+    mintLoveseat: './assets/furniture/furn_mint_loveseat.png',
+    woodRockerTea: './assets/furniture/furn_wood_rocker_tea.png',
     velvetSofa: './assets/furniture/furn_velvet_sofa.png',
+    emeraldThroneSofa: './assets/furniture/furn_emerald_throne_sofa.png',
+    blackGrandPiano: './assets/furniture/furn_black_grand_piano.png',
     goldPiano: './assets/furniture/furn_gold_piano.png',
     spaJacuzzi: './assets/furniture/furn_spa_jacuzzi.png',
+    standFan: './assets/furniture/furn_stand_fan.png',
+    pastelMiniFridge: './assets/furniture/furn_pastel_mini_fridge.png',
+    cinemaProjector: './assets/furniture/furn_cinema_projector.png',
+    lpEspressoBar: './assets/furniture/furn_lp_espresso_bar.png',
+    gamingRgbDesk: './assets/furniture/furn_gaming_rgb_desk.png',
     chandelier: './assets/furniture/furn_chandelier.png',
     aquariumWall: './assets/furniture/furn_aquarium_wall.png',
     wineBar: './assets/furniture/furn_wine_bar.png',
+    woodBookshelf: './assets/furniture/furn_wood_bookshelf.png',
+    diamondArtPedestal: './assets/furniture/furn_diamond_art_pedestal.png',
     texWallWainscot: './assets/furniture/tex_wall_wainscot.png',
     texWallMarble: './assets/furniture/tex_wall_marble.png',
+    texFloorHerringbone: './assets/furniture/tex_floor_herringbone.png',
+    texExteriorCreamBrick: './assets/furniture/tex_exterior_cream_brick.png',
     luxurySetSheet: './assets/furniture/furn_luxury_set_sheet.png',
     wallpaperCream: './assets/furniture/wallpaper_cream_wainscot.png',
     wallpaperMarble: './assets/furniture/wallpaper_royal_marble.png'
   },
   buildings: {
+    signBakery: './assets/buildings/sign_bakery_croissant.png',
     signBakeryCroissant: './assets/buildings/sign_bakery_croissant.png',
     signConv24h: './assets/buildings/sign_conv_24h.png',
     signLaundryBubble: './assets/buildings/sign_laundry_bubble.png',
     signFurnitureFlagship: './assets/buildings/sign_furniture_flagship.png',
     signCafeRoastery: './assets/buildings/sign_cafe_roastery.png',
+    signFlowerBoutique: './assets/buildings/sign_flower_boutique.png',
     signHarborLobster: './assets/buildings/sign_harbor_lobster.png',
     signHarborWine: './assets/buildings/sign_harbor_wine.png',
     signHarborMarina: './assets/buildings/sign_harbor_marina.png',
     propGrandGateLock: './assets/buildings/prop_grand_gate_lock.png',
-    propConstructionCrane: './assets/buildings/prop_construction_crane.png'
+    propConstructionCrane: './assets/buildings/prop_construction_crane.png',
+    propRaccoonOfficeBooth: './assets/buildings/prop_raccoon_office_booth.png'
   },
   ui: {
     goldenTelescope: './assets/ui/ui_golden_telescope.png',
@@ -3485,6 +3675,12 @@ const POPMART_ASSET_PATHS = {
     quickMoneygun: './assets/ui/ui_quick_moneygun.png',
     quickSupercar: './assets/ui/ui_quick_supercar.png',
     quickTrophy: './assets/ui/ui_quick_trophy.png',
+    fameCrestTiers: './assets/ui/ui_fame_crest_tiers.png',
+    managerStatusIcons: './assets/ui/ui_manager_status_icons.png',
+    episodeChapterIcons: './assets/ui/ui_episode_chapter_icons.png',
+    infraIconsSheet: './assets/ui/ui_infra_icons_sheet.png',
+    devLotsSheet: './assets/ui/ui_dev_lots_sheet.png',
+    duelTrophyCrown: './assets/ui/ui_duel_trophy_crown.png',
     weatherIconsSheet: './assets/ui/ui_weather_icons_sheet.png',
     actionIconsSheet: './assets/ui/ui_action_icons_sheet.png',
     signsShopsSheet: './assets/ui/signs_shops_sheet.png',

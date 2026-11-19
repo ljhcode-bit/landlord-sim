@@ -2280,9 +2280,9 @@ input[type='range'].golden-coin-range::-webkit-slider-thumb {
   position: absolute;
   top: -4px;
   right: -4px;
-  min-width: 17px;
-  height: 17px;
-  padding: 0 4px;
+  min-width: 18px;
+  height: 19px;
+  padding: 0 6px;
   border-radius: 999px;
   background: #10B981;
   border: 1.5px solid #FFFFFF;
@@ -2290,6 +2290,8 @@ input[type='range'].golden-coin-range::-webkit-slider-thumb {
   font-family: 'Pretendard', sans-serif;
   font-weight: 800;
   font-size: 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -3444,4 +3446,127 @@ button:hover .toy-ico-img,
   transform: translateY(-2px) scale(1.14) rotate(-4deg);
   filter: drop-shadow(0 4px 6px rgba(44, 34, 30, 0.28));
 }
+
+/* ==================== 22. 100인 부자 서열 · 명성(Fame) 캡슐 · 라쿤 관리인 경보 · 에피소드 스토리 배너 ==================== */
+.hud-fame-rank-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 253, 245, 0.95) 0%, rgba(254, 243, 199, 0.94) 100%);
+  border: 1.8px solid #FCD34D;
+  box-shadow: 0 6px 16px rgba(180, 83, 9, 0.14), 0 2px 0 #EAB30866;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.16s var(--spring-ease), box-shadow 0.16s ease;
+}
+
+.hud-fame-rank-pill:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(180, 83, 9, 0.22), 0 3px 0 #D9770688;
+}
+
+.hud-fame-rank-num {
+  font-family: 'Jua', sans-serif;
+  font-size: 14px;
+  color: #78350F;
+}
+
+.hud-fame-mult-tag {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 800;
+  font-size: 11.5px;
+  color: #15803D;
+}
+
+.hud-manager-alert-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #FFF1F2 0%, #FFE4E6 100%);
+  border: 1.8px solid #FB7185;
+  box-shadow: 0 6px 14px rgba(225, 29, 72, 0.18), 0 2px 0 #F43F5E66;
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 800;
+  font-size: 11.5px;
+  color: #9F1239;
+  cursor: pointer;
+  animation: pulseSoftAlert 1.8s ease-in-out infinite;
+}
+
+@keyframes pulseSoftAlert {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1.5px); }
+}
+
+.pocket-episode-banner {
+  padding: 6px 9px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+  border: 1.5px solid #FCD34D;
+  cursor: pointer;
+  transition: transform 0.14s ease, border-color 0.14s ease;
+}
+
+.pocket-episode-banner:hover {
+  transform: translateY(-1px);
+  border-color: #F59E0B;
+}
+
+.pocket-wide-card-btn.tone-mint {
+  background: linear-gradient(180deg, #F0FDF4 0%, #DCFCE7 100%);
+  border-color: #86EFAC;
+}
+
+.forbes-filter-pill {
+  padding: 5px 4px;
+  border-radius: 11px;
+  background: #F7EFE5;
+  border: 1.5px solid #E5CEB5;
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 800;
+  font-size: 10.5px;
+  color: #69544C;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+
+.forbes-filter-pill.active {
+  background: linear-gradient(180deg, #FFFBEB 0%, #FDE047 100%);
+  border-color: #F59E0B;
+  color: #3A2E2B;
+  box-shadow: 0 2px 0 #D9770666;
+}
+
+.rent-cap-warning-box {
+  border-radius: 14px;
+  padding: 7px 10px;
+  background: linear-gradient(90deg, #FFF1F2 0%, #FFE4E6 100%);
+  border: 1.5px solid #FDA4AF;
+  color: #9F1239;
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 800;
+  font-size: 11px;
+}
+
+@media (min-width: 640px) {
+  body:has(#room-focus-panel:not(.hidden)) .telescope-hud-tag,
+  body:has(#shop-focus-panel:not(.hidden)) .telescope-hud-tag {
+    left: calc(50% - 180px);
+    transition: left 0.22s ease;
+  }
+
+  body:has(#room-focus-panel:not(.hidden)) #focus-clean-capsule,
+  body:has(#shop-focus-panel:not(.hidden)) #focus-clean-capsule {
+    left: calc(50% - 180px) !important;
+    max-width: calc(100vw - 388px);
+    transition: left 0.22s ease;
+  }
+}
+
 
