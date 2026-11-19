@@ -4352,4 +4352,675 @@ body:has(#shop-focus-panel:not(.hidden)) #focus-clean-capsule {
   white-space: nowrap !important;
 }
 
+/* ==========================================================================
+   [24. 3D TOY UI SKINS 전면 적용]
+   단순 CSS 박스(background / border / box-shadow) 100% 퇴출 및
+   팝마트 & 동물의 숲 8종 입체 3D 토이 스킨(`assets/ui_skins/skin_*.png`) 매핑!
+   ========================================================================== */
+
+:root {
+  --skin-top-status-capsule: url('./assets/ui_skins/skin_top_status_capsule.png');
+  --skin-speech-bubble: url('./assets/ui_skins/skin_speech_bubble.png');
+  --skin-system-alert-modal: url('./assets/ui_skins/skin_system_alert_modal.png');
+  --skin-notebook-board: url('./assets/ui_skins/skin_notebook_board.png');
+  --skin-btn-primary-gold: url('./assets/ui_skins/skin_btn_primary_gold.png');
+  --skin-btn-action-coral: url('./assets/ui_skins/skin_btn_action_coral.png');
+  --skin-round-badge-frame: url('./assets/ui_skins/skin_round_badge_frame.png');
+  --skin-drawer-side-panel: url('./assets/ui_skins/skin_drawer_side_panel.png');
+}
+
+/* -------------------- ① 상단 자산·서열 상태창 & 할 일 가이드 가로형 3D 캡슐 스킨 (`skin_top_status_capsule.png`) -------------------- */
+.hud-big-unified-capsule,
+.goal-navigator-capsule,
+.focus-manual-capsule,
+.turntable-top-pill,
+.town-stage-switch-pill,
+.cinematic-tour-capsule {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: var(--skin-top-status-capsule) !important;
+  background-size: 100% 100% !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: drop-shadow(0 10px 20px rgba(44, 26, 14, 0.28));
+}
+
+.hud-big-unified-capsule {
+  min-height: 82px !important;
+  padding: 23px 38px 17px 32px !important;
+  gap: 12px !important;
+}
+
+.hud-big-money-num {
+  font-size: 30px !important;
+  font-weight: 900 !important;
+  color: #2C1E18 !important;
+  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.92) !important;
+}
+
+.hud-big-divider {
+  background: rgba(146, 98, 54, 0.35) !important;
+}
+
+#top-goal-navigator {
+  top: 118px !important;
+}
+
+body:has(#hud-manager-alert-pill:not(.hidden)) #top-goal-navigator {
+  top: 198px !important;
+}
+
+@media (min-width: 1580px) {
+  #top-goal-navigator,
+  body:has(#hud-manager-alert-pill:not(.hidden)) #top-goal-navigator {
+    top: 16px !important;
+    left: 55% !important;
+  }
+}
+
+.goal-navigator-capsule {
+  min-height: 82px !important;
+  padding: 23px 34px 17px 38px !important;
+  gap: 12px !important;
+  transition: transform 0.18s var(--spring-ease), filter 0.16s ease !important;
+}
+
+.goal-navigator-capsule:hover {
+  transform: scale(1.04) translateY(-2px) !important;
+  filter: brightness(1.03) drop-shadow(0 13px 24px rgba(44, 26, 14, 0.34));
+}
+
+.goal-navigator-capsule:active {
+  transform: scale(0.95) translateY(2px) !important;
+}
+
+.goal-nav-label {
+  font-size: 21px !important;
+  font-weight: 900 !important;
+  color: #2C1E18 !important;
+  text-shadow: 0 1.5px 0 rgba(255, 255, 255, 0.9);
+}
+
+.focus-manual-capsule {
+  min-height: 76px !important;
+  padding: 20px 36px 16px 36px !important;
+  gap: 10px !important;
+}
+
+.turntable-top-pill {
+  min-height: 84px !important;
+  padding: 22px 42px 16px 42px !important;
+}
+
+#tt-header-title {
+  color: #2C1E18 !important;
+  font-weight: 900 !important;
+  text-shadow: 0 1.5px 0 rgba(255, 255, 255, 0.9);
+}
+
+.town-stage-switch-pill {
+  min-height: 68px !important;
+  padding: 18px 28px 14px 28px !important;
+  gap: 6px !important;
+}
+
+.cinematic-tour-capsule {
+  min-height: 82px !important;
+  padding: 24px 42px 18px 42px !important;
+}
+
+/* -------------------- ② 3D 캐릭터 대사 · 거북 소장 · 드라이브 · 목표 화살표 입체 마시멜로 말풍선 스킨 (`skin_speech_bubble.png`) -------------------- */
+@keyframes toyBubbleSpringPop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -72%) scale(0.42);
+  }
+  65% {
+    opacity: 1;
+    transform: translate(-50%, -106%) scale(1.08);
+  }
+  84% {
+    opacity: 1;
+    transform: translate(-50%, -98%) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -100%) scale(1);
+  }
+}
+
+@keyframes toyBubbleGentleFloat {
+  0% {
+    transform: translate(-50%, -100%) scale(1);
+  }
+  100% {
+    transform: translate(-50%, -109%) scale(1.03);
+  }
+}
+
+.cloud-speech-bubble,
+.speech-cloud,
+.speech-cloud.rival-dark-glass,
+.world-float-action-pill,
+.world-float-action-pill.tone-drive,
+.world-float-action-pill.tone-manager,
+.world-float-action-pill.tone-manager.urgent,
+.goal-3d-arrow-label,
+.rent-coin-bubble,
+.shop-float-badge,
+.shop-float-badge.owned-shop,
+.lot-clay-badge,
+.lot-for-sale-sign,
+.poach-alert-pin {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: var(--skin-speech-bubble) !important;
+  background-size: 100% 100% !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  min-height: 70px !important;
+  padding: 20px 36px 28px 36px !important;
+  color: #2C1E18 !important;
+  font-family: 'Jua', 'Pretendard', sans-serif !important;
+  font-size: 19px !important;
+  font-weight: 900 !important;
+  text-shadow: 0 1.5px 0 rgba(255, 255, 255, 0.92) !important;
+  filter: drop-shadow(0 8px 16px rgba(44, 26, 14, 0.25));
+}
+
+.speech-cloud.rival-dark-glass,
+.world-float-action-pill.tone-manager.urgent {
+  color: #9F1239 !important;
+  filter: drop-shadow(0 9px 18px rgba(159, 18, 57, 0.34));
+}
+
+.cloud-speech-bubble,
+.speech-cloud {
+  max-width: min(440px, 90vw) !important;
+  animation:
+    toyBubbleSpringPop 0.36s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+    toyBubbleGentleFloat 2.0s ease-in-out 0.36s infinite alternate !important;
+}
+
+.world-float-action-pill {
+  animation: toyBubbleGentleFloat 2.2s ease-in-out infinite alternate !important;
+  transition: filter 0.16s ease !important;
+}
+
+.world-float-action-pill:hover {
+  animation-play-state: paused !important;
+  transform: translate(-50%, -108%) scale(1.07) !important;
+  filter: brightness(1.04) drop-shadow(0 12px 22px rgba(44, 26, 14, 0.34));
+}
+
+.goal-3d-arrow-label {
+  font-size: 22px !important;
+  padding: 22px 40px 30px 40px !important;
+  color: #92400E !important;
+  animation: toyBubbleGentleFloat 0.95s ease-in-out infinite alternate !important;
+}
+
+/* -------------------- ③ 시스템 토스트 · 해안 대문 잠금 안내 · 알림 보드 스킨 (`skin_system_alert_modal.png`) -------------------- */
+.pastel-toast,
+.gate-lock-glass-card,
+.coronation-royal-certificate,
+.hud-manager-alert-pill,
+.hq-dividend-mini-toast,
+.hud-minimal-fever-pill,
+.turntable-info-dock,
+.moneygun-popover-card,
+.title-floating-card,
+.construction-prog-pin,
+.duel-vs-card {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: var(--skin-system-alert-modal) !important;
+  background-size: 100% 100% !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  color: #2C1E18 !important;
+  filter: drop-shadow(0 14px 28px rgba(40, 24, 14, 0.32));
+}
+
+.pastel-toast {
+  min-height: 92px !important;
+  padding: 36px 56px 24px 56px !important;
+  font-size: 20px !important;
+  font-weight: 900 !important;
+  color: #2C1E18 !important;
+  animation: harborPopIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+#gate-lock-capsule {
+  bottom: 168px !important;
+  z-index: 82 !important;
+}
+
+.gate-lock-glass-card {
+  padding: 78px 86px 44px 86px !important;
+  opacity: 1 !important;
+}
+
+.gate-capsule-close {
+  top: 60px !important;
+  right: 68px !important;
+}
+
+.hud-manager-alert-pill,
+.hq-dividend-mini-toast,
+.hud-minimal-fever-pill {
+  min-height: 78px !important;
+  padding: 30px 48px 20px 48px !important;
+  font-size: 19px !important;
+  font-weight: 900 !important;
+}
+
+.turntable-info-dock {
+  padding: 56px 72px 36px 72px !important;
+}
+
+.moneygun-popover-card {
+  width: min(470px, calc(100vw - 24px)) !important;
+  max-height: calc(100vh - 215px) !important;
+  bottom: 122px !important;
+  padding: 82px 58px 38px 58px !important;
+  overflow-y: auto !important;
+  z-index: 65 !important;
+}
+
+.title-floating-card {
+  width: min(500px, 94vw) !important;
+  padding: 96px 60px 48px 60px !important;
+}
+
+.title-brand-display {
+  font-size: 46px !important;
+  color: #2C1E18 !important;
+  text-shadow:
+    0 2px 0 #FFFDF7,
+    0 4px 12px rgba(180, 105, 25, 0.24) !important;
+}
+
+.construction-prog-pin {
+  min-width: 300px !important;
+  padding: 40px 40px 26px 40px !important;
+}
+
+.duel-vs-card {
+  padding: 44px 52px 28px 52px !important;
+}
+
+/* -------------------- ④ `[📒]` 건물주 수첩 & 상세 장부 입체 가죽·스프링 다이어리 보드 스킨 (`skin_notebook_board.png`) -------------------- */
+body:has(#pocket-planner-popover:not(.hidden)) #top-right-action-cluster,
+body:has(#moneygun-flex-popover:not(.hidden)) #top-right-action-cluster {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.pocket-planner-card {
+  width: min(600px, calc(100vw - 24px)) !important;
+  max-height: calc(100vh - 140px) !important;
+  bottom: 120px !important;
+  right: 0 !important;
+  overflow: visible !important;
+  z-index: 65 !important;
+}
+
+.pocket-leather-frame {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: var(--skin-notebook-board) !important;
+  background-size: 100% 100% !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  filter: drop-shadow(0 18px 34px rgba(36, 20, 10, 0.38));
+  padding: 28px 74px 30px 160px !important;
+}
+
+.pocket-paper-sheet {
+  background: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  max-height: calc(100vh - 198px) !important;
+  overflow-y: auto !important;
+}
+
+.pocket-paper-sheet span.font-title {
+  white-space: nowrap !important;
+  font-size: 24px !important;
+}
+
+.pocket-giant-action-card,
+.pocket-giant-action-card.tone-gold,
+.pocket-giant-action-card.tone-sky,
+.pocket-giant-action-card.tone-lavender {
+  background: rgba(255, 248, 232, 0.56) !important;
+  border: none !important;
+  border-bottom: 2px dashed rgba(180, 140, 96, 0.38) !important;
+  border-radius: 14px !important;
+  box-shadow: none !important;
+  padding: 6px 10px 8px !important;
+  gap: 3px !important;
+}
+
+.pocket-giant-card-title {
+  font-size: 21px !important;
+}
+
+.pocket-giant-hero-number {
+  font-size: 28px !important;
+}
+
+.pocket-giant-sub-highlight {
+  font-size: 17px !important;
+}
+
+.pocket-giant-cta-btn {
+  min-height: 46px !important;
+  padding: 8px 20px !important;
+  font-size: 19px !important;
+}
+
+#notebook-modal .cozy-planner-shell {
+  width: min(580px, calc(100vw - 24px)) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: var(--skin-notebook-board) !important;
+  background-size: 100% 100% !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  filter: drop-shadow(-10px 18px 34px rgba(36, 20, 10, 0.36));
+  padding: 38px 72px 42px 152px !important;
+}
+
+#notebook-modal .cozy-planner-inner,
+#notebook-modal .planner-unified-sheet,
+#notebook-modal .cozy-planner-inner > div {
+  background: transparent !important;
+  background-image: none !important;
+  border-color: rgba(180, 140, 96, 0.35) !important;
+  box-shadow: none !important;
+}
+
+/* -------------------- ⑤ 핵심 액션용 3D 황금 토이 버튼(`skin_btn_primary_gold.png`) & 코럴 젤리 버튼(`skin_btn_action_coral.png`) -------------------- */
+.btn-gold-lip,
+.btn-mint-lip,
+.focus-cap-action-btn.primary,
+.duel-judge-cta-btn,
+.construction-rush-btn,
+.hud-big-rank-btn,
+.pocket-ledger-big-pill,
+.mansour-rain-pill,
+.tactile-pill-btn.tone-butter,
+.tactile-pill-btn.tone-mint {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: var(--skin-btn-primary-gold) !important;
+  background-size: 100% 100% !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  min-height: 56px !important;
+  padding: 14px 30px !important;
+  color: #FFFFFF !important;
+  font-family: 'Jua', 'Pretendard', sans-serif !important;
+  font-weight: 900 !important;
+  text-shadow: 0 2px 0 rgba(92, 34, 6, 0.92), 0 3px 8px rgba(38, 12, 2, 0.6) !important;
+  filter: drop-shadow(0 6px 12px rgba(68, 34, 8, 0.28));
+  transition: transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.14s ease !important;
+}
+
+.hud-big-rank-btn .hud-big-rank-num,
+.hud-big-rank-btn .hud-big-fame-tag,
+.pocket-ledger-big-pill span {
+  color: #FFFFFF !important;
+  text-shadow: 0 2px 0 rgba(92, 34, 6, 0.92), 0 3px 6px rgba(38, 12, 2, 0.55) !important;
+}
+
+.btn-coral-lip,
+.btn-sky-lip,
+.title-coral-start-btn,
+.goal-nav-cta-pill,
+.big-exit-capsule-btn,
+.gate-awakening-cta-btn,
+.drive-launch-pill,
+.exit-room-pill-btn,
+.focus-cap-action-btn.danger-soft {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: var(--skin-btn-action-coral) !important;
+  background-size: 100% 100% !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  min-height: 56px !important;
+  padding: 14px 30px !important;
+  color: #FFFFFF !important;
+  font-family: 'Jua', 'Pretendard', sans-serif !important;
+  font-weight: 900 !important;
+  text-shadow: 0 2px 0 rgba(124, 18, 34, 0.92), 0 3px 8px rgba(48, 8, 16, 0.58) !important;
+  filter: drop-shadow(0 6px 12px rgba(120, 24, 38, 0.28));
+  transition: transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.14s ease !important;
+}
+
+/* 캡슐 내부 서브 액션 버튼 콤팩트 높이 보정 */
+.hud-big-rank-btn,
+.goal-nav-cta-pill,
+.pocket-ledger-big-pill {
+  min-height: 48px !important;
+  padding: 10px 24px !important;
+}
+
+/* 토이 버튼 쫀득 타격감: hover scale(1.06) / active scale(0.94) */
+.btn-gold-lip:hover:not(:disabled),
+.btn-mint-lip:hover:not(:disabled),
+.btn-coral-lip:hover:not(:disabled),
+.btn-sky-lip:hover:not(:disabled),
+.title-coral-start-btn:hover:not(:disabled),
+.big-exit-capsule-btn:hover:not(:disabled),
+.gate-awakening-cta-btn:hover:not(:disabled),
+.focus-cap-action-btn:hover:not(:disabled),
+.duel-judge-cta-btn:hover:not(:disabled),
+.construction-rush-btn:hover:not(:disabled),
+.hud-big-rank-btn:hover:not(:disabled),
+.pocket-ledger-big-pill:hover:not(:disabled) {
+  transform: scale(1.06) translateY(-2px) !important;
+  filter: brightness(1.06) drop-shadow(0 10px 18px rgba(44, 20, 10, 0.34)) !important;
+}
+
+.btn-gold-lip:active:not(:disabled),
+.btn-mint-lip:active:not(:disabled),
+.btn-coral-lip:active:not(:disabled),
+.btn-sky-lip:active:not(:disabled),
+.title-coral-start-btn:active:not(:disabled),
+.big-exit-capsule-btn:active:not(:disabled),
+.gate-awakening-cta-btn:active:not(:disabled),
+.focus-cap-action-btn:active:not(:disabled),
+.duel-judge-cta-btn:active:not(:disabled),
+.construction-rush-btn:active:not(:disabled),
+.hud-big-rank-btn:active:not(:disabled),
+.pocket-ledger-big-pill:active:not(:disabled) {
+  transform: scale(0.94) translateY(2px) !important;
+  filter: brightness(0.96) drop-shadow(0 3px 6px rgba(44, 20, 10, 0.24)) !important;
+}
+
+/* -------------------- ⑥ 우측 하단 2대 대형 버튼 · 날씨 · 설정 · 닫기 원형 메달 스킨 (`skin_round_badge_frame.png`) -------------------- */
+.giant-bottom-fab .giant-fab-icon-box,
+.giant-bottom-fab.tone-money .giant-fab-icon-box,
+.giant-bottom-fab.tone-diary .giant-fab-icon-box,
+.big-corner-square-btn,
+.hud-big-avatar-chip,
+.btn-close-round,
+.pocket-mini-close,
+.tt-close-circle,
+.tt-nav-arrow,
+.top-glass-circle-btn,
+.quick-glass-circle-btn {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: var(--skin-round-badge-frame) !important;
+  background-size: 100% 100% !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  border: none !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  color: #2C1E18 !important;
+  filter: drop-shadow(0 8px 16px rgba(44, 26, 12, 0.28));
+  transition: transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.14s ease !important;
+}
+
+.giant-bottom-fab .giant-fab-icon-box {
+  width: 86px !important;
+  height: 86px !important;
+}
+
+.giant-fab-label {
+  background: transparent !important;
+  background-image: var(--skin-top-status-capsule) !important;
+  background-size: 100% 100% !important;
+  background-repeat: no-repeat !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 10px 22px 8px 22px !important;
+  font-size: 18px !important;
+  font-weight: 900 !important;
+  color: #2C1E18 !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.9);
+  filter: drop-shadow(0 5px 10px rgba(40, 24, 12, 0.26));
+}
+
+.big-corner-square-btn {
+  width: 64px !important;
+  height: 64px !important;
+}
+
+.hud-big-avatar-chip {
+  width: 52px !important;
+  height: 52px !important;
+}
+
+.giant-bottom-fab:hover {
+  transform: scale(1.06) translateY(-3px) !important;
+}
+
+.giant-bottom-fab:active {
+  transform: scale(0.94) translateY(2px) !important;
+}
+
+.big-corner-square-btn:hover,
+.btn-close-round:hover,
+.pocket-mini-close:hover,
+.tt-close-circle:hover,
+.tt-nav-arrow:hover {
+  transform: scale(1.08) !important;
+}
+
+.big-corner-square-btn:active,
+.btn-close-round:active,
+.pocket-mini-close:active,
+.tt-close-circle:active,
+.tt-nav-arrow:active {
+  transform: scale(0.92) !important;
+}
+
+/* -------------------- ⑦ 방 관리 · 가구 백화점 · 100인 서열표 세로형 3D 디스플레이 보드 스킨 (`skin_drawer_side_panel.png`) -------------------- */
+#room-focus-panel,
+#shop-focus-panel,
+#flagship-shop-drawer,
+#forbes-modal .slim-drawer-shell,
+#garage-modal .slim-drawer-shell,
+#lot-dev-modal .slim-drawer-shell,
+#recruit-modal .slim-drawer-shell,
+#settings-modal .cozy-planner-shell,
+#animal-select-modal .cozy-planner-shell,
+#rename-building-modal .cozy-planner-shell,
+#chronicle-modal .cozy-planner-shell,
+#happiness-milestone-modal .cozy-planner-shell,
+#rival-invasion-modal .cozy-planner-shell,
+#duel-result-drawer .cozy-planner-shell {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: var(--skin-drawer-side-panel) !important;
+  background-size: 100% 100% !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: drop-shadow(-10px 16px 32px rgba(36, 22, 12, 0.32));
+  padding: 54px 46px 52px 46px !important;
+}
+
+#room-focus-panel,
+#shop-focus-panel,
+.slim-drawer-shell {
+  width: min(520px, calc(100vw - 24px)) !important;
+}
+
+.forbes-filter-pill {
+  white-space: nowrap !important;
+  padding: 6px 8px !important;
+}
+
+#room-focus-panel > div:first-child,
+#shop-focus-panel > div:first-child,
+#flagship-shop-drawer > div:first-child,
+.slim-drawer-shell .cozy-planner-inner,
+.slim-drawer-shell .cozy-planner-inner > div:first-child,
+#settings-modal .cozy-planner-inner,
+#animal-select-modal .cozy-planner-inner,
+#rename-building-modal .cozy-planner-inner,
+#chronicle-modal .cozy-planner-inner,
+#happiness-milestone-modal .cozy-planner-inner,
+#rival-invasion-modal .cozy-planner-inner,
+#duel-result-drawer .cozy-planner-inner {
+  background: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.diary-card,
+.diary-subcard,
+.diary-soft-box,
+.fcat-item-card {
+  background: rgba(255, 250, 240, 0.68) !important;
+  border: 2px solid rgba(212, 175, 130, 0.45) !important;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.85) !important;
+  color: #2C1E18 !important;
+}
+
+
 

@@ -9863,17 +9863,15 @@ function showToast(msg, tone = 'mint') {
     dom.toastContainer.firstElementChild.remove();
   }
   const el = document.createElement('div');
-  const borderCol = tone === 'coral' ? '#FF6B6B' : tone === 'gold' ? '#FFD93D' : '#38E54D';
   const icoKey = tone === 'coral' ? 'sparkle_heart_gauge' : tone === 'gold' ? 'coin_stack' : 'cash_arrow_up';
-  el.className = 'pastel-toast font-title !text-[11.5px] sm:!text-[12.5px] transition-all duration-300 max-w-full';
-  el.style.borderColor = borderCol;
-  el.innerHTML = `${createCustomSVGIcon(icoKey, 18)}<span>${msg}</span>`;
+  el.className = 'pastel-toast font-title transition-all duration-300 max-w-full';
+  el.innerHTML = `${createCustomSVGIcon(icoKey, 22)}<span>${msg}</span>`;
   dom.toastContainer.appendChild(el);
   setTimeout(() => {
     el.style.opacity = '0';
-    el.style.transform = 'translateY(-6px)';
-    setTimeout(() => el.remove(), 240);
-  }, 1900);
+    el.style.transform = 'translateY(-8px) scale(0.95)';
+    setTimeout(() => el.remove(), 260);
+  }, 2350);
 }
 
 // 3D 파티클 · 파동 링 · 잭팟 텍스트 · 말풍선 · 월세 버블 (동시 파티클 캡 110개로 WebGL 60fps 보장!)
@@ -10022,10 +10020,12 @@ function isSpeechBubbleAllowedInCurrentView(forceShow = false) {
   return true;
 }
 
-function showSpeechBubble3D(key, wx, wy, wz, text, duration = 2.0, forceShow = false) {
+let lastAmbientSpeechAt = 0;
+
+function showSpeechBubble3D(key, wx, wy, wz, text, duration = 2.4, forceShow = false) {
   const isRivalLine = key.includes('kang') || key.includes('rival') || key.includes('poach') || key.includes('bid_kang');
 
-  // 발밑 3D 컬러 오라 링 활성화 (일상 말풍선 100% 바닥 3D 링으로 대체!)
+  // 발밑 3D 컬러 오라 링 활성화
   let matchedAura = false;
   for (const ar of characterAuraRings) {
     if (!ar.owner?.parent) continue;
@@ -10041,14 +10041,21 @@ function showSpeechBubble3D(key, wx, wy, wz, text, duration = 2.0, forceShow = f
     spawnGroundStatusRing3D(wx, wy < 2.8 ? 0.28 : wy - 1.4, wz, isRivalLine ? 'rival' : 'happy');
   }
 
-  // 일상 자동 대사(forceShow === false) 및 군중 환호 다중 말풍선은 100% 차단 -> 평소 말풍선 0개 보장!
-  const isCrowdSpam = key.includes('cheer') || key.startsWith('rain_') || key.startsWith('ms_');
-  if (!forceShow || isCrowdSpam || !dom.speechLayer) {
+  const isCrowdSpam = key.startsWith('rain_') || key.startsWith('ms_');
+  if (isCrowdSpam || !dom.speechLayer || titleScreenState.active) {
     if (isRivalLine) spawnGroundStatusRing3D(wx, 0.28, wz, 'rival');
     return;
   }
 
-  // 결정적 순간에만 반투명 글래스 한 줄 캡슐 토스트 딱 1개만 2초간 표시 후 소멸!
+  const nowMs = Date.now();
+  if (!forceShow) {
+    if (nowMs - lastAmbientSpeechAt < 4200 || Object.keys(speechEls).length >= 1) {
+      return;
+    }
+    lastAmbientSpeechAt = nowMs;
+  }
+
+  // 도톰한 3D 마시멜로 말풍선 스킨(`skin_speech_bubble.png`)으로 둥실둥실 팝업!
   clearTransientSpeechBubbles(null);
   const el = document.createElement('div');
   el.className = isRivalLine ? 'speech-cloud rival-dark-glass' : 'speech-cloud';
@@ -10059,7 +10066,7 @@ function showSpeechBubble3D(key, wx, wy, wz, text, duration = 2.0, forceShow = f
     wx,
     wy,
     wz,
-    timer: Math.min(2.0, duration),
+    timer: Math.min(2.8, Math.max(1.8, duration)),
     forceShow: true,
     moteEl: null
   };
@@ -24572,6 +24579,96 @@ function applyPopMartWorldDecorations() {
   }
 }
 
+function cleanUiSkinOuterWhiteToDataUrl(rawImg) {
+  const w = rawImg.naturalWidth || rawImg.width;
+  const h = rawImg.naturalHeight || rawImg.height;
+  const cv = document.createElement('canvas');
+  cv.width = w;
+  cv.height = h;
+  const ctx = cv.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(rawImg, 0, 0, w, h);
+
+  const imgData = ctx.getImageData(0, 0, w, h);
+  const d = imgData.data;
+  const visited = new Uint8Array(w * h);
+  const queue = new Int32Array(w * h);
+  let head = 0;
+  let tail = 0;
+
+  // UI 빈 템플릿 스킨 전용: 내부 크림색 영역은 100% 보존하고 바깥 테두리와 연결된 순백색(#FFFFFF)만 알파 0으로 투명 제거!
+  const isOuterWhite = (i4) => {
+    if (d[i4 + 3] < 24) return true;
+    const r = d[i4];
+    const g = d[i4 + 1];
+    const b = d[i4 + 2];
+    const minC = Math.min(r, g, b);
+    const maxC = Math.max(r, g, b);
+    const chroma = maxC - minC;
+    return (minC >= 240 && chroma <= 16) || (minC >= 195 && chroma <= 8);
+  };
+
+  const trySeed = (x, y) => {
+    if (x < 0 || x >= w || y < 0 || y >= h) return;
+    const p = y * w + x;
+    if (visited[p]) return;
+    if (isOuterWhite(p * 4)) {
+      visited[p] = 1;
+      queue[tail++] = p;
+    }
+  };
+
+  for (let x = 0; x < w; x++) {
+    trySeed(x, 0);
+    trySeed(x, h - 1);
+  }
+  for (let y = 0; y < h; y++) {
+    trySeed(0, y);
+    trySeed(w - 1, y);
+  }
+
+  while (head < tail) {
+    const p = queue[head++];
+    d[p * 4 + 3] = 0;
+    const px = p % w;
+    const py = (p - px) / w;
+    if (px > 0) trySeed(px - 1, py);
+    if (px + 1 < w) trySeed(px + 1, py);
+    if (py > 0) trySeed(px, py - 1);
+    if (py + 1 < h) trySeed(px, py + 1);
+  }
+
+  let minX = w;
+  let minY = h;
+  let maxX = -1;
+  let maxY = -1;
+  for (let y = 0; y < h; y++) {
+    const row = y * w;
+    for (let x = 0; x < w; x++) {
+      if (d[(row + x) * 4 + 3] > 32) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  ctx.putImageData(imgData, 0, 0);
+
+  if (maxX <= minX || maxY <= minY) {
+    return cv.toDataURL('image/png');
+  }
+  const cw = maxX - minX + 1;
+  const ch = maxY - minY + 1;
+  const out = document.createElement('canvas');
+  out.width = cw;
+  out.height = ch;
+  const oCtx = out.getContext('2d');
+  oCtx.imageSmoothingEnabled = true;
+  oCtx.imageSmoothingQuality = 'high';
+  oCtx.drawImage(cv, minX, minY, cw, ch, 0, 0, cw, ch);
+  return out.toDataURL('image/png');
+}
+
 async function initPopMartAssetsAsync() {
   if (POPMART_ASSETS.loading || POPMART_ASSETS.loaded) return;
   POPMART_ASSETS.loading = true;
@@ -24582,6 +24679,31 @@ async function initPopMartAssetsAsync() {
   ];
   const paths = window.POPMART_ASSET_PATHS || {};
   const maxAniso = renderer?.capabilities?.getMaxAnisotropy ? renderer.capabilities.getMaxAnisotropy() : 8;
+
+  // 0) 8종 3D 토이 UI 프레임 템플릿 스킨(`assets/ui_skins/skin_*.png`) 로드 & 외곽 #FFFFFF 100% 투명 마스킹 후 CSS 변수 바인딩!
+  if (paths.uiSkins) {
+    const skinVarMap = [
+      ['topStatusCapsule', '--skin-top-status-capsule'],
+      ['speechBubble', '--skin-speech-bubble'],
+      ['systemAlertModal', '--skin-system-alert-modal'],
+      ['notebookBoard', '--skin-notebook-board'],
+      ['btnPrimaryGold', '--skin-btn-primary-gold'],
+      ['btnActionCoral', '--skin-btn-action-coral'],
+      ['roundBadgeFrame', '--skin-round-badge-frame'],
+      ['drawerSidePanel', '--skin-drawer-side-panel']
+    ];
+    await Promise.all(skinVarMap.map(async ([key, cssVar]) => {
+      try {
+        const skinSrc = paths.uiSkins[key];
+        if (!skinSrc) return;
+        const rawSkinImg = await loadRawImagePromise(skinSrc);
+        const cleanDataUrl = cleanUiSkinOuterWhiteToDataUrl(rawSkinImg);
+        document.documentElement.style.setProperty(cssVar, `url("${cleanDataUrl}")`);
+      } catch (e) {
+        // 개별 스킨 실패 시 CSS 기본 로컬 파일 경로 유지
+      }
+    }));
+  }
 
   // 1) Batch 1: 동물 캐릭터 10종 단독 초고화질 마스터 PNG(char_01_bunny.png ~ char_10_panda_celeb.png) 로드 & 스튜디오 오프화이트 배경 100% 투명화
   await Promise.all(roster.map(async (ch) => {

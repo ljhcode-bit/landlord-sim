@@ -4036,6 +4036,16 @@ const POPMART_ASSET_PATHS = {
     signsShopsSheet: './assets/ui/signs_shops_sheet.png',
     pocketNotebook: './assets/ui/ui_pocket_notebook.png',
     quickIconsSheet: './assets/ui/ui_quick_icons_sheet.png'
+  },
+  uiSkins: {
+    topStatusCapsule: './assets/ui_skins/skin_top_status_capsule.png',
+    speechBubble: './assets/ui_skins/skin_speech_bubble.png',
+    systemAlertModal: './assets/ui_skins/skin_system_alert_modal.png',
+    notebookBoard: './assets/ui_skins/skin_notebook_board.png',
+    btnPrimaryGold: './assets/ui_skins/skin_btn_primary_gold.png',
+    btnActionCoral: './assets/ui_skins/skin_btn_action_coral.png',
+    roundBadgeFrame: './assets/ui_skins/skin_round_badge_frame.png',
+    drawerSidePanel: './assets/ui_skins/skin_drawer_side_panel.png'
   }
 };
 
