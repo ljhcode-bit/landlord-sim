@@ -265,6 +265,8 @@ function createInitialState() {
     duelTrophies: 0,
     selectedHeroCharId: 'char_05_hamster',
     hasChosenHeroAnimal: false,
+    weatherMode: 'clear',
+    constructionJobs: {},
     claimedQuests: [],
     lots,
     buildings,
@@ -378,6 +380,108 @@ let flagshipShop3DGroup = null;
 let activeFlagshipCategory = 'bed';
 let activeFlagshipTier = 0;
 const crashableStreetProps = [];
+
+// --------------------- [신규 8대 시스템 전역 상태 레지스트리] ---------------------
+const snowCapTargets = [];
+const wetRoadMaterials = [];
+
+const heroState = {
+  mesh: null,
+  x: -2.6,
+  y: 0.28,
+  z: 12.2,
+  heading: 0,
+  keys: { up: false, down: false, left: false, right: false },
+  idleKeyTimer: 0.5,
+  autoWpIdx: 0,
+  autoPauseTimer: 0,
+  paradeWaypoints: [
+    { x: -2.6, z: 10.6 },
+    { x: 14.5, z: 10.6 },
+    { x: 22.0, z: 7.0 },
+    { x: -16.5, z: 7.0 },
+    { x: -14.5, z: 12.2 },
+    { x: 0.0, z: 13.8 }
+  ],
+  paradeWpIdx: 1,
+  trail: [],
+  trailSampleAccum: 0,
+  telescopeTimer: 0,
+  telescopeActive: false,
+  telescopeTargetPos: new THREE.Vector3(),
+  telescopeBeamGroup: null
+};
+
+const weatherState = {
+  mode: 'clear', // 'clear' | 'rain' | 'snow'
+  snowAccum: 0,
+  precipGroup: null,
+  rainGeo: null,
+  rainMesh: null,
+  snowGeo: null,
+  snowMesh: null,
+  puddleGlowGroup: null,
+  icePatchGroup: null,
+  slipCooldown: 1.8
+};
+
+const constructionState = {
+  sites: {}
+};
+
+const gatePortalState = {
+  eastGateGroup: null,
+  doorLPivot: null,
+  doorRPivot: null,
+  padlockGroup: null,
+  padlockFlying: false,
+  padlockFlyVel: new THREE.Vector3(),
+  lightBeamGroup: null,
+  motes: [],
+  portalCurtain: null,
+  shakeTimer: 0,
+  nearGatePrompted: false,
+  returnGateGroup: null,
+  returnPortalCurtain: null,
+  teleportCooldown: 0
+};
+
+const turntableState = {
+  active: false,
+  mode: 'animal', // 'animal' | 'flagship' | 'garage' | 'recruit'
+  fromTitle: false,
+  scene: null,
+  camera: null,
+  renderer: null,
+  pedestalGroup: null,
+  subjectHolder: null,
+  currentSubject: null,
+  haloGroup: null,
+  sparkles: [],
+  items: [],
+  index: 0,
+  flagshipCat: 'bed',
+  flagshipTier: '0',
+  yaw: 0,
+  dragVel: 0,
+  dragging: false,
+  lastPointerX: 0,
+  winkTimer: 1.4,
+  winkDuration: 0,
+  hopTimer: 0.8,
+  emoteBadgeTimeout: null
+};
+
+const HARBOR_RING_WAYPOINTS = [
+  { x: -24.0, z: 112.5, zone: 'harbor_blvd' },
+  { x: 24.5, z: 112.5, zone: 'harbor_blvd' },
+  { x: 35.5, z: 108.0, zone: 'harbor_red_bridge_in' },
+  { x: 35.5, z: 123.0, zone: 'harbor_red_bridge_mid' },
+  { x: 35.5, z: 136.5, zone: 'harbor_red_bridge_out' },
+  { x: 14.0, z: 136.5, zone: 'harbor_marina' },
+  { x: -18.0, z: 136.5, zone: 'harbor_marina' },
+  { x: -28.0, z: 124.5, zone: 'harbor_west' }
+];
 
 const SHOWROOM_DUEL_ORIGIN = new THREE.Vector3(185, 0, 0);
 const duelState = {
@@ -2213,8 +2317,57 @@ function initSharedResources() {
 
 
 // =========================================================
-// 4. 스트리트 소품 · 어닝 · 간판 · 포커스 링 · 슈퍼카 · 단독 상가 3D 빌더
+// 4. 스트리트 소품 · 어닝 · 간판 · 포커스 링 · 슈퍼카 · 단독 상가 3D 빌더 (+ 3D 지붕 눈더미 Snow Cap 레이어)
 // =========================================================
+let sharedSnowCapMaterial = null;
+function getSharedSnowCapMaterial() {
+  if (!sharedSnowCapMaterial) {
+    sharedSnowCapMaterial = new THREE.MeshStandardMaterial({
+      color: 0xFFFFFF,
+      roughness: 0.82,
+      metalness: 0.02,
+      emissive: 0xEEF6FF,
+      emissiveIntensity: 0.28,
+      transparent: true,
+      opacity: 0.98
+    });
+  }
+  return sharedSnowCapMaterial;
+}
+
+function registerSnowCapMesh3D(parent, w, h, d, lx, ly, lz, radius = 0.12, rotX = 0, rotZ = 0, isSphereCap = false) {
+  if (!parent) return null;
+  const mat = getSharedSnowCapMaterial();
+  let mesh;
+  if (isSphereCap) {
+    mesh = new THREE.Mesh(GEO.sphere, mat);
+    mesh.scale.set(w, 0.01, d);
+    mesh.position.set(lx, ly, lz);
+  } else {
+    mesh = createRoundedToyMesh(w, h, d, mat, lx, ly, lz, Math.min(radius, h * 0.45), false, false, false);
+    mesh.rotation.set(rotX, 0, rotZ);
+    mesh.scale.y = 0.01;
+  }
+  mesh.visible = (weatherState.snowAccum || 0) > 0.015;
+  parent.add(mesh);
+  snowCapTargets.push({
+    mesh,
+    baseY: ly,
+    baseScaleX: mesh.scale.x,
+    baseScaleZ: mesh.scale.z,
+    targetScaleY: isSphereCap ? h : 1.0,
+    isSphereCap
+  });
+  return mesh;
+}
+
+function registerWetRoadMaterial(mat, dryRoughness = 0.75) {
+  if (!mat) return mat;
+  const dryMetalness = typeof mat.metalness === 'number' ? mat.metalness : 0.04;
+  wetRoadMaterials.push({ mat, dryRoughness, dryMetalness });
+  return mat;
+}
+
 function createScallopedAwning3D(width, style = 'coral') {
   const grp = new THREE.Group();
   const texMap = {
@@ -2238,6 +2391,9 @@ function createScallopedAwning3D(width, style = 'coral') {
   const slope = createRoundedToyMesh(width, 0.14, 1.32, slopeMat, 0, 0.18, 0.52, 0.05);
   slope.rotation.x = 0.36;
   grp.add(slope);
+
+  // [❄️ 눈 오는 날] 줄무늬 어닝 상단 3D 하얀 눈더미 레이어
+  registerSnowCapMesh3D(grp, width * 0.98, 0.24, 1.28, 0, 0.31, 0.5, 0.09, 0.36, 0, false);
 
   const count = Math.max(5, Math.floor(width / 0.52));
   const step = width / count;
@@ -2443,6 +2599,10 @@ function createBoulevardTree3D(scale = 1.0, sakura = false) {
     ball.castShadow = true;
     grp.add(ball);
   }
+  // [❄️ 눈 오는 날] 가로수 수관 상단 폭신한 하얀 3D 눈모자
+  registerSnowCapMesh3D(grp, 1.12 * scale, 0.58 * scale, 1.12 * scale, 0.05 * scale, 2.98 * scale, 0.04 * scale, 0.2, 0, 0, true);
+  registerSnowCapMesh3D(grp, 0.78 * scale, 0.42 * scale, 0.78 * scale, -0.52 * scale, 2.48 * scale, 0.28 * scale, 0.15, 0, 0, true);
+  registerSnowCapMesh3D(grp, 0.78 * scale, 0.42 * scale, 0.78 * scale, 0.54 * scale, 2.52 * scale, -0.22 * scale, 0.15, 0, 0, true);
   return grp;
 }
 
@@ -2981,9 +3141,9 @@ function buildCozyFloatingIsland() {
   // =========================================================
   // 3) [1단계 1] 순환 아스팔트 차도(노란 중앙선·횡단보도·맨홀·NO PARKING 연석) 구축
   // =========================================================
-  const roadHMat = makeClayMat(0xFFFFFF, { map: TEX.asphaltH, roughness: 0.75 });
-  const roadVMat = makeClayMat(0xFFFFFF, { map: TEX.asphaltV, roughness: 0.75 });
-  const roadCornerMat = makeClayMat(0x3E434C, { roughness: 0.75 });
+  const roadHMat = registerWetRoadMaterial(makeClayMat(0xFFFFFF, { map: TEX.asphaltH, roughness: 0.75 }), 0.75);
+  const roadVMat = registerWetRoadMaterial(makeClayMat(0xFFFFFF, { map: TEX.asphaltV, roughness: 0.75 }), 0.75);
+  const roadCornerMat = registerWetRoadMaterial(makeClayMat(0x3E434C, { roughness: 0.75 }), 0.75);
 
   // 북측 메인 스트리트 (z = 7.0, 폭 6.2, 길이 61.2)
   const northRoad = new THREE.Mesh(new THREE.BoxGeometry(55.0, 0.16, 6.2), roadHMat);
@@ -3334,6 +3494,9 @@ function buildCozyFloatingIsland() {
 
   // ⑨ 신규 3D 『메종 드 럭셔리 가구 백화점 (MAISON DE LUXURY)』 플래그십 쇼룸 빌딩 배치!
   buildLuxuryFurnitureFlagship3D();
+
+  // ⑩ 우측 해안 도로 끝 『🚪 빛이 새어 나오는 거대한 잠긴 대문 (East Harbor Portal Gate)』 및 직결 아스팔트 대로 구축!
+  buildWorld1EastHarborGate3D(roadHMat, sidewalkHMat);
 
   // =========================================================
   // 6) [1단계 5] 건물주 전용 VIP 골드 주차 구역 (VIP LANDLORD)
@@ -3694,11 +3857,14 @@ function buildOuterScenicDrivingZone3D(roadHMat, roadVMat, roadCornerMat, cwMat)
   for (const bx of [-4.4, 0, 4.4]) {
     const hY = 0.6 + Math.sin(((bx + 8.8) / 17.6) * Math.PI) * 5.2;
     bridgeGrp.add(createRoundedToyMesh(0.32, 0.26, 6.2, MAT.bridgeSteelRed, bx, hY - 0.1, 0, 0.04));
+    registerSnowCapMesh3D(bridgeGrp, 1.8, 0.26, 6.25, bx, hY + 0.12, 0, 0.08, 0, 0, false);
     const lampOrb = new THREE.Mesh(GEO.sphere, MAT.neonYellow);
     lampOrb.scale.setScalar(0.38);
     lampOrb.position.set(bx, hY - 0.35, 0);
     bridgeGrp.add(lampOrb);
   }
+  registerSnowCapMesh3D(bridgeGrp, bridgeLen * 0.88, 0.28, 0.42, 0, 5.95, -3.05, 0.08, 0, 0, false);
+  registerSnowCapMesh3D(bridgeGrp, bridgeLen * 0.88, 0.28, 0.42, 0, 5.95, 3.05, 0.08, 0, 0, false);
   islandRootGroup.add(bridgeGrp);
 
   // 5) 전망대 휴게소 데크 & 벤치 & 푸드트럭/커피트럭 배치
@@ -3800,6 +3966,11 @@ function createEuropeanGableRoofWithDormers3D(width, depth, roofMat, dormerCount
   const ridgeBeam = createRoundedToyMesh(width + 1.0, 0.32, 0.42, trimMat, 0, ridgeH + 0.06, 0, 0.08);
   grp.add(frontSlope, backSlope, ridgeBeam);
 
+  // [❄️ 눈 오는 날] 박공지붕 앞·뒤 경사면 및 마룻대 위 도톰한 3D 눈더미(Snow Cap Layer) 등록
+  registerSnowCapMesh3D(grp, width + 0.92, 0.34, slopeLen * 0.98, 0, ridgeH * 0.5 + 0.24, halfD * 0.5 + 0.06, 0.11, slopeAng, 0, false);
+  registerSnowCapMesh3D(grp, width + 0.92, 0.34, slopeLen * 0.98, 0, ridgeH * 0.5 + 0.24, -halfD * 0.5 - 0.06, 0.11, -slopeAng, 0, false);
+  registerSnowCapMesh3D(grp, width + 1.06, 0.36, 0.62, 0, ridgeH + 0.32, 0, 0.12, 0, 0, false);
+
   // 좌·우 박공 삼각 벽체 스텝 마감
   for (const sideX of [-width * 0.5 + 0.08, width * 0.5 - 0.08]) {
     grp.add(createRoundedToyMesh(0.32, ridgeH * 0.46, depth * 0.68, cutawayMat, sideX, ridgeH * 0.25, 0, 0.05));
@@ -3821,6 +3992,7 @@ function createEuropeanGableRoofWithDormers3D(width, depth, roofMat, dormerCount
       const dWin = createAmberLatticeWindow3D(1.12, 1.02);
       dWin.position.set(0, -0.02, 0.78);
       dormer.add(dRoofL, dRoofR, dWin);
+      registerSnowCapMesh3D(dormer, 1.96, 0.28, 1.68, 0, 1.18, 0.06, 0.09, 0, 0, false);
       grp.add(dormer);
     }
   }
@@ -4056,6 +4228,276 @@ function create3DWineCellarAndChandelierMesh(rh = 4.2, rd = 7.2) {
   return grp;
 }
 
+function createGatePlaqueTexture(titleStr, subStr, isReturn = false) {
+  const cv = document.createElement('canvas');
+  cv.width = 512;
+  cv.height = 128;
+  const ctx = cv.getContext('2d');
+  const grd = ctx.createLinearGradient(0, 0, 512, 128);
+  if (isReturn) {
+    grd.addColorStop(0, '#0F172A');
+    grd.addColorStop(0.5, '#1E3A8A');
+    grd.addColorStop(1, '#0F172A');
+  } else {
+    grd.addColorStop(0, '#451A03');
+    grd.addColorStop(0.5, '#9A3412');
+    grd.addColorStop(1, '#451A03');
+  }
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, 0, 512, 128);
+  ctx.strokeStyle = '#FBBF24';
+  ctx.lineWidth = 9;
+  ctx.strokeRect(8, 8, 496, 112);
+  ctx.fillStyle = '#FEF08A';
+  ctx.font = 'bold 34px Jua, Pretendard, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(titleStr, 256, 56);
+  ctx.fillStyle = '#FFFDF9';
+  ctx.font = 'bold 22px Pretendard, sans-serif';
+  ctx.fillText(subStr, 256, 98);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+function buildWorld1EastHarborGate3D(roadHMat, sidewalkHMat) {
+  if (!islandRootGroup) return;
+
+  // 동측 순환 도로(x = 30.5, z = 17.8)에서 우측 해안 대문(x = 41.8, z = 17.8)까지 뻗는 해안 진입 아스팔트 대로 & 석교 데크
+  const aveRoad = new THREE.Mesh(new THREE.BoxGeometry(13.2, 0.17, 6.2), roadHMat);
+  aveRoad.position.set(36.6, 0.1, 17.8);
+  aveRoad.receiveShadow = true;
+  islandRootGroup.add(aveRoad);
+
+  islandRootGroup.add(createRoundedToyMesh(12.6, 0.26, 1.35, sidewalkHMat, 36.6, 0.14, 14.05, 0.06));
+  islandRootGroup.add(createRoundedToyMesh(12.6, 0.26, 1.35, sidewalkHMat, 36.6, 0.14, 21.55, 0.06));
+
+  const gateGrp = new THREE.Group();
+  gateGrp.position.set(41.8, 0.18, 17.8);
+  gateGrp.rotation.y = -Math.PI * 0.5; // -X(본점 도로 방향)를 정면으로 응시!
+  islandRootGroup.add(gateGrp);
+  gatePortalState.eastGateGroup = gateGrp;
+
+  const whiteMarble = makeClayMat(0xFFFDF9, { roughness: 0.34, metalness: 0.08 });
+  const goldMat = MAT.pureGold24k || MAT.gold;
+
+  // 거대한 화이트 마블 & 24K 골드 양측 주탑 기둥 + 상단 로열 아치트레이브
+  gateGrp.add(createRoundedToyMesh(10.8, 0.36, 2.8, whiteMarble, 0, 0.18, 0, 0.1));
+  for (const px of [-3.95, 3.95]) {
+    gateGrp.add(createRoundedToyMesh(1.65, 8.8, 1.65, whiteMarble, px, 4.55, 0, 0.12));
+    gateGrp.add(createRoundedToyMesh(1.88, 0.42, 1.88, goldMat, px, 0.56, 0, 0.08));
+    gateGrp.add(createRoundedToyMesh(1.88, 0.44, 1.88, goldMat, px, 8.85, 0, 0.08));
+    gateGrp.add(createRoundedToyMesh(0.28, 7.6, 1.72, goldMat, px, 4.65, 0, 0.05));
+    const lanternOrb = new THREE.Mesh(GEO.sphere, MAT.stringBulbAmber || MAT.neonYellow);
+    lanternOrb.scale.setScalar(0.46);
+    lanternOrb.position.set(px, 9.55, 0);
+    gateGrp.add(lanternOrb);
+  }
+
+  // 상단 거대한 화이트&골드 아치 크라운 & 현판
+  gateGrp.add(createRoundedToyMesh(10.2, 1.55, 1.95, whiteMarble, 0, 9.65, 0, 0.14));
+  gateGrp.add(createRoundedToyMesh(10.5, 0.32, 2.15, goldMat, 0, 10.52, 0, 0.08));
+  registerSnowCapMesh3D(gateGrp, 10.6, 0.36, 2.2, 0, 10.82, 0, 0.1, 0, 0, false);
+
+  const archRing = new THREE.Mesh(new THREE.TorusGeometry(3.45, 0.32, 14, 32, Math.PI), goldMat);
+  archRing.position.set(0, 7.2, 0);
+  gateGrp.add(archRing);
+
+  const plaque = new THREE.Mesh(
+    GEO.quad,
+    new THREE.MeshBasicMaterial({ map: createGatePlaqueTexture('🌅 TWILIGHT HARBOR GATE', '제2마을 트와일라잇 하버 시티 관문', false) })
+  );
+  plaque.scale.set(6.8, 1.38, 1);
+  plaque.position.set(0, 9.68, 1.02);
+  gateGrp.add(plaque);
+
+  // 좌·우 거대한 양개형 대문 (Door Pivots)
+  const buildGateLeaf = (isRight) => {
+    const pivot = new THREE.Group();
+    pivot.position.set(isRight ? 3.12 : -3.12, 0.38, 0);
+    const leafX = isRight ? -1.52 : 1.52;
+    pivot.add(createRoundedToyMesh(2.96, 7.65, 0.36, whiteMarble, leafX, 3.84, 0, 0.08));
+    pivot.add(createRoundedToyMesh(2.54, 3.1, 0.44, goldMat, leafX, 5.65, 0, 0.06));
+    pivot.add(createRoundedToyMesh(2.24, 2.75, 0.48, whiteMarble, leafX, 5.65, 0, 0.05));
+    pivot.add(createRoundedToyMesh(2.54, 2.85, 0.44, goldMat, leafX, 2.15, 0, 0.06));
+    pivot.add(createRoundedToyMesh(2.24, 2.48, 0.48, whiteMarble, leafX, 2.15, 0, 0.05));
+    const knocker = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.07, 10, 20), goldMat);
+    knocker.position.set(isRight ? -2.58 : 2.58, 3.9, 0.26);
+    pivot.add(knocker);
+    return pivot;
+  };
+  const doorL = buildGateLeaf(false);
+  const doorR = buildGateLeaf(true);
+  gateGrp.add(doorL, doorR);
+  gatePortalState.doorLPivot = doorL;
+  gatePortalState.doorRPivot = doorR;
+
+  // 정중앙 초대형 3D 24K 황금 자물쇠 & 봉인 사슬 (봉인 해제 시 하늘로 튕겨 날아감!)
+  const padlockGrp = new THREE.Group();
+  padlockGrp.position.set(0, 4.05, 0.46);
+  const shackle = new THREE.Mesh(new THREE.TorusGeometry(0.56, 0.14, 12, 24, Math.PI), goldMat);
+  shackle.position.set(0, 0.68, 0);
+  const lockBody = createRoundedToyMesh(1.48, 1.38, 0.56, goldMat, 0, 0, 0, 0.14);
+  const keyhole = createRoundedToyMesh(0.24, 0.46, 0.62, MAT.charcoal, 0, -0.04, 0, 0.05);
+  const chainBar = createRoundedToyMesh(3.4, 0.2, 0.24, goldMat, 0, 0.12, -0.14, 0.05);
+  padlockGrp.add(shackle, lockBody, keyhole, chainBar);
+  gateGrp.add(padlockGrp);
+  gatePortalState.padlockGroup = padlockGrp;
+
+  // [요구사항 6] 문이 닫혀 있을 때도 문틈과 바닥 틈새로 길게 새어 나오는 노을빛·황금빛 볼류메트릭 광선(Light Beam) & 빛 입자!
+  const beamGrp = new THREE.Group();
+  gateGrp.add(beamGrp);
+  gatePortalState.lightBeamGroup = beamGrp;
+
+  const beamFloorMat = new THREE.MeshBasicMaterial({
+    color: 0xFFB347,
+    transparent: true,
+    opacity: 0.42,
+    blending: THREE.AdditiveBlending,
+    side: THREE.DoubleSide,
+    depthWrite: false
+  });
+  const floorSpill = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 13.5), beamFloorMat);
+  floorSpill.rotation.x = -Math.PI * 0.5;
+  floorSpill.position.set(0, 0.08, 6.8);
+  beamGrp.add(floorSpill);
+
+  const crackGlowMat = new THREE.MeshBasicMaterial({
+    color: 0xFFE066,
+    transparent: true,
+    opacity: 0.85,
+    blending: THREE.AdditiveBlending,
+    side: THREE.DoubleSide,
+    depthWrite: false
+  });
+  const centerCrack = new THREE.Mesh(new THREE.PlaneGeometry(0.38, 7.7), crackGlowMat);
+  centerCrack.position.set(0, 4.2, 0.24);
+  beamGrp.add(centerCrack);
+
+  const coneBeamMat = new THREE.MeshBasicMaterial({
+    color: 0xFF9642,
+    transparent: true,
+    opacity: 0.24,
+    blending: THREE.AdditiveBlending,
+    side: THREE.DoubleSide,
+    depthWrite: false
+  });
+  for (const [angY, posY, len] of [[0, 3.8, 11.5], [-0.18, 5.2, 10.2], [0.18, 2.6, 10.2]]) {
+    const rayCone = new THREE.Mesh(new THREE.ConeGeometry(2.15, len, 18, 1, true), coneBeamMat);
+    rayCone.rotation.x = Math.PI * 0.5;
+    rayCone.rotation.z = angY;
+    rayCone.position.set(Math.sin(angY) * 1.4, posY, len * 0.5 + 0.2);
+    beamGrp.add(rayCone);
+  }
+
+  const gateWarmLight = new THREE.PointLight(0xFFA94D, 2.4, 22);
+  gateWarmLight.position.set(0, 4.2, 2.8);
+  gateGrp.add(gateWarmLight);
+
+  gatePortalState.motes.length = 0;
+  const moteMat = new THREE.MeshBasicMaterial({
+    color: 0xFFF3B0,
+    transparent: true,
+    opacity: 0.88,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+  for (let m = 0; m < 22; m++) {
+    const sp = new THREE.Mesh(GEO.sphere, moteMat);
+    sp.scale.setScalar(0.11 + (m % 3) * 0.045);
+    sp.position.set((Math.random() - 0.5) * 3.4, 0.6 + Math.random() * 6.5, 0.4 + Math.random() * 9.5);
+    gateGrp.add(sp);
+    gatePortalState.motes.push({
+      mesh: sp,
+      baseX: sp.position.x,
+      speedZ: 1.4 + Math.random() * 1.6,
+      phase: m * 0.85
+    });
+  }
+
+  // 봉인 해제 후 활짝 열린 대문 중앙에 일렁이는 찬란한 노을빛 포탈 장막(Sunset Portal Curtain)
+  const portalMat = new THREE.MeshBasicMaterial({
+    color: 0xFF7E47,
+    transparent: true,
+    opacity: 0.62,
+    blending: THREE.AdditiveBlending,
+    side: THREE.DoubleSide,
+    depthWrite: false
+  });
+  const portalCurtain = new THREE.Mesh(new THREE.PlaneGeometry(6.2, 7.8), portalMat);
+  portalCurtain.position.set(0, 4.25, -0.05);
+  portalCurtain.visible = !!state.harborUnlocked;
+  gateGrp.add(portalCurtain);
+  gatePortalState.portalCurtain = portalCurtain;
+
+  // 클릭 판정용 넉넉한 히트박스
+  const gateHit = new THREE.Mesh(
+    new THREE.BoxGeometry(10.2, 10.6, 3.6),
+    new THREE.MeshBasicMaterial({ visible: false })
+  );
+  gateHit.position.set(0, 5.2, 0.4);
+  gateHit.userData = { kind: 'eastHarborGate' };
+  gateGrp.add(gateHit);
+  pickableMeshes.push(gateHit);
+}
+
+function createHarborEuropeanTownhouseBlock3D(isEastBlock = false) {
+  const grp = new THREE.Group();
+  const cutawayMat = MAT.dollhouseCutaway || MAT.cream;
+  const trimMat = MAT.dollhouseWarmTrim || MAT.walnutTrim;
+  const slateMat = MAT.slateRoofCharcoal || MAT.roofRoyalNavy;
+  const terraMat = MAT.terracottaRoof || MAT.coral;
+  const wallWarm = makeClayMat(isEastBlock ? 0xF5EBE0 : 0xEFE5DC, { roughness: 0.62 });
+  const wallAccent = makeClayMat(isEastBlock ? 0xE6D5C3 : 0xF8EFE6, { roughness: 0.62 });
+
+  // 좌·우 2채가 맞붙은 유럽 항구 부티크 타운하우스 + 시계탑 첨탑 + 호박색(#FFB347) 격자 창문 불빛
+  const wings = [
+    { lx: -4.4, w: 8.4, d: 6.8, h: 8.6, roof: isEastBlock ? slateMat : terraMat, wall: wallWarm },
+    { lx: 4.4,  w: 8.4, d: 6.8, h: 9.8, roof: isEastBlock ? terraMat : slateMat, wall: wallAccent }
+  ];
+  for (const wg of wings) {
+    grp.add(createRoundedToyMesh(wg.w + 0.4, 0.36, wg.d + 0.4, trimMat, wg.lx, 0.18, 0, 0.08));
+    grp.add(createRoundedToyMesh(wg.w, wg.h, wg.d, wg.wall, wg.lx, 0.36 + wg.h * 0.5, 0, 0.12));
+    grp.add(createRoundedToyMesh(wg.w + 0.25, 0.24, wg.d + 0.25, cutawayMat, wg.lx, 0.36 + wg.h * 0.5, 0, 0.05));
+
+    const roof = createEuropeanGableRoofWithDormers3D(wg.w + 0.2, wg.d + 0.2, wg.roof, 2);
+    roof.position.set(wg.lx, 0.36 + wg.h, 0);
+    grp.add(roof);
+
+    const awning = createScallopedAwning3D(wg.w - 0.8, isEastBlock ? 'sky' : 'coral');
+    awning.position.set(wg.lx, 3.45, wg.d * 0.5 + 0.08);
+    grp.add(awning);
+
+    // 1층 · 2층 전면 호박색(#FFB347) 유럽풍 격자 창문 + 주철 줄리엣 발코니
+    for (const wxOff of [-2.05, 2.05]) {
+      for (const wy of [2.1, 6.25]) {
+        const win = createAmberLatticeWindow3D(1.75, 2.05);
+        win.position.set(wg.lx + wxOff, wy, wg.d * 0.5 + 0.08);
+        grp.add(win);
+      }
+      grp.add(createRoundedToyMesh(2.15, 0.14, 0.55, cutawayMat, wg.lx + wxOff, 5.05, wg.d * 0.5 + 0.28, 0.03));
+      grp.add(createRoundedToyMesh(2.05, 0.56, 0.08, MAT.julietIron || MAT.castIron, wg.lx + wxOff, 5.38, wg.d * 0.5 + 0.52, 0.02));
+    }
+  }
+
+  // 시계탑 첨탑 (Harbor Clocktower Spire)
+  if (isEastBlock) {
+    const towerX = 4.4;
+    const towerBaseY = 12.8;
+    grp.add(createRoundedToyMesh(2.8, 3.2, 2.8, cutawayMat, towerX, towerBaseY, 0, 0.08));
+    const clockFace = new THREE.Mesh(GEO.cyl, MAT.amberWindowGlow || MAT.neonYellow);
+    clockFace.scale.set(0.82, 0.1, 0.82);
+    clockFace.rotation.x = Math.PI * 0.5;
+    clockFace.position.set(towerX, towerBaseY + 0.35, 1.44);
+    const spire = new THREE.Mesh(new THREE.ConeGeometry(1.85, 3.4, 4), slateMat);
+    spire.rotation.y = Math.PI * 0.25;
+    spire.position.set(towerX, towerBaseY + 3.25, 0);
+    grp.add(clockFace, spire);
+    registerSnowCapMesh3D(grp, 2.6, 0.32, 2.6, towerX, towerBaseY + 1.68, 0, 0.08, 0, 0, false);
+  }
+  return grp;
+}
+
 function buildTwilightHarborTown3D() {
   harborRootGroup = new THREE.Group();
   scene.add(harborRootGroup);
@@ -4063,91 +4505,162 @@ function buildTwilightHarborTown3D() {
   harborWalkerActors.length = 0;
   harborPointLights.length = 0;
 
-  const cobbleMat = makeClayMat(0xFFFFFF, { map: TEX.plazaCobble, roughness: 0.66 });
+  const cobbleMat = registerWetRoadMaterial(makeClayMat(0xFFFFFF, { map: TEX.plazaCobble, roughness: 0.66 }), 0.66);
   const quayStoneMat = MAT.dollhouseCutaway || MAT.fountainStone;
   const trimStoneMat = MAT.dollhouseWarmTrim || MAT.podiumStone;
-  const roadVMat = makeClayMat(0xFFFFFF, { map: TEX.asphaltV, roughness: 0.74 });
-  const roadHMat = makeClayMat(0xFFFFFF, { map: TEX.asphaltH, roughness: 0.74 });
+  const roadVMat = registerWetRoadMaterial(makeClayMat(0xFFFFFF, { map: TEX.asphaltV, roughness: 0.74 }), 0.74);
+  const roadHMat = registerWetRoadMaterial(makeClayMat(0xFFFFFF, { map: TEX.asphaltH, roughness: 0.74 }), 0.74);
   const teakMat = MAT.yachtTeakDeck || MAT.woodWarm;
 
-  // 1) 제1마을 해안 도로(z=50.2)와 제2마을 하버(z=88)를 잇는 초대형 '해안 연결 빨간 철제 아치 대교'
+  // 1) 황혼녘 노을 하늘과 불빛이 반사되어 일렁이는 광활한 3D 바다 만 (Sunset Harbor Bay)
   const straitSea = new THREE.Mesh(
-    new THREE.PlaneGeometry(156, 132),
+    new THREE.PlaneGeometry(220, 180),
     new THREE.MeshPhysicalMaterial({
       color: 0x0B4F6C,
       map: TEX.water,
-      roughness: 0.14,
-      metalness: 0.18,
-      clearcoat: 0.92,
-      emissive: 0x1E3A8A,
-      emissiveIntensity: 0.25
+      roughness: 0.11,
+      metalness: 0.28,
+      clearcoat: 0.96,
+      emissive: 0x2A1B4E,
+      emissiveIntensity: 0.32
     })
   );
   straitSea.rotation.x = -Math.PI * 0.5;
-  straitSea.position.set(0, -0.08, 114.0);
+  straitSea.position.set(4.0, -0.08, 122.0);
   harborRootGroup.add(straitSea);
 
-  const causewayBridge = new THREE.Group();
-  causewayBridge.position.set(2.0, 0.18, 70.5);
-  const spanLen = 36.5;
-  causewayBridge.add(createRoundedToyMesh(6.6, 0.38, spanLen, roadVMat, 0, 0.16, 0, 0.08));
-  for (const pz of [-11.5, 0, 11.5]) {
-    causewayBridge.add(createRoundedToyMesh(7.2, 2.2, 1.8, MAT.fountainStone, 0, -0.9, pz, 0.1));
+  // 수면 위 일렁이는 노을·호박색 반사 윤슬 패치 (Water Shimmer Reflections)
+  const shimmerMat = new THREE.MeshBasicMaterial({
+    color: 0xFFB347,
+    transparent: true,
+    opacity: 0.24,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+  for (let sr = 0; sr < 10; sr++) {
+    const strip = new THREE.Mesh(new THREE.PlaneGeometry(5.5 + (sr % 3) * 2.4, 0.55), shimmerMat);
+    strip.rotation.x = -Math.PI * 0.5;
+    strip.position.set(-24 + sr * 6.2, 0.01, 145.5 + (sr % 3) * 4.2);
+    harborRootGroup.add(strip);
   }
-  for (const bx of [-3.15, 3.15]) {
-    causewayBridge.add(createRoundedToyMesh(0.32, 0.45, spanLen, MAT.bridgeSteelRed, bx, 0.56, 0, 0.05));
+
+  // 2) 트와일라잇 하버 석조 해안 방파제 지반 & 코블스톤 해안 광장 (우측 해안교 수로를 위해 x = -38..+30 조성)
+  harborRootGroup.add(createRoundedToyMesh(72.0, 2.4, 54.0, trimStoneMat, -3.0, -1.05, 118.0, 0.22));
+  const harborDeck = createRoundedToyMesh(69.5, 0.26, 51.5, cobbleMat, -3.0, 0.13, 118.0, 0.14, false, true, false);
+  harborRootGroup.add(harborDeck);
+
+  // 상단 메인 부티크 대로(z = 112.5) + 남측 마리나 해안 도로(z = 136.5) + 서측 연결로(x = -28.0)
+  const hRoadNorth = new THREE.Mesh(new THREE.BoxGeometry(74.0, 0.17, 5.8), roadHMat);
+  hRoadNorth.position.set(0.5, 0.19, 112.5);
+  harborRootGroup.add(hRoadNorth);
+
+  const hRoadSouth = new THREE.Mesh(new THREE.BoxGeometry(66.0, 0.17, 5.4), roadHMat);
+  hRoadSouth.position.set(4.5, 0.19, 136.5);
+  harborRootGroup.add(hRoadSouth);
+
+  const hRoadWest = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.17, 26.0), roadVMat);
+  hRoadWest.position.set(-28.0, 0.19, 124.5);
+  harborRootGroup.add(hRoadWest);
+
+  // 3) [요구사항 7-③] 우측 해안을 따라 시원하게 뻗어 주행 가능한 『거대한 빨간 철제 아치형 다리 (Right-Coast Giant Red Steel Arch Bridge)』 (x = 35.5, z = 108..140)
+  const eastHarborBridge = new THREE.Group();
+  eastHarborBridge.position.set(35.5, 0.18, 124.5);
+  const spanLen = 30.5;
+  eastHarborBridge.add(createRoundedToyMesh(6.8, 0.38, spanLen, roadVMat, 0, 0.16, 0, 0.08));
+  for (const pz of [-10.5, 0, 10.5]) {
+    eastHarborBridge.add(createRoundedToyMesh(7.4, 2.4, 1.9, MAT.fountainStone, 0, -0.95, pz, 0.1));
+  }
+  for (const bx of [-3.2, 3.2]) {
+    eastHarborBridge.add(createRoundedToyMesh(0.34, 0.46, spanLen, MAT.bridgeSteelRed, bx, 0.58, 0, 0.05));
     const segs = 14;
     for (let s = 0; s < segs; s++) {
       const t0 = s / segs;
       const t1 = (s + 1) / segs;
-      const z0 = THREE.MathUtils.lerp(-16.5, 16.5, t0);
-      const z1 = THREE.MathUtils.lerp(-16.5, 16.5, t1);
-      const y0 = 0.65 + Math.sin(t0 * Math.PI) * 6.6;
-      const y1 = 0.65 + Math.sin(t1 * Math.PI) * 6.6;
-      const ribLen = Math.hypot(z1 - z0, y1 - y0) + 0.2;
-      const rib = createRoundedToyMesh(0.36, 0.36, ribLen, MAT.bridgeSteelRed, bx, (y0 + y1) * 0.5, (z0 + z1) * 0.5, 0.05, false, false, false);
+      const z0 = THREE.MathUtils.lerp(-14.2, 14.2, t0);
+      const z1 = THREE.MathUtils.lerp(-14.2, 14.2, t1);
+      const y0 = 0.68 + Math.sin(t0 * Math.PI) * 7.4;
+      const y1 = 0.68 + Math.sin(t1 * Math.PI) * 7.4;
+      const ribLen = Math.hypot(z1 - z0, y1 - y0) + 0.22;
+      const rib = createRoundedToyMesh(0.38, 0.38, ribLen, MAT.bridgeSteelRed, bx, (y0 + y1) * 0.5, (z0 + z1) * 0.5, 0.05, false, false, false);
       rib.rotation.x = -Math.atan2(y1 - y0, z1 - z0);
-      causewayBridge.add(rib);
+      eastHarborBridge.add(rib);
       if (s > 0 && s < segs) {
         const cabH = y0 - 0.55;
         const cab = new THREE.Mesh(GEO.cyl, MAT.silver);
         cab.scale.set(0.08, cabH, 0.08);
         cab.position.set(bx, 0.55 + cabH * 0.5, z0);
-        causewayBridge.add(cab);
+        eastHarborBridge.add(cab);
       }
     }
+    registerSnowCapMesh3D(eastHarborBridge, 0.48, 0.3, spanLen * 0.86, bx, 8.18, 0, 0.09, 0, 0, false);
   }
-  for (const bz of [-8.0, 0, 8.0]) {
-    const hY = 0.65 + Math.sin(((bz + 16.5) / 33.0) * Math.PI) * 6.6;
-    causewayBridge.add(createRoundedToyMesh(6.5, 0.28, 0.34, MAT.bridgeSteelRed, 0, hY - 0.1, bz, 0.04));
+  for (const bz of [-7.2, 0, 7.2]) {
+    const hY = 0.68 + Math.sin(((bz + 14.2) / 28.4) * Math.PI) * 7.4;
+    eastHarborBridge.add(createRoundedToyMesh(6.6, 0.3, 0.36, MAT.bridgeSteelRed, 0, hY - 0.1, bz, 0.04));
+    registerSnowCapMesh3D(eastHarborBridge, 6.65, 0.26, 0.52, 0, hY + 0.14, bz, 0.08, 0, 0, false);
     const orb = new THREE.Mesh(GEO.sphere, MAT.stringBulbAmber || MAT.neonYellow);
-    orb.scale.setScalar(0.42);
+    orb.scale.setScalar(0.45);
     orb.position.set(0, hY - 0.38, bz);
-    causewayBridge.add(orb);
+    eastHarborBridge.add(orb);
   }
+  harborRootGroup.add(eastHarborBridge);
 
-  // 3일 차 해금 전 차단기 & 해금 후 상향 개방 게이트
-  harborBridgeGateL = new THREE.Group();
-  harborBridgeGateL.position.set(-2.9, 1.05, -15.5);
-  harborBridgeGateL.add(createRoundedToyMesh(2.85, 0.18, 0.18, MAT.pureGold24k || MAT.gold, 1.42, 0, 0, 0.04));
-  harborBridgeGateR = new THREE.Group();
-  harborBridgeGateR.position.set(2.9, 1.05, -15.5);
-  harborBridgeGateR.add(createRoundedToyMesh(2.85, 0.18, 0.18, MAT.pureGold24k || MAT.gold, -1.42, 0, 0, 0.04));
-  causewayBridge.add(harborBridgeGateL, harborBridgeGateR);
-  harborRootGroup.add(causewayBridge);
+  // 4) [요구사항 7-②] 유럽풍 경사 박공지붕·도머창·호박색(#FFB347) 격자 창문 부티크 타운하우스 블록 2개 동 추가 (호텔 + 파인다이닝 + 와인바 + 요트클럽과 합쳐 총 6개 동 유럽 해안 스카이라인 완성!)
+  const westEuroBlock = createHarborEuropeanTownhouseBlock3D(false);
+  westEuroBlock.position.set(-22.2, 0.24, 102.8);
+  harborRootGroup.add(westEuroBlock);
 
-  // 2) 트와일라잇 하버 석조 해안 방파제 지반 & 코블스톤 해안 광장 (z = 88 .. 140)
-  harborRootGroup.add(createRoundedToyMesh(76.0, 2.4, 52.0, trimStoneMat, 0, -1.05, 114.0, 0.22));
-  const harborDeck = createRoundedToyMesh(73.5, 0.26, 49.5, cobbleMat, 0, 0.13, 114.0, 0.14, false, true, false);
-  harborRootGroup.add(harborDeck);
+  const eastEuroBlock = createHarborEuropeanTownhouseBlock3D(true);
+  eastEuroBlock.position.set(22.2, 0.24, 102.8);
+  harborRootGroup.add(eastEuroBlock);
 
-  // 해안 순환 도로
-  const hRoad = new THREE.Mesh(new THREE.BoxGeometry(64.0, 0.17, 5.6), roadHMat);
-  hRoad.position.set(0, 0.19, 112.5);
-  harborRootGroup.add(hRoad);
-  const hEntryRoad = new THREE.Mesh(new THREE.BoxGeometry(6.0, 0.17, 22.0), roadVMat);
-  hEntryRoad.position.set(2.0, 0.19, 99.0);
-  harborRootGroup.add(hEntryRoad);
+  // 5) 서측 입구 『☀️ 본점 귀환의 대문 (Return Gate to World 1)』 (걸어가거나 차로 통과 또는 클릭 시 즉시 제1마을 복귀!)
+  const returnGate = new THREE.Group();
+  returnGate.position.set(-35.2, 0.22, 112.5);
+  returnGate.rotation.y = Math.PI * 0.5;
+  const whiteMarble = makeClayMat(0xFFFDF9, { roughness: 0.34, metalness: 0.08 });
+  const goldMat = MAT.pureGold24k || MAT.gold;
+  for (const px of [-3.4, 3.4]) {
+    returnGate.add(createRoundedToyMesh(1.35, 7.6, 1.35, whiteMarble, px, 3.8, 0, 0.1));
+    returnGate.add(createRoundedToyMesh(1.55, 0.38, 1.55, goldMat, px, 7.65, 0, 0.07));
+  }
+  returnGate.add(createRoundedToyMesh(8.6, 1.35, 1.65, whiteMarble, 0, 8.35, 0, 0.12));
+  returnGate.add(createRoundedToyMesh(8.9, 0.28, 1.85, goldMat, 0, 9.12, 0, 0.07));
+  registerSnowCapMesh3D(returnGate, 9.0, 0.32, 1.9, 0, 9.38, 0, 0.09, 0, 0, false);
+
+  const retPlaque = new THREE.Mesh(
+    GEO.quad,
+    new THREE.MeshBasicMaterial({ map: createGatePlaqueTexture('☀️ 본점 귀환의 대문', '통과 또는 클릭 시 제1마을 본점 복귀', true) })
+  );
+  retPlaque.scale.set(6.0, 1.2, 1);
+  retPlaque.position.set(0, 8.38, 0.86);
+  returnGate.add(retPlaque);
+
+  const retCurtain = new THREE.Mesh(
+    new THREE.PlaneGeometry(5.4, 6.8),
+    new THREE.MeshBasicMaterial({
+      color: 0xFDE047,
+      transparent: true,
+      opacity: 0.48,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    })
+  );
+  retCurtain.position.set(0, 3.6, 0);
+  returnGate.add(retCurtain);
+  gatePortalState.returnGateGroup = returnGate;
+  gatePortalState.returnPortalCurtain = retCurtain;
+
+  const retHit = new THREE.Mesh(
+    new THREE.BoxGeometry(8.8, 9.2, 3.4),
+    new THREE.MeshBasicMaterial({ visible: false })
+  );
+  retHit.position.set(0, 4.5, 0);
+  retHit.userData = { kind: 'returnHarborGate' };
+  returnGate.add(retHit);
+  pickableMeshes.push(retHit);
+  harborRootGroup.add(returnGate);
 
   // 중앙 황금 닻(Golden Anchor) 노을 분수 광장 (x = 0, z = 121.5)
   const hPlaza = new THREE.Mesh(new THREE.CylinderGeometry(6.6, 6.8, 0.1, 42), quayStoneMat);
@@ -4167,12 +4680,12 @@ function buildTwilightHarborTown3D() {
   anchorRing.position.set(0, 2.35, 121.5);
   harborRootGroup.add(fPool, fWater, anchorPillar, anchorRing);
 
-  // 3) 바다 위 티크 원목 요트 선착장(Marina Pier) & 정박 중인 3D 럭셔리 요트 선단!
-  const mainPier = createRoundedToyMesh(38.0, 0.34, 4.2, teakMat, 0, 0.28, 142.0, 0.08);
+  // 6) 바다 위 티크 원목 요트 선착장(Marina Pier) & 정박 중인 3D 럭셔리 크루즈 요트 선단!
+  const mainPier = createRoundedToyMesh(42.0, 0.34, 4.2, teakMat, 0, 0.28, 143.0, 0.08);
   harborRootGroup.add(mainPier);
-  for (const slipX of [-14.0, 0.0, 14.0]) {
-    harborRootGroup.add(createRoundedToyMesh(2.8, 0.32, 11.5, teakMat, slipX, 0.26, 149.2, 0.06));
-    for (const postZ of [144.5, 149.5, 154.2]) {
+  for (const slipX of [-15.0, 0.0, 15.0]) {
+    harborRootGroup.add(createRoundedToyMesh(2.8, 0.32, 11.5, teakMat, slipX, 0.26, 150.2, 0.06));
+    for (const postZ of [145.5, 150.5, 155.2]) {
       const bollard = new THREE.Mesh(GEO.cyl, MAT.woodDark);
       bollard.scale.set(0.32, 1.15, 0.32);
       bollard.position.set(slipX - 1.25, 0.58, postZ);
@@ -4184,9 +4697,9 @@ function buildTwilightHarborTown3D() {
   }
 
   const yachtPlacements = [
-    { x: -18.8, z: 150.5, rotY: 0.08, phase: 0.0 },
-    { x: -6.2,  z: 151.2, rotY: -0.05, phase: 1.7 },
-    { x: 18.8,  z: 150.2, rotY: -0.1, phase: 3.1 }
+    { x: -19.5, z: 151.5, rotY: 0.08, phase: 0.0 },
+    { x: -6.2,  z: 152.2, rotY: -0.05, phase: 1.7 },
+    { x: 19.5,  z: 151.2, rotY: -0.1, phase: 3.1 }
   ];
   for (const yp of yachtPlacements) {
     const yacht = createLuxuryYacht3D(false);
@@ -4196,66 +4709,64 @@ function buildTwilightHarborTown3D() {
     harborYachtActors.push({ mesh: yacht, baseY: 0.08, baseRotY: yp.rotY, phase: yp.phase });
   }
 
-  // 마리나 클럽 프라이빗 슈퍼요트 업그레이드 시 추가 정박되는 24K 골드 VIP 메가요트
   harborVipMegaYacht = createLuxuryYacht3D(true);
-  harborVipMegaYacht.scale.setScalar(1.22);
-  harborVipMegaYacht.position.set(6.8, 0.1, 152.0);
-  harborVipMegaYacht.visible = !!state.standaloneShops?.shop_marina?.upgrades?.upg_crate;
+  harborVipMegaYacht.scale.setScalar(1.24);
+  harborVipMegaYacht.position.set(6.8, 0.1, 152.8);
+  harborVipMegaYacht.visible = true;
   harborRootGroup.add(harborVipMegaYacht);
   harborYachtActors.push({ mesh: harborVipMegaYacht, baseY: 0.1, baseRotY: 0.04, phase: 2.4 });
 
-  // 4) 항구 알전구 스트링 라이트(Harbor Festoon String Lights) & 주철 가로등 & 야자수
+  // 7) 주황빛 알전구 항구 스트링 라이트(Harbor Festoon String Lights) & 가로수
   const poleSpots = [
-    [-26, 115], [-10, 115], [10, 115], [26, 115],
-    [-26, 128], [-10, 128], [10, 128], [26, 128],
-    [-16, 140.5], [0, 140.5], [16, 140.5]
+    [-26, 115.5], [-10, 115.5], [10, 115.5], [26, 115.5],
+    [-26, 129.5], [-10, 129.5], [10, 129.5], [26, 129.5],
+    [-16, 141.2], [0, 141.2], [16, 141.2]
   ];
   for (const [px, pz] of poleSpots) {
     const pole = new THREE.Mesh(GEO.cyl, MAT.julietIron || MAT.castIron);
     pole.scale.set(0.18, 4.6, 0.18);
     pole.position.set(px, 2.45, pz);
     const lantern = new THREE.Mesh(GEO.sphere, MAT.stringBulbAmber || MAT.neonYellow);
-    lantern.scale.setScalar(0.34);
+    lantern.scale.setScalar(0.36);
     lantern.position.set(px, 4.82, pz);
     harborRootGroup.add(pole, lantern);
   }
 
   const stringSpans = [
-    [-26, 4.75, 115, -10, 4.75, 115],
-    [-10, 4.75, 115, 10, 4.75, 115],
-    [10, 4.75, 115, 26, 4.75, 115],
-    [-26, 4.75, 128, -10, 4.75, 128],
-    [-10, 4.75, 128, 10, 4.75, 128],
-    [10, 4.75, 128, 26, 4.75, 128],
-    [-16, 4.75, 140.5, 0, 4.75, 140.5],
-    [0, 4.75, 140.5, 16, 4.75, 140.5],
-    [-10, 4.75, 115, -10, 4.75, 128],
-    [10, 4.75, 115, 10, 4.75, 128]
+    [-26, 4.75, 115.5, -10, 4.75, 115.5],
+    [-10, 4.75, 115.5, 10, 4.75, 115.5],
+    [10, 4.75, 115.5, 26, 4.75, 115.5],
+    [-26, 4.75, 129.5, -10, 4.75, 129.5],
+    [-10, 4.75, 129.5, 10, 4.75, 129.5],
+    [10, 4.75, 129.5, 26, 4.75, 129.5],
+    [-16, 4.75, 141.2, 0, 4.75, 141.2],
+    [0, 4.75, 141.2, 16, 4.75, 141.2],
+    [-10, 4.75, 115.5, -10, 4.75, 129.5],
+    [10, 4.75, 115.5, 10, 4.75, 129.5]
   ];
   for (const [x1, y1, z1, x2, y2, z2] of stringSpans) {
     harborRootGroup.add(createHarborStringLightsSpan3D(x1, y1, z1, x2, y2, z2, 10, 0.68));
   }
 
-  // 트와일라잇 하버 따뜻한 호박빛 포인트 라이트 2기
-  const hLightL = new THREE.PointLight(0xFFA94D, 1.8, 42);
-  hLightL.position.set(-14, 7.5, 120);
-  const hLightR = new THREE.PointLight(0xFFB703, 1.8, 42);
-  hLightR.position.set(14, 7.5, 126);
+  const hLightL = new THREE.PointLight(0xFFA94D, 2.1, 46);
+  hLightL.position.set(-14, 8.0, 120);
+  const hLightR = new THREE.PointLight(0xFFB703, 2.1, 46);
+  hLightR.position.set(16, 8.0, 126);
   harborRootGroup.add(hLightL, hLightR);
   harborPointLights.push(hLightL, hLightR);
 
-  for (const [tx, tz] of [[-31, 104], [31, 104], [-32, 124], [32, 124], [-24, 138], [24, 138]]) {
-    const pm = createPalmTree3D(1.08);
-    pm.position.set(tx, 0.24, tz);
-    harborRootGroup.add(pm);
+  for (const [tx, tz] of [[-31, 107], [29, 107], [-31, 126], [28, 126], [-24, 140], [24, 140]]) {
+    const tr = createBoulevardTree3D(1.06, false);
+    tr.position.set(tx, 0.24, tz);
+    harborRootGroup.add(tr);
   }
 
-  // 5) 하버 프롬나드를 산책하고 요트를 감상하는 VIP 주민(글로벌 영화배우·월스트리트 펀드매니저·크루즈 선장) 액터 배치
+  // 하버 프롬나드를 산책하는 VIP 동물 주민들
   const vipRoles = ['movie_star', 'fund_manager', 'cruise_captain', 'streamer', 'newlywed'];
   for (let i = 0; i < 5; i++) {
     const vip = createChibiPerson3D(vipRoles[i], null, i + 7);
     const startX = -18 + i * 9;
-    const startZ = i % 2 === 0 ? 117.5 : 139.5;
+    const startZ = i % 2 === 0 ? 117.5 : 139.8;
     vip.position.set(startX, 0.28, startZ);
     vip.userData.auraTimer = 5.0;
     vip.userData.auraHex = i % 2 === 0 ? 0xFBBF24 : 0x34D399;
@@ -4277,8 +4788,20 @@ function syncHarborBridgeGate3D() {
   const open = !!state.harborUnlocked;
   if (harborBridgeGateL) harborBridgeGateL.rotation.z = open ? 1.32 : 0;
   if (harborBridgeGateR) harborBridgeGateR.rotation.z = open ? -1.32 : 0;
+  if (gatePortalState.doorLPivot) {
+    gatePortalState.doorLPivot.rotation.y = open ? -1.92 : 0;
+  }
+  if (gatePortalState.doorRPivot) {
+    gatePortalState.doorRPivot.rotation.y = open ? 1.92 : 0;
+  }
+  if (gatePortalState.padlockGroup && !gatePortalState.padlockFlying) {
+    gatePortalState.padlockGroup.visible = !open;
+  }
+  if (gatePortalState.portalCurtain) {
+    gatePortalState.portalCurtain.visible = open;
+  }
   if (harborVipMegaYacht) {
-    harborVipMegaYacht.visible = !!state.standaloneShops?.shop_marina?.upgrades?.upg_crate;
+    harborVipMegaYacht.visible = true;
   }
 }
 
@@ -5158,6 +5681,7 @@ function rebuildStandaloneShop3D(shopId) {
     } else {
       const roofMat = makeClayMat(tpl.kind === 'bakery' ? 0xF28B66 : tpl.roofColor, { roughness: 0.56 });
       grp.add(createRoundedToyMesh(w + 0.48, 0.44, d * 0.6, roofMat, 0, h + 0.46, -d * 0.18, 0.1));
+      registerSnowCapMesh3D(grp, w + 0.56, 0.34, d * 0.64, 0, h + 0.78, -d * 0.18, 0.11, 0, 0, false);
 
       const mascot = create3DStoreMascot(tpl.kind);
       mascot.scale.setScalar(1.35);
@@ -5868,6 +6392,8 @@ function buildResidentialComplex3D(lot) {
   } else {
     const roofCapMat = makeClayMat(0xF28B66, { roughness: 0.62 });
     upperStructGroup.add(createRoundedToyMesh(W + 1.0, 0.64, D + 0.96, roofCapMat, 0, 22.58, 0, 0.14));
+    // [❄️ 눈 오는 날] 메인 빌딩 옥상 도톰한 3D 눈더미(Snow Cap Layer) 등록
+    registerSnowCapMesh3D(upperStructGroup, W + 1.15, 0.52, D + 1.08, 0, 23.08, 0, 0.16, 0, 0, false);
 
     const skySignFrame = createRoundedToyMesh(11.6, 2.25, 0.36, warmTrimMat, 0, 23.98, D * 0.32, 0.14);
     const skySignFace = new THREE.Mesh(GEO.quad, skySignMat);
@@ -8108,6 +8634,43 @@ function findRoomById(roomId) {
   return null;
 }
 
+function applyObjectOutfocusOpacity3D(rootObj, outfocusAlpha = 1.0) {
+  if (!rootObj) return;
+  const shouldDim = outfocusAlpha < 0.98;
+  rootObj.traverse((child) => {
+    if (!child.isMesh || !child.material) return;
+    if (child.material.visible === false) return;
+    if (shouldDim) {
+      if (!child.userData._savedOrigMat) {
+        child.userData._savedOrigMat = child.material;
+        const cloned = child.material.clone();
+        cloned.transparent = true;
+        cloned.depthWrite = false;
+        child.userData._dimMat = cloned;
+      }
+      if (child.userData._dimMat) {
+        child.material = child.userData._dimMat;
+        const origOp = typeof child.userData._savedOrigMat.opacity === 'number' ? child.userData._savedOrigMat.opacity : 1.0;
+        child.material.opacity = Math.min(origOp, outfocusAlpha);
+      }
+    } else if (child.userData._savedOrigMat) {
+      child.material = child.userData._savedOrigMat;
+    }
+  });
+}
+
+const WorldManager = {
+  get currentStage() {
+    return (state && state.activeTownStage === 2 && !!state.harborUnlocked) ? 2 : 1;
+  },
+  set currentStage(val) {
+    if (state) {
+      state.activeTownStage = (val === 2 && !!state.harborUnlocked) ? 2 : 1;
+    }
+  }
+};
+window.WorldManager = WorldManager;
+
 function updateXRayAndFocusHighlights(dt) {
   const inFpShop = fpState.active && fpState.mode === 'shop';
   const inFpRoom = fpState.active && fpState.mode === 'room';
@@ -8116,63 +8679,81 @@ function updateXRayAndFocusHighlights(dt) {
   const inRoomFocus = (!!targetRoomObj && !inDuel && (inFpRoom || (!driveState.active && !fpState.active)));
   const inShopFocus = !!focusedShopId && !inDuel && !driveState.active && !fpState.active;
   const in1FShopFocus = !!focusedFirstFloorShopId && !inDuel && !driveState.active && !fpState.active;
+  const inTelescopeFocus = (inRoomFocus && !inFpRoom) || inShopFocus || in1FShopFocus;
+  const isStage2 = WorldManager.currentStage === 2;
 
-  // 스튜디오 배경 전환 (제2마을 타운 뷰에서는 노을빛 트와일라잇 황혼 배경 적용!)
-  const townSkyTex = state.activeTownStage === 2
+  // 스튜디오 / 월드별 하늘 배경 전환
+  const townSkyTex = isStage2
     ? (TEX.twilightSkyBackdrop || TEX.skyBackdrop)
     : TEX.skyBackdrop;
-  scene.background = (inRoomFocus || inShopFocus || in1FShopFocus || inFpShop || inDuel)
+  scene.background = (inFpShop || inDuel)
     ? TEX.studioBackdrop
     : townSkyTex;
+
   if (studioStageDisc) {
     if (inDuel) {
       studioStageDisc.position.set(SHOWROOM_DUEL_ORIGIN.x, -0.25, SHOWROOM_DUEL_ORIGIN.z);
       studioStageDisc.visible = true;
-    } else if (inRoomFocus && targetRoomObj) {
+    } else if (inFpRoom && targetRoomObj) {
       const lot = state.lots.find((l) => l.lotId === targetRoomObj.lotId);
       studioStageDisc.position.set((lot?.x || 0) + targetRoomObj.lx, targetRoomObj.ly - 0.18, (lot?.z || 0) + targetRoomObj.lz);
       studioStageDisc.visible = true;
-    } else if (inShopFocus) {
+    } else if (inFpShop) {
       const stpl = STANDALONE_SHOPS_TEMPLATE.find((s) => s.shopId === focusedShopId);
       studioStageDisc.position.set(stpl?.x || 0, 0.08, stpl?.z || 0);
-      studioStageDisc.visible = true;
-    } else if (in1FShopFocus) {
-      const ftpl = (window.FIRST_FLOOR_SHOPS_TEMPLATE || []).find((s) => s.shopId === focusedFirstFloorShopId);
-      const lot = state.lots.find((l) => l.lotId === (ftpl?.lotId || 'lot_main'));
-      studioStageDisc.position.set((lot?.x || 0) + (ftpl?.localX || 0), 0.06, (lot?.z || 0));
       studioStageDisc.visible = true;
     } else {
       studioStageDisc.visible = false;
     }
   }
 
-  // 스튜디오 보조광 강도 제어
+  // 황금 투시 망원경 및 스튜디오 보조광 강도 제어
   if (studioKeyLight) {
-    const targetInt = (inRoomFocus || inShopFocus || in1FShopFocus || inFpShop || inDuel) ? 1.28 : 0.0;
+    const targetInt = (inRoomFocus || inShopFocus || in1FShopFocus || inFpShop || inDuel) ? 1.25 : 0.0;
     studioKeyLight.intensity = THREE.MathUtils.lerp(studioKeyLight.intensity, targetInt, Math.min(1, dt * 8));
     studioFillLight.intensity = THREE.MathUtils.lerp(studioFillLight.intensity, targetInt * 0.68, Math.min(1, dt * 8));
     studioRimLight.intensity = THREE.MathUtils.lerp(studioRimLight.intensity, targetInt * 0.52, Math.min(1, dt * 8));
   }
 
-  // 아일랜드/트와일라잇 하버/단독상가/차량/거리 입주민/구름/마일스톤 가시성 제어
-  if (islandRootGroup) islandRootGroup.visible = !inRoomFocus && !inShopFocus && !in1FShopFocus && !inFpShop && !inDuel;
-  if (harborRootGroup) harborRootGroup.visible = !inRoomFocus && !inShopFocus && !in1FShopFocus && !inFpShop && !inDuel;
-  if (milestoneState.group) milestoneState.group.visible = !inRoomFocus && !inShopFocus && !in1FShopFocus && !inFpShop && !inDuel;
-  if (driveState.carRootGroup) driveState.carRootGroup.visible = !inRoomFocus && !inShopFocus && !in1FShopFocus && !inFpShop && !inDuel;
+  // [요구사항 7: 독립 WorldManager 분리] 제1마을(본점)과 제2마을(트와일라잇 하버 시티) 완벽 독립 가시성 제어!
+  if (islandRootGroup) {
+    islandRootGroup.visible = !isStage2 && !inFpShop && !inFpRoom && !inDuel;
+    applyObjectOutfocusOpacity3D(islandRootGroup, inTelescopeFocus ? 0.15 : 1.0);
+  }
+  if (harborRootGroup) {
+    harborRootGroup.visible = isStage2 && !inFpShop && !inFpRoom && !inDuel;
+    applyObjectOutfocusOpacity3D(harborRootGroup, inTelescopeFocus ? 0.15 : 1.0);
+  }
+  if (milestoneState.group) {
+    milestoneState.group.visible = !isStage2 && !inFpShop && !inFpRoom && !inDuel && !inTelescopeFocus;
+  }
+  if (driveState.carRootGroup) {
+    driveState.carRootGroup.visible = !inFpShop && !inFpRoom && !inDuel && !inTelescopeFocus;
+  }
+  if (heroState.mesh) {
+    heroState.mesh.visible = !titleScreenState.active && !driveState.active && !fpState.active && !inDuel && (!inTelescopeFocus || heroState.telescopeTimer > 0);
+  }
   if (driveState.vehicleMesh?.userData?.driverRef) {
     driveState.vehicleMesh.userData.driverRef.visible = !(driveState.active && driveState.cockpitView);
   }
   for (const cl of cloudActors) {
-    cl.mesh.visible = !inRoomFocus && !inShopFocus && !in1FShopFocus && !inFpShop && !inDuel;
+    cl.mesh.visible = !isStage2 && !inFpShop && !inFpRoom && !inDuel && !inTelescopeFocus;
   }
   for (const w of streetOutingActors) {
-    w.mesh.visible = !inRoomFocus && !in1FShopFocus && !inFpShop && !inDuel && (!inShopFocus || w.targetShopId === focusedShopId);
+    w.mesh.visible = !isStage2 && !inFpShop && !inFpRoom && !inDuel && (!inTelescopeFocus || (inShopFocus && w.targetShopId === focusedShopId));
   }
   for (const sid of Object.keys(standaloneShop3D)) {
-    standaloneShop3D[sid].group.visible = !inRoomFocus && !in1FShopFocus && !inFpShop && !inDuel && (!inShopFocus || sid === focusedShopId);
+    const stpl = STANDALONE_SHOPS_TEMPLATE.find((s) => s.shopId === sid);
+    const inActiveWorld = isStage2 ? (stpl?.stage === 2) : (stpl?.stage !== 2);
+    const grp = standaloneShop3D[sid].group;
+    grp.visible = inActiveWorld && !inFpShop && !inFpRoom && !inDuel;
+    if (grp.visible) {
+      const isFocusedThisShop = inShopFocus && sid === focusedShopId;
+      applyObjectOutfocusOpacity3D(grp, (inTelescopeFocus && !isFocusedThisShop) ? 0.15 : 1.0);
+    }
   }
 
-  // [요구사항 3: 투시 거리 대폭 완화] 기본 타운 뷰(zoom 0.78)에서도 인형의 집처럼 내부가 시원하게 투시!
+  // 기본 타운 뷰에서도 인형의 집처럼 내부 투시 & 방/상가 포커스 시 전면 외벽 100% 투명 Cutaway!
   let targetShell = 0.16;
   if (inRoomFocus || in1FShopFocus) {
     targetShell = 0.0;
@@ -8183,10 +8764,9 @@ function updateXRayAndFocusHighlights(dt) {
   }
   currentShellOpacity = THREE.MathUtils.lerp(currentShellOpacity, targetShell, Math.min(1, dt * 9));
 
-  // 월세 3D 코인 & 머니샤워 지폐가 스튜디오 단독 뷰 허공에 떠다니지 않도록 가시성 동기화
   const inAnyIsolated = inRoomFocus || inShopFocus || in1FShopFocus || inFpShop || inFpRoom || inDuel;
   for (const rb of rentBubbles) {
-    if (rb.coin3D) rb.coin3D.visible = !inAnyIsolated;
+    if (rb.coin3D) rb.coin3D.visible = !inAnyIsolated && !isStage2;
   }
   if (!fpState.active) {
     for (const bill of makeItRainState.bills) {
@@ -8200,10 +8780,13 @@ function updateXRayAndFocusHighlights(dt) {
     return;
   }
 
-  // 1층 편의점/세탁소 포커스 시 전면 통유리·어닝·간판·타 매장 외벽을 깔끔하게 커트어웨이하여 매장 내부 100% 오픈!
+  // 1층 편의점/세탁소 포커스 시 전면 어닝·간판 커트어웨이 및 타 매장 아웃포커싱
   for (const [fId, fObj] of Object.entries(firstFloorShop3D)) {
     const isTarget1F = !!(in1FShopFocus && focusedFirstFloorShopId === fId);
-    if (fObj?.group) fObj.group.visible = !in1FShopFocus || isTarget1F;
+    if (fObj?.group) {
+      fObj.group.visible = !isStage2;
+      applyObjectOutfocusOpacity3D(fObj.group, (inTelescopeFocus && !isTarget1F) ? 0.15 : 1.0);
+    }
     if (fObj?.glassMesh) fObj.glassMesh.visible = !in1FShopFocus;
     if (fObj?.awningMesh) fObj.awningMesh.visible = !in1FShopFocus;
     if (fObj?.signMesh) fObj.signMesh.visible = !in1FShopFocus;
@@ -8229,33 +8812,60 @@ function updateXRayAndFocusHighlights(dt) {
   for (const lid of Object.keys(lot3D)) {
     const entry = lot3D[lid];
     if (!entry) continue;
+    const lotDef = state.lots.find((l) => l.lotId === lid);
+    const inActiveStage = isStage2 ? (lotDef?.stage === 2) : (lotDef?.stage !== 2);
 
-    if (inShopFocus || inFpShop) {
+    if (!inActiveStage || inFpShop) {
       entry.root.visible = false;
       continue;
     }
-    if (inRoomFocus && targetRoomObj && lid !== targetRoomObj.lotId) {
-      entry.root.visible = false;
-      continue;
-    }
-    if (in1FShopFocus && lid !== 'lot_main') {
+    if (inFpRoom && targetRoomObj && lid !== targetRoomObj.lotId) {
       entry.root.visible = false;
       continue;
     }
     entry.root.visible = true;
 
-    if (entry.isResidential) {
-      if (entry.structGroup) entry.structGroup.visible = !inRoomFocus;
-      if (entry.upperStructGroup) entry.upperStructGroup.visible = !inRoomFocus && !in1FShopFocus;
-      if (entry.infraGroup) entry.infraGroup.visible = !inRoomFocus && !in1FShopFocus;
-      if (entry.frontShellGroup) entry.frontShellGroup.visible = currentShellOpacity > 0.02 && !inRoomFocus && !in1FShopFocus;
+    const isFocusedLot = (inRoomFocus && targetRoomObj && lid === targetRoomObj.lotId) || (in1FShopFocus && lid === 'lot_main');
+    if (!entry.isResidential) {
+      applyObjectOutfocusOpacity3D(entry.root, (inTelescopeFocus && !isFocusedLot) ? 0.15 : 1.0);
+      continue;
+    }
 
-      for (const sm of entry.shellMats) {
-        sm.mat.opacity = sm.baseOpacity * currentShellOpacity;
-      }
+    // 주거/주상복합 빌딩: 선택한 방/1층 매장 외 주변 구조물과 옆 호실은 opacity: 0.15 반투명 아웃포커싱!
+    if (entry.structGroup) {
+      entry.structGroup.visible = !inFpRoom;
+      applyObjectOutfocusOpacity3D(entry.structGroup, inTelescopeFocus ? 0.15 : 1.0);
+    }
+    if (entry.upperStructGroup) {
+      entry.upperStructGroup.visible = !inFpRoom && !in1FShopFocus;
+      applyObjectOutfocusOpacity3D(entry.upperStructGroup, inTelescopeFocus ? 0.15 : 1.0);
+    }
+    if (entry.infraGroup) {
+      entry.infraGroup.visible = !inFpRoom && !in1FShopFocus;
+      applyObjectOutfocusOpacity3D(entry.infraGroup, inTelescopeFocus ? 0.15 : 1.0);
+    }
+    if (entry.frontShellGroup) {
+      entry.frontShellGroup.visible = currentShellOpacity > 0.02 && !inRoomFocus && !in1FShopFocus;
+    }
 
-      for (const rid of Object.keys(entry.roomsMap)) {
-        entry.roomsMap[rid].visible = in1FShopFocus ? false : (!inRoomFocus || rid === targetRoomObj.id);
+    for (const sm of entry.shellMats) {
+      sm.mat.opacity = sm.baseOpacity * currentShellOpacity;
+    }
+
+    for (const rid of Object.keys(entry.roomsMap)) {
+      const rmGrp = entry.roomsMap[rid];
+      if (inFpRoom) {
+        rmGrp.visible = rid === targetRoomObj?.id;
+        applyObjectOutfocusOpacity3D(rmGrp, 1.0);
+      } else if (in1FShopFocus) {
+        rmGrp.visible = true;
+        applyObjectOutfocusOpacity3D(rmGrp, 0.15);
+      } else if (inRoomFocus && targetRoomObj) {
+        rmGrp.visible = true;
+        applyObjectOutfocusOpacity3D(rmGrp, rid === targetRoomObj.id ? 1.0 : 0.15);
+      } else {
+        rmGrp.visible = true;
+        applyObjectOutfocusOpacity3D(rmGrp, 1.0);
       }
     }
   }
@@ -8268,9 +8878,9 @@ function updateXRayAndFocusHighlights(dt) {
     } else if (driveState.active) {
       dom.xrayBadge.textContent = driveState.cockpitView ? '1인칭 운전석' : '3인칭 드라이브';
     } else if (inRoomFocus) {
-      dom.xrayBadge.textContent = '단독 룸 뷰';
+      dom.xrayBadge.textContent = '🔭 황금망원경 룸 투시';
     } else if (inShopFocus || in1FShopFocus) {
-      dom.xrayBadge.textContent = '매장 투시 뷰';
+      dom.xrayBadge.textContent = '🔭 황금망원경 매장 투시';
     } else {
       const pct = Math.round((1 - currentShellOpacity) * 100);
       dom.xrayBadge.textContent = `인형의집 투시 ${pct}%`;
@@ -9257,11 +9867,15 @@ function closeAllModalsImmediate(exceptId = null) {
     'harbor-chronicle-modal',
     'settings-modal',
     'flagship-shop-drawer',
-    'animal-select-modal'
+    'animal-select-modal',
+    'turntable-showcase-modal'
   ];
   for (const id of modalIds) {
     if (id !== exceptId) {
       document.getElementById(id)?.classList.add('hidden');
+      if (id === 'turntable-showcase-modal') {
+        turntableState.active = false;
+      }
     }
   }
   if (exceptId !== 'pocket-planner-popover') closePocketPlanner();
@@ -9320,12 +9934,14 @@ function syncTopBarsByMode() {
   dom.driveFocusTopbar?.classList.toggle('hidden', !inDrive || inTour);
   dom.fpFocusTopbar?.classList.toggle('hidden', !inFp || inTour);
 
-  // 우측 상단 [⚙️] 환경설정 고정 버튼 & 줌인/특수모드 시 옆에 뜨는 [✕] 전체타운 복귀 버튼
-  document.getElementById('btn-top-settings')?.classList.toggle('hidden', inTitle || inTour);
+  // 우측 상단 날씨 스위치 [ ☀️ 맑음 | ☔ 비 | ❄️ 눈 ] + [✕] 복귀 + [⚙️] 환경설정 클러스터
+  document.getElementById('top-right-action-cluster')?.classList.toggle('hidden', inTitle || inTour);
+  document.getElementById('weather-switch-pill')?.classList.toggle('hidden', inRoom || inShop || inFp || inDuel);
   const showFloatingClose = !inTitle && !inTour && (inDrive || inFp || inRoom || inShop || inDuel);
   document.getElementById('btn-focus-close-floating')?.classList.toggle('hidden', !showFloatingClose);
 
-  // [요구사항 5] 방/상가 클릭 시 자동 팝업 제로 -> 하단 수동 오픈 캡슐 바 표시!
+  // [요구사항 4] 방/상가 클릭 시 자동 팝업 제로 + 황금 투시 망원경 렌즈 조리개(Golden Iris Vignette) & 하단 캡슐 바!
+  document.getElementById('telescope-iris-vignette')?.classList.toggle('hidden', !(inRoom || inShop));
   const cleanCapsule = document.getElementById('focus-clean-capsule');
   const showCleanCapsule = (inRoom || inShop) && !isPoachRoom && !isBiddingShop;
   if (cleanCapsule) {
@@ -9337,15 +9953,15 @@ function syncTopBarsByMode() {
       if (inRoom) {
         const rm = findRoomById(focusedRoomId);
         const stars = rm ? calcRoomLuxuryStars(rm) : 1;
-        if (capLabel) capLabel.textContent = rm ? `${rm.name}호 · ★${stars}` : '호실 뷰';
-        if (openTxt) openTxt.textContent = showFocusDock ? '🛋️ 관리창 닫기' : '🛋️ 가구 세팅 · 관리';
+        if (capLabel) capLabel.textContent = rm ? `🔭 ${rm.name}호 · ★${stars}` : '🔭 호실 투시';
+        if (openTxt) openTxt.textContent = showFocusDock ? '🛋️ 관리창 접기' : '🛋️ 가구 세팅 · 관리';
         recBtn?.classList.toggle('hidden', !rm?.unlocked);
       } else {
         const tpl = focusedShopId
           ? STANDALONE_SHOPS_TEMPLATE.find((s) => s.shopId === focusedShopId)
           : (window.FIRST_FLOOR_SHOPS_TEMPLATE || []).find((s) => s.shopId === focusedFirstFloorShopId);
-        if (capLabel) capLabel.textContent = tpl?.name || '상가 뷰';
-        if (openTxt) openTxt.textContent = showFocusDock ? '🛠️ 관리창 닫기' : '🛠️ 매장 설비 · 인수';
+        if (capLabel) capLabel.textContent = `🔭 ${tpl?.name || '매장 투시'}`;
+        if (openTxt) openTxt.textContent = showFocusDock ? '🛋️ 관리창 접기' : '🛋️ 가구 세팅 · 관리';
         recBtn?.classList.add('hidden');
       }
     }
@@ -9506,6 +10122,69 @@ function closeFocusedManualDrawerKeepView() {
   syncTopBarsByMode();
 }
 
+function triggerHeroTelescopeScan(targetX, targetY, targetZ, onScanBeat = null) {
+  heroState.telescopeActive = true;
+  heroState.telescopeTimer = 0.72;
+  heroState.telescopeTargetPos.set(targetX, targetY, targetZ);
+
+  if (heroState.mesh) {
+    const dx = targetX - heroState.mesh.position.x;
+    const dz = targetZ - heroState.mesh.position.z;
+    if (Math.hypot(dx, dz) > 0.05) {
+      heroState.heading = Math.atan2(dx, dz);
+      heroState.mesh.rotation.y = heroState.heading;
+    }
+    const ud = heroState.mesh.userData;
+    if (ud?.goldenTelescopeGroup) ud.goldenTelescopeGroup.visible = true;
+
+    // 3D 황금 스캔 광선(Golden Scan Cone) 발사 연출
+    if (heroState.telescopeBeamGroup) {
+      scene.remove(heroState.telescopeBeamGroup);
+      heroState.telescopeBeamGroup = null;
+    }
+    const startPt = new THREE.Vector3(heroState.mesh.position.x, heroState.mesh.position.y + 1.45, heroState.mesh.position.z);
+    const endPt = new THREE.Vector3(targetX, targetY, targetZ);
+    const dist = Math.max(2.5, startPt.distanceTo(endPt));
+    const beamGrp = new THREE.Group();
+    const coneMat = new THREE.MeshBasicMaterial({
+      color: 0xFFD700,
+      transparent: true,
+      opacity: 0.36,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    });
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(2.35, dist, 20, 1, true), coneMat);
+    cone.position.y = -dist * 0.5;
+    beamGrp.add(cone);
+    beamGrp.position.copy(endPt);
+    beamGrp.quaternion.setFromUnitVectors(
+      new THREE.Vector3(0, 1, 0),
+      endPt.clone().sub(startPt).normalize()
+    );
+    scene.add(beamGrp);
+    heroState.telescopeBeamGroup = beamGrp;
+  }
+
+  playSynthTone(784, 'sine', 0.14, 0.05, 0);
+  playSynthTone(1175, 'triangle', 0.22, 0.06, 0.08);
+  if (typeof onScanBeat === 'function') {
+    onScanBeat();
+  }
+}
+
+function lowerHeroTelescope3D() {
+  heroState.telescopeActive = false;
+  heroState.telescopeTimer = 0;
+  if (heroState.mesh?.userData?.goldenTelescopeGroup) {
+    heroState.mesh.userData.goldenTelescopeGroup.visible = false;
+  }
+  if (heroState.telescopeBeamGroup) {
+    scene.remove(heroState.telescopeBeamGroup);
+    heroState.telescopeBeamGroup = null;
+  }
+}
+
 function focusCameraOnRoom(roomId) {
   if (driveState.active) exitDriveMode();
   if (focusedShopId) {
@@ -9530,32 +10209,40 @@ function focusCameraOnRoom(roomId) {
   renderRoomSwitcherChips(rm.lotId);
 
   const wx = lot.x + rm.lx;
-  const wy = rm.ly + rm.rh * 0.46;
+  const wy = rm.ly + rm.rh * 0.48;
   const wz = lot.z + rm.lz;
 
+  // [요구사항 4] 선택한 방 하나가 가로모드 화면의 85~90%를 꽉 채우도록 초대형 줌인 + 360도 회전/휠 초근접/우클릭 패닝 전부 개방!
   const aspect = window.innerWidth / Math.max(1, window.innerHeight);
   const frustumH = 38;
   const frustumW = frustumH * aspect;
-  const spanW = rm.rw * 1.3 + 2.8;
-  const spanH = rm.rh * 1.62 + 4.4;
-  const fitZoom = THREE.MathUtils.clamp(Math.min(frustumW / spanW, frustumH / spanH) * 0.88, 1.48, 3.55);
+  const spanW = rm.rw * 1.12 + 1.2;
+  const spanH = rm.rh * 1.18 + 1.6;
+  const fitZoom = THREE.MathUtils.clamp(Math.min((frustumW * 0.87) / spanW, (frustumH * 0.86) / spanH), 2.35, 5.25);
 
-  // 하단 가구 시트가 올라와도 방 정중앙이 절대 가려지지 않도록 타겟 Y를 살짝 아래로 오프셋하여 화면 중앙 상단에 방 배치!
-  const lookPt = new THREE.Vector3(wx, wy - 0.55, wz);
-  const camPt = new THREE.Vector3(wx + rm.rw * 0.44 + 11.5, wy + rm.rh * 0.78 + 8.5, wz + 23.0);
+  const lookPt = new THREE.Vector3(wx, wy - 0.12, wz);
+  const camPt = new THREE.Vector3(wx + rm.rw * 0.34 + 9.2, wy + rm.rh * 0.62 + 6.8, wz + 21.5);
 
-  controls.enablePan = false;
-  controls.minPolarAngle = 0.42;
-  controls.maxPolarAngle = Math.PI * 0.46;
+  controls.enabled = true;
+  controls.enableRotate = true;
+  controls.enableZoom = true;
+  controls.enablePan = true;
+  controls.minZoom = 0.65;
+  controls.maxZoom = 8.5;
+  controls.minPolarAngle = 0.16;
+  controls.maxPolarAngle = Math.PI * 0.485;
 
-  beginTwoStepFocusSequence(camPt, lookPt, fitZoom, () => {
-    renderFocusedRoomInspector();
-    renderFurnitureCatalogSheet();
+  triggerHeroTelescopeScan(wx, wy, wz, () => {
+    beginTwoStepFocusSequence(camPt, lookPt, fitZoom, () => {
+      renderFocusedRoomInspector();
+      renderFurnitureCatalogSheet();
+    });
   });
 }
 
 function exitRoomFocusMode() {
   if (!focusedRoomId) return;
+  lowerHeroTelescope3D();
   focusedRoomId = null;
   setOverviewCamera(true);
 }
@@ -9583,18 +10270,28 @@ function focusCameraOnShop(shopId) {
   const frustumH = 38;
   const frustumW = frustumH * aspect;
   const isBiddingTarget = !!(rivalState.bidding.active && rivalState.bidding.shopId === shopId);
-  const baseFitZoom = THREE.MathUtils.clamp(Math.min(frustumW / 15.5, frustumH / 12.8) * 0.9, 1.6, 2.95);
-  const fitZoom = isBiddingTarget ? baseFitZoom * 0.84 : baseFitZoom;
+  const baseFitZoom = THREE.MathUtils.clamp(Math.min((frustumW * 0.87) / (tpl.w + 2.4), (frustumH * 0.86) / (tpl.h + 2.8)), 2.55, 4.6);
+  const fitZoom = isBiddingTarget ? baseFitZoom * 0.72 : baseFitZoom;
 
   const lookPt = isBiddingTarget
     ? new THREE.Vector3(tpl.x, 0.35, tpl.z + 2.65)
-    : new THREE.Vector3(tpl.x, 1.45, tpl.z + 0.65);
-  const camPt = new THREE.Vector3(tpl.x + 11.5, 12.2, tpl.z + (isBiddingTarget ? 23.5 : 21.5));
+    : new THREE.Vector3(tpl.x, 1.55, tpl.z + 0.35);
+  const camPt = new THREE.Vector3(tpl.x + 9.8, 10.6, tpl.z + (isBiddingTarget ? 23.5 : 20.5));
 
-  controls.enablePan = false;
-  beginTwoStepFocusSequence(camPt, lookPt, fitZoom, () => {
-    renderFocusedShopPanel();
-    renderShopUpgradeCatalog();
+  controls.enabled = true;
+  controls.enableRotate = true;
+  controls.enableZoom = true;
+  controls.enablePan = true;
+  controls.minZoom = 0.65;
+  controls.maxZoom = 8.5;
+  controls.minPolarAngle = 0.16;
+  controls.maxPolarAngle = Math.PI * 0.485;
+
+  triggerHeroTelescopeScan(tpl.x, 1.8, tpl.z, () => {
+    beginTwoStepFocusSequence(camPt, lookPt, fitZoom, () => {
+      renderFocusedShopPanel();
+      renderShopUpgradeCatalog();
+    });
   });
 }
 
@@ -9618,20 +10315,30 @@ function focusCameraOnFirstFloorShop(shopId) {
   const aspect = window.innerWidth / Math.max(1, window.innerHeight);
   const frustumH = 38;
   const frustumW = frustumH * aspect;
-  const fitZoom = THREE.MathUtils.clamp(Math.min(frustumW / 14.2, frustumH / 12.2) * 0.94, 1.75, 2.88);
+  const fitZoom = THREE.MathUtils.clamp(Math.min((frustumW * 0.87) / 11.4, (frustumH * 0.86) / 8.2), 2.65, 4.65);
 
-  // 상층부 슬래브와 전면 간판을 커트어웨이한 상태에서, 뒷벽 냉장고/2단 세탁기 6대 + 과자 곤돌라 + 알바생/손님이 화면 상단 중앙에 막힘없이 들어오는 얼짱 앵글!
-  const lookPt = new THREE.Vector3(wx + 0.65, 1.05, wz - 0.15);
-  const camPt = new THREE.Vector3(wx + (shopId === 'shop_mart1f' ? 8.2 : -8.2), 11.4, wz + 21.8);
+  const lookPt = new THREE.Vector3(wx + 0.35, 1.45, wz - 0.05);
+  const camPt = new THREE.Vector3(wx + (shopId === 'shop_mart1f' ? 7.6 : -7.6), 9.8, wz + 20.5);
 
-  controls.enablePan = false;
-  beginTwoStepFocusSequence(camPt, lookPt, fitZoom, () => {
-    renderFocusedFirstFloorShopPanel();
-    renderFirstFloorShopUpgradeCatalog();
+  controls.enabled = true;
+  controls.enableRotate = true;
+  controls.enableZoom = true;
+  controls.enablePan = true;
+  controls.minZoom = 0.65;
+  controls.maxZoom = 8.5;
+  controls.minPolarAngle = 0.16;
+  controls.maxPolarAngle = Math.PI * 0.485;
+
+  triggerHeroTelescopeScan(wx, 1.8, wz, () => {
+    beginTwoStepFocusSequence(camPt, lookPt, fitZoom, () => {
+      renderFocusedFirstFloorShopPanel();
+      renderFirstFloorShopUpgradeCatalog();
+    });
   });
 }
 
 function exitShopFocusMode() {
+  lowerHeroTelescope3D();
   const prev = focusedShopId;
   focusedShopId = null;
   focusedFirstFloorShopId = null;
@@ -10052,13 +10759,14 @@ function playSoundproofTileLaying3D(room) {
 // 13. 건물주 VIP 슈퍼카 차고 & GTA식 3인칭 드라이브 모드 (와이드 썸네일 & 커스텀 SVG)
 // =========================================================
 function openGarageModal() {
-  closeAllModalsImmediate('garage-modal');
-  renderGarageCards();
-  dom.garageModal?.classList.remove('hidden');
+  openTurntableShowcaseModal('garage');
 }
 
 function closeGarageModal() {
   dom.garageModal?.classList.add('hidden');
+  if (turntableState.active && turntableState.mode === 'garage') {
+    closeTurntableShowcaseModal();
+  }
 }
 
 function renderGarageCards() {
@@ -10407,10 +11115,11 @@ function enterDriveMode(startInCockpit = false) {
   driveState.sessionLoot = 0;
   driveState.driveThruPauseTimer = 0;
 
-  driveState.x = 24.5;
+  const inHarborStage = WorldManager.currentStage === 2;
+  driveState.x = inHarborStage ? -12.0 : 24.5;
   driveState.y = 0.22;
-  driveState.z = 7.0;
-  driveState.heading = -Math.PI * 0.5;
+  driveState.z = inHarborStage ? 112.5 : 7.0;
+  driveState.heading = inHarborStage ? Math.PI * 0.5 : -Math.PI * 0.5;
   driveState.speed = 9.2;
 
   driveCamera.fov = driveState.cockpitView ? 68 : 58;
@@ -10472,8 +11181,13 @@ function exitDriveMode() {
     driveState.vehicleMesh.userData.driverRef.visible = true;
   }
   if (driveState.carRootGroup) {
-    driveState.carRootGroup.position.set(VIP_PARKING_POS.x, VIP_PARKING_POS.y + 0.06, VIP_PARKING_POS.z);
-    driveState.carRootGroup.rotation.y = Math.PI * 0.5;
+    if (WorldManager.currentStage === 2) {
+      driveState.carRootGroup.position.set(12.5, 0.28, 115.2);
+      driveState.carRootGroup.rotation.y = -Math.PI * 0.5;
+    } else {
+      driveState.carRootGroup.position.set(VIP_PARKING_POS.x, VIP_PARKING_POS.y + 0.06, VIP_PARKING_POS.z);
+      driveState.carRootGroup.rotation.y = Math.PI * 0.5;
+    }
   }
 
   controls.enabled = true;
@@ -10764,14 +11478,15 @@ function tickDriveMode(dt, elapsed) {
     driveState.driveThruPauseTimer -= dt;
     driveState.speed *= Math.pow(0.04, dt);
   } else if (driveState.autoCruise) {
-    // 아스팔트 순환 도로 웨이포인트 자동 크루징 주행
-    const wp = RING_ROAD_WAYPOINTS[driveState.waypointIdx % RING_ROAD_WAYPOINTS.length];
+    // 아스팔트 순환 도로 웨이포인트 자동 크루징 주행 (제2마을에서는 우측 거대 빨간 철제 아치교 코스 주행!)
+    const routeList = WorldManager.currentStage === 2 ? HARBOR_RING_WAYPOINTS : RING_ROAD_WAYPOINTS;
+    const wp = routeList[driveState.waypointIdx % routeList.length];
     const dx = wp.x - driveState.x;
     const dz = wp.z - driveState.z;
     const dist = Math.hypot(dx, dz);
 
     if (dist < 3.2) {
-      driveState.waypointIdx = (driveState.waypointIdx + 1) % RING_ROAD_WAYPOINTS.length;
+      driveState.waypointIdx = (driveState.waypointIdx + 1) % routeList.length;
     }
 
     const desiredHeading = Math.atan2(dx, dz);
@@ -10823,18 +11538,24 @@ function tickDriveMode(dt, elapsed) {
   let nx = driveState.x + fwdX * driveState.speed * dt;
   let nz = driveState.z + fwdZ * driveState.speed * dt;
 
-  // 섬 & 외곽 해안 드라이빙 존 안전 가드레일 (바다 쪽으로 코를 박지 않고 해안 도로를 따라 부드럽게 코너링 유도!)
-  if (nz > 51.4 && fwdZ > 0.15) {
-    const steerGoal = nx > -8.0 ? -Math.PI * 0.5 : -Math.PI * 0.72;
-    let gDiff = steerGoal - driveState.heading;
-    while (gDiff > Math.PI) gDiff -= Math.PI * 2;
-    while (gDiff < -Math.PI) gDiff += Math.PI * 2;
-    driveState.heading += gDiff * Math.min(1, dt * 6.5);
-    fwdX = Math.sin(driveState.heading);
-    fwdZ = Math.cos(driveState.heading);
+  if (WorldManager.currentStage === 2) {
+    nx = THREE.MathUtils.clamp(nx, -36.2, 38.2);
+    nz = THREE.MathUtils.clamp(nz, 106.5, 140.5);
+  } else {
+    // 섬 & 외곽 해안 드라이빙 존 안전 가드레일 (+ 우측 해안 잠긴 대문 x=41.8 진입 허용!)
+    if (nz > 51.4 && fwdZ > 0.15) {
+      const steerGoal = nx > -8.0 ? -Math.PI * 0.5 : -Math.PI * 0.72;
+      let gDiff = steerGoal - driveState.heading;
+      while (gDiff > Math.PI) gDiff -= Math.PI * 2;
+      while (gDiff < -Math.PI) gDiff += Math.PI * 2;
+      driveState.heading += gDiff * Math.min(1, dt * 6.5);
+      fwdX = Math.sin(driveState.heading);
+      fwdZ = Math.cos(driveState.heading);
+    }
+    const maxEastX = (nz >= 13.5 && nz <= 22.2) ? 42.4 : 35.5;
+    nx = THREE.MathUtils.clamp(nx, -35.5, maxEastX);
+    nz = THREE.MathUtils.clamp(nz, -7.5, 51.6);
   }
-  nx = THREE.MathUtils.clamp(nx, -35.5, 35.5);
-  nz = THREE.MathUtils.clamp(nz, -7.5, 51.6);
 
   driveState.x = nx;
   driveState.z = nz;
@@ -13252,14 +13973,9 @@ function renderNotebookUnifiedBody() {
 // --------------------- 입주 세대 모집 모달 (방 럭셔리 등급 ★1~★5 조건 연동!) ---------------------
 function openRecruitModal(room) {
   if (!room) return;
-  closeAllModalsImmediate('recruit-modal');
   recruitRoomTarget = room;
-  const meta = ROOM_TYPE_META[room.layoutType] || ROOM_TYPE_META.studio;
-  const stars = calcRoomLuxuryStars(room);
-  if (dom.recRoomTitle) dom.recRoomTitle.textContent = `${room.name}호 (럭셔리 ★${stars}) · ${meta.shortBadge}`;
   rollRecruitCandidates(room);
-  renderRecruitCards();
-  dom.recruitModal?.classList.remove('hidden');
+  openTurntableShowcaseModal('recruit');
 }
 
 function rollRecruitCandidates(room) {
@@ -13393,79 +14109,523 @@ function renderRecruitCards() {
   });
 }
 
-// --------------------- 외곽 신규 부지 매입 & 착공 모달 ---------------------
-function openLotDevModal(lotId) {
-  const lot = state.lots.find((l) => l.lotId === lotId);
-  if (!lot || !dom.devCardsGrid) return;
+// --------------------- [요구사항 5] 실시간 3D 착공 현장(비계 · 회전 노란 타워크레인 · 안전모 동물 인부 · 0%➔100% 공정률) & 증축 관리 ---------------------
+function create3DLiveConstructionRig(isRoomFloor = false, spanW = 10.2, spanD = 7.6, spanH = 4.6) {
+  const grp = new THREE.Group();
+  const craneYellow = makeClayMat(0xFACC15, { roughness: 0.36, metalness: 0.18 });
+  const steelMat = makeClayMat(0x64748B, { roughness: 0.42, metalness: 0.35 });
+  const woodPlankMat = MAT.woodWarm;
+  const coneOrange = makeClayMat(0xF97316, { roughness: 0.48 });
+
+  // 1) 3D 철제 파이프 & 원목 발판 비계(Scaffolding) 구조물
+  const scafGroup = new THREE.Group();
+  grp.add(scafGroup);
+  const hw = spanW * 0.48;
+  const hd = spanD * 0.48;
+  const postCoords = isRoomFloor
+    ? [[-hw, hd], [0, hd], [hw, hd]]
+    : [[-hw, -hd], [hw, -hd], [-hw, hd], [hw, hd], [0, hd]];
+  for (const [px, pz] of postCoords) {
+    const pole = new THREE.Mesh(GEO.cyl, steelMat);
+    pole.scale.set(0.11, spanH + 0.8, 0.11);
+    pole.position.set(px, (spanH + 0.8) * 0.5, pz);
+    scafGroup.add(pole);
+  }
+  for (const ly of [1.35, 2.75, Math.min(spanH, 4.05)]) {
+    scafGroup.add(createRoundedToyMesh(spanW + 0.3, 0.12, 0.72, woodPlankMat, 0, ly, hd, 0.03));
+    if (!isRoomFloor) {
+      scafGroup.add(createRoundedToyMesh(spanW + 0.3, 0.1, 0.12, steelMat, 0, ly + 0.5, -hd, 0.02));
+      scafGroup.add(createRoundedToyMesh(0.12, 0.1, spanD, steelMat, -hw, ly + 0.5, 0, 0.02));
+      scafGroup.add(createRoundedToyMesh(0.12, 0.1, spanD, steelMat, hw, ly + 0.5, 0, 0.02));
+    }
+    // X자 대각 가새 파이프
+    const brace1 = createRoundedToyMesh(spanW * 0.45, 0.08, 0.08, craneYellow, -hw * 0.48, ly - 0.55, hd + 0.08, 0.02);
+    brace1.rotation.z = 0.42;
+    const brace2 = createRoundedToyMesh(spanW * 0.45, 0.08, 0.08, craneYellow, hw * 0.48, ly - 0.55, hd + 0.08, 0.02);
+    brace2.rotation.z = -0.42;
+    scafGroup.add(brace1, brace2);
+  }
+
+  // 공정률(0% -> 100%)에 따라 단계별로 솟아오르는 내부 골조 블록
+  const risingCore = createRoundedToyMesh(spanW * 0.82, spanH * 0.88, spanD * 0.78, MAT.dollhouseCutaway || MAT.cream, 0, (spanH * 0.88) * 0.5, 0, 0.12);
+  risingCore.scale.y = 0.08;
+  grp.add(risingCore);
+
+  // 2) 팔(Jib)이 360도 회전하는 노란색 3D 타워크레인 (Yellow 3D Tower Crane)
+  const mastH = isRoomFloor ? (spanH + 5.8) : 11.5;
+  const mastX = isRoomFloor ? (hw + 1.35) : (hw + 1.6);
+  const mastZ = isRoomFloor ? (hd + 0.9) : (-hd * 0.4);
+  const craneRoot = new THREE.Group();
+  craneRoot.position.set(mastX, 0, mastZ);
+  grp.add(craneRoot);
+
+  craneRoot.add(createRoundedToyMesh(1.6, 0.36, 1.6, steelMat, 0, 0.18, 0, 0.06));
+  for (const [mx, mz] of [[-0.42, -0.42], [0.42, -0.42], [-0.42, 0.42], [0.42, 0.42]]) {
+    craneRoot.add(createRoundedToyMesh(0.16, mastH, 0.16, craneYellow, mx, mastH * 0.5, mz, 0.03));
+  }
+  for (let y = 1.2; y < mastH; y += 1.45) {
+    craneRoot.add(createRoundedToyMesh(1.02, 0.12, 1.02, craneYellow, 0, y, 0, 0.02));
+  }
+
+  const jibPivot = new THREE.Group();
+  jibPivot.position.set(0, mastH, 0);
+  craneRoot.add(jibPivot);
+
+  // 조종석 캐빈 + 긴 회전 지브 팔 + 카운터웨이트 + 트롤리 후크 & 매달린 원목 자재
+  jibPivot.add(createRoundedToyMesh(1.15, 1.1, 1.15, craneYellow, 0, 0.55, 0.25, 0.08));
+  jibPivot.add(createRoundedToyMesh(0.95, 0.65, 0.2, MAT.screenCyan, 0, 0.62, 0.82, 0.03));
+  jibPivot.add(createRoundedToyMesh(9.6, 0.42, 0.56, craneYellow, -2.4, 0.85, 0, 0.06));
+  jibPivot.add(createRoundedToyMesh(1.65, 0.92, 0.95, steelMat, 2.2, 0.58, 0, 0.08));
+  const peakSpire = new THREE.Mesh(new THREE.ConeGeometry(0.45, 1.6, 4), craneYellow);
+  peakSpire.position.set(0, 1.85, 0);
+  peakSpire.rotation.y = Math.PI * 0.25;
+  jibPivot.add(peakSpire);
+
+  const hookGroup = new THREE.Group();
+  hookGroup.position.set(-4.8, 0.65, 0);
+  const wire = new THREE.Mesh(GEO.cyl, steelMat);
+  wire.scale.set(0.05, 3.2, 0.05);
+  wire.position.y = -1.6;
+  const loadBeam = createRoundedToyMesh(1.85, 0.48, 0.82, MAT.pureGold24k || woodPlankMat, 0, -3.35, 0, 0.06);
+  hookGroup.add(wire, loadBeam);
+  jibPivot.add(hookGroup);
+
+  // 3) 노란 안전모(Hardhat)를 쓰고 3D 망치질을 하는 동물 현장 인부!
+  const worker = createChibiPerson3D('manager', null, 3);
+  worker.scale.setScalar(1.08);
+  worker.position.set(-1.1, 0.18, hd + 0.72);
+  worker.rotation.y = Math.PI;
+  const hardhat = new THREE.Group();
+  const hatDome = new THREE.Mesh(new THREE.SphereGeometry(0.46, 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.52), craneYellow);
+  hatDome.position.set(0, 0.22, 0);
+  const hatBrim = createRoundedToyMesh(0.98, 0.08, 1.06, craneYellow, 0, 0.21, 0.06, 0.03);
+  hardhat.add(hatDome, hatBrim);
+  if (worker.userData?.head) {
+    worker.userData.head.add(hardhat);
+  } else {
+    hardhat.position.y = 1.48;
+    worker.add(hardhat);
+  }
+  const hammerGrp = new THREE.Group();
+  hammerGrp.add(createRoundedToyMesh(0.08, 0.48, 0.08, woodPlankMat, 0, -0.18, 0.18, 0.02));
+  hammerGrp.add(createRoundedToyMesh(0.28, 0.18, 0.18, steelMat, 0, -0.38, 0.22, 0.03));
+  if (worker.userData?.armR) {
+    worker.userData.armR.add(hammerGrp);
+  }
+  grp.add(worker);
+
+  // 전면 안전 라바콘 2개
+  for (const cx of [-2.6, 2.2]) {
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(0.26, 0.68, 12), coneOrange);
+    cone.position.set(cx, 0.34, hd + 1.05);
+    grp.add(cone);
+  }
+
+  return { grp, scafGroup, risingCore, jibPivot, hookGroup, worker, mastH };
+}
+
+function syncPocketBuildBadge() {
+  const activeCount = Object.keys(constructionState.sites).length;
+  const badge = document.getElementById('stamp-build-badge');
+  const sub = document.getElementById('pocket-build-subtext');
+  if (badge) {
+    badge.classList.toggle('hidden', activeCount <= 0);
+    if (activeCount > 0) badge.textContent = `${activeCount}건 시공중`;
+  }
+  if (sub) {
+    if (activeCount > 0) {
+      const firstSite = Object.values(constructionState.sites)[0];
+      sub.textContent = `🏗️ ${firstSite.title} 공정률 ${Math.floor(firstSite.progress)}% 진행 중!`;
+    } else {
+      sub.textContent = '3D 타워크레인 착공 · 공정률 확인';
+    }
+  }
+}
+
+function startLive3DConstructionJob(opt) {
+  // opt: { jobKey, kind: 'lot' | 'room', lotId, devType, roomId, title, durationSec, wx, wy, wz, spanW, spanD, spanH }
+  if (constructionState.sites[opt.jobKey]) {
+    showToast('이미 해당 현장에서 타워크레인 공사가 진행 중입니다!', 'gold');
+    return;
+  }
+
+  if (opt.kind === 'lot') {
+    clearLot3D(opt.lotId);
+  }
+
+  const rig = create3DLiveConstructionRig(opt.kind === 'room', opt.spanW || 10.4, opt.spanD || 7.8, opt.spanH || 4.8);
+  rig.grp.position.set(opt.wx, opt.wy, opt.wz);
+  scene.add(rig.grp);
+
+  // 3D 현장 상단에 실시간 투영되는 공정률(0% ➔ 100%) 프로그레스 바 & [⚡ 특별 야근 투입 (즉시 완공)] 버튼 생성!
+  const layer = document.getElementById('construction-overlay-layer');
+  let pinEl = null;
+  if (layer) {
+    pinEl = document.createElement('div');
+    pinEl.className = 'construction-prog-pin';
+    pinEl.innerHTML = `
+      <div class="flex items-center justify-between gap-2 text-[11.5px] font-title text-[#2C221E]">
+        <span class="truncate">🏗️ ${opt.title}</span>
+        <span data-cprog-pct class="font-num text-[#B45309] shrink-0">0%</span>
+      </div>
+      <div class="candy-gauge-track !h-2.5 mt-1">
+        <div data-cprog-fill class="candy-gauge-fill candy-gold" style="width: 2%;"></div>
+      </div>
+      <button type="button" data-crush-job="${opt.jobKey}" class="construction-rush-btn">
+        ⚡ 특별 야근 투입 (즉시 완공)
+      </button>
+    `;
+    pinEl.addEventListener('pointerdown', (e) => e.stopPropagation());
+    pinEl.addEventListener('pointerup', (e) => e.stopPropagation());
+    pinEl.querySelector('[data-crush-job]')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      completeLive3DConstructionJob(opt.jobKey, true);
+    });
+    layer.appendChild(pinEl);
+  }
+
+  const siteObj = {
+    ...opt,
+    progress: 2,
+    durationSec: opt.durationSec || 20.0,
+    dustAccum: 0,
+    rig,
+    pinEl
+  };
+  constructionState.sites[opt.jobKey] = siteObj;
+  syncPocketBuildBadge();
+
+  // 카메라를 타워크레인 착공 현장으로 부드럽게 이동시켜 생생한 비계·크레인 회전·동물 망치질을 즉시 감상!
+  if (!driveState.active && !fpState.active && !duelState.active) {
+    if (focusedRoomId) exitRoomFocusMode();
+    if (focusedShopId || focusedFirstFloorShopId) exitShopFocusMode();
+    startSmoothCameraTween(
+      new THREE.Vector3(opt.wx + 18.5, opt.wy + 16.5, opt.wz + 26.5),
+      new THREE.Vector3(opt.wx, opt.wy + 3.2, opt.wz),
+      1.18,
+      0.55,
+      null
+    );
+  }
+
+  playGoldenBellSound();
+  spawnPoofParticles3D(opt.wx, opt.wy + 1.2, opt.wz, 0xFACC15, 14);
+  showToast(`🏗️ [${opt.title}] 3D 타워크레인 착공 돌입! (0% ➔ 100% 단계별 시공)`, 'gold');
+}
+
+function completeLive3DConstructionJob(jobKey, isInstantRush = false) {
+  const site = constructionState.sites[jobKey];
+  if (!site) return;
+
+  if (site.rig?.grp) scene.remove(site.rig.grp);
+  if (site.pinEl) site.pinEl.remove();
+  delete constructionState.sites[jobKey];
+
+  if (site.kind === 'room') {
+    const rm = findRoomById(site.roomId);
+    if (rm) {
+      rm.unlocked = true;
+      buildSingleLot3D(rm.lotId);
+    }
+  } else if (site.kind === 'lot') {
+    const lot = state.lots.find((l) => l.lotId === site.lotId);
+    const cat = DEVELOPMENT_CATALOG[site.devType];
+    if (lot && cat) {
+      lot.owned = true;
+      lot.devType = site.devType;
+      lot.title = cat.name;
+      if (cat.isResidential) {
+        state.buildings[lot.lotId] = makeResidentialBuilding(lot.lotId, site.devType, cat.name, false);
+      } else {
+        state.developments[lot.lotId] = { lotId: lot.lotId, devType: site.devType, timer: cat.cycleSec };
+      }
+      buildSingleLot3D(lot.lotId);
+    }
+  }
+
+  syncPocketBuildBadge();
+  playGoldenBellSound();
+  spawnShockwaveRing3D(site.wx, site.wy + 0.4, site.wz, 0xFFD700, 8.5);
+  spawnPoofParticles3D(site.wx, site.wy + 3.0, site.wz, 0xFFD700, 18);
+  updateTopHUDTargets();
+  if (!dom.lotDevModal?.classList.contains('hidden')) {
+    openLotDevModal(devModalLotId);
+  }
+  showToast(
+    isInstantRush
+      ? `⚡ 특별 야근 투입! [${site.title}] 공정률 100% 즉시 완공 완료!!`
+      : `🎉 [${site.title}] 100% 완공! 신규 임대 및 시너지 수익이 개시됩니다!`,
+    'gold'
+  );
+  saveGameState();
+}
+
+function tickLive3DConstructionSites(dt, elapsed) {
+  const keys = Object.keys(constructionState.sites);
+  if (keys.length === 0) return;
+
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const inHiddenOverlay = titleScreenState.active || guidedTourState.active || duelState.active || fpState.active;
+
+  for (const jobKey of keys) {
+    const site = constructionState.sites[jobKey];
+    if (!site) continue;
+
+    site.progress = Math.min(100, site.progress + (100 / Math.max(4, site.durationSec)) * dt);
+    const ratio = site.progress / 100;
+
+    // 1) 노란 3D 타워크레인 팔(Jib) 회전 & 후크 상하 인양 모션
+    if (site.rig?.jibPivot) {
+      site.rig.jibPivot.rotation.y = Math.sin(elapsed * 1.15 + site.wx * 0.1) * 0.95;
+    }
+    if (site.rig?.hookGroup) {
+      site.rig.hookGroup.position.y = 0.65 + Math.sin(elapsed * 2.4) * 0.55;
+    }
+    // 2) 공정률에 비례하여 실제 건물 골조가 비계 안에서 쑥쑥 솟아오름!
+    if (site.rig?.risingCore) {
+      site.rig.risingCore.scale.y = 0.1 + ratio * 0.9;
+    }
+    // 3) 안전모 동물 인부의 신나는 망치질 & 흙먼지/나무칩 파티클!
+    if (site.rig?.worker?.userData?.armR) {
+      site.rig.worker.userData.armR.rotation.x = -0.95 + Math.sin(elapsed * 15.0) * 0.65;
+      site.rig.worker.position.y = 0.18 + Math.abs(Math.sin(elapsed * 7.5)) * 0.08;
+    }
+    site.dustAccum += dt;
+    if (site.dustAccum >= 0.62) {
+      site.dustAccum = 0;
+      spawnPoofParticles3D(site.wx - 1.0, site.wy + 1.1, site.wz + (site.spanD || 7.6) * 0.45, 0xE7D5C0, 4);
+    }
+
+    // 4) 상단 실시간 공정률(0% -> 100%) 프로그레스 핀 화면 좌표 투영 업데이트
+    if (site.pinEl) {
+      const pctTxt = site.pinEl.querySelector('[data-cprog-pct]');
+      const fillBar = site.pinEl.querySelector('[data-cprog-fill]');
+      const roundedPct = Math.min(100, Math.floor(site.progress));
+      if (pctTxt) pctTxt.textContent = `${roundedPct}%`;
+      if (fillBar) fillBar.style.width = `${roundedPct}%`;
+
+      const lotDef = state.lots.find((l) => l.lotId === site.lotId);
+      const inSameWorld = (lotDef?.stage === 2) === (WorldManager.currentStage === 2);
+      if (inHiddenOverlay || !inSameWorld) {
+        site.pinEl.style.display = 'none';
+      } else {
+        const pt = projectWorldToScreen(site.wx, site.wy + (site.spanH || 4.8) + 3.2, site.wz);
+        if (!pt.visible || pt.x < 40 || pt.x > vw - 40 || pt.y < 60 || pt.y > vh - 40) {
+          site.pinEl.style.display = 'none';
+        } else {
+          site.pinEl.style.display = 'block';
+          site.pinEl.style.left = `${pt.x}px`;
+          site.pinEl.style.top = `${pt.y}px`;
+        }
+      }
+    }
+
+    if (site.progress >= 100) {
+      completeLive3DConstructionJob(jobKey, false);
+    }
+  }
+  syncPocketBuildBadge();
+}
+
+function openLotDevModal(lotId = null) {
+  if (!dom.devCardsGrid) return;
   closeAllModalsImmediate('lot-dev-modal');
   devModalLotId = lotId;
-  if (dom.devLotBadge) dom.devLotBadge.textContent = lot.name;
 
-  if (!lot.owned) {
-    dom.devCardsGrid.innerHTML = `
-      <div class="diary-card p-4 sm:col-span-2 text-center space-y-3">
-        <div class="flex items-center justify-center gap-2 font-title text-[16.5px] text-[#3A2E2B]">
-          ${createCustomSVGIcon('sprout_lot', 24)}
-          <span>${lot.name} 토지 매입</span>
-        </div>
-        <div class="font-body text-[12.5px] font-medium text-[#69544C]">
-          토지를 매입하면 태양광 발전소, 딸기 도시농장, 벚꽃 힐링공원, 럭키 팰리스를 착공할 수 있습니다.
-        </div>
-        <button type="button" id="btn-buy-lot-land" class="jelly-action-btn btn-gold-lip px-6 py-2.5">
-          ${createCustomSVGIcon('coin_stack', 18)}
-          <span>${lot.landPrice.toLocaleString()}만으로 토지 매입하기</span>
-        </button>
-      </div>
-    `;
-    dom.devCardsGrid.querySelector('#btn-buy-lot-land')?.addEventListener('click', () => {
-      if (!spendGold(lot.landPrice)) return;
-      lot.owned = true;
-      ensureLotOverlayBadge(lot.lotId);
-      openLotDevModal(lot.lotId);
-      showToast(`[${lot.name}] 토지 매입 완료! 착공할 시설을 선택하세요!`, 'gold');
-      saveGameState();
-    });
-  } else {
-    const devKeys = ['solar_plant', 'urban_farm', 'sakura_park', 'bakery_cafe', 'mixed_2'];
-    dom.devCardsGrid.innerHTML = devKeys.map((dk) => {
-      const cat = DEVELOPMENT_CATALOG[dk];
-      return `
-        <div class="diary-card flex flex-col justify-between gap-2.5">
-          <div class="flex items-center gap-3">
-            ${createNotebookArtworkSVG(cat.artKey, 46)}
-            <div>
-              <div class="font-title text-[14px] text-[#3A2E2B]">${cat.name}</div>
-              <span class="kw-chip tone-mint mt-1">타운 시너지 +${cat.rentSynergyPct}%</span>
+  const targetLot = lotId ? state.lots.find((l) => l.lotId === lotId) : null;
+  if (dom.devLotBadge) {
+    dom.devLotBadge.textContent = targetLot ? targetLot.name : '통합 증축 · 착공 공정 관리';
+  }
+
+  const htmlBlocks = [];
+
+  // 1) 현재 실시간 시공 중인 3D 타워크레인 공정 현황 카드
+  const activeSites = Object.values(constructionState.sites);
+  if (activeSites.length > 0) {
+    htmlBlocks.push(`
+      <div class="diary-card !bg-[#FFFBEB] !border-2 !border-[#F59E0B] space-y-2">
+        <div class="font-title text-[13.5px] text-[#92400E]">🏗️ 실시간 3D 타워크레인 시공 현장 (${activeSites.length}건)</div>
+        ${activeSites.map((s) => `
+          <div class="rounded-xl bg-white p-2.5 border border-[#FDE68A] space-y-1.5">
+            <div class="flex items-center justify-between text-[12px] font-title">
+              <span>${s.title}</span>
+              <span class="font-num text-[#B45309]">${Math.floor(s.progress)}%</span>
             </div>
+            <div class="candy-gauge-track !h-2.5">
+              <div class="candy-gauge-fill candy-gold" style="width:${Math.floor(s.progress)}%;"></div>
+            </div>
+            <button type="button" data-modal-rush="${s.jobKey}" class="jelly-action-btn btn-gold-lip w-full py-1.5 !text-[11.5px]">
+              <span>⚡ 특별 야근 투입 (즉시 완공)</span>
+            </button>
           </div>
-          <button type="button" data-build-dev="${dk}" class="jelly-action-btn btn-coral-lip w-full py-2">
-            ${createCustomSVGIcon('blueprint_hammer', 17)}
-            <span>${cat.buildCost}만 착공</span>
+        `).join('')}
+      </div>
+    `);
+  }
+
+  // 2) 메인 빌딩 / 하버 호텔 잠긴 층·호실 증축 발주 카드 (수첩 [🏗️ 빌딩 증축 · 착공 공정 관리] 진입 시 표시)
+  const activeBldId = WorldManager.currentStage === 2 ? 'lot_harbor_main' : 'lot_main';
+  const activeBld = state.buildings[activeBldId];
+  const bldLot = state.lots.find((l) => l.lotId === activeBldId);
+  if (!targetLot || targetLot.lotId === activeBldId) {
+    const lockedRooms = (activeBld?.rooms || []).filter((r) => !r.unlocked && !constructionState.sites[`room_${r.id}`]);
+    if (lockedRooms.length > 0) {
+      htmlBlocks.push(`
+        <div class="diary-card space-y-2">
+          <div class="font-title text-[13.5px] text-[#3A2E2B]">🏢 [${activeBld.title}] 상층부 호실 증축 착공</div>
+          ${lockedRooms.map((rm) => {
+            const meta = ROOM_TYPE_META[rm.layoutType] || ROOM_TYPE_META.studio;
+            const cost = rm.unlockCost || 180;
+            return `
+              <div class="rounded-xl bg-[#F8FAFC] border border-[#CBD5E1] p-2.5 flex items-center justify-between gap-2">
+                <div>
+                  <div class="font-title text-[12.5px] text-[#2C221E]">${rm.name}호 · ${meta.badge}</div>
+                  <div class="font-body text-[10.5px] font-bold text-[#64748B]">3D 비계 &amp; 타워크레인 시공</div>
+                </div>
+                <button type="button" data-expand-room-id="${rm.id}" class="jelly-action-btn btn-sky-lip !py-1.5 !px-3 !text-[11.5px] shrink-0">
+                  <span>🏗️ ${cost}만 착공</span>
+                </button>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `);
+    }
+  }
+
+  // 3) 특정 외곽 부지 또는 전체 미개발 부지 매입 & 착공 카드
+  const candidateLots = (targetLot && targetLot.lotId !== 'lot_main' && targetLot.lotId !== 'lot_harbor_main')
+    ? [targetLot]
+    : state.lots.filter((l) => l.lotId !== 'lot_main' && l.lotId !== 'lot_harbor_main' && (WorldManager.currentStage === 2 ? l.stage === 2 : l.stage !== 2));
+
+  for (const lot of candidateLots) {
+    if (constructionState.sites[`lot_${lot.lotId}`]) continue;
+    if (!lot.owned) {
+      htmlBlocks.push(`
+        <div class="diary-card p-3 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-title text-[14px] text-[#3A2E2B]">🌱 ${lot.name} 토지 매입</span>
+            <span class="kw-chip tone-gold">${lot.landPrice.toLocaleString()}만</span>
+          </div>
+          <div class="font-body text-[11.5px] font-semibold text-[#69544C]">매입 후 3D 타워크레인을 투입해 발전소·농장·주상복합을 착공합니다.</div>
+          <button type="button" data-buy-lot-id="${lot.lotId}" class="jelly-action-btn btn-gold-lip w-full py-2 !text-[12px]">
+            ${createCustomSVGIcon('coin_stack', 16)}
+            <span>${lot.landPrice.toLocaleString()}만 토지 매입하기</span>
           </button>
         </div>
-      `;
-    }).join('');
-
-    dom.devCardsGrid.querySelectorAll('[data-build-dev]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const dk = btn.getAttribute('data-build-dev');
-        const cat = DEVELOPMENT_CATALOG[dk];
-        if (!cat || !spendGold(cat.buildCost)) return;
-        lot.devType = dk;
-        lot.title = cat.name;
-        if (cat.isResidential) {
-          state.buildings[lot.lotId] = makeResidentialBuilding(lot.lotId, dk, cat.name, false);
-        } else {
-          state.developments[lot.lotId] = { lotId: lot.lotId, devType: dk, timer: cat.cycleSec };
-        }
-        buildSingleLot3D(lot.lotId);
-        dom.lotDevModal?.classList.add('hidden');
-        updateTopHUDTargets();
-        showToast(`[${lot.name}] ${cat.name} 완공!`, 'gold');
-        saveGameState();
-      });
-    });
+      `);
+    } else if (!lot.devType) {
+      const devKeys = ['solar_plant', 'urban_farm', 'sakura_park', 'bakery_cafe', 'mixed_2'];
+      htmlBlocks.push(`
+        <div class="diary-card p-3 space-y-2">
+          <div class="font-title text-[14px] text-[#3A2E2B]">🏗️ [${lot.name}] 착공 시설 발주</div>
+          <div class="space-y-2">
+            ${devKeys.map((dk) => {
+              const cat = DEVELOPMENT_CATALOG[dk];
+              return `
+                <div class="rounded-xl bg-[#FFFDF9] border border-[#E8D5C0] p-2 flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-2 min-w-0">
+                    ${createNotebookArtworkSVG(cat.artKey, 34)}
+                    <div class="min-w-0">
+                      <div class="font-title text-[12.5px] text-[#3A2E2B] truncate">${cat.name}</div>
+                      <div class="font-body text-[10.5px] font-bold text-[#15803D]">시너지 +${cat.rentSynergyPct}%</div>
+                    </div>
+                  </div>
+                  <button type="button" data-build-lot="${lot.lotId}" data-build-dev="${dk}" class="jelly-action-btn btn-coral-lip !py-1.5 !px-3 !text-[11.5px] shrink-0">
+                    <span>🏗️ ${cat.buildCost}만 착공</span>
+                  </button>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `);
+    }
   }
+
+  if (htmlBlocks.length === 0) {
+    htmlBlocks.push(`
+      <div class="diary-card p-4 text-center font-title text-[13.5px] text-[#15803D]">
+        ✨ 현재 월드의 모든 호실 증축 및 부지 착공이 100% 완료되었습니다!
+      </div>
+    `);
+  }
+
+  dom.devCardsGrid.innerHTML = htmlBlocks.join('');
+
+  dom.devCardsGrid.querySelectorAll('[data-modal-rush]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const jk = btn.getAttribute('data-modal-rush');
+      completeLive3DConstructionJob(jk, true);
+    });
+  });
+
+  dom.devCardsGrid.querySelectorAll('[data-expand-room-id]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const rid = btn.getAttribute('data-expand-room-id');
+      const rm = findRoomById(rid);
+      if (!rm || !bldLot) return;
+      const cost = rm.unlockCost || 180;
+      if (!spendGold(cost)) return;
+      dom.lotDevModal?.classList.add('hidden');
+      startLive3DConstructionJob({
+        jobKey: `room_${rm.id}`,
+        kind: 'room',
+        lotId: rm.lotId,
+        roomId: rm.id,
+        title: `${rm.name}호 증축 공사`,
+        durationSec: 18.0,
+        wx: bldLot.x + rm.lx,
+        wy: rm.ly,
+        wz: bldLot.z + rm.lz,
+        spanW: rm.rw * 0.92,
+        spanD: rm.rd * 0.92,
+        spanH: rm.rh
+      });
+      saveGameState();
+    });
+  });
+
+  dom.devCardsGrid.querySelectorAll('[data-buy-lot-id]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const lid = btn.getAttribute('data-buy-lot-id');
+      const lot = state.lots.find((l) => l.lotId === lid);
+      if (!lot || !spendGold(lot.landPrice)) return;
+      lot.owned = true;
+      ensureLotOverlayBadge(lot.lotId);
+      openLotDevModal(lid);
+      showToast(`[${lot.name}] 토지 매입 완료! 이제 착공할 건물을 발주하세요!`, 'gold');
+      saveGameState();
+    });
+  });
+
+  dom.devCardsGrid.querySelectorAll('[data-build-dev]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const lid = btn.getAttribute('data-build-lot');
+      const dk = btn.getAttribute('data-build-dev');
+      const lot = state.lots.find((l) => l.lotId === lid);
+      const cat = DEVELOPMENT_CATALOG[dk];
+      if (!lot || !cat || !spendGold(cat.buildCost)) return;
+      dom.lotDevModal?.classList.add('hidden');
+      startLive3DConstructionJob({
+        jobKey: `lot_${lot.lotId}`,
+        kind: 'lot',
+        lotId: lot.lotId,
+        devType: dk,
+        title: `${lot.name} · ${cat.name}`,
+        durationSec: 20.0,
+        wx: lot.x,
+        wy: 0.12,
+        wz: lot.z,
+        spanW: cat.isResidential ? 18.0 : 10.6,
+        spanD: 8.2,
+        spanH: cat.isResidential ? 9.5 : 4.8
+      });
+      saveGameState();
+    });
+  });
+
   dom.lotDevModal?.classList.remove('hidden');
 }
 
@@ -13824,13 +14984,14 @@ function triggerMansourMakeItRain(customOpt = null) {
   const totalBurstBills = opt.billCount || 80;
   makeItRainState.maxBillCap = Math.min(260, Math.max(100, totalBurstBills + 40));
   makeItRainState.active = true;
-  makeItRainState.timer = opt.skyFireworks ? 7.2 : (totalBurstBills >= 150 ? 6.2 : 4.2);
+  makeItRainState.timer = opt.skyFireworks ? 9.5 : (totalBurstBills >= 150 ? 8.2 : 6.8);
   makeItRainState.spawnAccum = 0;
 
-  const inHarbor = state.activeTownStage === 2 && !!state.harborUnlocked;
-  let centerX = inHarbor ? 0.0 : 0.0;
+  const inHarbor = WorldManager.currentStage === 2;
+  ensureHeroTownActorSpawned();
+  let centerX = heroState.mesh ? heroState.mesh.position.x : 0.0;
   let centerY = 0.28;
-  let centerZ = inHarbor ? 118.5 : 11.8;
+  let centerZ = heroState.mesh ? heroState.mesh.position.z : (inHarbor ? 118.5 : 11.8);
 
   if (fpState.active) {
     if (fpState.leftHandSlot && fpState.rightHandSlot) {
@@ -13854,46 +15015,53 @@ function triggerMansourMakeItRain(customOpt = null) {
       spawnSingleFlutterBill3D(centerX, centerY, centerZ, camDirVec.x, camDirVec.z, 0.85, !!opt.coinBurst);
     }
   } else if (driveState.active) {
+    // 오픈카 운전 중 드라이브 바이(Drive-By) 머니건 플렉스!
     centerX = driveState.x;
     centerY = driveState.y + 1.45;
     centerZ = driveState.z;
     const fwdX = Math.sin(driveState.heading);
     const fwdZ = Math.cos(driveState.heading);
     for (let i = 0; i < Math.min(140, totalBurstBills); i++) {
-      spawnSingleFlutterBill3D(centerX, centerY, centerZ, fwdX, fwdZ, 1.15, !!opt.coinBurst);
+      const sideSign = i % 2 === 0 ? -1 : 1;
+      spawnSingleFlutterBill3D(centerX, centerY, centerZ, -fwdZ * sideSign + fwdX * 0.4, fwdX * sideSign + fwdZ * 0.4, 1.15, !!opt.coinBurst);
     }
     spawnShockwaveRing3D(centerX, 0.32, centerZ, 0xFFD700, 7.5);
   } else {
     if (focusedRoomId) exitRoomFocusMode();
     if (focusedShopId || focusedFirstFloorShopId) exitShopFocusMode();
 
-    if (!makeItRainState.avatarGroup) {
-      const av = createChibiPerson3D('landlord_avatar');
-      av.scale.setScalar(1.22);
-      const gunL = create3DMoneyGunMesh();
-      gunL.position.set(-0.56, 1.02, 0.34);
-      gunL.rotation.x = -0.24;
-      const gunR = create3DMoneyGunMesh();
-      gunR.position.set(0.56, 1.02, 0.34);
-      gunR.rotation.x = -0.24;
-      av.add(gunL, gunR);
-      scene.add(av);
-      makeItRainState.avatarGroup = av;
-      makeItRainState.gunL = gunL;
-      makeItRainState.gunR = gunR;
+    // [요구사항 2: 이동형 머니건 플렉스 퍼레이드!] 별도 정지 클론 생성 없이 현재 마을에 서 있는 내 주인공 캐릭터가 즉시 선글라스 & 양손 24K 황금 머니건을 장착하고 거리를 행진!
+    if (makeItRainState.avatarGroup) {
+      makeItRainState.avatarGroup.visible = false;
     }
-    makeItRainState.avatarGroup.visible = true;
-    makeItRainState.avatarGroup.position.set(centerX, centerY, centerZ);
+    if (heroState.mesh) {
+      heroState.mesh.visible = true;
+      centerX = heroState.mesh.position.x;
+      centerZ = heroState.mesh.position.z;
+      const hud = heroState.mesh.userData;
+      if (hud?.bossSunglassesGroup) hud.bossSunglassesGroup.visible = true;
+      if (hud?.dualMoneyGunsGroup) hud.dualMoneyGunsGroup.visible = true;
 
-    const immediateCount = Math.min(190, totalBurstBills);
+      // 주인공 뒤를 피리 부는 사나이처럼 따라올 경로 히스토리 시드 초기화
+      heroState.trail = [];
+      for (let t = 0; t < 36; t++) {
+        heroState.trail.push({
+          x: centerX - Math.sin(heroState.heading) * (t * 0.38),
+          z: centerZ - Math.cos(heroState.heading) * (t * 0.38)
+        });
+      }
+      showSpeechBubble3D('hero_parade_shout', centerX, 2.55, centerZ, '💸 골든 머니건 행진 출발!! WASD로 원하는 거리로 뿌려요~!', 3.6, true);
+    }
+
+    const immediateCount = Math.min(120, Math.round(totalBurstBills * 0.65));
     for (let i = 0; i < immediateCount; i++) {
       const ang = (i / Math.max(1, immediateCount)) * Math.PI * 2;
-      const skyLift = opt.skyFireworks && i % 2 === 0 ? 7.5 + Math.random() * 5.0 : 1.4;
-      const spreadScale = opt.skyFireworks ? 1.55 : (totalBurstBills >= 150 ? 1.25 : 0.95);
+      const skyLift = opt.skyFireworks && i % 2 === 0 ? 7.5 + Math.random() * 5.0 : 1.45;
+      const spreadScale = opt.skyFireworks ? 1.45 : (totalBurstBills >= 150 ? 1.18 : 0.92);
       spawnSingleFlutterBill3D(
-        centerX + (opt.skyFireworks ? (Math.random() - 0.5) * 14 : 0),
+        centerX + (opt.skyFireworks ? (Math.random() - 0.5) * 12 : 0),
         centerY + skyLift,
-        centerZ + (opt.skyFireworks ? (Math.random() - 0.5) * 10 : 0),
+        centerZ + (opt.skyFireworks ? (Math.random() - 0.5) * 9 : 0),
         Math.cos(ang),
         Math.sin(ang),
         spreadScale,
@@ -13910,7 +15078,7 @@ function triggerMansourMakeItRain(customOpt = null) {
       }
     }
 
-    const crowdCount = opt.crowdCheer ? 10 : 4;
+    const crowdCount = opt.crowdCheer ? 8 : 5;
     while (makeItRainState.crowdActors.length < 10) {
       const idx = makeItRainState.crowdActors.length;
       const roles = ['newlywed', 'streamer', 'developer', 'musician', 'chef', 'florist', 'student', 'elderly', 'barista', 'petlover'];
@@ -13925,12 +15093,19 @@ function triggerMansourMakeItRain(customOpt = null) {
     makeItRainState.crowdActors.forEach((cr, idx) => {
       cr.mesh.visible = idx < crowdCount;
       if (!cr.mesh.visible) return;
-      const startAng = Math.PI * 0.12 + (idx / 9) * Math.PI * 0.88 + (idx % 2 === 0 ? -0.25 : 0.25);
-      const startDist = 9.5 + (idx % 3) * 2.8;
-      const targetDist = 3.4 + (idx % 2) * 1.15;
-      cr.mesh.position.set(centerX + Math.cos(startAng) * startDist, 0.26, centerZ + Math.sin(startAng) * startDist);
-      cr.targetX = centerX + Math.cos(startAng) * targetDist;
-      cr.targetZ = centerZ + Math.sin(startAng) * targetDist;
+      const lateral = (idx % 2 === 0 ? -1 : 1) * (0.75 + (idx % 3) * 0.35);
+      const backDist = 2.2 + idx * 1.25;
+      cr.mesh.position.set(
+        centerX - Math.sin(heroState.heading) * backDist + Math.cos(heroState.heading) * lateral,
+        0.26,
+        centerZ - Math.cos(heroState.heading) * backDist - Math.sin(heroState.heading) * lateral
+      );
+      if (cr.mesh.userData?.heartEyesGroup) {
+        cr.mesh.userData.heartEyesGroup.visible = true;
+      }
+      if (idx < 3) {
+        showSpeechBubble3D(`parade_fan_${idx}`, cr.mesh.position.x, 2.35, cr.mesh.position.z, idx === 0 ? '😍 꺄아!! 갓물주님 머니건 퍼레이드다!!' : '😍💸 폴짝폴짝!! 오만원권 주워 담자~!', 3.2, true);
+      }
     });
   }
 
@@ -13940,16 +15115,16 @@ function triggerMansourMakeItRain(customOpt = null) {
 
   if (!fpState.active && !driveState.active && !unlockedNewMilestone) {
     startSmoothCameraTween(
-      new THREE.Vector3(centerX + 14.5, 13.5, centerZ + 22.0),
-      new THREE.Vector3(centerX, 1.8, centerZ + 0.8),
-      1.52,
-      0.55,
+      new THREE.Vector3(centerX + 16.5, 15.2, centerZ + 24.5),
+      new THREE.Vector3(centerX, 1.6, centerZ + 0.5),
+      1.26,
+      0.5,
       null
     );
   }
 
   const happyNote = opt.maxHappy ? '행복도 즉시 100% MAX!' : `행복도 +${opt.happyAdd}%`;
-  showToast(`💸 [${opt.title}] -${opt.cost.toLocaleString()}만 플렉스! ${happyNote} · ${opt.feverSec}초간 전 수익 ${opt.feverMult}배 피버!`, 'gold');
+  showToast(`💸 [${opt.title}] -${opt.cost.toLocaleString()}만 행진 살포! ${happyNote} · WASD로 행진 조종 가능!`, 'gold');
   saveGameState();
 }
 
@@ -13958,8 +15133,8 @@ function tickMakeItRain(dt, elapsed) {
     makeItRainState.timer -= dt;
     makeItRainState.spawnAccum += dt;
 
-    // 발사 지속 시간 동안 연속 지폐·금화 추가 분사!
-    if (makeItRainState.timer > 1.4 && makeItRainState.spawnAccum >= 0.085) {
+    // 발사 지속 시간 동안 이동하는 내 주인공(또는 운전석) 좌우에서 연속 지폐·금화 분사!
+    if (makeItRainState.timer > 0.35 && makeItRainState.spawnAccum >= 0.08) {
       makeItRainState.spawnAccum = 0;
       if (fpState.active) {
         fpCamera.getWorldDirection(camDirVec);
@@ -13976,50 +15151,89 @@ function tickMakeItRain(dt, elapsed) {
       } else if (driveState.active) {
         const fx = Math.sin(driveState.heading);
         const fz = Math.cos(driveState.heading);
-        for (let k = 0; k < 5; k++) {
-          spawnSingleFlutterBill3D(driveState.x, driveState.y + 1.4, driveState.z, fx, fz, 1.1);
+        for (let k = 0; k < 4; k++) {
+          const sideSign = k % 2 === 0 ? -1 : 1;
+          spawnSingleFlutterBill3D(driveState.x, driveState.y + 1.45, driveState.z, -fz * sideSign + fx * 0.35, fx * sideSign + fz * 0.35, 1.08, true);
         }
-      } else if (makeItRainState.avatarGroup) {
-        const sweep = Math.sin(elapsed * 5.2) * 1.35;
-        makeItRainState.avatarGroup.rotation.y = sweep;
-        makeItRainState.avatarGroup.position.y = 0.28 + Math.abs(Math.sin(elapsed * 8.5)) * 0.22;
-        const dxL = Math.sin(sweep - 0.45);
-        const dzL = Math.cos(sweep - 0.45);
-        const dxR = Math.sin(sweep + 0.45);
-        const dzR = Math.cos(sweep + 0.45);
-        const ax = makeItRainState.avatarGroup.position.x;
-        const az = makeItRainState.avatarGroup.position.z;
-        for (let k = 0; k < 3; k++) {
-          spawnSingleFlutterBill3D(ax - 0.5, 1.75, az + 0.3, dxL, dzL, 0.95);
-          spawnSingleFlutterBill3D(ax + 0.5, 1.75, az + 0.3, dxR, dzR, 0.95);
+      } else if (heroState.mesh) {
+        const ax = heroState.mesh.position.x;
+        const az = heroState.mesh.position.z;
+        const hAng = heroState.heading;
+        const sweep = Math.sin(elapsed * 7.5) * 0.55;
+        // 주인공 양손 3D 황금 머니건이 좌우 도로로 지폐와 금화를 촤르르 뿜어냄!
+        const leftAng = hAng - Math.PI * 0.42 + sweep;
+        const rightAng = hAng + Math.PI * 0.42 - sweep;
+        for (let k = 0; k < 2; k++) {
+          spawnSingleFlutterBill3D(ax + Math.cos(hAng) * -0.45, 1.52, az - Math.sin(hAng) * -0.45, Math.sin(leftAng), Math.cos(leftAng), 0.88, true);
+          spawnSingleFlutterBill3D(ax + Math.cos(hAng) * 0.45, 1.52, az - Math.sin(hAng) * 0.45, Math.sin(rightAng), Math.cos(rightAng), 0.88, true);
         }
       }
     }
 
-    // 군중 자석 AI 이동 및 폴짝폴짝 점프 환호
-    for (const cr of makeItRainState.crowdActors) {
+    // [피리 부는 사나이 행진 AI] 하트 눈(😍)을 띄운 동물 세입자들이 돈을 뿌리며 걸어가는 내 주인공 뒤를 줄지어 따라오며 폴짝폴짝 점프해 돈 줍기!
+    for (let idx = 0; idx < makeItRainState.crowdActors.length; idx++) {
+      const cr = makeItRainState.crowdActors[idx];
       if (!cr.mesh.visible) continue;
-      cr.mesh.position.x = THREE.MathUtils.lerp(cr.mesh.position.x, cr.targetX, Math.min(1, dt * 3.8));
-      cr.mesh.position.z = THREE.MathUtils.lerp(cr.mesh.position.z, cr.targetZ, Math.min(1, dt * 3.8));
-      cr.mesh.position.y = 0.26 + Math.abs(Math.sin(elapsed * 9.5 + cr.phase)) * 0.46;
-      if (makeItRainState.avatarGroup) {
-        cr.mesh.lookAt(
-          makeItRainState.avatarGroup.position.x,
-          cr.mesh.position.y,
-          makeItRainState.avatarGroup.position.z
+      if (cr.mesh.userData?.heartEyesGroup) {
+        cr.mesh.userData.heartEyesGroup.visible = true;
+      }
+
+      const trailIdx = Math.min(heroState.trail.length - 1, (idx + 1) * 4);
+      const crumb = heroState.trail[trailIdx] || { x: heroState.x, z: heroState.z - 2.0 };
+      const sideOffset = (idx % 2 === 0 ? -0.68 : 0.68);
+      const goalX = crumb.x + Math.cos(heroState.heading) * sideOffset;
+      const goalZ = crumb.z - Math.sin(heroState.heading) * sideOffset;
+
+      const dx = goalX - cr.mesh.position.x;
+      const dz = goalZ - cr.mesh.position.z;
+      const d = Math.hypot(dx, dz);
+      if (d > 0.15) {
+        const step = Math.min(d, 5.4 * dt);
+        cr.mesh.position.x += (dx / d) * step;
+        cr.mesh.position.z += (dz / d) * step;
+        cr.mesh.rotation.y = lerpAngleShortest(cr.mesh.rotation.y, Math.atan2(dx, dz), Math.min(1, dt * 12));
+      } else if (heroState.mesh) {
+        cr.mesh.rotation.y = lerpAngleShortest(
+          cr.mesh.rotation.y,
+          Math.atan2(heroState.mesh.position.x - cr.mesh.position.x, heroState.mesh.position.z - cr.mesh.position.z),
+          Math.min(1, dt * 10)
         );
       }
+
+      // 폴짝폴짝 점프 & 허리 숙여 지폐 주워 담는 신나는 모션!
+      const hopWave = Math.sin(elapsed * 10.5 + cr.phase);
+      cr.mesh.position.y = 0.26 + Math.max(0, hopWave) * 0.44;
       const ud = cr.mesh.userData;
+      if (ud?.bodyRig) {
+        ud.bodyRig.rotation.x = hopWave < -0.35 ? 0.36 : 0;
+      }
       if (ud?.armLPivot && ud?.armRPivot) {
-        ud.armLPivot.rotation.z = 2.45 + Math.sin(elapsed * 12 + cr.phase) * 0.35;
-        ud.armRPivot.rotation.z = -2.45 - Math.cos(elapsed * 12 + cr.phase) * 0.35;
+        if (hopWave < -0.35) {
+          ud.armLPivot.rotation.set(-1.15, 0, 0.25);
+          ud.armRPivot.rotation.set(-1.15, 0, -0.25);
+        } else {
+          ud.armLPivot.rotation.set(0, 0, 2.38 + Math.sin(elapsed * 14 + cr.phase) * 0.28);
+          ud.armRPivot.rotation.set(0, 0, -2.38 - Math.cos(elapsed * 14 + cr.phase) * 0.28);
+        }
       }
     }
 
     if (makeItRainState.timer <= 0) {
       makeItRainState.active = false;
       if (makeItRainState.avatarGroup) makeItRainState.avatarGroup.visible = false;
-      for (const cr of makeItRainState.crowdActors) cr.mesh.visible = false;
+      if (heroState.mesh?.userData) {
+        const hud = heroState.mesh.userData;
+        const heroId = state?.selectedHeroCharId || 'char_05_hamster';
+        if (hud.bossSunglassesGroup && heroId !== 'char_06_panther' && heroId !== 'char_09_fox') {
+          hud.bossSunglassesGroup.visible = false;
+        }
+        if (hud.dualMoneyGunsGroup) hud.dualMoneyGunsGroup.visible = false;
+      }
+      for (const cr of makeItRainState.crowdActors) {
+        cr.mesh.visible = false;
+        if (cr.mesh.userData?.heartEyesGroup) cr.mesh.userData.heartEyesGroup.visible = false;
+        if (cr.mesh.userData?.bodyRig) cr.mesh.userData.bodyRig.rotation.x = 0;
+      }
       if (makeItRainState.fpGunL?.parent) makeItRainState.fpGunL.parent.remove(makeItRainState.fpGunL);
       if (makeItRainState.fpGunR?.parent) makeItRainState.fpGunR.parent.remove(makeItRainState.fpGunR);
       makeItRainState.fpGunL = null;
@@ -16860,17 +18074,19 @@ function showHqDividendToast(amount) {
   }, 2900);
 }
 
-function travelToTownStage(targetStage = 2) {
+function travelToTownStage(targetStage = 2, viaPhysicalGate = false) {
   if (targetStage === 2 && !state.harborUnlocked) {
-    openHarborChronicleModal();
+    rattleLockedHarborGate(true);
     return;
   }
 
   closePocketPlanner();
+  closeGateLockCapsule();
   closeAllModalsImmediate();
 
   if (fpState.active) exitFirstPersonMode(false);
   if (driveState.active) exitDriveMode();
+  lowerHeroTelescope3D();
 
   const prevShop = focusedShopId;
   focusedRoomId = null;
@@ -16882,21 +18098,48 @@ function travelToTownStage(targetStage = 2) {
   if (prevShop) rebuildStandaloneShop3D(prevShop);
 
   state.activeTownStage = targetStage === 2 ? 2 : 1;
+  WorldManager.currentStage = state.activeTownStage;
+  gatePortalState.teleportCooldown = 2.6;
   hqDividendTimer = 3.6;
 
+  if (islandRootGroup) islandRootGroup.visible = state.activeTownStage === 1;
+  if (harborRootGroup) harborRootGroup.visible = state.activeTownStage === 2;
+
+  ensureHeroTownActorSpawned();
+  if (heroState.mesh) {
+    if (state.activeTownStage === 2) {
+      heroState.x = viaPhysicalGate ? -27.5 : -6.0;
+      heroState.z = viaPhysicalGate ? 112.5 : 116.5;
+      heroState.heading = Math.PI * 0.5;
+    } else {
+      heroState.x = viaPhysicalGate ? 33.8 : -2.6;
+      heroState.z = viaPhysicalGate ? 17.8 : 12.2;
+      heroState.heading = viaPhysicalGate ? -Math.PI * 0.5 : 0;
+    }
+    heroState.mesh.position.set(heroState.x, 0.28, heroState.z);
+    heroState.mesh.rotation.y = heroState.heading;
+    if (heroState.mesh.userData?.popMartEntry) {
+      heroState.mesh.userData.popMartEntry.prevLocalX = heroState.x;
+      heroState.mesh.userData.popMartEntry.prevLocalZ = heroState.z;
+    }
+  }
+
   controls.enabled = true;
+  controls.enableRotate = true;
+  controls.enableZoom = true;
   controls.enablePan = true;
   controls.minPolarAngle = 0.35;
   controls.maxPolarAngle = Math.PI * 0.44;
 
   applyTownAtmosphere(state.activeTownStage);
+  if (typeof setWeatherMode === 'function') {
+    setWeatherMode(state.weatherMode || 'clear', true);
+  }
   syncChronicleAndStageUI();
   syncTopBarsByMode();
 
   const isMobilePortrait = window.innerWidth < 640 && window.innerHeight > window.innerWidth;
   const offset = CAM_OFFSETS[camAzimuth % 4];
-  const bridgeMidLook = new THREE.Vector3(2.0, 4.8, 70.5);
-  const bridgeMidPos = bridgeMidLook.clone().add(offset);
 
   const finalLook = state.activeTownStage === 2
     ? (isMobilePortrait ? new THREE.Vector3(0.0, 6.0, 120.0) : HARBOR_OVERVIEW_LOOK.clone())
@@ -16906,15 +18149,12 @@ function travelToTownStage(targetStage = 2) {
     ? (isMobilePortrait ? 0.42 : 0.72)
     : (isMobilePortrait ? 0.45 : 0.78);
 
-  // 빨간 철제 아치형 해안 대교 위를 스치듯 건너가는 2단 시네마틱 카메라 글라이드 (총 ~0.95초!)
-  startSmoothCameraTween(bridgeMidPos, bridgeMidLook, 0.68, 0.42, () => {
-    startSmoothCameraTween(finalPos, finalLook, finalZoom, 0.52, null);
-  });
+  startSmoothCameraTween(finalPos, finalLook, finalZoom, 0.65, null);
 
   if (state.activeTownStage === 2) {
-    showToast('🌅 빨간 해안 아치교를 건너 [제2마을: 트와일라잇 하버]에 도착했습니다!', 'gold');
+    showToast('🌅 황금빛 대문을 통과해 풀스케일 해안 도시 [트와일라잇 하버 시티]에 입성했습니다!', 'gold');
   } else {
-    showToast('☀️ 화사한 낮 조명의 [제1마을: 코지 본점 타운]으로 복귀했습니다!', 'mint');
+    showToast('☀️ 귀환의 대문을 통과해 화사한 [코지 본점 타운]으로 복귀했습니다!', 'mint');
   }
   saveGameState();
 }
@@ -17008,7 +18248,11 @@ function triggerDay3CoronationAndOpenBridge(autoTravel = true) {
     hudAnim.targetGold = state.gold;
   }
 
-  syncHarborBridgeGate3D();
+  if (typeof unlockHarborGateWithAnimation === 'function') {
+    unlockHarborGateWithAnimation();
+  } else {
+    syncHarborBridgeGate3D();
+  }
   syncChronicleAndStageUI();
   updateTopHUDTargets();
   updateForbesRankAndHUD(false);
@@ -17016,7 +18260,7 @@ function triggerDay3CoronationAndOpenBridge(autoTravel = true) {
   playGoldenBellSound();
   const fwCols = [0xFFD93D, 0xFF6B6B, 0x38BDF8, 0xA855F7, 0x34D399];
   for (let i = 0; i < 7; i++) {
-    spawnPoofParticles3D(-12 + i * 4, 8.5 + (i % 2) * 2.5, 72.0, fwCols[i % fwCols.length], 16);
+    spawnPoofParticles3D(41.8 - 6 + i * 2, 7.5 + (i % 2) * 2.2, 17.8, fwCols[i % fwCols.length], 16);
     spawnPoofParticles3D(-14 + i * 4.5, 9.5 + (i % 2) * 2.5, 118.0, fwCols[(i + 2) % fwCols.length], 18);
   }
 
@@ -17031,13 +18275,13 @@ function triggerDay3CoronationAndOpenBridge(autoTravel = true) {
 
   saveGameState();
   if (autoTravel) {
-    travelToTownStage(2);
+    travelToTownStage(2, true);
   } else {
     renderHarborChronicleModal();
   }
 }
 
-function triggerDay3InstantSkip() {
+function triggerDay3InstantSkip(stayAtGate = false) {
   state.day3SkipForced = true;
   state.firstStartedAt = Date.now() - 49 * 60 * 60 * 1000;
   try {
@@ -17046,7 +18290,7 @@ function triggerDay3InstantSkip() {
     // ignore storage quota errors
   }
   document.getElementById('harbor-chronicle-modal')?.classList.add('hidden');
-  triggerDay3CoronationAndOpenBridge(true);
+  triggerDay3CoronationAndOpenBridge(!stayAtGate);
 }
 
 // =========================================================
@@ -17078,22 +18322,12 @@ function syncFlagshipInventoryBadge() {
 }
 
 function openFurnitureFlagshipDrawer(defaultCat = null) {
-  if (defaultCat && defaultCat !== 'all') flagshipShopTab = defaultCat;
-  closeAllModalsImmediate('flagship-shop-drawer');
-  syncFlagshipInventoryBadge();
-  renderFurnitureFlagshipDrawer();
-  document.getElementById('flagship-shop-drawer')?.classList.remove('hidden');
-
-  // 타운 뷰(1마을)에서 백화점을 열었을 때 좌측~중앙 75% 화면에 3D 메종 드 럭셔리 통유리 쇼윈도가 비스듬히 보이도록 포커싱!
-  if (!duelState.active && !focusedRoomId && !focusedShopId && !focusedFirstFloorShopId && !driveState.active && !fpState.active && state.activeTownStage !== 2) {
-    startSmoothCameraTween(
-      new THREE.Vector3(33.5, 13.8, 16.8),
-      new THREE.Vector3(23.5, 2.2, -5.2),
-      1.42,
-      0.5,
-      null
-    );
+  if (defaultCat && defaultCat !== 'all') {
+    flagshipShopTab = defaultCat;
+    turntableState.flagshipCat = defaultCat;
   }
+  syncFlagshipInventoryBadge();
+  openTurntableShowcaseModal('flagship', { defaultCat: flagshipShopTab });
 }
 
 function renderFurnitureFlagshipDrawer() {
@@ -18307,7 +19541,7 @@ function makeMattePlushMat(hexOrNum, extra = {}) {
   });
 }
 
-function createAnimalFaceDecalTexture(charId) {
+function createAnimalFaceDecalTexture(charId, isWink = false) {
   const st = ANIMAL_3D_STYLE_PRESETS[charId] || ANIMAL_3D_STYLE_PRESETS.char_01_bunny;
   const cv = document.createElement('canvas');
   cv.width = 512;
@@ -18326,20 +19560,19 @@ function createAnimalFaceDecalTexture(charId) {
     ctx.fill();
   }
 
-  // 그라데이션 핑크 볼터치 (Rosy Cheeks)
+  // 그라데이션 핑크 볼터치 (윙크 시 한층 더 화사하게 발그레!)
   if (charId !== 'char_06_panther') {
     for (const bx of [208, 304]) {
-      const rg = ctx.createRadialGradient(bx, 286, 2, bx, 286, 23);
-      rg.addColorStop(0, 'rgba(255, 118, 152, 0.72)');
+      const rg = ctx.createRadialGradient(bx, 286, 2, bx, 286, isWink ? 26 : 23);
+      rg.addColorStop(0, isWink ? 'rgba(255, 92, 138, 0.88)' : 'rgba(255, 118, 152, 0.72)');
       rg.addColorStop(1, 'rgba(255, 118, 152, 0)');
       ctx.fillStyle = rg;
       ctx.beginPath();
-      ctx.arc(bx, 286, 23, 0, Math.PI * 2);
+      ctx.arc(bx, 286, isWink ? 26 : 23, 0, Math.PI * 2);
       ctx.fill();
     }
   }
 
-  // 시바견 시그니처 하얀 눈썹 점 2개 (마루마유)
   if (charId === 'char_03_shiba') {
     ctx.fillStyle = '#FFFDF9';
     for (const ex of [231, 281]) {
@@ -18349,7 +19582,6 @@ function createAnimalFaceDecalTexture(charId) {
     }
   }
 
-  // 판다 시그니처 까만 타원형 눈 패치
   if (charId === 'char_10_panda') {
     ctx.fillStyle = '#222228';
     ctx.beginPath();
@@ -18360,8 +19592,33 @@ function createAnimalFaceDecalTexture(charId) {
     ctx.fill();
   }
 
-  // 개성 만점 눈동자 / 반달눈 표현
-  if (charId === 'char_01_bunny' || charId === 'char_02_sheep') {
+  // [요구사항 3] 정면 귀여운 윙크(> ◡ ◕) 표정 vs 기본 눈동자
+  if (isWink) {
+    // 왼쪽 눈: 귀여운 '>' 윙크!
+    ctx.strokeStyle = charId === 'char_10_panda' || charId === 'char_06_panther' ? '#FFFDF9' : '#3B2822';
+    ctx.lineWidth = 6.2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(215, 246);
+    ctx.lineTo(236, 256);
+    ctx.lineTo(215, 266);
+    ctx.stroke();
+
+    // 오른쪽 눈: 초롱초롱 열린 '◕' 눈동자!
+    const ex = 285;
+    ctx.fillStyle = charId === 'char_10_panda' ? '#111115' : '#241917';
+    ctx.beginPath();
+    ctx.ellipse(ex, 256, 10.5, 12.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.arc(ex - 3, 251, 4.0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(ex + 3, 259, 2.0, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (charId === 'char_01_bunny' || charId === 'char_02_sheep') {
     ctx.strokeStyle = '#3B2822';
     ctx.lineWidth = 5.5;
     ctx.lineCap = 'round';
@@ -18380,7 +19637,6 @@ function createAnimalFaceDecalTexture(charId) {
       ctx.beginPath();
       ctx.ellipse(ex, 256, 9.5, 11.5, 0, 0, Math.PI * 2);
       ctx.fill();
-      // 반짝이는 더블 하이라이트 캐치라이트
       ctx.fillStyle = '#FFFFFF';
       ctx.beginPath();
       ctx.arc(ex - 3, 251, 3.6, 0, Math.PI * 2);
@@ -18391,13 +19647,15 @@ function createAnimalFaceDecalTexture(charId) {
     }
   }
 
-  // ㅅ / ω 귀여운 입모양 및 고양이·토끼 수염
+  // ㅅ / ◡ 귀여운 입모양 및 수염
   if (charId !== 'char_04_duck') {
     ctx.strokeStyle = charId === 'char_06_panther' ? '#D4AF37' : '#4A3228';
-    ctx.lineWidth = 3.8;
+    ctx.lineWidth = 4.0;
     ctx.lineCap = 'round';
     ctx.beginPath();
-    if (charId === 'char_06_panther' || charId === 'char_09_fox') {
+    if (isWink) {
+      ctx.arc(256, 290, 12, 0.15, Math.PI - 0.15, false);
+    } else if (charId === 'char_06_panther' || charId === 'char_09_fox') {
       ctx.moveTo(246, 294);
       ctx.quadraticCurveTo(258, 301, 271, 290);
     } else {
@@ -18520,13 +19778,19 @@ function createAnimalOutfitTexture(charId) {
 function getAnimal3DSharedResources(charId) {
   if (ANIMAL_3D_RESOURCE_CACHE[charId]) return ANIMAL_3D_RESOURCE_CACHE[charId];
   const st = ANIMAL_3D_STYLE_PRESETS[charId] || ANIMAL_3D_STYLE_PRESETS.char_01_bunny;
-  const faceTex = createAnimalFaceDecalTexture(charId);
+  const faceTex = createAnimalFaceDecalTexture(charId, false);
+  const winkTex = createAnimalFaceDecalTexture(charId, true);
   const outfitTex = createAnimalOutfitTexture(charId);
 
   const res = {
     st,
     headMat: new THREE.MeshStandardMaterial({
       map: faceTex,
+      roughness: 0.85,
+      metalness: 0.05
+    }),
+    headWinkMat: new THREE.MeshStandardMaterial({
+      map: winkTex,
       roughness: 0.85,
       metalness: 0.05
     }),
@@ -18554,6 +19818,7 @@ function buildTrue3DAnimalClayRig(grp, charId, role = 'student') {
   const ud = grp?.userData;
   if (!ud || !ud.bodyRig || ud.isGoldenStatueHero) return null;
 
+  const isHeroRole = (role === 'landlord_avatar' || role === 'landlord' || role === 'landlord_driver');
   const res = getAnimal3DSharedResources(charId);
   const st = res.st;
 
@@ -18567,6 +19832,40 @@ function buildTrue3DAnimalClayRig(grp, charId, role = 'student') {
   }
   const oldSpr = grp.children.find((c) => c.userData?.isPopMartSprite);
   if (oldSpr) grp.remove(oldSpr);
+  const oldHeroAura = grp.children.find((c) => c.userData?.isHeroGoldenAura);
+  if (oldHeroAura) grp.remove(oldHeroAura);
+
+  // [요구사항 1] 내 주인공 동물 캐릭터 발밑 은은한 24K 황금 링 오라(Golden Ring Aura) 상시 점등!
+  if (isHeroRole && role !== 'landlord_driver') {
+    const auraGrp = new THREE.Group();
+    auraGrp.userData.isHeroGoldenAura = true;
+    auraGrp.position.set(0, 0.04, 0);
+    const outerRing = new THREE.Mesh(
+      new THREE.RingGeometry(0.58, 0.76, 36),
+      new THREE.MeshBasicMaterial({
+        color: 0xFFD700,
+        transparent: true,
+        opacity: 0.78,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      })
+    );
+    outerRing.rotation.x = -Math.PI * 0.5;
+    const innerGlow = new THREE.Mesh(
+      new THREE.CircleGeometry(0.56, 32),
+      new THREE.MeshBasicMaterial({
+        color: 0xFDE047,
+        transparent: true,
+        opacity: 0.24,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      })
+    );
+    innerGlow.rotation.x = -Math.PI * 0.5;
+    auraGrp.add(innerGlow, outerRing);
+    grp.add(auraGrp);
+    ud.heroGoldenAura = auraGrp;
+  }
 
   // 1) 통통한 2등신 다리 관절 그룹 (Left/Right Legs) + 오리 물갈퀴발 / 폭신한 발끝 조형
   const makePlushLeg = (lx) => {
@@ -18597,6 +19896,21 @@ function buildTrue3DAnimalClayRig(grp, charId, role = 'student') {
   torso.castShadow = true;
   addToonHullOutline(torso, 1.05);
   ud.bodyRig.add(torso);
+
+  // [요구사항 8] 눈(❄️) 날씨 전용 포근한 3D 빨강·크림 니트 목도리 (Winter Scarf)
+  const winterScarfGroup = new THREE.Group();
+  const scarfColors = ['#EF4444', '#F97316', '#EC4899', '#10B981', '#3B82F6'];
+  const scarfMat = makeMattePlushMat(scarfColors[Math.abs(charId.charCodeAt(5) || 0) % scarfColors.length]);
+  const scarfRing = new THREE.Mesh(new THREE.TorusGeometry(0.305, 0.072, 12, 22), scarfMat);
+  scarfRing.rotation.x = Math.PI * 0.5;
+  scarfRing.position.set(0, 0.89, 0.02);
+  const scarfTail1 = createRoundedToyMesh(0.12, 0.28, 0.06, scarfMat, 0.14, 0.73, 0.31, 0.025);
+  scarfTail1.rotation.z = -0.14;
+  const scarfTail2 = createRoundedToyMesh(0.11, 0.22, 0.06, makeMattePlushMat('#FFFBEB'), 0.22, 0.76, 0.29, 0.025);
+  scarfTail2.rotation.z = -0.26;
+  winterScarfGroup.add(scarfRing, scarfTail1, scarfTail2);
+  winterScarfGroup.visible = false;
+  ud.bodyRig.add(winterScarfGroup);
 
   // 3) 왼팔 / 오른팔 관절 그룹 (Left/Right Arms) + 시그니처 3D 손 소품
   const makePlushArm = (ax, rotZ) => {
@@ -18648,6 +19962,74 @@ function buildTrue3DAnimalClayRig(grp, charId, role = 'student') {
     handPropGroup.add(bCup);
   }
   armR.add(handPropGroup);
+
+  // [요구사항 8] 비(☔) 날씨 전용 앙증맞은 3D 파스텔 미니 우산(Pastel Dome Umbrella)
+  const umbrellaPropGroup = new THREE.Group();
+  const pastelUmbrellaPalette = [0xFF9EBB, 0x7DD3FC, 0xFDE047, 0xA7F3D0, 0xDDD6FE];
+  const umbCol = pastelUmbrellaPalette[Math.abs((charId.charCodeAt(5) || 0) + (role.charCodeAt(0) || 0)) % pastelUmbrellaPalette.length];
+  const umbShaft = new THREE.Mesh(GEO.cyl, MAT.pureGold24k || MAT.woodWarm);
+  umbShaft.scale.set(0.032, 0.96, 0.032);
+  umbShaft.position.set(0, 0.44, 0.08);
+  const umbDome = new THREE.Mesh(
+    new THREE.SphereGeometry(0.68, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.48),
+    new THREE.MeshStandardMaterial({ color: umbCol, roughness: 0.35, metalness: 0.05, side: THREE.DoubleSide })
+  );
+  umbDome.position.set(0, 0.56, 0.08);
+  const umbFinial = new THREE.Mesh(GEO.sphere, MAT.pureGold24k || MAT.white);
+  umbFinial.scale.setScalar(0.065);
+  umbFinial.position.set(0, 1.25, 0.08);
+  const umbHandle = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.022, 8, 14, Math.PI), MAT.coral);
+  umbHandle.rotation.z = Math.PI;
+  umbHandle.position.set(0.07, -0.03, 0.08);
+  umbrellaPropGroup.add(umbShaft, umbDome, umbFinial, umbHandle);
+  umbrellaPropGroup.position.set(-0.08, -0.22, 0.08);
+  umbrellaPropGroup.visible = false;
+  armR.add(umbrellaPropGroup);
+
+  // [요구사항 2] 이동형 머니건 플렉스 퍼레이드 전용 양손 24K 황금 머니건 (Dual 3D Money Guns)
+  let dualMoneyGunsGroup = null;
+  let goldenTelescopeGroup = null;
+  if (isHeroRole) {
+    const gunLeft = create3DMoneyGunMesh();
+    gunLeft.scale.setScalar(0.68);
+    gunLeft.rotation.y = Math.PI;
+    gunLeft.position.set(0, -0.28, 0.28);
+    const gunRight = create3DMoneyGunMesh();
+    gunRight.scale.setScalar(0.68);
+    gunRight.rotation.y = Math.PI;
+    gunRight.position.set(0, -0.28, 0.28);
+    gunLeft.visible = false;
+    gunRight.visible = false;
+    armL.add(gunLeft);
+    armR.add(gunRight);
+    dualMoneyGunsGroup = {
+      gunLeft,
+      gunRight,
+      get visible() { return gunLeft.visible; },
+      set visible(v) { gunLeft.visible = !!v; gunRight.visible = !!v; }
+    };
+
+    // [요구사항 4] 방·상가 클릭 시 주인공이 두 손으로 들어 올리는 3D 24K 황금 투시 망원경!
+    goldenTelescopeGroup = new THREE.Group();
+    goldenTelescopeGroup.position.set(0, 1.22, 0.56);
+    const teleTube1 = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.14, 0.42, 18), MAT.pureGold24k);
+    teleTube1.rotation.x = Math.PI * 0.5;
+    teleTube1.position.z = 0.06;
+    const teleTube2 = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.19, 0.46, 18), MAT.pureGold24k);
+    teleTube2.rotation.x = Math.PI * 0.5;
+    teleTube2.position.z = 0.42;
+    const teleBand = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.032, 10, 20), makeMattePlushMat('#B45309'));
+    teleBand.position.z = 0.64;
+    const teleLens = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.17, 0.17, 0.05, 18),
+      new THREE.MeshBasicMaterial({ color: 0x38BDF8 })
+    );
+    teleLens.rotation.x = Math.PI * 0.5;
+    teleLens.position.z = 0.66;
+    goldenTelescopeGroup.add(teleTube1, teleTube2, teleBand, teleLens);
+    goldenTelescopeGroup.visible = false;
+    ud.bodyRig.add(goldenTelescopeGroup);
+  }
 
   // 4) 찹쌀떡 2등신 볼살 헤드 그룹 (Head + 3D 입체 주둥이/부리 + Ears/Crown/Sunglasses)
   const headGroup = new THREE.Group();
@@ -18772,26 +20154,54 @@ function buildTrue3DAnimalClayRig(grp, charId, role = 'student') {
     }
   }
 
-  // 햄스터 3D 24K 황금 왕관 + 블랙팬서/여우 3D 선글라스
-  if (charId === 'char_05_hamster') {
-    const crownBase = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.14, 0.14, 16), MAT.pureGold24k);
-    crownBase.position.set(0, 0.44, 0.02);
-    earsGroup.add(crownBase);
+  // [요구사항 1] 내 주인공 동물 캐릭터(또는 황금 햄스터) 정수리 3D 24K 황금 왕관(👑) 장착!
+  if (charId === 'char_05_hamster' || isHeroRole) {
+    const crownY = charId === 'char_02_sheep' ? 0.56 : 0.45;
+    const crownScale = isHeroRole ? 1.18 : 1.0;
+    const crownGrp = new THREE.Group();
+    crownGrp.position.set(0, crownY, 0.02);
+    crownGrp.scale.setScalar(crownScale);
+    const crownBase = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.14, 0.15, 18), MAT.pureGold24k);
+    crownGrp.add(crownBase);
     for (let p = 0; p < 5; p++) {
       const ang = (p / 5) * Math.PI * 2;
       const tip = new THREE.Mesh(GEO.sphere, p === 0 ? makeMattePlushMat('#EF4444') : MAT.pureGold24k);
-      tip.scale.setScalar(0.06);
-      tip.position.set(Math.sin(ang) * 0.15, 0.53, 0.02 + Math.cos(ang) * 0.15);
-      earsGroup.add(tip);
+      tip.scale.setScalar(0.062);
+      tip.position.set(Math.sin(ang) * 0.155, 0.095, Math.cos(ang) * 0.155);
+      crownGrp.add(tip);
     }
+    earsGroup.add(crownGrp);
   }
-  if (charId === 'char_06_panther' || charId === 'char_09_fox') {
-    const glassMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.22, metalness: 0.45 });
-    const lensL = createRoundedToyMesh(0.24, 0.14, 0.07, glassMat, -0.15, 0.04, 0.42, 0.03);
-    const lensR = createRoundedToyMesh(0.24, 0.14, 0.07, glassMat, 0.15, 0.04, 0.42, 0.03);
-    const bridge = createRoundedToyMesh(0.14, 0.03, 0.05, MAT.pureGold24k, 0, 0.06, 0.43, 0.01);
-    headGroup.add(lensL, lensR, bridge);
+
+  // [요구사항 2] 3D 보스 선글라스 (블랙팬서/여우는 상시 착용, 다른 동물 주인공은 머니건 퍼레이드 중 즉시 착용!)
+  const bossSunglassesGroup = new THREE.Group();
+  const glassMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.18, metalness: 0.55 });
+  const lensL = createRoundedToyMesh(0.24, 0.14, 0.07, glassMat, -0.15, 0.04, 0.42, 0.03);
+  const lensR = createRoundedToyMesh(0.24, 0.14, 0.07, glassMat, 0.15, 0.04, 0.42, 0.03);
+  const bridge = createRoundedToyMesh(0.14, 0.03, 0.05, MAT.pureGold24k, 0, 0.06, 0.43, 0.01);
+  bossSunglassesGroup.add(lensL, lensR, bridge);
+  bossSunglassesGroup.visible = (charId === 'char_06_panther' || charId === 'char_09_fox');
+  headGroup.add(bossSunglassesGroup);
+
+  // [요구사항 2] 머니건 퍼레이드 추종 동물들의 3D 핑크 하트 눈(😍) 이펙트!
+  const heartEyesGroup = new THREE.Group();
+  const heartPinkMat = new THREE.MeshStandardMaterial({ color: 0xFF2E7E, emissive: 0xEC4899, emissiveIntensity: 0.45, roughness: 0.25 });
+  for (const hx of [-0.15, 0.15]) {
+    const hEye = new THREE.Group();
+    const lobeL = new THREE.Mesh(GEO.sphere, heartPinkMat);
+    lobeL.scale.set(0.065, 0.068, 0.045);
+    lobeL.position.set(-0.032, 0.025, 0);
+    const lobeR = lobeL.clone();
+    lobeR.position.x = 0.032;
+    const hCone = new THREE.Mesh(new THREE.ConeGeometry(0.082, 0.1, 12), heartPinkMat);
+    hCone.rotation.x = Math.PI;
+    hCone.position.set(0, -0.028, 0);
+    hEye.add(lobeL, lobeR, hCone);
+    hEye.position.set(hx, 0.05, 0.42);
+    heartEyesGroup.add(hEye);
   }
+  heartEyesGroup.visible = false;
+  headGroup.add(heartEyesGroup);
 
   // 5) 180도 뒷모습의 핵심! 3D 입체 꼬리(TailGroup) & 등 뒤 3D 백팩+침낭 / 목걸이 / 헤드폰 (BackGearGroup)
   const tailGroup = new THREE.Group();
@@ -18799,19 +20209,16 @@ function buildTrue3DAnimalClayRig(grp, charId, role = 'student') {
   ud.bodyRig.add(tailGroup);
 
   if (charId === 'char_03_shiba') {
-    // 시바견 시그니처 돌돌 말린 3D 도넛 꼬리!
     const donutTail = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.065, 12, 18, Math.PI * 1.55), res.furMat);
     donutTail.position.set(0, 0.12, -0.06);
     donutTail.rotation.y = Math.PI * 0.5;
     tailGroup.add(donutTail);
   } else if (charId === 'char_04_duck') {
-    // 아기오리 앙증맞은 꽁지깃!
     const duckTail = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.24, 12), res.furMat);
     duckTail.rotation.x = -Math.PI * 0.62;
     duckTail.position.set(0, 0.02, -0.06);
     tailGroup.add(duckTail);
   } else if (charId === 'char_09_fox') {
-    // 여우 풍성한 주황 꼬리 + 하얀 꼬리 끝!
     const foxTail = new THREE.Mesh(GEO.sphere, res.furMat);
     foxTail.scale.set(0.2, 0.22, 0.44);
     foxTail.position.set(0, 0.06, -0.14);
@@ -18830,7 +20237,6 @@ function buildTrue3DAnimalClayRig(grp, charId, role = 'student') {
     tailTip.position.set(0, 0.29, -0.24);
     tailGroup.add(longTail, tailTip);
   } else {
-    // 토끼 솜뭉치 꼬리 · 양 몽글 꼬리 · 테디베어/판다/햄스터 폼폼 꼬리!
     const pomMat = charId === 'char_02_sheep' ? res.woolMat : res.furMat;
     const pom = new THREE.Mesh(GEO.sphere, pomMat);
     pom.scale.setScalar(charId === 'char_01_bunny' ? 0.23 : 0.18);
@@ -18893,7 +20299,7 @@ function buildTrue3DAnimalClayRig(grp, charId, role = 'student') {
     backGearGroup.add(hpRing, cupL, cupR, backHood);
   }
 
-  // 기존 AI 상태 머신이 참조하는 관절 레퍼런스 완벽 동기화!
+  // 기존 AI 상태 머신 & 신규 인터랙션 소품 레퍼런스 완벽 동기화!
   ud.legL = legL;
   ud.legR = legR;
   ud.armL = armL;
@@ -18901,13 +20307,24 @@ function buildTrue3DAnimalClayRig(grp, charId, role = 'student') {
   ud.armLPivot = armL;
   ud.armRPivot = armR;
   ud.head = headGroup;
+  ud.headMeshRef = headMesh;
+  ud.normalHeadMat = res.headMat;
+  ud.winkHeadMat = res.headWinkMat;
   ud.torsoMesh = torso;
   ud.earsGroup = earsGroup;
   ud.tailGroup = tailGroup;
   ud.handPropGroup = handPropGroup;
+  ud.umbrellaPropGroup = umbrellaPropGroup;
+  ud.winterScarfGroup = winterScarfGroup;
+  ud.bossSunglassesGroup = bossSunglassesGroup;
+  ud.heartEyesGroup = heartEyesGroup;
+  ud.dualMoneyGunsGroup = dualMoneyGunsGroup;
+  ud.goldenTelescopeGroup = goldenTelescopeGroup;
+  if (typeof ud.slipTimer !== 'number') ud.slipTimer = 0;
 
   return {
     headGroup,
+    headMesh,
     torso,
     legL,
     legR,
@@ -18965,6 +20382,9 @@ function tickPopMartCharacterSprites(dt, elapsed) {
   }
   if (popMartActorRegistry.length === 0) return;
 
+  const isRainy = weatherState.mode === 'rain';
+  const isSnowy = weatherState.mode === 'snow';
+
   for (let i = popMartActorRegistry.length - 1; i >= 0; i--) {
     const entry = popMartActorRegistry[i];
     const grp = entry.grp;
@@ -18979,6 +20399,56 @@ function tickPopMartCharacterSprites(dt, elapsed) {
     if (!grp.visible) continue;
 
     const ud = grp.userData || {};
+    const isHeroMesh = (grp === heroState.mesh);
+    const isOutdoorActor = (
+      grp.parent === scene ||
+      grp.parent === islandRootGroup ||
+      grp.parent === harborRootGroup
+    ) && entry.role !== 'landlord_driver';
+
+    // [요구사항 8] 비(☔) 우산 & 눈(❄️) 니트 목도리 자동 착용 제어
+    if (ud.umbrellaPropGroup) {
+      const hideUmbrellaForHeroAction = isHeroMesh && (makeItRainState.active || heroState.telescopeActive);
+      ud.umbrellaPropGroup.visible = isRainy && isOutdoorActor && !hideUmbrellaForHeroAction;
+    }
+    if (ud.winterScarfGroup) {
+      ud.winterScarfGroup.visible = isSnowy && isOutdoorActor;
+    }
+
+    // [요구사항 8] 눈길 빙판 '꽈당!' 뒤로 미끄러져 짧은 다리 바동거린 뒤 툭툭 털고 일어나는 슬랩스틱 모션!
+    if (ud.slipTimer && ud.slipTimer > 0) {
+      ud.slipTimer = Math.max(0, ud.slipTimer - dt);
+      if (ud.slipTimer > 0.42) {
+        if (ud.bodyRig) {
+          ud.bodyRig.rotation.x = THREE.MathUtils.lerp(ud.bodyRig.rotation.x, -Math.PI * 0.46, Math.min(1, dt * 15));
+          ud.bodyRig.position.y = 0.24;
+          ud.bodyRig.rotation.z = Math.sin(elapsed * 18) * 0.08;
+        }
+        if (ud.legL && ud.legR) {
+          const kick = Math.sin(elapsed * 28 + i) * 0.65;
+          ud.legL.rotation.x = kick;
+          ud.legR.rotation.x = -kick;
+        }
+        if (ud.armL && ud.armR) {
+          ud.armL.rotation.set(-0.5, 0, 1.9 + Math.sin(elapsed * 25) * 0.38);
+          ud.armR.rotation.set(-0.5, 0, -1.9 - Math.cos(elapsed * 25) * 0.38);
+        }
+      } else {
+        const recT = 1 - (ud.slipTimer / 0.42);
+        if (ud.bodyRig) {
+          ud.bodyRig.rotation.x = THREE.MathUtils.lerp(ud.bodyRig.rotation.x, 0, Math.min(1, dt * 16));
+          ud.bodyRig.position.y = Math.sin(recT * Math.PI) * 0.38;
+          ud.bodyRig.rotation.z = Math.sin(elapsed * 22) * 0.12;
+        }
+        if (ud.slipTimer <= 0.02 && ud.bodyRig) {
+          ud.bodyRig.rotation.x = 0;
+          ud.bodyRig.position.y = 0;
+          ud.bodyRig.rotation.z = 0;
+        }
+      }
+      continue;
+    }
+
     const curX = grp.position.x;
     const curZ = grp.position.z;
     let vx = 0;
@@ -18993,6 +20463,67 @@ function tickPopMartCharacterSprites(dt, elapsed) {
     const stepDist = Math.hypot(vx, vz);
     const speed = stepDist / Math.max(0.008, dt);
 
+    // [요구사항 4] 방·상가 클릭 시 주인공이 3D 황금 투시 망원경을 두 손으로 들어 올리는 포즈!
+    if (isHeroMesh && (heroState.telescopeActive || heroState.telescopeTimer > 0)) {
+      if (ud.handPropGroup) ud.handPropGroup.visible = false;
+      if (ud.armL && ud.armR) {
+        ud.armL.rotation.set(-1.35, 0.32, 0.25);
+        ud.armR.rotation.set(-1.35, -0.32, -0.25);
+      }
+      if (ud.legL && ud.legR) {
+        ud.legL.rotation.x = 0;
+        ud.legR.rotation.x = 0;
+      }
+      if (ud.bodyRig) {
+        ud.bodyRig.position.y = Math.sin(elapsed * 3.2) * 0.02;
+        ud.bodyRig.rotation.x = -0.08;
+        ud.bodyRig.rotation.z = 0;
+      }
+      continue;
+    }
+
+    // [요구사항 2] 이동형 머니건 플렉스 퍼레이드 중 주인공의 당당한 전진 보행 + 양손 황금 머니건 좌우 난사 모션!
+    if (isHeroMesh && makeItRainState.active && !driveState.active && !fpState.active) {
+      if (ud.handPropGroup) ud.handPropGroup.visible = false;
+      if (speed > 0.03 && stepDist < 4.5) {
+        const targetAngle = Math.atan2(vx, vz);
+        grp.rotation.y = lerpAngleShortest(grp.rotation.y, targetAngle, Math.min(1, dt * 15));
+      }
+      entry.walkPhase += dt * 12.5;
+      const sw = Math.sin(entry.walkPhase);
+      const gunSweep = Math.sin(elapsed * 7.5) * 0.45;
+      if (ud.legL && ud.legR) {
+        ud.legL.rotation.x = sw * 0.56;
+        ud.legR.rotation.x = -sw * 0.56;
+      }
+      if (ud.armL && ud.armR) {
+        ud.armL.rotation.set(-1.25, 0.32 + gunSweep, 0.34);
+        ud.armR.rotation.set(-1.25, -0.32 + gunSweep, -0.34);
+      }
+      if (ud.bodyRig) {
+        ud.bodyRig.position.y = Math.abs(sw) * 0.16;
+        ud.bodyRig.rotation.x = 0;
+        ud.bodyRig.rotation.z = sw * 0.08;
+      }
+      if (ud.tailGroup) {
+        ud.tailGroup.rotation.y = Math.sin(entry.walkPhase * 1.8) * 0.42;
+      }
+      continue;
+    }
+
+    // 머니건 퍼레이드 피리 부는 사나이 추종자들은 tickMakeItRain에서 행진·폴짝 점프를 직접 제어하므로 스핀 방지!
+    if (makeItRainState.active && makeItRainState.crowdActors.some((c) => c.mesh === grp)) {
+      if (ud.legL && ud.legR) {
+        const sw = Math.sin(elapsed * 14 + i);
+        ud.legL.rotation.x = sw * 0.48;
+        ud.legR.rotation.x = -sw * 0.48;
+      }
+      if (ud.tailGroup) {
+        ud.tailGroup.rotation.y = Math.sin(elapsed * 16 + i) * 0.45;
+      }
+      continue;
+    }
+
     // 침대 수면(가로 눕기) 또는 소파/의자 착석 상태 판별
     const isSleepingFlat = Math.abs(ud.bodyRig?.rotation.x || 0) > 0.6;
     const isSitting = !isSleepingFlat &&
@@ -19001,7 +20532,7 @@ function tickPopMartCharacterSprites(dt, elapsed) {
       ud.legR.rotation.x < -0.95;
 
     if (ud.handPropGroup) {
-      ud.handPropGroup.visible = !isSleepingFlat && !(ud.carryBag && ud.carryBag.visible);
+      ud.handPropGroup.visible = !isSleepingFlat && !(ud.carryBag && ud.carryBag.visible) && !(ud.umbrellaPropGroup && ud.umbrellaPropGroup.visible);
     }
 
     if (isSleepingFlat || isSitting) {
@@ -19011,17 +20542,17 @@ function tickPopMartCharacterSprites(dt, elapsed) {
       continue;
     }
 
-    const isCheering = (
+    const isCheering = !isHeroMesh && speed < 0.08 && (
       globalCharacterCheerTimer > 0 ||
       makeItRainState.active ||
       (ud.auraTimer && ud.auraTimer > 0.1)
     );
 
     if (isCheering) {
-      // 환호/머니건 피버/가구 배치: 두 팔을 위로 번쩍 들고 폴짝폴짝 점프하며 360도 회전!
       const hop = Math.abs(Math.sin(elapsed * 10.2 + i * 0.7));
       if (ud.bodyRig) {
         ud.bodyRig.position.y = hop * 0.28;
+        ud.bodyRig.rotation.x = 0;
         ud.bodyRig.rotation.z = Math.sin(elapsed * 10.2 + i) * 0.08;
       }
       if (ud.armL && ud.armR) {
@@ -19035,7 +20566,7 @@ function tickPopMartCharacterSprites(dt, elapsed) {
       if (ud.tailGroup) {
         ud.tailGroup.rotation.y = Math.sin(elapsed * 16 + i) * 0.45;
       }
-      grp.rotation.y += dt * 4.8;
+      grp.rotation.y += dt * 4.2;
     } else if (speed > 0.06 && stepDist < 4.5) {
       // [뒷걸음질/문워크 100% 차단!] 이동 방향 벡터(vx, vz) 기반 targetAngle = Math.atan2(vx, vz) 최단 각도 보간 회전!
       const targetAngle = Math.atan2(vx, vz);
@@ -19048,13 +20579,20 @@ function tickPopMartCharacterSprites(dt, elapsed) {
         ud.legR.rotation.x = -sw * 0.52;
       }
       if (ud.armL && ud.armR) {
+        ud.armL.rotation.y = 0;
+        ud.armR.rotation.y = 0;
         ud.armL.rotation.z = 0.28;
         ud.armR.rotation.z = -0.28;
         ud.armL.rotation.x = -sw * 0.48;
-        ud.armR.rotation.x = (ud.carryBag && ud.carryBag.visible) ? -0.52 : sw * 0.48;
+        if (ud.umbrellaPropGroup && ud.umbrellaPropGroup.visible) {
+          ud.armR.rotation.x = -0.78;
+        } else {
+          ud.armR.rotation.x = (ud.carryBag && ud.carryBag.visible) ? -0.52 : sw * 0.48;
+        }
       }
       if (ud.bodyRig) {
         ud.bodyRig.position.y = Math.abs(sw) * 0.12;
+        ud.bodyRig.rotation.x = 0;
         ud.bodyRig.rotation.z = sw * 0.075;
       }
       if (ud.earsGroup) {
@@ -19071,11 +20609,16 @@ function tickPopMartCharacterSprites(dt, elapsed) {
         ud.legR.rotation.x = THREE.MathUtils.lerp(ud.legR.rotation.x, 0, damp);
       }
       if (ud.armL && ud.armR) {
+        ud.armL.rotation.y = THREE.MathUtils.lerp(ud.armL.rotation.y, 0, damp);
+        ud.armR.rotation.y = THREE.MathUtils.lerp(ud.armR.rotation.y, 0, damp);
+        ud.armL.rotation.x = THREE.MathUtils.lerp(ud.armL.rotation.x, 0, damp);
+        ud.armR.rotation.x = THREE.MathUtils.lerp(ud.armR.rotation.x, (ud.umbrellaPropGroup && ud.umbrellaPropGroup.visible) ? -0.75 : 0, damp);
         ud.armL.rotation.z = THREE.MathUtils.lerp(ud.armL.rotation.z, 0.28, damp);
         ud.armR.rotation.z = THREE.MathUtils.lerp(ud.armR.rotation.z, -0.28, damp);
       }
       if (ud.bodyRig) {
         ud.bodyRig.position.y = THREE.MathUtils.lerp(ud.bodyRig.position.y, 0, damp);
+        ud.bodyRig.rotation.x = THREE.MathUtils.lerp(ud.bodyRig.rotation.x, 0, damp);
         ud.bodyRig.rotation.z = THREE.MathUtils.lerp(ud.bodyRig.rotation.z, 0, damp);
       }
       const breath = Math.sin(elapsed * 2.6 + i * 0.8);
@@ -19283,6 +20826,7 @@ function selectHeroAnimalId(charId) {
 
   for (const entry of popMartActorRegistry) {
     if (entry.role === 'landlord_avatar' || entry.role === 'landlord' || entry.role === 'landlord_driver') {
+      entry.rigBuiltForId = null;
       applyLoadedSheetToActor(entry);
     }
   }
@@ -19291,9 +20835,6 @@ function selectHeroAnimalId(charId) {
   if (sumEl) {
     sumEl.textContent = `선택됨: ${picked.emoji} ${picked.name} [${picked.title}] — ${picked.desc}`;
   }
-  document.querySelectorAll('#animal-roster-grid .animal-blindbox-card').forEach((el) => {
-    el.classList.toggle('selected', el.getAttribute('data-animal-id') === picked.id);
-  });
   if (duelState?.active) syncDuelScoreHUD();
   updateTopHUDTargets();
   saveGameState();
@@ -19301,86 +20842,1246 @@ function selectHeroAnimalId(charId) {
 
 function openAnimalSelectModal(fromTitleStart = false) {
   animalSelectPendingStart = !!fromTitleStart;
-  closeAllModalsImmediate('animal-select-modal');
-  const modal = document.getElementById('animal-select-modal');
-  const grid = document.getElementById('animal-roster-grid');
-  if (!modal || !grid) return;
-
-  const roster = window.ANIMAL_CHARACTER_ROSTER || [];
-  const curId = state?.selectedHeroCharId || 'char_05_hamster';
-  animalModalLiveCanvases.length = 0;
-
-  grid.innerHTML = roster.map((ch) => {
-    const isSel = ch.id === curId;
-    return `
-      <button type="button" data-animal-id="${ch.id}" class="animal-blindbox-card text-left ${isSel ? 'selected' : ''}">
-        <div class="w-full flex items-center justify-between text-[10px] font-extrabold text-[#7C5836] mb-0.5">
-          <span>NO.${String(ch.num).padStart(2, '0')}</span>
-          <span>${ch.isRivalBoss ? '🔥 BOSS' : '✨ 3D TOY'}</span>
-        </div>
-        <div class="w-[84px] h-[84px] rounded-2xl bg-gradient-to-b from-[#FFFDF9] to-[#FDEFD9] border border-[#E8CCB0] flex items-center justify-center overflow-hidden">
-          <canvas data-live-animal="${ch.id}" width="128" height="128" class="w-[80px] h-[80px]"></canvas>
-        </div>
-        <div class="font-title text-[12.5px] text-[#3A2E2B] mt-1 leading-tight text-center">${ch.emoji} ${ch.name}</div>
-        <div class="px-2 py-0.5 rounded-full text-[9.5px] font-extrabold mt-0.5 text-center leading-tight" style="background:#FEF3C7;color:#92400E;">${ch.title}</div>
-      </button>
-    `;
-  }).join('');
-
-  grid.querySelectorAll('[data-live-animal]').forEach((cv, idx) => {
-    const cid = cv.getAttribute('data-live-animal');
-    animalModalLiveCanvases.push({ id: cid, idx, canvas: cv, ctx: cv.getContext('2d') });
-  });
-
-  grid.querySelectorAll('[data-animal-id]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      selectHeroAnimalId(btn.getAttribute('data-animal-id'));
-    });
-  });
-
-  selectHeroAnimalId(curId);
-  const confirmBtn = document.getElementById('btn-confirm-animal-hero');
-  if (confirmBtn) {
-    confirmBtn.textContent = fromTitleStart
-      ? '✨ 이 동물 주인공으로 타운 입장! ▶'
-      : '✨ 이 동물 주인공으로 변경 완료!';
-  }
-  modal.classList.remove('hidden');
+  openTurntableShowcaseModal('animal', { fromTitleStart: !!fromTitleStart });
 }
 
 function closeAnimalSelectModal() {
   document.getElementById('animal-select-modal')?.classList.add('hidden');
+  if (turntableState.active && turntableState.mode === 'animal') {
+    closeTurntableShowcaseModal();
+  }
   animalModalLiveCanvases.length = 0;
 }
 
 function tickAnimalModalLiveCanvases(elapsed) {
-  const modal = document.getElementById('animal-select-modal');
-  if (!modal || modal.classList.contains('hidden') || animalModalLiveCanvases.length === 0) return;
+  // 3D 360도 턴테이블 쇼케이스로 전면 통합됨 (레거시 안전 호환 유지)
+  void elapsed;
+}
 
-  for (const item of animalModalLiveCanvases) {
-    const { id, idx, canvas, ctx } = item;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const charAsset = POPMART_ASSETS.characters[id];
-    if (charAsset?.masterCanvas) {
-      const isSelected = (state?.selectedHeroCharId || 'char_05_hamster') === id;
-      const t = elapsed * (isSelected ? 7.5 : 3.6) + idx * 0.65;
-      const waddleRot = Math.sin(t) * (isSelected ? 0.085 : 0.035);
-      const bounceY = Math.abs(Math.sin(t)) * (isSelected ? 6.5 : 2.5);
-      const sx = 1.0 + Math.cos(t * 2) * 0.025;
-      const sy = 1.0 - Math.cos(t * 2) * 0.025;
+// =========================================================
+// 16G. [신규 엔진 A] 상시 마을 주인공 동물 캐릭터 & WASD/방향키 직접 보행 & 우측 잠긴 노을빛 대문 포탈
+// =========================================================
+const HERO_WORLD1_STROLL_PTS = [
+  { x: -2.6, z: 12.2 },
+  { x: 10.5, z: 11.4 },
+  { x: 16.5, z: 3.5 },
+  { x: 0.0, z: 2.8 },
+  { x: -12.8, z: 3.5 },
+  { x: -12.0, z: 11.8 }
+];
 
-      ctx.save();
-      ctx.translate(canvas.width * 0.5, canvas.height * 0.54 - bounceY);
-      ctx.rotate(waddleRot);
-      ctx.scale(sx, sy);
-      ctx.drawImage(
-        charAsset.masterCanvas,
-        -canvas.width * 0.46,
-        -canvas.height * 0.46,
-        canvas.width * 0.92,
-        canvas.height * 0.92
+const HERO_WORLD2_STROLL_PTS = [
+  { x: -8.5, z: 116.5 },
+  { x: 10.5, z: 116.5 },
+  { x: 14.0, z: 138.0 },
+  { x: -12.0, z: 138.0 }
+];
+
+function ensureHeroTownActorSpawned() {
+  if (!scene) return null;
+  if (!heroState.mesh) {
+    const heroGrp = createChibiPerson3D('landlord_avatar', null, 0);
+    heroGrp.scale.setScalar(1.16);
+    const inHarbor = state?.activeTownStage === 2 && state?.harborUnlocked;
+    heroState.x = inHarbor ? -6.0 : -2.6;
+    heroState.z = inHarbor ? 116.5 : 12.2;
+    heroGrp.position.set(heroState.x, 0.28, heroState.z);
+    scene.add(heroGrp);
+    heroState.mesh = heroGrp;
+  }
+  return heroState.mesh;
+}
+
+function openGateLockCapsule() {
+  const cap = document.getElementById('gate-lock-capsule');
+  if (!cap) return;
+  const msgEl = document.getElementById('gate-lock-msg');
+  const skipBtn = document.getElementById('btn-gate-unlock-skip');
+  const enterBtn = document.getElementById('btn-gate-enter-now');
+
+  if (state.harborUnlocked) {
+    if (msgEl) {
+      msgEl.textContent = '🌅 [대문 봉인 해제 완료!] 찬란한 노을빛 해안 도시 [트와일라잇 하버 시티]로 향하는 문이 활짝 열렸습니다! 문 안으로 걸어 들어가거나 아래 버튼을 눌러 입장하세요!';
+    }
+    skipBtn?.classList.add('hidden');
+    enterBtn?.classList.remove('hidden');
+  } else {
+    if (msgEl) {
+      msgEl.textContent = '🔒 [아직 굳게 닫혀 있습니다] 문틈 너머로 신비로운 노을빛 도시의 기운이 새어 나옵니다... (3일 차 총독 칭호 획득 시 개방)';
+    }
+    skipBtn?.classList.remove('hidden');
+    enterBtn?.classList.add('hidden');
+  }
+  cap.classList.remove('hidden');
+}
+
+function closeGateLockCapsule() {
+  document.getElementById('gate-lock-capsule')?.classList.add('hidden');
+}
+
+function rattleLockedHarborGate(focusCam = false) {
+  if (state.harborUnlocked) {
+    openGateLockCapsule();
+    return;
+  }
+  gatePortalState.shakeTimer = 0.62;
+  playSynthTone(165, 'triangle', 0.14, 0.08, 0);
+  playSynthTone(124, 'sawtooth', 0.18, 0.07, 0.09);
+  showSpeechBubble3D('east_gate_rattle', 41.8, 7.6, 17.8, '🔒 덜컹! 덜컹! 굳게 잠긴 대문 틈으로 황혼빛 도시의 기운이 새어 나옵니다...', 3.2, true);
+  openGateLockCapsule();
+
+  if (focusCam && !driveState.active && !fpState.active && !duelState.active) {
+    startSmoothCameraTween(
+      new THREE.Vector3(24.5, 14.5, 34.5),
+      new THREE.Vector3(39.5, 4.2, 17.8),
+      1.15,
+      0.55,
+      null
+    );
+  }
+}
+
+function unlockHarborGateWithAnimation() {
+  if (gatePortalState.padlockGroup && gatePortalState.padlockGroup.visible) {
+    gatePortalState.padlockFlying = true;
+    gatePortalState.padlockFlyVel.set(-5.8, 12.5, 4.6);
+  }
+  if (gatePortalState.portalCurtain) {
+    gatePortalState.portalCurtain.visible = true;
+  }
+  spawnShockwaveRing3D(41.8, 0.45, 17.8, 0xFFD700, 11.5);
+  spawnPoofParticles3D(41.8, 4.5, 17.8, 0xFFD700, 24);
+  openGateLockCapsule();
+}
+
+function tickHeroTownActorAndGatePortal(dt, elapsed) {
+  ensureHeroTownActorSpawned();
+
+  if (gatePortalState.teleportCooldown > 0) {
+    gatePortalState.teleportCooldown = Math.max(0, gatePortalState.teleportCooldown - dt);
+  }
+
+  // 1) 우측 잠긴 노을빛 대문 빛 입자(Motes) · 문 덜컹거림 · 자물쇠 튕겨 날아가는 모션 · 양문 개방 애니메이션
+  if (gatePortalState.eastGateGroup) {
+    if (gatePortalState.shakeTimer > 0) {
+      gatePortalState.shakeTimer = Math.max(0, gatePortalState.shakeTimer - dt);
+      const shk = Math.sin(elapsed * 58) * 0.075 * (gatePortalState.shakeTimer / 0.62);
+      if (gatePortalState.doorLPivot && !state.harborUnlocked) gatePortalState.doorLPivot.rotation.y = shk;
+      if (gatePortalState.doorRPivot && !state.harborUnlocked) gatePortalState.doorRPivot.rotation.y = -shk;
+      if (gatePortalState.padlockGroup && !gatePortalState.padlockFlying) {
+        gatePortalState.padlockGroup.rotation.z = shk * 2.4;
+      }
+    } else if (state.harborUnlocked) {
+      if (gatePortalState.doorLPivot) {
+        gatePortalState.doorLPivot.rotation.y = THREE.MathUtils.lerp(gatePortalState.doorLPivot.rotation.y, -1.92, Math.min(1, dt * 4.5));
+      }
+      if (gatePortalState.doorRPivot) {
+        gatePortalState.doorRPivot.rotation.y = THREE.MathUtils.lerp(gatePortalState.doorRPivot.rotation.y, 1.92, Math.min(1, dt * 4.5));
+      }
+    } else {
+      if (gatePortalState.doorLPivot) gatePortalState.doorLPivot.rotation.y = 0;
+      if (gatePortalState.doorRPivot) gatePortalState.doorRPivot.rotation.y = 0;
+    }
+
+    if (gatePortalState.padlockFlying && gatePortalState.padlockGroup) {
+      gatePortalState.padlockGroup.position.addScaledVector(gatePortalState.padlockFlyVel, dt);
+      gatePortalState.padlockFlyVel.y -= 26.0 * dt;
+      gatePortalState.padlockGroup.rotation.x += dt * 9.5;
+      gatePortalState.padlockGroup.rotation.z += dt * 11.2;
+      if (gatePortalState.padlockGroup.position.y < -3.0) {
+        gatePortalState.padlockFlying = false;
+        gatePortalState.padlockGroup.visible = false;
+      }
+    }
+
+    for (const m of gatePortalState.motes) {
+      m.mesh.position.z += m.speedZ * dt;
+      m.mesh.position.x = m.baseX + Math.sin(elapsed * 2.4 + m.phase) * 0.45;
+      m.mesh.position.y += Math.sin(elapsed * 3.1 + m.phase) * 0.012;
+      if (m.mesh.position.z > 11.2) {
+        m.mesh.position.z = 0.25;
+        m.mesh.position.y = 0.7 + Math.random() * 6.2;
+      }
+    }
+
+    if (gatePortalState.portalCurtain && gatePortalState.portalCurtain.visible) {
+      gatePortalState.portalCurtain.material.opacity = 0.54 + Math.sin(elapsed * 4.2) * 0.16;
+    }
+  }
+  if (gatePortalState.returnPortalCurtain) {
+    gatePortalState.returnPortalCurtain.material.opacity = 0.48 + Math.sin(elapsed * 3.8) * 0.14;
+  }
+
+  // 황금 망원경 스캔 광선 타이머 감쇠
+  if (heroState.telescopeTimer > 0) {
+    heroState.telescopeTimer = Math.max(0, heroState.telescopeTimer - dt);
+    if (heroState.telescopeTimer <= 0 && heroState.telescopeBeamGroup) {
+      scene.remove(heroState.telescopeBeamGroup);
+      heroState.telescopeBeamGroup = null;
+    }
+  }
+
+  const hero = heroState.mesh;
+  if (!hero) return;
+
+  // 운전 중이거나 1인칭 실내 모드 또는 1:1 쇼룸 결투 중에는 타운 주인공 메쉬 숨김
+  const hideHeroInMode = driveState.active || fpState.active || duelState.active;
+  hero.visible = !hideHeroInMode;
+  if (hero.userData?.heroGoldenAura) {
+    const pulse = 1.0 + Math.sin(elapsed * 3.8) * 0.07;
+    hero.userData.heroGoldenAura.scale.set(pulse, 1, pulse);
+  }
+
+  // 운전 중 대문 접근/통과 체크 (슈퍼카를 타고 대문에 다가가도 덜컹! & 통과 시 월드 전환!)
+  if (driveState.active) {
+    if (WorldManager.currentStage === 1) {
+      const distGate = Math.hypot(driveState.x - 41.8, driveState.z - 17.8);
+      if (!state.harborUnlocked) {
+        if (distGate < 10.5 && !gatePortalState.nearGatePrompted) {
+          gatePortalState.nearGatePrompted = true;
+          rattleLockedHarborGate(false);
+        } else if (distGate > 13.5) {
+          gatePortalState.nearGatePrompted = false;
+        }
+      } else if (gatePortalState.teleportCooldown <= 0 && driveState.x > 38.6 && Math.abs(driveState.z - 17.8) < 5.5) {
+        travelToTownStage(2, true);
+      }
+    } else if (WorldManager.currentStage === 2) {
+      if (gatePortalState.teleportCooldown <= 0 && driveState.x < -31.5 && Math.abs(driveState.z - 112.5) < 5.8) {
+        travelToTownStage(1, true);
+      }
+    }
+    return;
+  }
+
+  if (hideHeroInMode || titleScreenState.active || turntableState.active) return;
+
+  const inHarbor = WorldManager.currentStage === 2;
+  const keyUp = !!heroState.keys.up;
+  const keyDown = !!heroState.keys.down;
+  const keyLeft = !!heroState.keys.left;
+  const keyRight = !!heroState.keys.right;
+  const hasKeyInput = (keyUp || keyDown || keyLeft || keyRight) && !focusedRoomId && !focusedShopId && !focusedFirstFloorShopId;
+
+  if (hasKeyInput) {
+    heroState.idleKeyTimer = 0;
+    if (heroState.telescopeActive) lowerHeroTelescope3D();
+
+    // 현재 카메라 시점 기준 상하좌우 직관적 XZ 이동 벡터 계산!
+    const camFwd = new THREE.Vector3();
+    camera.getWorldDirection(camFwd);
+    camFwd.y = 0;
+    if (camFwd.lengthSq() < 0.0001) camFwd.set(0, 0, -1);
+    camFwd.normalize();
+    const camRight = new THREE.Vector3(-camFwd.z, 0, camFwd.x);
+
+    const moveVec = new THREE.Vector3();
+    if (keyUp) moveVec.add(camFwd);
+    if (keyDown) moveVec.sub(camFwd);
+    if (keyRight) moveVec.add(camRight);
+    if (keyLeft) moveVec.sub(camRight);
+
+    if (moveVec.lengthSq() > 0.0001) {
+      moveVec.normalize();
+      const moveSpeed = makeItRainState.active ? 8.8 : 7.8;
+      const stepX = moveVec.x * moveSpeed * dt;
+      const stepZ = moveVec.z * moveSpeed * dt;
+
+      if (inHarbor) {
+        heroState.x = THREE.MathUtils.clamp(heroState.x + stepX, -35.8, 36.5);
+        heroState.z = THREE.MathUtils.clamp(heroState.z + stepZ, 102.0, 144.5);
+      } else {
+        const maxEastX = state.harborUnlocked ? 42.5 : 39.2;
+        heroState.x = THREE.MathUtils.clamp(heroState.x + stepX, -37.5, maxEastX);
+        heroState.z = THREE.MathUtils.clamp(heroState.z + stepZ, -18.5, 42.0);
+      }
+      heroState.heading = Math.atan2(moveVec.x, moveVec.z);
+      hero.position.set(heroState.x, 0.28, heroState.z);
+
+      // 주인공 직접 이동 시 카메라 타겟도 부드럽게 따라가며 산책 몰입감 극대화!
+      if (!camTween.active && controls) {
+        const followRate = Math.min(1, dt * 4.2);
+        const targetX = THREE.MathUtils.lerp(controls.target.x, heroState.x, followRate);
+        const targetZ = THREE.MathUtils.lerp(controls.target.z, heroState.z, followRate);
+        const dxCam = targetX - controls.target.x;
+        const dzCam = targetZ - controls.target.z;
+        controls.target.x += dxCam;
+        controls.target.z += dzCam;
+        camera.position.x += dxCam;
+        camera.position.z += dzCam;
+      }
+    }
+  } else {
+    heroState.idleKeyTimer += dt;
+
+    if (makeItRainState.active && !focusedRoomId && !focusedShopId && !focusedFirstFloorShopId) {
+      // [요구사항 2] 키 입력 없이 머니건 발사 시에도 제자리 정지가 아니라 마을 거리를 따라 당당히 걸어가며 지폐 난사!
+      const pList = inHarbor
+        ? HERO_WORLD2_STROLL_PTS
+        : heroState.paradeWaypoints;
+      const wp = pList[heroState.paradeWpIdx % pList.length];
+      const dx = wp.x - heroState.x;
+      const dz = wp.z - heroState.z;
+      const d = Math.hypot(dx, dz);
+      if (d < 0.75) {
+        heroState.paradeWpIdx = (heroState.paradeWpIdx + 1) % pList.length;
+      } else {
+        const spd = 5.2 * dt;
+        heroState.x += (dx / d) * Math.min(d, spd);
+        heroState.z += (dz / d) * Math.min(d, spd);
+        heroState.heading = Math.atan2(dx, dz);
+        hero.position.set(heroState.x, 0.28, heroState.z);
+      }
+    } else if (heroState.idleKeyTimer >= 4.0 && !heroState.telescopeActive && !focusedRoomId && !focusedShopId && !focusedFirstFloorShopId) {
+      // [요구사항 1] 키 입력을 멈추고 4초가 지나면 다시 여유롭게 인도를 자율 산책!
+      if (heroState.autoPauseTimer > 0) {
+        heroState.autoPauseTimer -= dt;
+      } else {
+        const pts = inHarbor ? HERO_WORLD2_STROLL_PTS : HERO_WORLD1_STROLL_PTS;
+        const wp = pts[heroState.autoWpIdx % pts.length];
+        const dx = wp.x - heroState.x;
+        const dz = wp.z - heroState.z;
+        const d = Math.hypot(dx, dz);
+        if (d < 0.55) {
+          heroState.autoWpIdx = (heroState.autoWpIdx + 1) % pts.length;
+          heroState.autoPauseTimer = 1.6;
+        } else {
+          const strollSpd = (weatherState.mode === 'rain' ? 3.2 : 2.35) * dt;
+          heroState.x += (dx / d) * Math.min(d, strollSpd);
+          heroState.z += (dz / d) * Math.min(d, strollSpd);
+          heroState.heading = Math.atan2(dx, dz);
+          hero.position.set(heroState.x, 0.28, heroState.z);
+        }
+      }
+    }
+  }
+
+  // 머니건 피리 부는 사나이 추종 행렬용 발자취(Breadcrumb Trail) 업데이트
+  heroState.trailSampleAccum += dt;
+  if (heroState.trailSampleAccum >= 0.07) {
+    heroState.trailSampleAccum = 0;
+    const headCrumb = heroState.trail[0];
+    if (!headCrumb || Math.hypot(heroState.x - headCrumb.x, heroState.z - headCrumb.z) > 0.32) {
+      heroState.trail.unshift({ x: heroState.x, z: heroState.z });
+      if (heroState.trail.length > 48) heroState.trail.pop();
+    }
+  }
+
+  // 2) 주인공 도보 대문 접근 & 통과 물리 포탈 체크!
+  if (!inHarbor) {
+    const distEastGate = Math.hypot(heroState.x - 41.8, heroState.z - 17.8);
+    if (!state.harborUnlocked) {
+      if (distEastGate < 9.5 && !gatePortalState.nearGatePrompted) {
+        gatePortalState.nearGatePrompted = true;
+        rattleLockedHarborGate(false);
+      } else if (distEastGate > 12.2) {
+        gatePortalState.nearGatePrompted = false;
+      }
+    } else if (gatePortalState.teleportCooldown <= 0 && heroState.x > 38.8 && Math.abs(heroState.z - 17.8) < 5.2) {
+      travelToTownStage(2, true);
+    }
+  } else {
+    const distRetGate = Math.hypot(heroState.x - (-35.2), heroState.z - 112.5);
+    if (gatePortalState.teleportCooldown <= 0 && (distRetGate < 3.4 || (heroState.x < -32.2 && Math.abs(heroState.z - 112.5) < 5.0))) {
+      travelToTownStage(1, true);
+    }
+  }
+}
+
+// =========================================================
+// 16H. [신규 엔진 B] 화면 정중앙 대형 3D 360도 턴테이블 쇼케이스 (캐릭터 · 가구 · 차량 · 세입자 모집 통합)
+// =========================================================
+function initTurntableStage3D() {
+  if (turntableState.renderer) return;
+  const canvas = document.getElementById('turntable-webgl-canvas');
+  if (!canvas) return;
+
+  const ttRenderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  ttRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  ttRenderer.outputColorSpace = THREE.SRGBColorSpace;
+  ttRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+  ttRenderer.toneMappingExposure = 1.12;
+
+  const ttScene = new THREE.Scene();
+  const ttCam = new THREE.PerspectiveCamera(36, 1.35, 0.1, 60);
+  ttCam.position.set(0, 2.35, 6.25);
+  ttCam.lookAt(0, 1.05, 0);
+
+  const hemi = new THREE.HemisphereLight(0xFFFDF9, 0xF3D9B1, 1.55);
+  const key = new THREE.DirectionalLight(0xFFF9EB, 1.85);
+  key.position.set(4.5, 7.5, 6.5);
+  const fill = new THREE.DirectionalLight(0xFFE4E6, 0.9);
+  fill.position.set(-5.0, 4.5, 5.0);
+  const rim = new THREE.DirectionalLight(0xBAE6FD, 0.95);
+  rim.position.set(0, 5.5, -5.5);
+  ttScene.add(hemi, key, fill, rim);
+
+  // 크림 대리석 + 24K 순금 테두리 3D 회전 원형 쇼케이스 원판(Pedestal)
+  const pedestalGrp = new THREE.Group();
+  const baseDisc = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.85, 2.02, 0.24, 48),
+    makeClayMat(0xFFF9F0, { roughness: 0.35, metalness: 0.06 })
+  );
+  baseDisc.position.y = -0.12;
+  const goldTrim = new THREE.Mesh(
+    new THREE.TorusGeometry(1.9, 0.055, 14, 48),
+    MAT.pureGold24k
+  );
+  goldTrim.rotation.x = Math.PI * 0.5;
+  goldTrim.position.y = -0.02;
+  const innerInlay = new THREE.Mesh(
+    new THREE.RingGeometry(1.42, 1.5, 44),
+    MAT.pureGold24k
+  );
+  innerInlay.rotation.x = -Math.PI * 0.5;
+  innerInlay.position.y = 0.008;
+  pedestalGrp.add(baseDisc, goldTrim, innerInlay);
+  ttScene.add(pedestalGrp);
+
+  const subjectHolder = new THREE.Group();
+  pedestalGrp.add(subjectHolder);
+
+  // [요구사항 3] Tier 3~4 최고급 하이엔드 가구 뒤편 3D 회전 황금 후광(Golden Halo Rays) & 반짝이 별 파티클!
+  const haloGrp = new THREE.Group();
+  haloGrp.position.set(0, 1.28, -0.75);
+  const haloRing = new THREE.Mesh(
+    new THREE.RingGeometry(1.15, 1.32, 40),
+    new THREE.MeshBasicMaterial({ color: 0xFFD700, transparent: true, opacity: 0.65, side: THREE.DoubleSide })
+  );
+  haloGrp.add(haloRing);
+  const rayMat = new THREE.MeshBasicMaterial({ color: 0xFDE047, transparent: true, opacity: 0.46, side: THREE.DoubleSide });
+  for (let r = 0; r < 12; r++) {
+    const ang = (r / 12) * Math.PI * 2;
+    const ray = new THREE.Mesh(new THREE.ConeGeometry(0.18, 1.25, 4), rayMat);
+    ray.position.set(Math.cos(ang) * 1.55, Math.sin(ang) * 1.55, -0.02);
+    ray.rotation.z = ang - Math.PI * 0.5;
+    haloGrp.add(ray);
+  }
+  turntableState.sparkles = [];
+  const starMat = new THREE.MeshBasicMaterial({ color: 0xFFFBEB });
+  for (let s = 0; s < 10; s++) {
+    const sp = new THREE.Mesh(new THREE.OctahedronGeometry(0.085, 0), starMat);
+    const a = (s / 10) * Math.PI * 2;
+    sp.position.set(Math.cos(a) * 1.75, 0.4 + (s % 4) * 0.55, Math.sin(a) * 1.2);
+    haloGrp.add(sp);
+    turntableState.sparkles.push({ mesh: sp, baseY: sp.position.y, phase: s * 0.8 });
+  }
+  haloGrp.visible = false;
+  ttScene.add(haloGrp);
+
+  turntableState.renderer = ttRenderer;
+  turntableState.scene = ttScene;
+  turntableState.camera = ttCam;
+  turntableState.pedestalGroup = pedestalGrp;
+  turntableState.subjectHolder = subjectHolder;
+  turntableState.haloGroup = haloGrp;
+}
+
+function resizeTurntableStageCanvas() {
+  if (!turntableState.renderer || !turntableState.camera) return;
+  const stageEl = document.getElementById('tt-canvas-stage');
+  if (!stageEl) return;
+  const w = Math.max(280, stageEl.clientWidth || 640);
+  const h = Math.max(240, stageEl.clientHeight || 380);
+  turntableState.renderer.setSize(w, h, false);
+  turntableState.camera.aspect = w / h;
+  turntableState.camera.updateProjectionMatrix();
+}
+
+function buildTurntableItemsForCurrentMode() {
+  const mode = turntableState.mode;
+  if (mode === 'animal') {
+    return (window.ANIMAL_CHARACTER_ROSTER || []).map((ch) => ({ kind: 'animal', data: ch, id: ch.id }));
+  }
+  if (mode === 'flagship') {
+    const raw = (FURNITURE_CATALOG[turntableState.flagshipCat] || []).filter((it) => it.cost > 0);
+    const filtered = (turntableState.flagshipTier === '0' || turntableState.flagshipTier === 'all')
+      ? raw
+      : raw.filter((it) => String(it.tier || 1) === String(turntableState.flagshipTier));
+    return (filtered.length > 0 ? filtered : raw).map((it) => ({ kind: 'flagship', data: it, id: it.id, cat: turntableState.flagshipCat }));
+  }
+  if (mode === 'garage') {
+    return (CAR_CATALOG || []).map((car) => ({ kind: 'garage', data: car, id: car.id }));
+  }
+  if (mode === 'recruit') {
+    return (recruitCandidates || []).map((cand, idx) => ({ kind: 'recruit', data: cand, idx, id: `${cand.type}_${idx}` }));
+  }
+  return [];
+}
+
+function openTurntableShowcaseModal(mode = 'animal', opt = {}) {
+  closeAllModalsImmediate('turntable-showcase-modal');
+  initTurntableStage3D();
+
+  turntableState.active = true;
+  turntableState.mode = mode;
+  turntableState.fromTitle = !!opt.fromTitleStart;
+  if (opt.defaultCat) {
+    turntableState.flagshipCat = opt.defaultCat;
+    flagshipShopTab = opt.defaultCat;
+  }
+
+  const modal = document.getElementById('turntable-showcase-modal');
+  const furnFilters = document.getElementById('tt-furniture-filters');
+  if (furnFilters) {
+    furnFilters.classList.toggle('hidden', mode !== 'flagship');
+    furnFilters.classList.toggle('flex', mode === 'flagship');
+  }
+
+  const modeBadge = document.getElementById('tt-mode-badge');
+  const headerTitle = document.getElementById('tt-header-title');
+  if (mode === 'animal') {
+    if (modeBadge) modeBadge.textContent = '🐾 3D ANIMAL HERO TURNTABLE';
+    if (headerTitle) headerTitle.textContent = '내 동물 건물주 주인공 360° 쇼케이스';
+  } else if (mode === 'flagship') {
+    if (modeBadge) modeBadge.textContent = '🛋️ MAISON DE LUXURY 360° SHOWROOM';
+    if (headerTitle) headerTitle.textContent = '메종 드 럭셔리 가구 백화점 3D 턴테이블';
+  } else if (mode === 'garage') {
+    if (modeBadge) modeBadge.textContent = '🏎️ VIP SUPERCAR GARAGE 360°';
+    if (headerTitle) headerTitle.textContent = '프라이빗 슈퍼카 컬렉션 3D 턴테이블';
+  } else if (mode === 'recruit') {
+    if (modeBadge) modeBadge.textContent = '🔑 VIP TENANT AUDITION 360°';
+    if (headerTitle) headerTitle.textContent = `${recruitRoomTarget ? `${recruitRoomTarget.name}호 ` : ''}입주 희망 동물 세입자 3D 쇼케이스`;
+  }
+
+  turntableState.items = buildTurntableItemsForCurrentMode();
+  turntableState.index = 0;
+
+  if (mode === 'animal') {
+    const curHero = state?.selectedHeroCharId || 'char_05_hamster';
+    const found = turntableState.items.findIndex((x) => x.id === curHero);
+    if (found >= 0) turntableState.index = found;
+  } else if (mode === 'garage') {
+    const curCar = state?.garage?.currentCar || 'car_scooter';
+    const found = turntableState.items.findIndex((x) => x.id === curCar);
+    if (found >= 0) turntableState.index = found;
+  }
+
+  modal?.classList.remove('hidden');
+  requestAnimationFrame(() => {
+    resizeTurntableStageCanvas();
+    rebuildTurntableSubject3D();
+  });
+}
+
+function closeTurntableShowcaseModal() {
+  turntableState.active = false;
+  document.getElementById('turntable-showcase-modal')?.classList.add('hidden');
+  document.getElementById('tt-emote-float-badge')?.classList.add('hidden');
+}
+
+function triggerTurntableAnimalWinkEmote() {
+  const subj = turntableState.currentSubject;
+  const ud = subj?.userData;
+  if (!ud || !ud.headMeshRef || !ud.winkHeadMat) return;
+
+  ud.headMeshRef.material = ud.winkHeadMat;
+  turntableState.winkDuration = 0.52;
+  turntableState.hopTimer = 0.44;
+
+  const badge = document.getElementById('tt-emote-float-badge');
+  if (badge) {
+    badge.textContent = Math.random() < 0.5 ? '😉 찡긋~! ♥' : '✨ 폴짝! 반가워요~ ♥';
+    badge.classList.remove('hidden');
+    if (turntableState.emoteBadgeTimeout) clearTimeout(turntableState.emoteBadgeTimeout);
+    turntableState.emoteBadgeTimeout = setTimeout(() => {
+      badge.classList.add('hidden');
+    }, 1050);
+  }
+}
+
+function rebuildTurntableSubject3D() {
+  if (!turntableState.subjectHolder) return;
+  clearGroupChildren(turntableState.subjectHolder);
+  turntableState.currentSubject = null;
+  turntableState.yaw = 0;
+  turntableState.pedestalGroup.rotation.y = 0;
+
+  if (turntableState.items.length === 0) return;
+  turntableState.index = ((turntableState.index % turntableState.items.length) + turntableState.items.length) % turntableState.items.length;
+  const entry = turntableState.items[turntableState.index];
+
+  const haloCss = document.getElementById('tt-golden-halo-aura');
+  let showGoldenHalo = false;
+
+  if (entry.kind === 'animal') {
+    const ch = entry.data;
+    const dummy = new THREE.Group();
+    const bodyRig = new THREE.Group();
+    dummy.add(bodyRig);
+    dummy.userData = { bodyRig };
+    buildTrue3DAnimalClayRig(dummy, ch.id, 'landlord_avatar');
+    dummy.scale.setScalar(1.38);
+    dummy.position.set(0, 0.02, 0);
+    turntableState.subjectHolder.add(dummy);
+    turntableState.currentSubject = dummy;
+    turntableState.camera.position.set(0, 2.15, 5.45);
+    turntableState.camera.lookAt(0, 1.18, 0);
+    turntableState.winkTimer = 0.55;
+    selectHeroAnimalId(ch.id);
+  } else if (entry.kind === 'recruit') {
+    const cand = entry.data;
+    const charId = resolveAnimalIdForRole(cand.type, entry.idx) || 'char_01_bunny';
+    const dummy = new THREE.Group();
+    const bodyRig = new THREE.Group();
+    dummy.add(bodyRig);
+    dummy.userData = { bodyRig };
+    buildTrue3DAnimalClayRig(dummy, charId, cand.type);
+    dummy.scale.setScalar(1.36);
+    dummy.position.set(0, 0.02, 0);
+    turntableState.subjectHolder.add(dummy);
+    turntableState.currentSubject = dummy;
+    turntableState.camera.position.set(0, 2.15, 5.45);
+    turntableState.camera.lookAt(0, 1.18, 0);
+    turntableState.winkTimer = 0.55;
+    const hDef = HOUSEHOLD_TYPES[cand.type];
+    showGoldenHalo = !!(hDef?.isVipTenant || hDef?.isHarborVip);
+  } else if (entry.kind === 'flagship') {
+    const item = entry.data;
+    const mesh = buildPreviewSubject3D(item.id);
+    mesh.rotation.y = 0;
+    mesh.position.set(0, 0.04, 0);
+    mesh.scale.multiplyScalar(1.18);
+    turntableState.subjectHolder.add(mesh);
+    turntableState.currentSubject = mesh;
+    turntableState.camera.position.set(0, 2.45, 6.2);
+    turntableState.camera.lookAt(0, 0.98, 0);
+    showGoldenHalo = (item.tier || 1) >= 3;
+  } else if (entry.kind === 'garage') {
+    const car = entry.data;
+    const mesh = createVehicle3D(car.id, false);
+    const sc = car.id === 'car_limo' ? 0.62 : car.id === 'car_scooter' ? 1.28 : 0.82;
+    mesh.scale.setScalar(sc);
+    mesh.rotation.y = Math.PI * 0.22;
+    mesh.position.set(0, 0.04, 0);
+    turntableState.subjectHolder.add(mesh);
+    turntableState.currentSubject = mesh;
+    turntableState.camera.position.set(0, 2.35, 6.45);
+    turntableState.camera.lookAt(0, 0.78, 0);
+    showGoldenHalo = (car.cost || 0) >= 800;
+  }
+
+  if (turntableState.haloGroup) turntableState.haloGroup.visible = showGoldenHalo;
+  haloCss?.classList.toggle('hidden', !showGoldenHalo);
+
+  syncTurntableInfoAndStripUI();
+}
+
+function syncTurntableInfoAndStripUI() {
+  const entry = turntableState.items[turntableState.index];
+  if (!entry) return;
+
+  const goldEl = document.getElementById('tt-gold-readout');
+  if (goldEl) goldEl.textContent = `${Math.round(state.gold || 0).toLocaleString()}만`;
+
+  const tierPill = document.getElementById('tt-item-tier-pill');
+  const counterEl = document.getElementById('tt-index-counter');
+  const nameEl = document.getElementById('tt-item-name');
+  const descEl = document.getElementById('tt-item-desc');
+  const chipsRow = document.getElementById('tt-item-stats-row');
+  const actionBtn = document.getElementById('btn-tt-primary-action');
+
+  if (counterEl) {
+    counterEl.textContent = `${turntableState.index + 1} / ${turntableState.items.length}`;
+  }
+
+  // 필터 탭 활성 동기화
+  document.querySelectorAll('[data-tt-cat]').forEach((b) => {
+    b.classList.toggle('active', b.getAttribute('data-tt-cat') === turntableState.flagshipCat);
+  });
+  document.querySelectorAll('[data-tt-tier]').forEach((b) => {
+    b.classList.toggle('active', b.getAttribute('data-tt-tier') === String(turntableState.flagshipTier));
+  });
+
+  if (entry.kind === 'animal') {
+    const ch = entry.data;
+    if (tierPill) {
+      tierPill.textContent = ch.isRivalBoss ? `NO.${String(ch.num).padStart(2, '0')} · BOSS EDITION` : `NO.${String(ch.num).padStart(2, '0')} · SIGNATURE 3D CLAY`;
+      tierPill.className = 'kw-chip tone-gold !text-[10.5px]';
+    }
+    if (nameEl) nameEl.textContent = `${ch.emoji} ${ch.name}`;
+    if (descEl) descEl.textContent = ch.desc;
+    if (chipsRow) {
+      chipsRow.innerHTML = `
+        <span class="kw-chip tone-gold !text-[10.5px]">👑 ${ch.title}</span>
+        <span class="kw-chip tone-mint !text-[10.5px]">✨ 360° 3D 클레이 피규어</span>
+      `;
+    }
+    if (actionBtn) {
+      actionBtn.disabled = false;
+      actionBtn.className = 'jelly-action-btn btn-gold-lip px-5 py-2.5 !text-[13.5px] shrink-0 shadow-lg';
+      actionBtn.textContent = turntableState.fromTitle
+        ? '✨ 이 동물 주인공으로 타운 입장! ▶'
+        : '✨ 이 동물 주인공으로 변경 완료!';
+    }
+  } else if (entry.kind === 'flagship') {
+    const it = entry.data;
+    const tNum = it.tier || 1;
+    const tierMeta = (window.FURNITURE_TIER_META || {})[tNum] || { badge: `Tier ${tNum}` };
+    const invQty = state.furnitureInventory?.[it.id] || 0;
+    const effCost = state?.selectedHeroCharId === 'char_04_duck' ? Math.max(1, Math.round(it.cost * 0.85)) : it.cost;
+    const canAfford = (state.gold || 0) >= effCost;
+
+    if (tierPill) {
+      tierPill.textContent = `${tierMeta.badge}${tNum >= 3 ? ' · 🌟 GOLDEN HALO' : ''}`;
+      tierPill.className = `kw-chip ${tNum >= 3 ? 'tone-gold' : 'tone-sky'} !text-[10.5px]`;
+    }
+    if (nameEl) nameEl.textContent = it.name;
+    if (descEl) descEl.textContent = `세입자 방 배치 및 1:1 쇼룸 플렉스 결투 겸용 3D 인테리어 컬렉션 (현재 창고 보유: ${invQty}개)`;
+    if (chipsRow) {
+      chipsRow.innerHTML = `
+        <span class="kw-chip tone-mint !text-[10.5px]">${it.chip}</span>
+        <span class="kw-chip tone-gold !text-[10.5px]">💎 럭셔리 +${it.luxuryPts ?? it.luxuryScore ?? (tNum * 100)}점</span>
+        ${invQty > 0 ? `<span class="kw-chip tone-sky !text-[10.5px]">📦 보유 ${invQty}개</span>` : ''}
+      `;
+    }
+    if (actionBtn) {
+      actionBtn.disabled = !canAfford;
+      actionBtn.className = `jelly-action-btn ${tNum >= 3 ? 'btn-gold-lip' : 'btn-coral-lip'} px-5 py-2.5 !text-[13.5px] shrink-0 shadow-lg ${!canAfford ? 'opacity-50 cursor-not-allowed' : ''}`;
+      actionBtn.textContent = canAfford
+        ? `🛍️ ${effCost.toLocaleString()}만 구매 · 창고 담기`
+        : `🔒 ${effCost.toLocaleString()}만 (보유자산 부족)`;
+    }
+  } else if (entry.kind === 'garage') {
+    const car = entry.data;
+    const ownedList = state.garage?.ownedCars || ['car_scooter'];
+    const isOwned = ownedList.includes(car.id);
+    const isEquipped = (state.garage?.currentCar || 'car_scooter') === car.id;
+    const canAfford = (state.gold || 0) >= car.cost;
+
+    if (tierPill) {
+      tierPill.textContent = isEquipped ? '🏎️ 현재 탑승 차량' : isOwned ? '🔑 차고 보유중' : '✨ VIP 출고 대기';
+      tierPill.className = `kw-chip ${isEquipped ? 'tone-coral' : isOwned ? 'tone-mint' : 'tone-gold'} !text-[10.5px]`;
+    }
+    if (nameEl) nameEl.textContent = car.name;
+    if (descEl) descEl.textContent = `마을 순환도로 · 외곽 해안 아치교 · 트와일라잇 하버 전 구간 3인칭/1인칭 오픈카 주행 지원`;
+    if (chipsRow) {
+      chipsRow.innerHTML = `
+        <span class="kw-chip tone-${car.tone || 'gold'} !text-[10.5px]">${car.chip}</span>
+        <span class="kw-chip tone-sky !text-[10.5px]">🧲 자석수금 +${car.driveTipPct}%</span>
+      `;
+    }
+    if (actionBtn) {
+      actionBtn.disabled = !isOwned && !canAfford;
+      actionBtn.className = `jelly-action-btn ${isEquipped ? 'btn-coral-lip' : isOwned ? 'btn-mint-lip' : 'btn-gold-lip'} px-5 py-2.5 !text-[13.5px] shrink-0 shadow-lg ${(!isOwned && !canAfford) ? 'opacity-50 cursor-not-allowed' : ''}`;
+      actionBtn.textContent = isEquipped
+        ? '🏎️ 이 차량으로 즉시 드라이브 출발!'
+        : isOwned
+          ? '🔑 주차구역 배차 & 드라이브 출발!'
+          : canAfford
+            ? `💰 ${car.cost.toLocaleString()}만 VIP 출고 & 배차`
+            : `🔒 ${car.cost.toLocaleString()}만 (자산 부족)`;
+    }
+  } else if (entry.kind === 'recruit') {
+    const cand = entry.data;
+    const hDef = HOUSEHOLD_TYPES[cand.type] || HOUSEHOLD_TYPES.student;
+    const roomStars = recruitRoomTarget ? calcRoomLuxuryStars(recruitRoomTarget) : 1;
+    const reqStars = hDef.minLuxuryStars || (hDef.isVipTenant ? 3 : 1);
+    const canContract = roomStars >= reqStars;
+
+    if (tierPill) {
+      tierPill.textContent = `${hDef.isVipTenant ? '👑 VIP 고액 세입자' : '🏡 일반 입주 희망'} · 필요 ★${reqStars}`;
+      tierPill.className = `kw-chip ${hDef.isVipTenant ? 'tone-gold' : 'tone-mint'} !text-[10.5px]`;
+    }
+    if (nameEl) nameEl.textContent = `${cand.familyName} (${hDef.label})`;
+    if (descEl) {
+      descEl.textContent = canContract
+        ? `현재 ${recruitRoomTarget?.name || ''}호 럭셔리 ★${roomStars} 달성! 즉시 입주 계약을 체결할 수 있습니다.`
+        : `🔒 현재 방 럭셔리 ★${roomStars} — Tier 3+ 하이엔드 침대·설비를 배치해 ★${reqStars}를 달성하면 계약이 해금됩니다!`;
+    }
+    if (chipsRow) {
+      chipsRow.innerHTML = `
+        <span class="kw-chip tone-gold !text-[10.5px]">💰 희망 월세 한도 ${cand.maxBudget.toLocaleString()}만</span>
+        <span class="kw-chip ${canContract ? 'tone-mint' : 'tone-coral'} !text-[10.5px]">현재 방 ★${roomStars} / 조건 ★${reqStars}</span>
+      `;
+    }
+    if (actionBtn) {
+      actionBtn.disabled = false;
+      actionBtn.className = `jelly-action-btn ${canContract ? 'btn-gold-lip' : 'btn-sky-lip'} px-5 py-2.5 !text-[13.5px] shrink-0 shadow-lg`;
+      actionBtn.textContent = canContract
+        ? `📜 ${cand.maxBudget.toLocaleString()}만 입주 계약 체결!`
+        : `🛋️ 방 가구 세팅으로 ★${reqStars} 맞추기`;
+    }
+  }
+
+  // 하단 퀵 스트립 칩 렌더링
+  const stripEl = document.getElementById('tt-quick-strip');
+  if (stripEl) {
+    stripEl.innerHTML = turntableState.items.map((it, idx) => {
+      const active = idx === turntableState.index;
+      let lbl = '';
+      if (it.kind === 'animal') lbl = `${it.data.emoji} ${it.data.name.split(' ').pop()}`;
+      else if (it.kind === 'flagship') lbl = `${(it.data.tier || 1) >= 3 ? '✨' : '🛋️'} ${it.data.name}`;
+      else if (it.kind === 'garage') lbl = `🏎️ ${it.data.name}`;
+      else if (it.kind === 'recruit') lbl = `${(HOUSEHOLD_TYPES[it.data.type]?.isVipTenant) ? '👑' : '🐾'} ${it.data.familyName}`;
+      return `<button type="button" data-tt-jump="${idx}" class="tt-strip-chip ${active ? 'active' : ''}">${lbl}</button>`;
+    }).join('');
+
+    stripEl.querySelectorAll('[data-tt-jump]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        turntableState.index = Number(btn.getAttribute('data-tt-jump')) || 0;
+        rebuildTurntableSubject3D();
+      });
+    });
+  }
+}
+
+function executeTurntablePrimaryAction() {
+  const entry = turntableState.items[turntableState.index];
+  if (!entry) return;
+
+  if (entry.kind === 'animal') {
+    const shouldEnter = turntableState.fromTitle;
+    state.hasChosenHeroAnimal = true;
+    selectHeroAnimalId(entry.data.id);
+    closeTurntableShowcaseModal();
+    triggerGlobalAnimalCheer(3.5);
+    showToast(`👑 [${entry.data.name}] 주인공 피규어 장착 완료! WASD/방향키로 마을을 산책해 보세요!`, 'gold');
+    if (shouldEnter && titleScreenState.active) {
+      const firstPlay = !localStorage.getItem('god_landlord_tour_seen_v1');
+      enterTownFromTitleScreen(firstPlay);
+    }
+  } else if (entry.kind === 'flagship') {
+    buyFlagshipFurnitureToInventory(entry.cat || turntableState.flagshipCat, entry.data.id);
+    if (turntableState.currentSubject) {
+      turntableState.hopTimer = 0.42;
+    }
+    syncTurntableInfoAndStripUI();
+  } else if (entry.kind === 'garage') {
+    const cid = entry.data.id;
+    const car = getCarDef(cid);
+    const ownedList = state.garage?.ownedCars || ['car_scooter'];
+    const isOwned = ownedList.includes(cid);
+    const isEquipped = (state.garage?.currentCar || 'car_scooter') === cid;
+
+    if (isEquipped) {
+      closeTurntableShowcaseModal();
+      enterDriveMode();
+      return;
+    }
+    if (!isOwned) {
+      if (!spendGold(car.cost)) return;
+      state.garage.ownedCars.push(cid);
+    }
+    state.garage.currentCar = cid;
+    closeTurntableShowcaseModal();
+    refreshPlayerCar3D();
+    playDropBouncePlacement3D(driveState.vehicleMesh, driveState.carRootGroup.position.x, 1.1, driveState.carRootGroup.position.z);
+    playSupercarHornSound(cid);
+    updateTopHUDTargets();
+    syncDriveTopBadges();
+    saveGameState();
+    enterDriveMode();
+  } else if (entry.kind === 'recruit') {
+    const cand = entry.data;
+    if (!recruitRoomTarget) return;
+    const hDef = HOUSEHOLD_TYPES[cand.type];
+    const reqStars = hDef?.minLuxuryStars || (hDef?.isVipTenant ? 3 : 1);
+    if (calcRoomLuxuryStars(recruitRoomTarget) < reqStars) {
+      closeTurntableShowcaseModal();
+      if (focusedRoomId !== recruitRoomTarget.id) {
+        focusCameraOnRoom(recruitRoomTarget.id);
+      }
+      focusRevealState.revealed = true;
+      renderFocusedRoomInspector();
+      syncTopBarsByMode();
+      return;
+    }
+    recruitRoomTarget.household = {
+      type: cand.type,
+      familyName: cand.familyName,
+      maxBudget: cand.maxBudget,
+      happiness: hDef?.isVipTenant ? 88 : 68
+    };
+    recruitRoomTarget.rentTimer = 4.0;
+    closeTurntableShowcaseModal();
+    syncBuildingResidents3D(recruitRoomTarget.lotId);
+    updateTopHUDTargets();
+    if (focusRevealState.revealed) renderFocusedRoomInspector();
+    syncTopBarsByMode();
+    showToast(`🎉 ${recruitRoomTarget.name}호에 [${cand.familyName}] 입주 계약 완료! (월세 한도 ${cand.maxBudget}만)`, 'gold');
+    saveGameState();
+  }
+}
+
+function tickTurntableShowcase3D(dt, elapsed) {
+  if (!turntableState.active || !turntableState.renderer || !turntableState.scene || !turntableState.camera) return;
+
+  const entry = turntableState.items[turntableState.index];
+  const isAnimalSubject = entry && (entry.kind === 'animal' || entry.kind === 'recruit');
+
+  if (!turntableState.dragging) {
+    if (Math.abs(turntableState.dragVel) > 0.01) {
+      turntableState.yaw += turntableState.dragVel * dt;
+      turntableState.dragVel *= Math.pow(0.06, dt);
+    } else if (isAnimalSubject) {
+      // 동물 쇼케이스는 정면 윙크 애교가 가장 잘 보이도록 부드러운 정면 스웨이 + 드래그 시 360도 자유 회전!
+      turntableState.yaw += Math.sin(elapsed * 1.35) * 0.22 * dt;
+    } else {
+      // 가구·차량은 원판 위에서 우아하게 360도 자동 회전!
+      turntableState.yaw += dt * 0.62;
+    }
+  }
+  if (turntableState.pedestalGroup) {
+    turntableState.pedestalGroup.rotation.y = turntableState.yaw;
+  }
+
+  // [요구사항 3] 캐릭터 정면 귀여운 윙크(> ◡ ◕) & 폴짝 반김 애교 모션!
+  if (isAnimalSubject && turntableState.currentSubject) {
+    const ud = turntableState.currentSubject.userData;
+    turntableState.winkTimer -= dt;
+    if (turntableState.winkTimer <= 0) {
+      turntableState.winkTimer = 2.65;
+      triggerTurntableAnimalWinkEmote();
+    }
+    if (turntableState.winkDuration > 0) {
+      turntableState.winkDuration -= dt;
+      if (ud?.headGroup || ud?.head) {
+        (ud.headGroup || ud.head).rotation.z = 0.16;
+      }
+      if (ud?.armR) {
+        ud.armR.rotation.set(-0.4, 0, -2.35 + Math.sin(elapsed * 18) * 0.26);
+      }
+      if (turntableState.winkDuration <= 0 && ud?.headMeshRef && ud?.normalHeadMat) {
+        ud.headMeshRef.material = ud.normalHeadMat;
+        if (ud.headGroup || ud.head) (ud.headGroup || ud.head).rotation.z = 0;
+      }
+    } else if (ud?.armR) {
+      ud.armR.rotation.z = THREE.MathUtils.lerp(ud.armR.rotation.z, -0.28, Math.min(1, dt * 10));
+      ud.armR.rotation.x = THREE.MathUtils.lerp(ud.armR.rotation.x, 0, Math.min(1, dt * 10));
+    }
+
+    if (turntableState.hopTimer > 0) {
+      turntableState.hopTimer = Math.max(0, turntableState.hopTimer - dt);
+      const hopPct = 1 - (turntableState.hopTimer / 0.44);
+      turntableState.currentSubject.position.y = 0.02 + Math.sin(hopPct * Math.PI) * 0.36;
+    } else {
+      turntableState.currentSubject.position.y = 0.02 + Math.abs(Math.sin(elapsed * 2.8)) * 0.04;
+    }
+    if (ud?.tailGroup) {
+      ud.tailGroup.rotation.y = Math.sin(elapsed * 6.5) * 0.35;
+    }
+  } else if (turntableState.currentSubject && turntableState.hopTimer > 0) {
+    turntableState.hopTimer = Math.max(0, turntableState.hopTimer - dt);
+    const hopPct = 1 - (turntableState.hopTimer / 0.42);
+    turntableState.currentSubject.position.y = 0.04 + Math.sin(hopPct * Math.PI) * 0.28;
+  }
+
+  // [요구사항 3] Tier 3~4 하이엔드 가구 회전 황금 후광(Golden Halo) & 반짝이 파티클 애니메이션!
+  if (turntableState.haloGroup && turntableState.haloGroup.visible) {
+    turntableState.haloGroup.rotation.z = elapsed * 0.68;
+    for (const sp of turntableState.sparkles) {
+      sp.mesh.position.y = sp.baseY + Math.sin(elapsed * 3.4 + sp.phase) * 0.18;
+      sp.mesh.rotation.y = elapsed * 2.8 + sp.phase;
+      const sc = 0.75 + Math.abs(Math.sin(elapsed * 4.5 + sp.phase)) * 0.55;
+      sp.mesh.scale.setScalar(sc);
+    }
+  }
+
+  turntableState.renderer.render(turntableState.scene, turntableState.camera);
+}
+
+// =========================================================
+// 16I. [신규 엔진 C] 역동적 기상청 날씨 스위치 ([ ☀️ 맑음 | ☔ 비 | ❄️ 눈 ]) & 3D 적설 · 빙판 꽈당 슬랩스틱
+// =========================================================
+function createSnowflakeSpriteTex() {
+  const cv = document.createElement('canvas');
+  cv.width = 64;
+  cv.height = 64;
+  const ctx = cv.getContext('2d');
+  const grad = ctx.createRadialGradient(32, 32, 2, 32, 32, 28);
+  grad.addColorStop(0, 'rgba(255,255,255,1)');
+  grad.addColorStop(0.55, 'rgba(240,249,255,0.92)');
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(32, 32, 28, 0, Math.PI * 2);
+  ctx.fill();
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+function initWeatherParticles3D() {
+  if (weatherState.precipGroup || !scene) return;
+  const grp = new THREE.Group();
+  scene.add(grp);
+  weatherState.precipGroup = grp;
+
+  // 1) ☔ 3D 사선 빗줄기 (Rain LineSegments)
+  const rainCount = 520;
+  const rainPos = new Float32Array(rainCount * 6);
+  for (let i = 0; i < rainCount; i++) {
+    const rx = (Math.random() - 0.5) * 92;
+    const ry = Math.random() * 34;
+    const rz = (Math.random() - 0.5) * 78;
+    const i6 = i * 6;
+    rainPos[i6] = rx;
+    rainPos[i6 + 1] = ry;
+    rainPos[i6 + 2] = rz;
+    rainPos[i6 + 3] = rx - 0.32;
+    rainPos[i6 + 4] = ry - 1.55;
+    rainPos[i6 + 5] = rz + 0.15;
+  }
+  const rainGeo = new THREE.BufferGeometry();
+  rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPos, 3));
+  const rainMat = new THREE.LineBasicMaterial({
+    color: 0xBAE6FD,
+    transparent: true,
+    opacity: 0.62
+  });
+  const rainMesh = new THREE.LineSegments(rainGeo, rainMat);
+  rainMesh.visible = false;
+  rainMesh.frustumCulled = false;
+  grp.add(rainMesh);
+  weatherState.rainGeo = rainGeo;
+  weatherState.rainMesh = rainMesh;
+
+  // 비 오는 날 도로 위 물웅덩이 파문 글린트
+  const puddleGrp = new THREE.Group();
+  const puddleMat = new THREE.MeshBasicMaterial({
+    color: 0x7DD3FC,
+    transparent: true,
+    opacity: 0.34,
+    side: THREE.DoubleSide,
+    depthWrite: false
+  });
+  for (const [px, pz, pr] of [[-9.5, 7.2, 1.8], [4.5, 6.8, 2.1], [16.2, 11.5, 1.6], [-2.0, 16.5, 2.2], [22.0, 17.8, 1.9]]) {
+    const pd = new THREE.Mesh(new THREE.CircleGeometry(pr, 24), puddleMat);
+    pd.rotation.x = -Math.PI * 0.5;
+    pd.position.set(px, 0.24, pz);
+    puddleGrp.add(pd);
+  }
+  puddleGrp.visible = false;
+  scene.add(puddleGrp);
+  weatherState.puddleGlowGroup = puddleGrp;
+
+  // 2) ❄️ 3D 몽글몽글 함박눈 송이 (Snow Points)
+  const snowCount = 560;
+  const snowPos = new Float32Array(snowCount * 3);
+  for (let i = 0; i < snowCount; i++) {
+    snowPos[i * 3] = (Math.random() - 0.5) * 94;
+    snowPos[i * 3 + 1] = Math.random() * 34;
+    snowPos[i * 3 + 2] = (Math.random() - 0.5) * 80;
+  }
+  const snowGeo = new THREE.BufferGeometry();
+  snowGeo.setAttribute('position', new THREE.BufferAttribute(snowPos, 3));
+  const snowMat = new THREE.PointsMaterial({
+    size: 0.68,
+    map: createSnowflakeSpriteTex(),
+    transparent: true,
+    opacity: 0.94,
+    depthWrite: false
+  });
+  const snowMesh = new THREE.Points(snowGeo, snowMat);
+  snowMesh.visible = false;
+  snowMesh.frustumCulled = false;
+  grp.add(snowMesh);
+  weatherState.snowGeo = snowGeo;
+  weatherState.snowMesh = snowMesh;
+
+  // 눈 오는 날 인도·광장 반짝이는 3D 살얼음 빙판 패치 (동물들이 밟고 '꽈당!' 미끄러지는 구역)
+  const iceGrp = new THREE.Group();
+  const iceMat = new THREE.MeshPhysicalMaterial({
+    color: 0xE0F2FE,
+    emissive: 0x38BDF8,
+    emissiveIntensity: 0.22,
+    roughness: 0.06,
+    metalness: 0.15,
+    transparent: true,
+    opacity: 0.68
+  });
+  for (const [ix, iz, rx, rz] of [[-5.5, 11.4, 2.2, 1.4], [6.8, 11.6, 2.4, 1.5], [0.0, 3.2, 2.5, 1.5], [14.5, 3.4, 2.1, 1.3]]) {
+    const ice = new THREE.Mesh(new THREE.CylinderGeometry(rx, rx, 0.04, 20), iceMat);
+    ice.scale.set(1, 1, rz / rx);
+    ice.position.set(ix, 0.29, iz);
+    iceGrp.add(ice);
+  }
+  iceGrp.visible = false;
+  islandRootGroup?.add(iceGrp);
+  weatherState.icePatchGroup = iceGrp;
+}
+
+function setWeatherMode(mode = 'clear', silent = false) {
+  const validMode = (mode === 'rain' || mode === 'snow') ? mode : 'clear';
+  weatherState.mode = validMode;
+  if (state) state.weatherMode = validMode;
+
+  initWeatherParticles3D();
+
+  document.querySelectorAll('[data-weather-btn]').forEach((btn) => {
+    btn.classList.toggle('active', btn.getAttribute('data-weather-btn') === validMode);
+  });
+
+  if (weatherState.rainMesh) weatherState.rainMesh.visible = validMode === 'rain';
+  if (weatherState.puddleGlowGroup) weatherState.puddleGlowGroup.visible = validMode === 'rain' && WorldManager.currentStage === 1;
+  if (weatherState.snowMesh) weatherState.snowMesh.visible = validMode === 'snow';
+  if (weatherState.icePatchGroup) weatherState.icePatchGroup.visible = validMode === 'snow';
+
+  // [요구사항 8] 비(☔) 선택 시 아스팔트 도로와 광장이 촉촉하게 젖어 네온·가로등 불빛을 반사!
+  for (const wm of wetRoadMaterials) {
+    if (!wm?.mat) continue;
+    wm.mat.roughness = validMode === 'rain' ? 0.22 : (typeof wm.dryRoughness === 'number' ? wm.dryRoughness : 0.74);
+    wm.mat.metalness = validMode === 'rain' ? 0.16 : (typeof wm.dryMetalness === 'number' ? wm.dryMetalness : 0.04);
+    wm.mat.needsUpdate = true;
+  }
+
+  // 눈(❄️) 모드 즉시 체감을 위해 초기 적설량을 시드(0.45) 부여 후 1.0까지 소복이 차오르게 연출!
+  if (validMode === 'snow' && weatherState.snowAccum < 0.45) {
+    weatherState.snowAccum = 0.45;
+  }
+
+  // 기상 상태에 따른 하늘 안개·조명 무드 보정
+  const stg = WorldManager.currentStage || 1;
+  applyTownAtmosphere(stg);
+  if (scene && hemiLight && dirLight) {
+    if (validMode === 'rain') {
+      scene.fog = new THREE.FogExp2(stg === 2 ? 0x1E1B38 : 0xCBD5E1, 0.0042);
+      hemiLight.intensity *= 0.85;
+      dirLight.intensity *= 0.72;
+    } else if (validMode === 'snow') {
+      scene.fog = new THREE.FogExp2(stg === 2 ? 0x2E244D : 0xF1F5F9, 0.0036);
+      hemiLight.color.setHex(0xF8FAFC);
+      hemiLight.intensity *= 1.08;
+    }
+  }
+
+  if (!silent) {
+    if (validMode === 'rain') {
+      showToast('☔ 촉촉한 봄비가 내립니다! 도로가 반짝이고 동물 친구들이 파스텔 미니 우산을 펼칩니다!', 'sky');
+    } else if (validMode === 'snow') {
+      showToast('❄️ 함박눈이 펑펑 내립니다! 빌딩 지붕·어닝·아치교 위에 눈이 소복이 쌓이고 빙판길 꽈당 주의보 발령!', 'sky');
+    } else {
+      showToast('☀️ 구름 한 점 없이 화사하고 맑은 날씨로 개었습니다!', 'gold');
+    }
+    saveGameState();
+  }
+}
+
+function tickWeatherSystem(dt, elapsed) {
+  if (!weatherState.precipGroup) return;
+
+  const zOffset = WorldManager.currentStage === 2 ? 122.0 : 10.0;
+  weatherState.precipGroup.position.set(0, 0, zOffset);
+  if (weatherState.puddleGlowGroup) {
+    weatherState.puddleGlowGroup.visible = (weatherState.mode === 'rain' && WorldManager.currentStage === 1);
+  }
+
+  // 1) ☔ 3D 빗줄기 낙하 & 우산 쓴 외출 동물들의 상가 어닝 처마 밑 빠른 종종걸음 이동!
+  if (weatherState.mode === 'rain' && weatherState.rainGeo) {
+    const arr = weatherState.rainGeo.attributes.position.array;
+    const fallY = 34.0 * dt;
+    const windX = -6.8 * dt;
+    for (let i = 0; i < arr.length; i += 6) {
+      arr[i] += windX;
+      arr[i + 1] -= fallY;
+      arr[i + 3] += windX;
+      arr[i + 4] -= fallY;
+      if (arr[i + 1] < 0.2) {
+        const nx = (Math.random() - 0.5) * 92;
+        const ny = 30 + Math.random() * 6;
+        const nz = (Math.random() - 0.5) * 78;
+        arr[i] = nx;
+        arr[i + 1] = ny;
+        arr[i + 2] = nz;
+        arr[i + 3] = nx - 0.32;
+        arr[i + 4] = ny - 1.55;
+        arr[i + 5] = nz + 0.15;
+      }
+    }
+    weatherState.rainGeo.attributes.position.needsUpdate = true;
+
+    // 비가 오면 거리의 동물 주민들이 파스텔 우산을 쓰고 건물 어닝 처마 쪽으로 총총걸음 가속!
+    for (const ac of streetOutingActors) {
+      if (ac?.mesh && ac.phase !== 'dining') {
+        const wp = ac.waypoints?.[ac.wpIndex];
+        if (wp) {
+          const dx = wp.x - ac.mesh.position.x;
+          const dz = wp.z - ac.mesh.position.z;
+          const d = Math.hypot(dx, dz);
+          if (d > 0.25) {
+            ac.mesh.position.x += (dx / d) * 1.45 * dt;
+            ac.mesh.position.z += (dz / d) * 1.45 * dt;
+          }
+        }
+      }
+    }
+  }
+
+  // 2) ❄️ 3D 눈송이 유영 & 건물 옥상·어닝·가로수·아치교 위 3D 하얀 적설(Snow Cap) 점진 축적 + 빙판길 '꽈당!' 슬랩스틱!
+  if (weatherState.mode === 'snow' && weatherState.snowGeo) {
+    const arr = weatherState.snowGeo.attributes.position.array;
+    for (let i = 0; i < arr.length; i += 3) {
+      arr[i] += Math.sin(elapsed * 1.6 + i) * 1.15 * dt;
+      arr[i + 1] -= (4.2 + (i % 5) * 0.45) * dt;
+      arr[i + 2] += Math.cos(elapsed * 1.3 + i) * 0.85 * dt;
+      if (arr[i + 1] < 0.2) {
+        arr[i] = (Math.random() - 0.5) * 94;
+        arr[i + 1] = 31 + Math.random() * 5;
+        arr[i + 2] = (Math.random() - 0.5) * 80;
+      }
+    }
+    weatherState.snowGeo.attributes.position.needsUpdate = true;
+
+    // 빙판길 '꽈당!' 주기적 슬랩스틱 발동
+    weatherState.slipCooldown -= dt;
+    if (weatherState.slipCooldown <= 0) {
+      weatherState.slipCooldown = 4.2 + Math.random() * 2.4;
+      const pool = (WorldManager.currentStage === 2 ? harborWalkerActors : streetOutingActors)
+        .filter((a) => a?.mesh && a.mesh.visible && (!a.phase || a.phase !== 'dining') && !(a.mesh.userData?.slipTimer > 0));
+      if (pool.length > 0) {
+        const lucky = pool[Math.floor(Math.random() * pool.length)];
+        const mud = lucky.mesh.userData;
+        if (mud) {
+          mud.slipTimer = 1.75;
+          const sx = lucky.mesh.position.x;
+          const sz = lucky.mesh.position.z;
+          spawnPoofParticles3D(sx, 0.65, sz, 0xFFFFFF, 12);
+          showSpeechBubble3D(
+            `snow_slip_${Math.floor(elapsed * 10)}`,
+            sx,
+            2.25,
+            sz,
+            Math.random() < 0.5 ? '❄️ 앗 미끄러워!! 꽈당~!! 🐾' : '❄️ 꺄악 빙판길 꽈당!! 툭툭~⛄',
+            2.8,
+            true
+          );
+        }
+      }
+    }
+  }
+
+  // 적설량(0.0 ➔ 1.0) 부드러운 상승(눈 모드) 및 융설(맑음/비 모드)
+  const targetSnow = weatherState.mode === 'snow' ? 1.0 : 0.0;
+  const snowRate = weatherState.mode === 'snow' ? 0.28 : 0.48;
+  if (Math.abs(weatherState.snowAccum - targetSnow) > 0.002) {
+    weatherState.snowAccum = THREE.MathUtils.lerp(weatherState.snowAccum, targetSnow, Math.min(1, dt * snowRate));
+  } else {
+    weatherState.snowAccum = targetSnow;
+  }
+
+  const showSnowCaps = weatherState.snowAccum > 0.02;
+  for (let i = snowCapTargets.length - 1; i >= 0; i--) {
+    const entry = snowCapTargets[i];
+    const capMesh = entry?.mesh || entry;
+    if (!capMesh || !capMesh.parent) {
+      snowCapTargets.splice(i, 1);
+      continue;
+    }
+    capMesh.visible = showSnowCaps;
+    if (showSnowCaps) {
+      const s = weatherState.snowAccum;
+      const sx = entry.baseScaleX || 1.0;
+      const sz = entry.baseScaleZ || 1.0;
+      const ty = entry.targetScaleY || 1.0;
+      capMesh.scale.set(
+        sx * (0.86 + 0.14 * s),
+        Math.max(0.02, ty * (0.35 + 1.05 * s)),
+        sz * (0.86 + 0.14 * s)
       );
-      ctx.restore();
+      if (typeof entry.baseY === 'number') {
+        capMesh.position.y = entry.baseY + 0.05 * s;
+      }
     }
   }
 }
@@ -19747,6 +22448,7 @@ function loadGameState() {
       vipTitle: parsed.vipTitle || '🌱 코지 타운 명예 동장',
       selectedHeroCharId: parsed.selectedHeroCharId || 'char_05_hamster',
       hasChosenHeroAnimal: !!parsed.hasChosenHeroAnimal,
+      weatherMode: (parsed.weatherMode === 'rain' || parsed.weatherMode === 'snow') ? parsed.weatherMode : 'clear',
       furnitureInventory: {
         ...(fresh.furnitureInventory || {}),
         ...(parsed.furnitureInventory || {})
@@ -19876,6 +22578,9 @@ function initThreeScene() {
     }
 
     renderer.setSize(window.innerWidth, window.innerHeight);
+    if (turntableState.active) {
+      resizeTurntableStageCanvas();
+    }
 
     if (titleScreenState.active) {
       applyTitleDollhouseShowcaseCamera(titleScreenState.swayPhase || 0);
@@ -20128,10 +22833,13 @@ function bindAllUIEvents() {
   // [요구사항 9] UI 클릭 관통(Click Bleed-Through) 원천 차단: 모든 드로어·팝오버·퀵버튼에서 3D 캔버스로 포인터 이벤트 전파 차단!
   const uiShieldSelectors = [
     '#top-right-action-cluster',
+    '#weather-switch-pill',
     '#quick-trio-stack',
     '#moneygun-flex-popover',
     '#pocket-planner-popover',
     '#focus-clean-capsule',
+    '#gate-lock-capsule',
+    '#turntable-showcase-modal',
     '#room-focus-panel',
     '#shop-focus-panel',
     '#flagship-shop-drawer',
@@ -20237,8 +22945,87 @@ function bindAllUIEvents() {
       enterDriveMode();
     } else if (ud.kind === 'lot' && ud.lotId) {
       openLotDevModal(ud.lotId);
+    } else if (ud.kind === 'eastHarborGate') {
+      if (state.harborUnlocked) {
+        travelToTownStage(2, true);
+      } else {
+        rattleLockedHarborGate(true);
+      }
+    } else if (ud.kind === 'returnHarborGate') {
+      travelToTownStage(1, true);
     }
   });
+
+  // [요구사항 8] 역동적 기상청 날씨 스위치 ([ ☀️ 맑음 | ☔ 비 | ❄️ 눈 ]) 바인딩
+  document.querySelectorAll('[data-weather-btn]').forEach((btn) => {
+    btn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      setWeatherMode(btn.getAttribute('data-weather-btn') || 'clear', false);
+    });
+  });
+
+  // [요구사항 6] 우측 잠긴 노을빛 대문 안내 캡슐 & 봉인 해제 스킵 버튼 바인딩
+  document.getElementById('btn-close-gate-capsule')?.addEventListener('click', () => closeGateLockCapsule());
+  document.getElementById('btn-gate-unlock-skip')?.addEventListener('click', () => {
+    triggerDay3InstantSkip(true);
+  });
+  document.getElementById('btn-gate-enter-now')?.addEventListener('click', () => {
+    travelToTownStage(2, true);
+  });
+
+  // [요구사항 3] 정중앙 대형 3D 360도 턴테이블 쇼케이스 컨트롤 & 마우스/터치 360도 회전 드래그 바인딩
+  document.getElementById('btn-close-turntable')?.addEventListener('click', () => closeTurntableShowcaseModal());
+  document.getElementById('btn-tt-prev')?.addEventListener('click', () => {
+    if (!turntableState.items.length) return;
+    turntableState.index = (turntableState.index - 1 + turntableState.items.length) % turntableState.items.length;
+    rebuildTurntableSubject3D();
+  });
+  document.getElementById('btn-tt-next')?.addEventListener('click', () => {
+    if (!turntableState.items.length) return;
+    turntableState.index = (turntableState.index + 1) % turntableState.items.length;
+    rebuildTurntableSubject3D();
+  });
+  document.getElementById('btn-tt-primary-action')?.addEventListener('click', () => {
+    executeTurntablePrimaryAction();
+  });
+  document.querySelectorAll('[data-tt-cat]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      turntableState.flagshipCat = btn.getAttribute('data-tt-cat') || 'bed';
+      flagshipShopTab = turntableState.flagshipCat;
+      turntableState.items = buildTurntableItemsForCurrentMode();
+      turntableState.index = 0;
+      rebuildTurntableSubject3D();
+    });
+  });
+  document.querySelectorAll('[data-tt-tier]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      turntableState.flagshipTier = btn.getAttribute('data-tt-tier') || '0';
+      flagshipTierFilter = turntableState.flagshipTier;
+      turntableState.items = buildTurntableItemsForCurrentMode();
+      turntableState.index = 0;
+      rebuildTurntableSubject3D();
+    });
+  });
+
+  const ttStage = document.getElementById('tt-canvas-stage');
+  if (ttStage) {
+    ttStage.addEventListener('pointerdown', (ev) => {
+      if (ev.target && ev.target.closest('button')) return;
+      turntableState.dragging = true;
+      turntableState.lastPointerX = ev.clientX;
+      turntableState.dragVel = 0;
+    });
+    window.addEventListener('pointermove', (ev) => {
+      if (!turntableState.active || !turntableState.dragging) return;
+      const dx = ev.clientX - turntableState.lastPointerX;
+      turntableState.lastPointerX = ev.clientX;
+      turntableState.yaw += dx * 0.014;
+      turntableState.dragVel = dx * 0.16;
+    });
+    window.addEventListener('pointerup', () => {
+      turntableState.dragging = false;
+    });
+  }
 
   // 타이틀 화면 버튼 & 10종 동물 주인공 아바타 선택 바인딩
   document.getElementById('btn-start-game')?.addEventListener('click', () => {
@@ -20357,6 +23144,10 @@ function bindAllUIEvents() {
       const targetShop = focusedShopId || focusedFirstFloorShopId;
       if (targetShop) enterFirstPersonShop(targetShop, false);
     }
+  });
+  document.getElementById('btn-focus-lower-telescope')?.addEventListener('click', () => {
+    if (focusedRoomId) exitRoomFocusMode();
+    else if (focusedShopId || focusedFirstFloorShopId) exitShopFocusMode();
   });
 
   // 미니 수첩 스탬프 클릭 시 자동으로 수첩 접기 연동
@@ -20478,8 +23269,7 @@ function bindAllUIEvents() {
   dom.btnEnterDrive?.addEventListener('click', () => enterDriveMode());
   dom.btnOpenGarage?.addEventListener('click', () => openGarageModal());
   dom.btnQuickExpand?.addEventListener('click', () => {
-    const nextLot = state.lots.find((l) => l.lotId !== 'lot_main' && l.stage !== 2 && (!l.owned || !l.devType)) || state.lots[1];
-    if (nextLot) openLotDevModal(nextLot.lotId);
+    openLotDevModal(null);
   });
   dom.btnCollectAll?.addEventListener('click', () => collectAllRentBubbles());
 
@@ -20611,6 +23401,15 @@ function bindAllUIEvents() {
   window.addEventListener('keydown', (e) => {
     if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
     if (e.key === 'Escape') {
+      if (turntableState.active) {
+        closeTurntableShowcaseModal();
+        return;
+      }
+      const gateCap = document.getElementById('gate-lock-capsule');
+      if (gateCap && !gateCap.classList.contains('hidden')) {
+        closeGateLockCapsule();
+        return;
+      }
       const pocketPop = document.getElementById('pocket-planner-popover');
       if (pocketPop && !pocketPop.classList.contains('hidden')) {
         closePocketPlanner();
@@ -20657,6 +23456,19 @@ function bindAllUIEvents() {
       return;
     }
 
+    if (turntableState.active) {
+      if (e.key === 'ArrowLeft' && turntableState.items.length > 0) {
+        e.preventDefault();
+        turntableState.index = (turntableState.index - 1 + turntableState.items.length) % turntableState.items.length;
+        rebuildTurntableSubject3D();
+      } else if (e.key === 'ArrowRight' && turntableState.items.length > 0) {
+        e.preventDefault();
+        turntableState.index = (turntableState.index + 1) % turntableState.items.length;
+        rebuildTurntableSubject3D();
+      }
+      return;
+    }
+
     const k = e.key.toLowerCase();
     if (fpState.active) {
       if (k === 'w' || e.key === 'ArrowUp') fpState.keys.forward = true;
@@ -20666,31 +23478,49 @@ function bindAllUIEvents() {
       return;
     }
 
-    if (!driveState.active) return;
+    if (driveState.active) {
+      if (k === 'w' || e.key === 'ArrowUp') driveState.keys.forward = true;
+      else if (k === 's' || e.key === 'ArrowDown') driveState.keys.backward = true;
+      else if (k === 'a' || e.key === 'ArrowLeft') driveState.keys.left = true;
+      else if (k === 'd' || e.key === 'ArrowRight') driveState.keys.right = true;
+      else if (e.key === 'Shift' || e.key === ' ') {
+        e.preventDefault();
+        driveState.keys.boost = true;
+        driveState.autoCruise = false;
+        document.getElementById('btn-nitro-boost')?.classList.add('pressed');
+        syncDriveTopBadges();
+      } else if (k === 'v' || k === 'c') toggleCockpitView();
+      else if (k === 'h') {
+        e.preventDefault();
+        triggerCarHorn();
+      }
+      return;
+    }
 
-    if (k === 'w' || e.key === 'ArrowUp') driveState.keys.forward = true;
-    else if (k === 's' || e.key === 'ArrowDown') driveState.keys.backward = true;
-    else if (k === 'a' || e.key === 'ArrowLeft') driveState.keys.left = true;
-    else if (k === 'd' || e.key === 'ArrowRight') driveState.keys.right = true;
-    else if (e.key === 'Shift' || e.key === ' ') {
-      e.preventDefault();
-      driveState.keys.boost = true;
-      driveState.autoCruise = false;
-      document.getElementById('btn-nitro-boost')?.classList.add('pressed');
-      syncDriveTopBadges();
-    } else if (k === 'v' || k === 'c') toggleCockpitView();
-    else if (k === 'h') {
-      e.preventDefault();
-      triggerCarHorn();
+    // [요구사항 1] 타운 뷰에서 WASD 및 방향키(↑↓←→)로 내 동물 주인공 직접 보행 조종!
+    if (!titleScreenState.active && !duelState.active) {
+      if (k === 'w' || e.key === 'ArrowUp') {
+        if (e.key.startsWith('Arrow')) e.preventDefault();
+        heroState.keys.up = true;
+      } else if (k === 's' || e.key === 'ArrowDown') {
+        if (e.key.startsWith('Arrow')) e.preventDefault();
+        heroState.keys.down = true;
+      } else if (k === 'a' || e.key === 'ArrowLeft') {
+        if (e.key.startsWith('Arrow')) e.preventDefault();
+        heroState.keys.left = true;
+      } else if (k === 'd' || e.key === 'ArrowRight') {
+        if (e.key.startsWith('Arrow')) e.preventDefault();
+        heroState.keys.right = true;
+      }
     }
   });
 
   window.addEventListener('keyup', (e) => {
     const k = e.key.toLowerCase();
-    if (k === 'w' || e.key === 'ArrowUp') { driveState.keys.forward = false; fpState.keys.forward = false; }
-    else if (k === 's' || e.key === 'ArrowDown') { driveState.keys.backward = false; fpState.keys.backward = false; }
-    else if (k === 'a' || e.key === 'ArrowLeft') { driveState.keys.left = false; fpState.keys.left = false; }
-    else if (k === 'd' || e.key === 'ArrowRight') { driveState.keys.right = false; fpState.keys.right = false; }
+    if (k === 'w' || e.key === 'ArrowUp') { driveState.keys.forward = false; fpState.keys.forward = false; heroState.keys.up = false; }
+    else if (k === 's' || e.key === 'ArrowDown') { driveState.keys.backward = false; fpState.keys.backward = false; heroState.keys.down = false; }
+    else if (k === 'a' || e.key === 'ArrowLeft') { driveState.keys.left = false; fpState.keys.left = false; heroState.keys.left = false; }
+    else if (k === 'd' || e.key === 'ArrowRight') { driveState.keys.right = false; fpState.keys.right = false; heroState.keys.right = false; }
     else if (e.key === 'Shift' || e.key === ' ') {
       driveState.keys.boost = false;
       document.getElementById('btn-nitro-boost')?.classList.remove('pressed');
@@ -20761,12 +23591,15 @@ window.addEventListener('DOMContentLoaded', () => {
   buildAllLots3D();
   rebuildHappinessMilestones3D();
   seedInitialStreetVisitors();
+  ensureHeroTownActorSpawned();
 
   hudAnim.shownGold = state.gold;
   hudAnim.shownHappy = calcAvgHappiness();
   syncFlagshipInventoryBadge();
   syncChronicleAndStageUI();
-  applyTownAtmosphere(1);
+  WorldManager.currentStage = state.activeTownStage || 1;
+  applyTownAtmosphere(WorldManager.currentStage);
+  setWeatherMode(state.weatherMode || 'clear', true);
   updateTopHUDTargets();
   setOverviewCamera(false);
   initTitleScreenUI();
@@ -20793,10 +23626,13 @@ window.addEventListener('DOMContentLoaded', () => {
     tickRivalBattlesAndRace(dt, elapsed);
     tickShowroomDuelAI(dt, elapsed);
     tickDriveMode(dt, elapsed);
+    tickHeroTownActorAndGatePortal(dt, elapsed);
+    tickLive3DConstructionSites(dt, elapsed);
+    tickWeatherSystem(dt, elapsed);
     tickCrashedStreetPropsRecovery(dt);
     tickFirstPersonMode(dt, elapsed);
     tickPopMartCharacterSprites(dt, elapsed);
-    tickAnimalModalLiveCanvases(elapsed);
+    tickTurntableShowcase3D(dt, elapsed);
     tickAnimationsAndEffects(dt, elapsed, uiDt);
 
     if (!titleScreenState.active && !driveState.active && !fpState.active) {

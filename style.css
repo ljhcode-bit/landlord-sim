@@ -2913,3 +2913,483 @@ input[type='range'].golden-coin-range::-webkit-slider-thumb {
     transform: translate3d(var(--drift-x, 30px), 88vh, 0) scale(0.92) rotate(var(--rot-end, 220deg));
   }
 }
+
+/* ==================== 20. 날씨 스위치 · 황금 망원경 조리개 · 3대 와이드 수첩 · 3D 착공 바 · 잠긴 대문 · 중앙 3D 턴테이블 쇼케이스 ==================== */
+.weather-switch-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px;
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(255, 255, 255, 0.96);
+  box-shadow: 0 6px 18px rgba(44, 34, 30, 0.11), 0 2px 0 #DFCBB5;
+}
+
+.weather-seg-btn {
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  font-family: 'Pretendard', sans-serif !important;
+  font-weight: 800;
+  font-size: 11.5px;
+  line-height: 1;
+  color: #6B574B;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.16s ease;
+}
+
+.weather-seg-btn:hover {
+  color: #2C221E;
+  background: rgba(254, 243, 199, 0.55);
+}
+
+.weather-seg-btn.active[data-weather-btn="clear"] {
+  background: linear-gradient(180deg, #FFE885 0%, #F59E0B 100%);
+  color: #2C221E;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.35);
+}
+
+.weather-seg-btn.active[data-weather-btn="rain"] {
+  background: linear-gradient(180deg, #7DD3FC 0%, #0284C7 100%);
+  color: #FFFFFF;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.35);
+}
+
+.weather-seg-btn.active[data-weather-btn="snow"] {
+  background: linear-gradient(180deg, #E0F2FE 0%, #6366F1 100%);
+  color: #FFFFFF;
+  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.35);
+}
+
+.weather-seg-sep {
+  font-size: 10px;
+  font-weight: 700;
+  color: #D5C3B0;
+  user-select: none;
+}
+
+/* 황금 투시 망원경 조리개 렌즈 비네팅 */
+#telescope-iris-vignette {
+  background: radial-gradient(circle at 50% 50%, rgba(255, 251, 235, 0) 56%, rgba(120, 68, 12, 0.14) 78%, rgba(28, 19, 14, 0.48) 100%);
+  animation: telescopeIrisOpen 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes telescopeIrisOpen {
+  0% {
+    opacity: 0;
+    clip-path: circle(8% at 50% 50%);
+  }
+  100% {
+    opacity: 1;
+    clip-path: circle(85% at 50% 50%);
+  }
+}
+
+.telescope-iris-ring {
+  position: absolute;
+  inset: 12px;
+  border-radius: 32px;
+  border: 2.5px solid rgba(251, 191, 36, 0.65);
+  box-shadow: inset 0 0 28px rgba(251, 191, 36, 0.22);
+}
+
+.telescope-crosshair-h {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  top: 50%;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(251, 191, 36, 0.45) 0%, transparent 10%, transparent 90%, rgba(251, 191, 36, 0.45) 100%);
+}
+
+.telescope-crosshair-v {
+  position: absolute;
+  top: 24px;
+  bottom: 24px;
+  left: 50%;
+  width: 1px;
+  background: linear-gradient(180deg, rgba(251, 191, 36, 0.45) 0%, transparent 12%, transparent 88%, rgba(251, 191, 36, 0.45) 100%);
+}
+
+.telescope-hud-tag {
+  position: absolute;
+  top: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: rgba(38, 26, 18, 0.72);
+  border: 1.5px solid rgba(251, 191, 36, 0.78);
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 800;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: #FDE68A;
+  white-space: nowrap;
+}
+
+.focus-cap-action-btn.danger-soft {
+  background: #FFF1F2;
+  border-color: #FDA4AF;
+  color: #BE123C;
+}
+
+.focus-cap-action-btn.danger-soft:hover {
+  background: #FFE4E6;
+}
+
+/* 수첩 3대 핵심 업무 와이드 카드 레이아웃 */
+.pocket-planner-card {
+  width: 298px !important;
+}
+
+.pocket-wide-cards-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pocket-wide-card-btn {
+  width: 100%;
+  padding: 9px 11px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1.8px solid #EDE0D1;
+  background: #FFFDF9;
+  box-shadow: 0 3px 0 #DFCBB5;
+  cursor: pointer;
+  transition: transform 0.14s var(--spring-ease), box-shadow 0.14s ease, filter 0.14s ease;
+}
+
+.pocket-wide-card-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.02);
+}
+
+.pocket-wide-card-btn:active {
+  transform: translateY(2px) scale(0.98);
+  box-shadow: 0 1px 0 #DFCBB5;
+}
+
+.pocket-wide-card-btn.tone-gold {
+  background: linear-gradient(135deg, #FFFDF5 0%, #FEF3C7 100%);
+  border-color: #FCD34D;
+  box-shadow: 0 3px 0 #F59E0B55;
+}
+
+.pocket-wide-card-btn.tone-sky {
+  background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%);
+  border-color: #7DD3FC;
+  box-shadow: 0 3px 0 #0284C744;
+}
+
+.pocket-wide-card-btn.tone-lavender {
+  background: linear-gradient(135deg, #FAF5FF 0%, #F3E8FF 100%);
+  border-color: #D8B4FE;
+  box-shadow: 0 3px 0 #9333EA44;
+}
+
+.wide-card-title {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 900;
+  font-size: 12.5px;
+  color: #2C221E;
+  line-height: 1.2;
+}
+
+.wide-card-sub {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 700;
+  font-size: 10.5px;
+  color: #6E5A4F;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 3D 타워크레인 착공 현장 실시간 프로그레스 바 오버레이 */
+.construction-prog-pin {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  pointer-events: auto !important;
+  min-width: 214px;
+  padding: 8px 11px;
+  border-radius: 18px;
+  background: rgba(255, 253, 248, 0.96);
+  backdrop-filter: blur(10px);
+  border: 2px solid #F59E0B;
+  box-shadow: 0 8px 22px rgba(44, 34, 30, 0.22), 0 3px 0 #B45309;
+  z-index: 32;
+}
+
+.construction-rush-btn {
+  width: 100%;
+  margin-top: 6px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  border: 1.5px solid #B45309;
+  background: linear-gradient(180deg, #FFE869 0%, #F59E0B 100%);
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 900;
+  font-size: 11px;
+  color: #2C221E;
+  cursor: pointer;
+  box-shadow: 0 2px 0 #B45309;
+}
+
+.construction-rush-btn:hover {
+  filter: brightness(1.05);
+}
+
+/* 우측 해안 잠긴 대문 접근/클릭 안내 캡슐 */
+.gate-lock-glass-card {
+  position: relative;
+  padding: 15px 20px;
+  border-radius: 26px;
+  background: linear-gradient(180deg, rgba(255, 253, 246, 0.97) 0%, rgba(254, 243, 199, 0.95) 100%);
+  backdrop-filter: blur(16px);
+  border: 2.5px solid #F59E0B;
+  box-shadow: 0 18px 42px rgba(44, 34, 30, 0.28), 0 5px 0 #B45309;
+  text-align: center;
+  animation: harborPopIn 0.24s var(--spring-ease) forwards;
+}
+
+.gate-capsule-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(120, 53, 15, 0.12);
+  font-weight: 900;
+  font-size: 12px;
+  color: #78350F;
+  cursor: pointer;
+}
+
+.gate-awakening-cta-btn {
+  padding: 9px 18px;
+  border-radius: 999px;
+  border: 2px solid #9A3412;
+  background: linear-gradient(135deg, #FDE047 0%, #F59E0B 48%, #EA580C 100%);
+  box-shadow: 0 4px 0 #9A3412, 0 8px 20px rgba(234, 88, 12, 0.32);
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 900;
+  font-size: 13px;
+  color: #FFFFFF;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  transition: transform 0.14s ease, filter 0.14s ease;
+}
+
+.gate-awakening-cta-btn.unlocked-portal {
+  background: linear-gradient(135deg, #FB923C 0%, #E11D48 60%, #7E22CE 100%);
+  border-color: #881337;
+  box-shadow: 0 4px 0 #881337, 0 8px 22px rgba(225, 29, 72, 0.36);
+}
+
+.gate-awakening-cta-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  filter: brightness(1.05);
+}
+
+/* 화면 정중앙 대형 3D 360도 턴테이블 쇼케이스 */
+.turntable-backdrop {
+  background: radial-gradient(circle at 50% 46%, rgba(62, 46, 84, 0.56) 0%, rgba(22, 16, 28, 0.86) 72%, rgba(12, 9, 18, 0.94) 100%);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.turntable-top-pill {
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: rgba(30, 23, 38, 0.78);
+  border: 1.5px solid rgba(253, 224, 71, 0.45);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+}
+
+.tt-close-circle {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.14);
+  color: #FFFFFF;
+  font-weight: 900;
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform 0.14s ease, background-color 0.14s ease;
+}
+
+.tt-close-circle:hover {
+  transform: scale(1.08);
+  background: rgba(244, 63, 94, 0.85);
+}
+
+.tt-filter-chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 800;
+  font-size: 11.5px;
+  color: #E2E8F0;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.14s ease;
+}
+
+.tt-filter-chip.active {
+  background: linear-gradient(180deg, #FDE68A 0%, #F59E0B 100%);
+  border-color: #FEF3C7;
+  color: #2C221E;
+}
+
+.tt-nav-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 12;
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  background: linear-gradient(180deg, #FFFDF8 0%, #FDE68A 100%);
+  box-shadow: 0 4px 0 #B45309, 0 12px 24px rgba(0, 0, 0, 0.3);
+  font-size: 18px;
+  font-weight: 900;
+  color: #2C221E;
+  cursor: pointer;
+  transition: transform 0.14s ease, filter 0.14s ease;
+}
+
+.tt-nav-arrow:hover {
+  transform: translateY(-50%) scale(1.08);
+  filter: brightness(1.06);
+}
+
+.tt-nav-arrow:active {
+  transform: translateY(-46%) scale(0.95);
+}
+
+.tt-drag-hint-pill {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: rgba(20, 16, 28, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 800;
+  font-size: 11px;
+  color: #FDE68A;
+  white-space: nowrap;
+}
+
+.tt-emote-float-badge {
+  position: absolute;
+  top: 14%;
+  left: 56%;
+  padding: 5px 13px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #FFFDF9 0%, #FFE4E6 100%);
+  border: 2px solid #FB7185;
+  box-shadow: 0 8px 18px rgba(244, 63, 94, 0.28);
+  font-family: 'Jua', sans-serif;
+  font-size: 16px;
+  color: #E11D48;
+  animation: ttEmotePop 0.9s var(--spring-ease) forwards;
+}
+
+@keyframes ttEmotePop {
+  0% { opacity: 0; transform: translateY(10px) scale(0.7); }
+  25% { opacity: 1; transform: translateY(-4px) scale(1.08); }
+  80% { opacity: 1; transform: translateY(-8px) scale(1); }
+  100% { opacity: 0; transform: translateY(-16px) scale(0.9); }
+}
+
+.tt-golden-halo-css {
+  position: absolute;
+  width: 390px;
+  height: 390px;
+  border-radius: 999px;
+  background: conic-gradient(
+    from 0deg,
+    rgba(253, 224, 71, 0.0) 0deg,
+    rgba(253, 224, 71, 0.34) 20deg,
+    rgba(251, 191, 36, 0.0) 40deg,
+    rgba(253, 224, 71, 0.32) 65deg,
+    rgba(251, 191, 36, 0.0) 90deg,
+    rgba(253, 224, 71, 0.34) 115deg,
+    rgba(251, 191, 36, 0.0) 140deg,
+    rgba(253, 224, 71, 0.32) 165deg,
+    rgba(251, 191, 36, 0.0) 190deg,
+    rgba(253, 224, 71, 0.34) 215deg,
+    rgba(251, 191, 36, 0.0) 240deg,
+    rgba(253, 224, 71, 0.32) 265deg,
+    rgba(251, 191, 36, 0.0) 290deg,
+    rgba(253, 224, 71, 0.34) 320deg,
+    rgba(251, 191, 36, 0.0) 360deg
+  );
+  mask-image: radial-gradient(circle, rgba(0,0,0,1) 24%, rgba(0,0,0,0) 70%);
+  -webkit-mask-image: radial-gradient(circle, rgba(0,0,0,1) 24%, rgba(0,0,0,0) 70%);
+  animation: ttHaloSpin 12s linear infinite;
+}
+
+@keyframes ttHaloSpin {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.06); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+.turntable-info-dock {
+  padding: 12px 18px;
+  border-radius: 24px;
+  background: rgba(255, 253, 248, 0.96);
+  border: 2.5px solid #FDE68A;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28), 0 4px 0 #D97706;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.tt-quick-pill {
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(255, 255, 255, 0.28);
+  background: rgba(30, 23, 38, 0.72);
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 800;
+  font-size: 11.5px;
+  color: #F8FAFC;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+
+.tt-quick-pill:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.tt-quick-pill.active {
+  background: linear-gradient(180deg, #FFFBEB 0%, #FDE047 100%);
+  border-color: #F59E0B;
+  color: #2C221E;
+  box-shadow: 0 2px 8px rgba(250, 204, 21, 0.4);
+}
+
