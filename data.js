@@ -1977,10 +1977,11 @@ const FP_SHOP_DESTINATIONS = [
     staffName: '파티시에 피에르',
     wallColor: 0xFFF3E6,
     accentColor: 0xFF6B6B,
-    welcomeQuote: '헉! 우리 동네 갓물주님 행차하셨다!! 갓 구운 빵 대령할게요!!',
+    showcaseItems: ['item_cake', 'item_croissant', 'item_baguette', 'item_matcha_box', 'item_coffee'],
+    welcomeQuote: '헉! 우리 동네 갓물주님 행차하셨다!! 갓 구운 프랑스 빵 대령할게요!!',
     customerQuotes: [
       '우와 실물 영접!! 건물주님 아우라 대박~!',
-      '박수 짝짝짝!! 바게트 하우스 건물주님 최고예요!'
+      '박수 짝짝짝!! 바게트 하우스 버터 냄새 최고예요!'
     ],
     driveThruItem: 'item_croissant',
     driveThruQuote: '건물주님! 차 안에서 바로 드실 모닝커피와 버터 크루아상 대령했습니다!'
@@ -1997,10 +1998,11 @@ const FP_SHOP_DESTINATIONS = [
     staffName: '바리스타 루카스',
     wallColor: 0xF2FBF5,
     accentColor: 0x2D6A4F,
+    showcaseItems: ['item_coffee', 'item_cake', 'item_croissant', 'item_fruit_basket', 'item_matcha_box'],
     welcomeQuote: '헉! 우리 동네 갓물주님 행차하셨다!! 최상급 스페셜티 원두 내릴게요!!',
     customerQuotes: [
       '세상에 갓물주님이다!! 포스 장난 아니네요!!',
-      '우리 카페 오너님 오셨다~ 박수 짝짝짝!!'
+      '우리 카페 오너님 오셨다~ 아인슈페너 크림 예술이에요!!'
     ],
     driveThruItem: 'item_coffee',
     driveThruQuote: '건물주님! 차 안에서 바로 드실 모닝커피 대령했습니다!'
@@ -2017,9 +2019,10 @@ const FP_SHOP_DESTINATIONS = [
     staffName: '플로리스트 클레어',
     wallColor: 0xFDF2F8,
     accentColor: 0xBE185D,
-    welcomeQuote: '헉! 우리 동네 갓물주님 행차하셨다!! 오늘 가장 예쁜 장미를 준비했어요!!',
+    showcaseItems: ['item_bouquet', 'item_rose_vase', 'item_fruit_basket', 'item_cake', 'item_coffee'],
+    welcomeQuote: '헉! 우리 동네 갓물주님 행차하셨다!! 오늘 가장 싱그러운 생화를 준비했어요!!',
     customerQuotes: [
-      '와아~ 건물주님 센스 최고예요!!',
+      '와아~ 건물주님 플라워 센스 최고예요!!',
       '꽃집 향기보다 건물주님 후광이 더 눈부셔요!'
     ],
     driveThruItem: 'item_bouquet',
@@ -2027,40 +2030,42 @@ const FP_SHOP_DESTINATIONS = [
   },
   {
     id: 'shop_mart1f',
-    name: '1층 해피마트 24',
+    name: '1층 미니미 마트 24',
     badge: '빌딩 1층 편의점',
     icon: 'mart_ico',
     tone: 'gold',
     roadX: -11.4,
     roadZ: 6.2,
-    staffRole: 'student',
+    staffRole: 'mart_clerk',
     staffName: '알바생 민수',
     wallColor: 0xF0FDF4,
     accentColor: 0x16A34A,
-    welcomeQuote: '헉! 우리 빌딩 갓물주님 행차하셨다!! 충성충성 어서 오십시오!!',
+    showcaseItems: ['item_bento', 'item_kimbap', 'item_chips_pack', 'item_drink_six', 'item_matcha_box'],
+    welcomeQuote: '헉! 우리 빌딩 갓물주님 행차하셨다!! 갓 들어온 도시락·스낵 대령합니다!!',
     customerQuotes: [
       '우와 이 빌딩 주인님이시래!! 부럽다~!',
-      '편의점 진열대 쓸어가시는 클라스 대박!!'
+      '편의점 신상 과자랑 도시락 쓸어가시는 클라스 대박!!'
     ],
     driveThruItem: 'item_bento',
     driveThruQuote: '건물주님! 차 안에서 든든히 드실 프리미엄 도시락과 모닝커피 대령했습니다!'
   },
   {
     id: 'shop_wash1f',
-    name: '1층 뽀송 워시 라운지',
+    name: '1층 버블 코인세탁소',
     badge: '세탁 & 무인카페',
     icon: 'wash_ico',
     tone: 'sky',
     roadX: 3.0,
     roadZ: 6.2,
-    staffRole: 'newlywed',
+    staffRole: 'wash_clerk',
     staffName: '라운지 매니저 소망',
     wallColor: 0xF0F9FF,
     accentColor: 0x0284C7,
-    welcomeQuote: '헉! 우리 빌딩 갓물주님 행차하셨다!! 뽀송 라운지 커피 바로 내릴게요!!',
+    showcaseItems: ['item_aroma_kit', 'item_coffee', 'item_chips_pack', 'item_bouquet', 'item_bento'],
+    welcomeQuote: '헉! 우리 빌딩 갓물주님 행차하셨다!! 뽀송 아로마 키트와 라운지 커피 준비했어요!!',
     customerQuotes: [
       '빨래 기다리다 갓물주님 영접하네!! 대박~!',
-      '건물 관리가 너무 깨끗해서 살기 최고예요!'
+      '드럼세탁기랑 건조기가 너무 깨끗해서 살기 최고예요!'
     ],
     driveThruItem: 'item_coffee',
     driveThruQuote: '건물주님! 차 안에서 바로 드실 라운지 모닝커피 대령했습니다!'
@@ -2100,23 +2105,103 @@ const FP_GIFT_ITEMS = [
   },
   {
     id: 'item_bouquet',
-    name: '대형 장미 꽃다발',
-    shortName: '장미 꽃다발',
+    name: '프리미엄 로즈 부케',
+    shortName: '로즈 꽃다발',
     cost: 22,
     icon: 'item_bouquet_ico',
     slot: 'right',
     tone: 'coral',
-    buyMsg: '대형 장미 꽃다발 구매! 화사한 리본 장미 부케를 품에 안았습니다!'
+    buyMsg: '프리미엄 로즈 부케 구매! 풍성한 유러피안 장미 꽃다발을 품에 안았습니다!'
   },
   {
     id: 'item_bento',
-    name: '편의점 프리미엄 도시락',
-    shortName: '프리미엄 도시락',
+    name: '편의점 한상 도시락',
+    shortName: '한상 도시락',
     cost: 10,
     icon: 'item_bento_ico',
     slot: 'right',
     tone: 'sky',
-    buyMsg: '편의점 프리미엄 도시락 구매! 정갈한 보자기 도시락을 들었습니다!'
+    buyMsg: '편의점 한상 도시락 구매! 정갈한 프리미엄 도시락 세트를 들었습니다!'
+  },
+  {
+    id: 'item_baguette',
+    name: '프랑스 전통 바게트 바구니',
+    shortName: '화덕 바게트',
+    cost: 11,
+    icon: 'bakery_ico',
+    slot: 'right',
+    tone: 'gold',
+    buyMsg: '화덕 프랑스 바게트 세트 구매! 노릇노릇 바삭한 바게트 봉투를 들었습니다!'
+  },
+  {
+    id: 'item_matcha_box',
+    name: '제주 말차 사블레 기프트',
+    shortName: '말차 쿠키팩',
+    cost: 12,
+    icon: 'sparkle_star',
+    slot: 'left',
+    tone: 'mint',
+    buyMsg: '제주 말차 사블레 기프트 구매! 향긋한 말차 디저트 박스를 들었습니다!'
+  },
+  {
+    id: 'item_fruit_basket',
+    name: '프레시 사과·오렌지 바구니',
+    shortName: '과일 바구니',
+    cost: 16,
+    icon: 'berry_farm',
+    slot: 'right',
+    tone: 'coral',
+    buyMsg: '프레시 과일 바구니 구매! 싱싱한 사과·오렌지 선물 바구니를 들었습니다!'
+  },
+  {
+    id: 'item_kimbap',
+    name: '전주비빔 삼각김밥 & 라면 세트',
+    shortName: '삼각김밥 세트',
+    cost: 8,
+    icon: 'item_bento_ico',
+    slot: 'left',
+    tone: 'gold',
+    buyMsg: '삼각김밥 & 컵라면 세트 구매! 든든한 편의점 인기 간식을 챙겼습니다!'
+  },
+  {
+    id: 'item_chips_pack',
+    name: '허니버터 & 새우 스낵 파티팩',
+    shortName: '스낵 파티팩',
+    cost: 9,
+    icon: 'mart_ico',
+    slot: 'right',
+    tone: 'gold',
+    buyMsg: '허니버터 & 새우 스낵 파티팩 구매! 바삭한 실사 과자 봉투를 들었습니다!'
+  },
+  {
+    id: 'item_drink_six',
+    name: '아이스 콜라·골든라거 6캔팩',
+    shortName: '시원 음료6캔',
+    cost: 13,
+    icon: 'drive_thru_cup',
+    slot: 'left',
+    tone: 'sky',
+    buyMsg: '아이스 콜라·골든라거 6캔팩 구매! 시원한 칠링 캔 세트를 들었습니다!'
+  },
+  {
+    id: 'item_rose_vase',
+    name: '크리스탈 생화 화병 세트',
+    shortName: '크리스탈 화병',
+    cost: 24,
+    icon: 'flower_ico',
+    slot: 'right',
+    tone: 'sky',
+    buyMsg: '크리스탈 생화 화병 구매! 고급 유리 화병에 담긴 장미를 들었습니다!'
+  },
+  {
+    id: 'item_aroma_kit',
+    name: '코튼 퍼퓸 섬유유연제 기프트',
+    shortName: '코튼 아로마팩',
+    cost: 14,
+    icon: 'wash_ico',
+    slot: 'right',
+    tone: 'sky',
+    buyMsg: '코튼 퍼퓸 섬유유연제 기프트 구매! 뽀송한 호텔 런드리 기프트 세트를 들었습니다!'
   }
 ];
 
