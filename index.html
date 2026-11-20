@@ -49,16 +49,11 @@
     <!-- ==================== 1. WebGL 3D 파스텔 타운 뷰포트 ==================== -->
     <div id="webgl-container"></div>
 
-    <!-- 전체화면 단독 룸/상가/내방 뷰 전용 소프트 스튜디오 비네팅 & 황금 투시 망원경 조리개 렌즈 -->
+    <!-- 전체화면 단독 룸/상가/내방 뷰 전용 소프트 스튜디오 비네팅 -->
     <div id="room-isolation-vignette" class="hidden fixed inset-0 z-10 pointer-events-none"></div>
-    <div id="telescope-iris-vignette" class="hidden fixed inset-0 z-[12] pointer-events-none">
-      <div class="telescope-iris-ring"></div>
-      <div class="telescope-crosshair-h"></div>
-      <div class="telescope-crosshair-v"></div>
-      <div class="telescope-hud-tag">
-        <span id="ico-telescope-hud" class="inline-flex items-center justify-center w-4 h-4 mr-1"></span>
-        <span id="telescope-hud-caption">🔭 360° 투시 뷰 · 드래그 회전</span>
-      </div>
+    <div id="telescope-iris-vignette" class="hidden" aria-hidden="true">
+      <span id="ico-telescope-hud" class="hidden"></span>
+      <span id="telescope-hud-caption" class="hidden"></span>
     </div>
 
     <!-- ==================== 2. 3D 공간 밀착 투영(Project) 오버레이 레이어 ==================== -->
@@ -77,40 +72,59 @@
       <div id="jackpot-overlay-layer"></div>
     </div>
 
-    <!-- ==================== 2B. 시네마틱 오프닝 타이틀 (닌텐도 스위치 마시멜로 & 캔디 팝 디자인) ==================== -->
-    <section id="title-screen-overlay" class="fixed inset-0 z-[90] pointer-events-none select-none">
-      <div id="title-floating-card" class="title-floating-card wood-board-frame pointer-events-auto">
-        <div class="clay-cream-tray flex flex-col items-center w-full">
-          <span class="clay-corner-pill pill-pink mb-1">⭐ NINTENDO TOY TOWN EDITION ⭐</span>
-          <h1 class="nintendo-hero-logo-title" aria-label="갓물주 라이프 3D">갓물주 라이프 3D</h1>
+    <!-- ==================== 2B. 전용 3D 키아트 기반 『메인 타이틀 & 캔디 로딩 스플래시 화면』 ==================== -->
+    <section id="splash-loading-screen" class="fixed inset-0 z-[99999] pointer-events-auto select-none overflow-hidden" role="dialog" aria-label="갓물주 라이프 미니미 타운 타이틀 화면">
+      <img id="splash-keyart-bg" src="./assets/ui_splash/main_title_splash.png" alt="갓물주 라이프 미니미 타운" class="splash-bg-keyart" />
+      <div class="splash-pastel-scrim" aria-hidden="true"></div>
 
-          <div class="w-full mt-2.5 flex flex-col items-center">
-            <div id="title-loading-box" class="title-slim-loader-wrap">
-              <div class="title-slim-loader-track">
-                <div id="title-progress-fill" class="title-slim-loader-fill" style="width: 8%;"></div>
+      <!-- 반짝이는 별(⭐) & 황금 코인(🪙) 파티클 레이어 -->
+      <div class="splash-sparkle-field" aria-hidden="true">
+        <span class="splash-float-mote m1">⭐</span>
+        <span class="splash-float-mote m2">🪙</span>
+        <span class="splash-float-mote m3">✨</span>
+        <span class="splash-float-mote m4">🪙</span>
+        <span class="splash-float-mote m5">⭐</span>
+        <span class="splash-float-mote m6">✨</span>
+      </div>
+
+      <!-- 상단~중앙: 둥둥 떠다니는 3D 입체 엠보싱 한글 버블 로고 -->
+      <div class="splash-hero-logo-zone">
+        <span class="splash-sub-edition-pill">✨ 미니미 타운 ✨</span>
+        <h1 class="splash-hero-3d-logo" aria-label="갓물주 라이프">👑 갓물주 라이프</h1>
+      </div>
+
+      <!-- 하단: 딸기우유 & 민트 3D 캔디 로딩 프로그레스 바 + 총총 걷는 미니 캐릭터 ➔ 100% 완료 시 마시멜로 입장 버튼 -->
+      <div class="splash-bottom-dock">
+        <div id="title-loading-box" class="splash-candy-loader-card">
+          <div class="splash-candy-bar-row">
+            <div class="splash-candy-track">
+              <div id="title-progress-fill" class="splash-candy-fill" style="width: 8%;"></div>
+              <div id="splash-walker-wrap" class="splash-walker-wrap" style="left: 8%;">
+                <img id="splash-walker-char" src="./assets/characters/char_01_boba_otter.png" alt="" class="splash-walker-img" />
               </div>
             </div>
-
-            <div class="clay-btn-groove w-full">
-              <button id="btn-start-game" type="button" class="hidden title-coral-start-btn">
-                <span>타운 시작하기</span>
-                <span class="title-start-chevron" aria-hidden="true">▶</span>
-              </button>
-            </div>
+            <span id="splash-progress-pct" class="splash-pct-pill">8%</span>
           </div>
-
-          <nav class="title-sub-nav" aria-label="타이틀 서브 메뉴">
-            <button id="btn-title-pick-animal" type="button" class="title-sub-link">🐾 캐릭터</button>
-            <span class="title-sub-divider" aria-hidden="true"></span>
-            <button id="btn-continue-game" type="button" class="title-sub-link">이어하기</button>
-            <span class="title-sub-divider" aria-hidden="true"></span>
-            <button id="btn-title-settings" type="button" class="title-sub-link">⚙️ 설정</button>
-          </nav>
+          <p id="splash-tip-text" class="splash-tip-line">💡 팁: 최고층 👑 내 방에 명품 가구를 채우면 1:1 쇼룸 결투 가치가 즉시 올라가요!</p>
         </div>
+
+        <button id="btn-start-game" type="button" class="hidden splash-enter-town-btn">
+          <span>🎮 타운 입장하기!</span>
+        </button>
+      </div>
+
+      <!-- 입장 클릭 시 부드러운 파스텔 구름 커튼 전환 오버레이 -->
+      <div id="splash-cloud-curtain" class="splash-cloud-curtain pointer-events-none" aria-hidden="true"></div>
+
+      <!-- 내부 레거시 호환 숨김 슬롯 -->
+      <div id="title-screen-overlay" class="hidden">
+        <button id="btn-title-pick-animal" type="button"></button>
+        <button id="btn-continue-game" type="button"></button>
+        <button id="btn-title-settings" type="button"></button>
       </div>
     </section>
 
-    <!-- 코인 비행 & HUD 플로팅 텍스트 & 팝마트 스킬 VFX 연출 레이어 -->
+    <!-- 코인 비행 & HUD 플로팅 텍스트 & 스킬 VFX 연출 레이어 -->
     <div id="flying-coin-layer" class="fixed inset-0 z-40 pointer-events-none overflow-hidden"></div>
     <div id="skill-vfx-burst-layer" class="fixed inset-0 z-[43] pointer-events-none overflow-hidden"></div>
 
@@ -142,7 +156,7 @@
             <div id="hud-gold-pop-anchor" class="absolute right-2 top-0 pointer-events-none"></div>
           </div>
 
-          <button id="btn-hud-my-penthouse" type="button" title="최고층 내 방(회장님 펜트하우스) 꾸미기" class="pointer-events-auto hud-penthouse-pill">
+          <button id="btn-hud-my-penthouse" type="button" title="최고층 내 방 꾸미기" class="hidden">
             <span>👑 내 방</span>
             <span id="hud-penthouse-val-text" class="hud-penthouse-val">50만</span>
           </button>
@@ -160,22 +174,15 @@
           </div>
         </div>
 
-        <!-- ② 중앙: [🎯 할 일: 침대 구매 | 말랑 캔디 달성률 게이지 75% 👆] -->
+        <!-- ② 중앙: 초슬림 10자 이내 원클릭 할 일 가이드 (`[🎯 침대 구매 👆]`) -->
         <div id="hud-top-center-group" class="flex items-center justify-center min-w-0 flex-1 overflow-hidden">
           <div id="top-goal-navigator" class="pointer-events-auto max-w-full">
             <button id="btn-goal-nav-bar" type="button" class="goal-navigator-capsule" title="클릭 시 목표 위치로 즉시 이동">
-              <span id="goal-nav-thumb" class="goal-nav-thumb-box" aria-hidden="true">
-                <img id="goal-nav-thumb-img" src="./assets/furniture/bed_tier3_canopy.png" alt="" class="w-full h-full object-contain" />
-              </span>
-              <span class="goal-nav-prefix">🎯 할 일:</span>
+              <span class="goal-target-pin-ico" aria-hidden="true">🎯</span>
               <span id="goal-nav-text" class="goal-nav-label">침대 구매</span>
-              <span id="goal-nav-prog-wrap" class="goal-candy-prog-pill" aria-hidden="true">
-                <span class="goal-candy-mini-track">
-                  <span id="goal-nav-prog-fill" class="goal-candy-mini-fill" style="width: 100%;"></span>
-                </span>
-                <span id="goal-nav-prog-pct" class="goal-candy-pct-txt">100%</span>
-              </span>
               <span id="btn-goal-nav-go" class="goal-nav-finger" aria-hidden="true">👆</span>
+              <span id="goal-nav-thumb" class="hidden"><img id="goal-nav-thumb-img" src="./assets/furniture/bed_tier3_canopy.png" alt="" /></span>
+              <span id="goal-nav-prog-wrap" class="hidden"><span id="goal-nav-prog-fill"></span><span id="goal-nav-prog-pct"></span></span>
             </button>
           </div>
 
@@ -267,23 +274,19 @@
         </div>
       </div>
 
-      <!-- 좌측 상단 상태창 바로 아래: 『초소형 1줄 뉴스 티커 (height: 24px; font-size: 11px; padding: 2px 10px;)』 -->
-      <div id="hud-sub-ticker-row" class="px-3 flex items-center gap-1.5 flex-wrap pointer-events-none">
-        <button id="hud-mini-news-ticker" type="button" class="pointer-events-auto mini-news-ticker-pill" title="클릭하여 소식 상세 내역 보기">
-          <span id="mini-news-ticker-text" class="truncate">🔔 99위 스타트! 내 방에 명품 가구를 채워 서열 결투에 도전하세요</span>
-          <span class="mini-news-detail-tag">[🔍 상세]</span>
+      <!-- 상단 부가 알림 티커 완전 비노출 (단일 알림 큐 원칙) -->
+      <div id="hud-sub-ticker-row" class="hidden">
+        <button id="hud-mini-news-ticker" type="button" class="hidden">
+          <span id="mini-news-ticker-text"></span>
         </button>
-
-        <button id="hud-manager-alert-pill" type="button" class="hidden pointer-events-auto mini-news-ticker-pill urgent-alert">
+        <button id="hud-manager-alert-pill" type="button" class="hidden">
           <span id="hud-mgr-alert-ico" class="hidden"></span>
-          <span id="hud-mgr-alert-text">💢 소장 파업! 급여 인상 필요</span>
+          <span id="hud-mgr-alert-text"></span>
         </button>
-
-        <div id="hud-fever-pill" class="hidden pointer-events-none mini-news-ticker-pill fever-alert">
+        <div id="hud-fever-pill" class="hidden">
           <span id="hud-ico-fever" class="hidden"></span>
-          <span id="hud-fever-text">🔥 피버 2.5배!</span>
+          <span id="hud-fever-text"></span>
         </div>
-
         <div id="hq-dividend-pill" class="hidden">
           <span id="hq-dividend-text"></span>
         </div>
@@ -356,26 +359,19 @@
       </div>
     </div>
 
-    <!-- ==================== 4A. ⑤ 방 / 내 방(펜트하우스) / 상가 황금 투시 망원경 하단 1줄 컨트롤 바 ==================== -->
+    <!-- ==================== 4A. ⑤ 방 / 내 방 / 상가 즉시 3D 개방 하단 2버튼 바 (`[🛋️ 가구 구매/배치]`, `[✕ 닫기]`) ==================== -->
     <div id="focus-clean-capsule" class="hidden fixed bottom-[10px] left-1/2 -translate-x-1/2 z-[38] focus-manual-capsule pointer-events-auto">
       <span id="focus-capsule-label" class="focus-cap-room-tag">101호</span>
       <button id="btn-focus-open-drawer" type="button" class="focus-cap-action-btn primary">
         <span id="ico-focus-cap-sofa" class="hidden"></span>
-        <span>🛋️ <span id="focus-cap-open-text">가구 세팅</span></span>
-      </button>
-      <button id="btn-focus-open-recruit" type="button" class="hidden focus-cap-action-btn">
-        <span>🤝 세입자</span>
-      </button>
-      <button id="btn-focus-enter-fp" type="button" class="focus-cap-action-btn">
-        <span id="ico-focus-cap-door" class="hidden"></span>
-        <span>👁️ 실내 보기</span>
-      </button>
-      <button id="btn-focus-reset-cam" type="button" class="focus-cap-action-btn">
-        <span>🔄 초기화</span>
+        <span>🛋️ <span id="focus-cap-open-text">가구 구매/배치</span></span>
       </button>
       <button id="btn-focus-lower-telescope" type="button" class="focus-cap-action-btn danger-soft">
         <span>✕ 닫기</span>
       </button>
+      <button id="btn-focus-open-recruit" type="button" class="hidden"></button>
+      <button id="btn-focus-enter-fp" type="button" class="hidden"><span id="ico-focus-cap-door" class="hidden"></span></button>
+      <button id="btn-focus-reset-cam" type="button" class="hidden"></button>
       <span id="ico-focus-cap-tele" class="hidden"></span>
     </div>
 
@@ -581,7 +577,7 @@
       <button id="btn-smart-cta-dismiss" type="button" class="smart-cta-dismiss-btn" title="잠시 숨기기" aria-label="알림 숨기기">✕</button>
     </div>
 
-    <!-- ==================== 8A. ② 우측 하단 닌텐도 마시멜로 버블 메인 버튼 2종 (`돈 뿌리기`, `건물주 수첩`) ==================== -->
+    <!-- ==================== 8A. ② 우측 하단 마시멜로 버블 메인 버튼 2종 (`돈 뿌리기`, `건물주 수첩`) ==================== -->
     <div id="bottom-town-bar" class="hidden fixed bottom-[10px] right-[12px] z-[44] pointer-events-none flex items-end gap-[10px]">
       <div id="quick-duo-dock" class="flex items-end gap-[10px] pointer-events-auto">
         <button id="btn-make-it-rain" type="button" title="돈 뿌리기 (마을 행복도 &amp; 피버 상승)" aria-label="돈 뿌리기" class="giant-bottom-fab toy-img-main-fab tone-money">
@@ -615,24 +611,13 @@
           <div class="wood-title-cluster min-w-0">
             <span class="wood-star-rivet" aria-hidden="true">⭐</span>
             <span class="wood-embossed-title">📒 건물주 수첩</span>
-            <button id="btn-pocket-my-penthouse" type="button" class="wood-tag-pill tag-gold" title="최고층 내 방(회장님 펜트하우스) 꾸미기">
-              <span>👑 내 방:</span>
-              <span id="pocket-myroom-val-text">50만 원</span>
-            </button>
+            <button id="btn-pocket-my-penthouse" type="button" class="hidden"><span id="pocket-myroom-val-text"></span></button>
             <span id="pocket-header-mini-ico" class="hidden"></span>
           </div>
 
           <div class="flex items-center gap-1.5 shrink-0">
-            <button id="btn-pocket-manager-hr" type="button" class="wood-tag-pill tag-mint">
-              <span id="hud-ico-raccoon-mgr" class="hidden"></span>
-              <span>🪴 관리소장</span>
-              <span id="stamp-manager-badge" class="hidden"></span>
-            </button>
-            <button id="btn-open-ledger-modal" type="button" class="wood-clipboard-tag-btn">
-              <img data-ui-illust="clipboardTag" src="./assets/ui_illustrations/illust_clipboard_tag.png" alt="" class="clipboard-tag-illust" />
-              <span id="hud-ico-ledger" class="hidden"></span>
-              <span>상세 장부</span>
-            </button>
+            <button id="btn-pocket-manager-hr" type="button" class="hidden"><span id="hud-ico-raccoon-mgr"></span><span id="stamp-manager-badge"></span></button>
+            <button id="btn-open-ledger-modal" type="button" class="hidden"><span id="hud-ico-ledger"></span></button>
             <button id="btn-close-pocket-planner" type="button" class="btn-close-round" aria-label="수첩 닫기">
               <img data-ui-nintendo="btnPinkClose" src="./assets/ui_nintendo/btn_pink_close.png" alt="닫기" class="close-toy-img" />
             </button>
@@ -747,7 +732,7 @@
           <div class="wood-title-cluster min-w-0">
             <span class="wood-star-rivet" aria-hidden="true">⭐</span>
             <span id="modal-ico-notebook" class="hidden"></span>
-            <span class="wood-embossed-title whitespace-nowrap">📋 상세 장부 · 관리소장 인사</span>
+            <span class="wood-embossed-title whitespace-nowrap">🪴 관리소장 · 호실 현황</span>
             <span id="modal-quest-summary" class="clay-corner-pill pill-gold shrink-0">0/11</span>
             <span id="modal-alert-summary" class="hidden clay-corner-pill pill-pink shrink-0"></span>
           </div>
@@ -1178,60 +1163,43 @@
       </div>
     </div>
 
-    <!-- ==================== 26. ④ 『🛋️ 가구 백화점 & 👑 내 방 꾸미기』 대형 3D 우드 보드 & 파스텔 클레이 블록 쇼룸 ==================== -->
-    <div id="flagship-shop-drawer" class="hidden fixed inset-0 z-[64] pastel-modal-backdrop flex items-center justify-center p-2.5 pointer-events-auto" role="dialog" aria-label="가구 백화점 및 내 방 꾸미기">
+    <!-- ==================== 26. ④ 『🛋️ 가구 백화점』 실시간 3D 턴테이블 카탈로그 ==================== -->
+    <div id="flagship-shop-drawer" class="hidden fixed inset-0 z-[64] pastel-modal-backdrop flex items-center justify-center p-2.5 pointer-events-auto" role="dialog" aria-label="가구 백화점">
       <div class="flagship-boutique-board wood-board-frame">
-        <!-- 우드 헤더 -->
+        <!-- 우드 헤더 (중복 [3D 보기] / [360° 감상] 버튼 완전 퇴출!) -->
         <div class="wood-header-bar">
           <div class="wood-title-cluster min-w-0">
             <span class="wood-star-rivet" aria-hidden="true">⭐</span>
             <span id="flagship-drawer-ico" class="hidden"></span>
             <span id="flagship-board-title" class="wood-embossed-title truncate">🛋️ 가구 백화점</span>
-            <span id="flagship-penthouse-val-chip" class="clay-corner-pill pill-gold shrink-0">👑 내 방 가치: 50만 원</span>
+            <span id="flagship-penthouse-val-chip" class="clay-corner-pill pill-gold shrink-0">👑 50만 원</span>
             <span id="flagship-inv-summary" class="hidden"></span>
           </div>
           <div class="flex items-center gap-1.5 shrink-0">
-            <button id="btn-flagship-view-penthouse" type="button" class="wood-tag-pill tag-gold">🔭 내 방 3D 보기</button>
-            <button id="btn-flagship-open-turntable" type="button" class="wood-tag-pill tag-mint">🔄 360° 감상</button>
+            <button id="btn-flagship-view-penthouse" type="button" class="hidden"></button>
+            <button id="btn-flagship-open-turntable" type="button" class="hidden"></button>
             <button id="btn-close-flagship-drawer" type="button" class="btn-close-round" aria-label="닫기">
               <img data-ui-nintendo="btnPinkClose" src="./assets/ui_nintendo/btn_pink_close.png" alt="닫기" class="close-toy-img" />
             </button>
           </div>
         </div>
 
-        <!-- 3D 클레이 카테고리 탭 4종 -->
+        <!-- 단일 1줄 카테고리 탭 (`침대 | 소파·피아노 | 설비·수조 | 오브제`) -->
         <div id="flagship-cat-tabs" class="grid grid-cols-4 gap-2 mb-2 shrink-0">
           <button type="button" data-shopcat="bed" class="fcat-tab-btn clay-tab-pill active">🛏️ 침대</button>
           <button type="button" data-shopcat="sofa" class="fcat-tab-btn clay-tab-pill">🎹 소파·피아노</button>
           <button type="button" data-shopcat="appliance" class="fcat-tab-btn clay-tab-pill">🐠 설비·수조</button>
-          <button type="button" data-shopcat="decor" class="fcat-tab-btn clay-tab-pill">💎 오브제·벽지</button>
+          <button type="button" data-shopcat="decor" class="fcat-tab-btn clay-tab-pill">💎 오브제</button>
         </div>
 
-        <div id="flagship-tier-tabs" class="hidden">
-          <button type="button" data-shoptier="0" class="tier-filter-pill active">전체</button>
-          <button type="button" data-shoptier="1" class="tier-filter-pill">T1</button>
-          <button type="button" data-shoptier="2" class="tier-filter-pill">T2</button>
-          <button type="button" data-shoptier="3" class="tier-filter-pill">T3</button>
-          <button type="button" data-shoptier="4" class="tier-filter-pill">T4</button>
+        <div id="flagship-tier-tabs" class="hidden"></div>
+        <div id="flagship-onestop-bar" class="hidden">
+          <span id="flagship-onestop-msg"></span>
+          <button id="btn-flagship-auto-place-room" type="button"><span id="flagship-auto-place-label"></span></button>
+          <button id="btn-flagship-quick-myroom" type="button"></button>
         </div>
 
-        <!-- 구매 직후 원스톱 자동 배치 연결 배너 (인벤토리 재탐색 불필요!) -->
-        <div id="flagship-onestop-bar" class="hidden flagship-onestop-strip mb-2 shrink-0">
-          <div class="flex items-center gap-1.5 min-w-0">
-            <span class="text-[14px] shrink-0">✨</span>
-            <span id="flagship-onestop-msg" class="font-title text-[12.5px] text-[#042F2E] truncate">내 방에 영구 진열 완료!</span>
-          </div>
-          <div class="flex items-center gap-1.5 shrink-0">
-            <button id="btn-flagship-auto-place-room" type="button" class="clay-jelly-push push-green !min-h-[30px] !h-[30px] !px-3 !text-[12px]">
-              <span id="flagship-auto-place-label">🏠 호실에 바로 배치 ➔</span>
-            </button>
-            <button id="btn-flagship-quick-myroom" type="button" class="clay-jelly-push push-cyan !min-h-[30px] !h-[30px] !px-2.5 !text-[12px]">
-              <span>👑 내 방 보기</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- 크림 트레이 내부 파스텔 클레이 상품 블록 그리드 -->
+        <!-- 크림 트레이 내부 실시간 3D 회전 가구 카드 그리드 -->
         <div class="clay-cream-tray flex-1 min-h-0 overflow-y-auto custom-scroll">
           <div id="flagship-items-list" class="flagship-clay-grid"></div>
         </div>
@@ -1255,7 +1223,7 @@
           </div>
           <div class="flex items-center gap-1.5 shrink-0">
             <span id="duel-stake-badge" class="clay-corner-pill pill-gold">✨ 명성 +18pt</span>
-            <button id="btn-duel-goto-penthouse" type="button" class="wood-tag-pill tag-gold">👑 내 방 꾸미기</button>
+            <button id="btn-duel-goto-penthouse" type="button" class="hidden"></button>
           </div>
         </div>
 
@@ -1278,48 +1246,17 @@
         </div>
       </div>
 
-      <!-- 결투 출격 대면 보드 (좌측 옐로우 클레이 블록 `👑 내 방` vs 우측 퍼플 클레이 블록 `🦹‍♂️ 상대 방` + 하단 `[🔥 감정 배틀 시작!]`) -->
-      <div id="duel-pre-board" class="fixed bottom-[10px] left-1/2 -translate-x-1/2 z-[60] w-[min(94vw,680px)] pointer-events-auto wood-board-frame !py-2.5 !px-3.5">
-        <div class="clay-cream-tray !p-2.5 space-y-2.5">
-          <div class="grid grid-cols-2 gap-3 items-stretch">
-            <!-- 좌측: 🟡 옐로우 클레이 블록 (내 방 가치 + 3D 내 펜트하우스 디오라마) -->
-            <div class="clay-block-yellow !p-2.5 flex items-center gap-2.5">
-              <img data-ui-illust="penthouseMyroom" src="./assets/ui_illustrations/illust_penthouse_myroom.png" alt="내 방 펜트하우스" class="duel-versus-illust shrink-0" />
-              <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-1 flex-wrap">
-                  <span class="clay-block-title !text-[13px]">👑 내 방 총 투자 가치</span>
-                  <span id="duel-pre-my-synergy" class="hidden clay-corner-pill pill-mint">시너지 +20%</span>
-                </div>
-                <div id="duel-pre-my-val" class="font-num text-[17px] text-[#6B3706] mt-0.5">50만 원</div>
-                <div id="duel-pre-forecast" class="text-[11.5px] font-extrabold text-[#B45309] truncate">명품 가구 진열 시 즉시 상승!</div>
-              </div>
-            </div>
-
-            <!-- 우측: 🟣 퍼플 클레이 블록 (상대 부자 방 투자금 + 상대 아트토이 피규어) -->
-            <div class="clay-block-purple !p-2.5 flex items-center gap-2.5">
-              <img id="duel-pre-opp-img" src="./assets/characters/char_11_phantom_bat.png" alt="상대 부자" class="duel-versus-illust shrink-0" />
-              <div class="min-w-0 flex-1">
-                <div id="duel-pre-opp-title" class="clay-block-title !text-[13px] truncate">🦹‍♂️ 98위 상대 방</div>
-                <div id="duel-pre-opp-val" class="font-num text-[17px] text-[#3B0764] mt-0.5">55만 원</div>
-                <div id="duel-pre-opp-reward" class="text-[11.5px] font-extrabold text-[#581C87] truncate">승리 시 명성 보너스 &amp; 배당금!</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 하단 중앙 도톰한 코럴레드 3D 버튼 `[ 🔥 감정 배틀 시작! ]` -->
-          <div class="grid grid-cols-[1fr_auto] gap-2.5 items-center">
-            <div class="clay-btn-groove">
-              <button id="btn-duel-judge-now" type="button" class="clay-jelly-push push-coral w-full !text-[14.5px]">
-                <span>🔥 감정 배틀 시작! (5초 단판 승부)</span>
-              </button>
-            </div>
-            <div class="clay-btn-groove !w-auto">
-              <button id="btn-duel-pre-decorate" type="button" class="clay-jelly-push push-gold !px-3.5">
-                <span>👑 내 방 꾸미기</span>
-              </button>
-            </div>
-          </div>
-        </div>
+      <!-- 결투 출격 보드 비노출 (입장 즉시 3초 감정 카운트업 배틀 직행!) -->
+      <div id="duel-pre-board" class="hidden">
+        <span id="duel-pre-my-synergy"></span>
+        <span id="duel-pre-my-val"></span>
+        <span id="duel-pre-forecast"></span>
+        <img id="duel-pre-opp-img" src="./assets/characters/char_11_phantom_bat.png" alt="" />
+        <span id="duel-pre-opp-title"></span>
+        <span id="duel-pre-opp-val"></span>
+        <span id="duel-pre-opp-reward"></span>
+        <button id="btn-duel-judge-now" type="button"></button>
+        <button id="btn-duel-pre-decorate" type="button"></button>
       </div>
 
       <!-- 레거시 호환 숨김 슬롯 (결투 중 임시 가구 선택 완전 폐기!) -->
@@ -1392,9 +1329,9 @@
       <div class="w-full max-w-[740px] flex flex-col items-center gap-1.5 pointer-events-auto z-10 shrink-0">
         <div class="w-full flex items-center justify-between gap-2 turntable-top-pill wood-board-frame !py-1.5 !px-3.5 !rounded-full">
           <div class="flex items-center gap-2 min-w-0">
-            <span id="tt-header-badge" class="hidden">360° 쇼케이스</span>
+            <span id="tt-header-badge" class="hidden"></span>
             <span class="wood-star-rivet" aria-hidden="true">⭐</span>
-            <div id="tt-header-title" class="wood-embossed-title !text-[14.5px] whitespace-nowrap">🛋️ 360° 쇼케이스</div>
+            <div id="tt-header-title" class="wood-embossed-title !text-[14.5px] whitespace-nowrap">🐾 캐릭터 선택</div>
             <div id="tt-header-sub" class="hidden"></div>
           </div>
 
@@ -1465,7 +1402,7 @@
       </div>
     </section>
 
-    <!-- 닌텐도 손맛 이펙트 레이어 (버튼 탄성 파문 · 3D 별코인/지폐 자석 포물선 · 토이 터치 하트/음표/별 팝업) -->
+    <!-- 손맛 이펙트 레이어 (버튼 탄성 파문 · 3D 별코인/지폐 자석 포물선 · 토이 터치 하트/음표/별 팝업) -->
     <div id="nintendo-juice-fx-layer" class="fixed inset-0 z-[96] pointer-events-none overflow-hidden" aria-hidden="true"></div>
 
     <!-- 직접 조작 피드백용 초슬림 토스트 컨테이너 -->

@@ -3032,7 +3032,7 @@ const MANAGER_SALARY_TABLE = [
 ];
 
 function generateForbes100Rankers() {
-  // 정확히 99위 스타트 & 30종 팝마트 하이브리드 디자이너 아트토이가 100인 서열에 모두 배치됨!
+  // 정확히 99위 스타트 & 30종 미니미 타운 아트토이가 100인 서열에 모두 배치됨!
   const specialNamed = {
     1:   { name: '갤럭시 만수르 라이온 대제',     badge: '1위 · 우주 절대성군',       role: 'char_30_cosmic_lion',      tone: 'gold',  titleUnlock: '세계관 최강 갤럭시 만수르 대제', desc: '은하 성운 갈기와 태양 왕관을 쓴 전 세계 부자 서열 1위 최종 보스!' },
     2:   { name: '모나코 샹들리에 스완 여제',      badge: '2위 · 오페라 해운여제',     role: 'char_25_chandelier_swan',  tone: 'sky',   titleUnlock: '모나코 샹들리에 여제',           desc: '크리스탈 샹들리에 프리즘 날개를 펼친 유럽 오페라·마리나 재벌' },
@@ -3250,10 +3250,10 @@ const TITLE_LOADING_STAGES = [
 ];
 
 const TITLE_TIPS_POOL = [
-  'TIP: 세입자 방을 클릭해 취향에 맞는 가구를 배치하면 임대료 시너지가 폭발합니다!',
-  'TIP: 라이벌 강 회장의 스카우트 공세를 방어하면 해당 호실 임대료가 영구 +30% 인상됩니다!',
-  'TIP: 상가 경매에서 200% 황금 돈가방 폭격을 날리면 매장 기본 수익이 영구 +40% 상승합니다!',
-  'TIP: 총자산을 불려 포브스(FORBES) 대한민국 건물주 랭킹 1위 만수르 셰이크에 도전해 보세요!'
+  '💡 팁: 최고층 👑 내 방에 명품 가구를 채우면 1:1 쇼룸 결투 가치가 즉시 올라가요!',
+  '💡 팁: 1층 분재 거북 소장님의 급여를 올리면 호실당 월세 상한선이 껑충 뛰어요!',
+  '💡 팁: 우측 하단 💸 돈 뿌리기 한 번이면 마을 행복도와 수익 피버가 즉시 폭발해요!',
+  '💡 팁: 100인 부자 서열을 하나씩 정복해 미니미 타운 최고의 갓물주에 등극해 보세요!'
 ];
 
 function createTitleEmblemSVG() {
@@ -3576,7 +3576,7 @@ window.MANAGER_SALARY_TABLE = MANAGER_SALARY_TABLE;
 window.EPISODE_CHAPTERS = EPISODE_CHAPTERS;
 
 // =========================================================
-// 12. 팝마트 하이브리드 디자이너 아트토이 30종 로스터 (벨벳 플로킹 + 투명 유리/젤리/크리스탈 + 24K 순금)
+// 12. 미니미 타운 디자이너 아트토이 30종 로스터 (벨벳 플로킹 + 투명 유리/젤리/크리스탈 + 24K 순금)
 // =========================================================
 const NPC_SPECIAL_CHARACTERS = [];
 window.NPC_SPECIAL_CHARACTERS = NPC_SPECIAL_CHARACTERS;
@@ -4070,6 +4070,9 @@ const POPMART_ASSET_PATHS = {
     penthouseMyroom: './assets/ui_illustrations/illust_penthouse_myroom.png',
     clipboardTag: './assets/ui_illustrations/illust_clipboard_tag.png',
     redCloseBtn: './assets/ui_nintendo/btn_pink_close.png'
+  },
+  uiSplash: {
+    mainTitleSplash: './assets/ui_splash/main_title_splash.png'
   },
   uiNintendo: {
     pointerVividArrow: './assets/ui_nintendo/pointer_vivid_arrow.png',

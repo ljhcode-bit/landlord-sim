@@ -2854,7 +2854,7 @@ html body .hidden {
   filter: brightness(1.12);
 }
 
-/* ==================== 19. 팝마트 10종 동물 블라인드박스 선택창 & 스킬 VFX 컷인 연출 ==================== */
+/* ==================== 19. 미니미 타운 동물 캐릭터 선택창 & 스킬 VFX 컷인 연출 ==================== */
 .hud-hero-mini-chip {
   display: inline-flex;
   align-items: center;
@@ -4877,7 +4877,7 @@ html body .hidden {
 
 
 /* ==========================================================================
-   [닌텐도 스위치 전면 리스킨 (Full Nintendo Marshmallow & Candy Pop Reskin)]
+   [파스텔 마시멜로 & 캔디 팝 3D 토이 UI 전면 리스킨]
    - 삼국지풍 황동 금속(#D4AF37) · 어두운 갈색 나무(#754F2B) · 시커먼 배경 100% 영구 퇴출!
    - 소다 스카이 블루 실리콘 보드 + 마시멜로 밀크 화이트 속판 + 4색 캔디 클레이 쿠션 카드
    - 3D 월드 고채도·고대비 바운싱 화살표 핀(▼, 34x40px, 호버/근접 시에만 미니 캡슐 표시)
@@ -5026,7 +5026,7 @@ html body .hidden {
   font-weight: 900 !important;
 }
 
-/* 우측 상단 닌텐도 구름·무지개 날씨 & 라벤더 별-톱니 설정 3D 마시멜로 원형 버튼 */
+/* 우측 상단 구름·무지개 날씨 & 라벤더 별-톱니 설정 3D 마시멜로 원형 버튼 */
 .nintendo-top-bubble-btn {
   width: 42px !important;
   height: 42px !important;
@@ -5673,7 +5673,7 @@ html body .hidden {
   cursor: not-allowed !important;
 }
 
-/* -------------------- 5. 투시 망원경 뷰(`🔭`) & 3D 턴테이블 캡슐 바 닌텐도화 -------------------- */
+/* -------------------- 5. 호실 개방 뷰 & 3D 턴테이블 캡슐 바 파스텔화 -------------------- */
 #focus-clean-capsule:not(.hidden) {
   background: #FFFFFF !important;
   border: 3.5px solid #4DC4F0 !important;
@@ -6067,7 +6067,7 @@ html body .hidden {
 }
 
 /* ==========================================================================
-   [25. NINTENDO CHIEF UX AUDIT — GAME JUICE, COIN MAGNET, 1-TAP CTA, CANDY GAUGES & 44PX TOUCH ERGONOMICS]
+   [25. 미니미 타운 UX 손맛 고도화 — GAME JUICE, COIN MAGNET, 1-TAP CTA, CANDY GAUGES & 44PX TOUCH ERGONOMICS]
    ========================================================================== */
 
 /* 1-A) 모든 인터랙티브 마시멜로 버튼 & 파스텔 캔디 클레이 쿠션 스프링 탄성(`cubic-bezier(0.34, 1.56, 0.64, 1)`) */
@@ -6594,6 +6594,420 @@ button,
     min-height: 38px !important;
     padding: 3px 7px 3px 9px !important;
     max-width: calc(var(--vw-unit, 1vw) * 64) !important;
+  }
+}
+
+/* ==========================================================================
+   [26. 전용 3D 키아트 스플래시 타이틀 & 실시간 3D 가구 턴테이블 카드 & 2차 UX 다이어트]
+   ========================================================================== */
+
+#splash-loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: clamp(14px, 3.8vh, 34px) clamp(16px, 4vw, 40px) clamp(14px, 4.2vh, 36px);
+  background: linear-gradient(180deg, #AEE2FF 0%, #FFE5F1 100%);
+  transition: opacity 0.52s cubic-bezier(0.22, 1, 0.36, 1), transform 0.52s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.splash-bg-keyart {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 46%;
+  animation: splashKeyartGentleZoom 14s ease-in-out infinite alternate;
+  z-index: 0;
+}
+
+@keyframes splashKeyartGentleZoom {
+  0% {
+    transform: scale(1.01);
+  }
+  100% {
+    transform: scale(1.065);
+  }
+}
+
+.splash-pastel-scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 68% 36% at 50% 18%, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 100%),
+    linear-gradient(180deg, rgba(174, 226, 255, 0.28) 0%, rgba(255, 255, 255, 0.02) 45%, rgba(30, 41, 59, 0.22) 100%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.splash-sparkle-field {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.splash-float-mote {
+  position: absolute;
+  font-size: clamp(18px, 2.4vw, 28px);
+  filter: drop-shadow(0 2px 0 #FFFFFF) drop-shadow(0 4px 10px rgba(245, 158, 11, 0.45));
+  animation: splashSparkleTwinkle 3.2s ease-in-out infinite;
+}
+
+.splash-float-mote.m1 { left: 14%; top: 15%; animation-delay: 0s; }
+.splash-float-mote.m2 { right: 15%; top: 17%; animation-delay: 0.6s; }
+.splash-float-mote.m3 { left: 24%; top: 32%; animation-delay: 1.1s; }
+.splash-float-mote.m4 { right: 23%; top: 30%; animation-delay: 1.6s; }
+.splash-float-mote.m5 { left: 10%; bottom: 26%; animation-delay: 0.9s; }
+.splash-float-mote.m6 { right: 11%; bottom: 28%; animation-delay: 1.9s; }
+
+@keyframes splashSparkleTwinkle {
+  0%, 100% {
+    transform: translateY(0px) scale(0.92) rotate(-8deg);
+    opacity: 0.78;
+  }
+  50% {
+    transform: translateY(-10px) scale(1.18) rotate(10deg);
+    opacity: 1;
+  }
+}
+
+.splash-hero-logo-zone {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: clamp(2px, 1.5vh, 14px);
+  animation: splashLogoBob 2.8s ease-in-out infinite;
+}
+
+@keyframes splashLogoBob {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+.splash-sub-edition-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 14px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFF0F7 100%);
+  border: 3px solid #FF7EB6;
+  box-shadow: 0 4px 0 #E11D84, 0 6px 14px rgba(225, 29, 132, 0.28);
+  font-family: 'TmoneyRoundWind', 'Jua', sans-serif;
+  font-size: clamp(11.5px, 1.5vw, 15px);
+  font-weight: 900;
+  color: #BE185D;
+  letter-spacing: 0.04em;
+}
+
+.splash-hero-3d-logo {
+  margin: 0;
+  padding: 4px 18px 6px;
+  font-family: 'TmoneyRoundWind', 'CookieRun', 'Jua', sans-serif;
+  font-size: clamp(30px, 5.2vw, 56px);
+  font-weight: 900;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: #FFFDF7;
+  -webkit-text-stroke: 3px #E11D84;
+  paint-order: stroke fill;
+  text-shadow:
+    0 4px 0 #BE185D,
+    0 8px 0 #4DC4F0,
+    0 13px 24px rgba(15, 23, 42, 0.34);
+  white-space: nowrap;
+}
+
+.splash-bottom-dock {
+  position: relative;
+  z-index: 4;
+  width: min(92vw, 490px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.splash-candy-loader-card {
+  width: 100%;
+  padding: 12px 16px 10px;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 3.5px solid #FF80BF;
+  box-shadow:
+    0 6px 0 #E11D84,
+    0 14px 28px rgba(15, 23, 42, 0.28),
+    inset 0 2px 0 #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.splash-candy-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding-top: 10px;
+}
+
+.splash-candy-track {
+  position: relative;
+  flex: 1;
+  height: 22px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #FFE4EF 0%, #FFF5FA 100%);
+  border: 3px solid #FFFFFF;
+  box-shadow:
+    0 0 0 2.5px #FF9EC7,
+    inset 0 2px 5px rgba(190, 24, 93, 0.16);
+  overflow: visible;
+}
+
+.splash-candy-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: repeating-linear-gradient(
+    -45deg,
+    #FF85B8 0px,
+    #FF85B8 12px,
+    #6EE7B7 12px,
+    #6EE7B7 24px
+  );
+  background-size: 34px 34px;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.65);
+  animation: splashCandyStripeMove 0.9s linear infinite;
+  transition: width 0.12s linear;
+}
+
+@keyframes splashCandyStripeMove {
+  0% { background-position: 0 0; }
+  100% { background-position: 34px 0; }
+}
+
+.splash-walker-wrap {
+  position: absolute;
+  top: -22px;
+  transform: translateX(-50%);
+  width: 38px;
+  height: 38px;
+  pointer-events: none;
+  transition: left 0.12s linear;
+  z-index: 3;
+}
+
+.splash-walker-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 0 #FFFFFF) drop-shadow(0 4px 6px rgba(15, 23, 42, 0.25));
+  animation: splashWalkerWaddle 0.36s ease-in-out infinite alternate;
+}
+
+@keyframes splashWalkerWaddle {
+  0% {
+    transform: translateY(0px) rotate(-9deg) scale(1.02, 0.96);
+  }
+  100% {
+    transform: translateY(-5px) rotate(9deg) scale(0.97, 1.05);
+  }
+}
+
+.splash-pct-pill {
+  min-width: 48px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #FFF799 0%, #FFD633 100%);
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 2px 0 #D97706;
+  font-family: 'Fredoka', 'TmoneyRoundWind', sans-serif;
+  font-size: 12.5px;
+  font-weight: 900;
+  color: #422006;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.splash-tip-line {
+  margin: 0;
+  font-family: 'TmoneyRoundWind', 'Pretendard', sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  color: #334155;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.splash-enter-town-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: min(84vw, 310px);
+  min-height: 56px;
+  padding: 10px 32px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #FF8CC6 0%, #FF477E 55%, #F43F5E 100%);
+  border: 4px solid #FFFFFF;
+  box-shadow:
+    0 7px 0 #BE123C,
+    0 14px 28px rgba(225, 29, 72, 0.42),
+    inset 0 3px 0 rgba(255, 255, 255, 0.65);
+  font-family: 'TmoneyRoundWind', 'Jua', sans-serif;
+  font-size: clamp(18px, 2.5vw, 23px);
+  font-weight: 900;
+  color: #FFFFFF;
+  text-shadow: 0 2px 0 #9F1239;
+  cursor: pointer;
+  animation: splashEnterPopSpring 0.52s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, splashEnterPulse 1.8s 0.55s ease-in-out infinite;
+}
+
+@keyframes splashEnterPopSpring {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.68);
+  }
+  65% {
+    opacity: 1;
+    transform: translateY(-5px) scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes splashEnterPulse {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-3px) scale(1.035);
+  }
+}
+
+.splash-cloud-curtain {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  opacity: 0;
+  background: radial-gradient(circle at 50% 50%, #FFFFFF 0%, #E0F2FE 65%, #FCE7F3 100%);
+  transition: opacity 0.36s ease;
+}
+
+#splash-loading-screen.splash-curtain-exit .splash-cloud-curtain {
+  opacity: 1;
+}
+
+#splash-loading-screen.splash-curtain-exit {
+  opacity: 0;
+  transform: scale(1.06);
+  pointer-events: none !important;
+}
+
+/* 가구 백화점 & 호실 인스펙터 내부 『실시간 3D 턴테이블 가구 캔버스』 (네모 2D 썸네일 박스 0%!) */
+.live-3d-card-stage {
+  position: relative;
+  width: 100%;
+  height: 98px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.live-3d-card-stage:active {
+  cursor: grabbing;
+}
+
+.live-3d-item-canvas {
+  width: 176px;
+  height: 98px;
+  display: block;
+  pointer-events: auto;
+  filter: drop-shadow(0 5px 8px rgba(15, 23, 42, 0.14));
+}
+
+.live-3d-card-stage.compact-rf {
+  width: 84px;
+  height: 62px;
+  flex-shrink: 0;
+}
+
+.live-3d-card-stage.compact-rf .live-3d-item-canvas {
+  width: 84px;
+  height: 62px;
+}
+
+/* 상단 중앙 10자 이내 초슬림 할 일 가이드 캡슐 */
+.goal-navigator-capsule {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  padding: 4px 12px !important;
+  min-height: 36px !important;
+}
+
+.goal-target-pin-ico {
+  font-size: 14px;
+  line-height: 1;
+}
+
+@media (max-height: 440px), (orientation: portrait) and (max-width: 480px) {
+  #splash-loading-screen {
+    padding: 8px 14px 10px !important;
+  }
+  .splash-hero-3d-logo {
+    font-size: 28px !important;
+    padding: 2px 12px 4px !important;
+  }
+  .splash-sub-edition-pill {
+    font-size: 10.5px !important;
+    padding: 2px 10px !important;
+  }
+  .splash-candy-loader-card {
+    padding: 8px 12px 7px !important;
+    gap: 4px !important;
+  }
+  .splash-candy-track {
+    height: 18px !important;
+  }
+  .splash-walker-wrap {
+    width: 30px !important;
+    height: 30px !important;
+    top: -18px !important;
+  }
+  .splash-tip-line {
+    font-size: 11px !important;
+  }
+  .splash-enter-town-btn {
+    min-height: 44px !important;
+    padding: 6px 24px !important;
+    font-size: 16.5px !important;
+  }
+  .live-3d-card-stage {
+    height: 76px !important;
+  }
+  .live-3d-item-canvas {
+    width: 144px !important;
+    height: 76px !important;
   }
 }
 
