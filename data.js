@@ -1137,7 +1137,7 @@ function createFurnitureArtworkSVG(itemId, size = 56) {
 function createNotebookArtworkSVG(kind, size = 48) {
   const uid = `nb_${kind}_${++svgUidSeq}`;
 
-  if (kind === 'stamp_well_done' || kind === 'stamp_complete') {
+  if (kind === 'stamp_well_done'|| kind ==='stamp_complete') {
     return `
       <svg width="${size}" height="${size}" viewBox="0 0 68 68" fill="none" xmlns="http://www.w3.org/2000/svg" class="inline-block shrink-0 select-none">
         <g transform="rotate(-8 34 34)">
@@ -1684,7 +1684,7 @@ const MY_PENTHOUSE_TEMPLATE = {
   id: 'lot_main_penthouse',
   lotId: 'lot_main',
   subId: 'PH',
-  name: '👑 내 방',
+  name: '내 방',
   layoutType: 'penthouse',
   floor: 4,
   lx: 0.0,
@@ -1796,17 +1796,17 @@ const ROOM_SLOTS_TEMPLATE = [
 ];
 
 const FURNITURE_CATEGORIES = [
-  { key: 'bed', label: '🛏️ 침대·침실', svgIcon: 'bed_ico' },
-  { key: 'sofa', label: '🛋️ 소파·거실', svgIcon: 'sofa_ico' },
-  { key: 'appliance', label: '📺 가전·설비', svgIcon: 'tv_ico' },
-  { key: 'decor', label: '💎 로열 오브제', svgIcon: 'palette_ico' }
+  { key: 'bed', label: '침대·침실', svgIcon: 'bed_ico' },
+  { key: 'sofa', label: '소파·거실', svgIcon: 'sofa_ico' },
+  { key: 'appliance', label: '가전·설비', svgIcon: 'tv_ico' },
+  { key: 'decor', label: '로열 오브제', svgIcon: 'palette_ico' }
 ];
 
 const FURNITURE_TIER_META = {
-  1: { tier: 1, badge: '🌱 Tier 1 · 베이직', short: 'T1 베이직', color: '#15803D', bg: '#DCFCE7' },
-  2: { tier: 2, badge: '🏠 Tier 2 · 모던 부티크', short: 'T2 부티크', color: '#0369A1', bg: '#E0F2FE' },
-  3: { tier: 3, badge: '💎 Tier 3 · 로열 펜트하우스', short: 'T3 로열', color: '#7E22CE', bg: '#F3E8FF' },
-  4: { tier: 4, badge: '👑 Tier 4 · 만수르 리미티드', short: 'T4 리미티드', color: '#B45309', bg: '#FEF3C7' }
+  1: { tier: 1, badge: 'Tier 1 · 베이직', short: 'T1 베이직', color: '#15803D', bg: '#DCFCE7' },
+  2: { tier: 2, badge: 'Tier 2 · 모던 부티크', short: 'T2 부티크', color: '#0369A1', bg: '#E0F2FE' },
+  3: { tier: 3, badge: 'Tier 3 · 로열 펜트하우스', short: 'T3 로열', color: '#7E22CE', bg: '#F3E8FF' },
+  4: { tier: 4, badge: 'Tier 4 · 만수르 리미티드', short: 'T4 리미티드', color: '#B45309', bg: '#FEF3C7' }
 };
 
 const FURNITURE_CATALOG = {
@@ -2992,20 +2992,20 @@ const CHARACTER_STYLE_PRESETS = [
 // =========================================================
 // 11. [하드코어 장기 성장 시스템]
 //  - 100인 글로벌 동물 재벌 서열 (Rank 1 만수르 사자 왕 ~ Rank 100 동네 고시원 총무 · 기하급수 로그 곡선 Base * 1.12^(100 - Rank))
-//  - 명성도(Fame) 영구 월세·상가 프리미엄 배율 (+5% ➔ +25% ➔ +50% ➔ +150% ➔ +500% MAX) & 시크릿 명품 해금
+//  - 명성도(Fame) 영구 월세·상가 프리미엄 배율 (+5% → +25% → +50% → +150% → +500% MAX) & 시크릿 명품 해금
 //  - 라쿤 관리소장 급여 레벨(Lv.1~Lv.20) 기반 호실 최대 월세 상한선(Rent Cap) & 사기(Morale) 태업 스토리
 //  - 장기 플레이용 에피소드 스토리 퀘스트 (Ch.1 ~ Ch.4)
 // =========================================================
 
 const FAME_PRESTIGE_TIERS = [
-  { minFame: 0,     bonusPct: 5,   crestIdx: 0, badge: '브론즈 초보 임대업자',     title: '🌱 99위 벼락치기 초보 임대업자', unlockNote: '기본 명성 프리미엄 +5%' },
-  { minFame: 60,    bonusPct: 15,  crestIdx: 0, badge: '원룸촌 실속 건물주',       title: '🏠 골목상권 실속 임대인',       unlockNote: '전 호실·1층상가 수익 +15%' },
-  { minFame: 180,   bonusPct: 25,  crestIdx: 0, badge: '80위 신흥 부티크 오너',     title: '✨ 부티크 스트리트 루키',        unlockNote: '+25% · 시크릿 황실소파 & VIP 세입자 해금' },
-  { minFame: 480,   bonusPct: 50,  crestIdx: 1, badge: '실버 상권 프랜차이즈장',    title: '🏢 상권 부활 프랜차이즈 오너',    unlockNote: '+50% · 상위 IT 대표 VIP 해금' },
-  { minFame: 1250,  bonusPct: 100, crestIdx: 1, badge: '50위 중견 부티크 재벌',     title: '💎 중견 부티크 부동산 재벌',     unlockNote: '+100% · T4 순금피아노·아쿠아리움 & 하버 VIP 해금' },
-  { minFame: 3000,  bonusPct: 150, crestIdx: 2, badge: '30위 전국구 랜드마크 거물', title: '👑 로열 하버 랜드마크 총수',     unlockNote: '+150% · T4 플로팅베드·명화홀 & 월스트리트 VIP 해금' },
-  { minFame: 8200,  bonusPct: 300, crestIdx: 2, badge: '10위 다이아몬드 타워 제왕', title: '💠 다이아몬드 스카이라인 제왕',  unlockNote: '+300% · 최상위 다이아몬드 리그 입성' },
-  { minFame: 22000, bonusPct: 500, crestIdx: 3, badge: '1위 갤럭시 만수르 절대성군', title: '🌌 세계관 최강 갤럭시 라이온 대제', unlockNote: '+500% MAX · 전 세계 부자 서열 1위 정복!' }
+  { minFame: 0,     bonusPct: 5,   crestIdx: 0, badge: '브론즈 초보 임대업자',     title: '99위 벼락치기 초보 임대업자', unlockNote: '기본 명성 프리미엄 +5%' },
+  { minFame: 60,    bonusPct: 15,  crestIdx: 0, badge: '원룸촌 실속 건물주',       title: '골목상권 실속 임대인',       unlockNote: '전 호실·1층상가 수익 +15%' },
+  { minFame: 180,   bonusPct: 25,  crestIdx: 0, badge: '80위 신흥 부티크 오너',     title: '부티크 스트리트 루키',        unlockNote: '+25% · 시크릿 황실소파 & VIP 세입자 해금' },
+  { minFame: 480,   bonusPct: 50,  crestIdx: 1, badge: '실버 상권 프랜차이즈장',    title: '상권 부활 프랜차이즈 오너',    unlockNote: '+50% · 상위 IT 대표 VIP 해금' },
+  { minFame: 1250,  bonusPct: 100, crestIdx: 1, badge: '50위 중견 부티크 재벌',     title: '중견 부티크 부동산 재벌',     unlockNote: '+100% · T4 순금피아노·아쿠아리움 & 하버 VIP 해금' },
+  { minFame: 3000,  bonusPct: 150, crestIdx: 2, badge: '30위 전국구 랜드마크 거물', title: '로열 하버 랜드마크 총수',     unlockNote: '+150% · T4 플로팅베드·명화홀 & 월스트리트 VIP 해금' },
+  { minFame: 8200,  bonusPct: 300, crestIdx: 2, badge: '10위 다이아몬드 타워 제왕', title: '다이아몬드 스카이라인 제왕',  unlockNote: '+300% · 최상위 다이아몬드 리그 입성' },
+  { minFame: 22000, bonusPct: 500, crestIdx: 3, badge: '1위 갤럭시 만수르 절대성군', title: '세계관 최강 갤럭시 라이온 대제', unlockNote: '+500% MAX · 전 세계 부자 서열 1위 정복!' }
 ];
 
 const MANAGER_SALARY_TABLE = [
@@ -3168,7 +3168,7 @@ const EPISODE_CHAPTERS = [
     iconIdx: 0,
     title: '바닥부터 시작하는 원룸촌 임대업',
     subtitle: '낡은 101호 수리 · 황금 분재 거북소장 급여 인상 · 90위 트러플 황 사장 첫 결투!',
-    storyQuote: '🐢 황금 분재 거북소장: "회장님! 지금은 100명 중 99위 초보지만, 제 월급 한도(Rent Cap)를 올리고 가구를 채우면 90위 트러플 황 사장 코를 납작하게 해줄 수 있어요!"',
+    storyQuote: '황금 분재 거북소장: "회장님! 지금은 100명 중 99위 초보지만, 제 월급 한도(Rent Cap)를 올리고 가구를 채우면 90위 트러플 황 사장 코를 납작하게 해줄 수 있어요!"',
     questIds: ['ep1_q1', 'ep1_q2', 'ep1_q3']
   },
   {
@@ -3179,7 +3179,7 @@ const EPISODE_CHAPTERS = [
     iconIdx: 1,
     title: '상권 부활과 상가 프랜차이즈 전쟁',
     subtitle: '1층 마트·베이커리 골든벨 홍보 · Lv.5 정식 분재소장 승급 · 팬텀 강 회장 방어전!',
-    storyQuote: '🦇 팬텀 젤리배트 강 회장: "호오~ 원룸촌 흙수저가 감히 상가 상권에 발을 들여? 내 스카우트 공세와 쇼룸 결투를 버텨낼 수 있을까!"',
+    storyQuote: '팬텀 젤리배트 강 회장: "호오~ 원룸촌 흙수저가 감히 상가 상권에 발을 들여? 내 스카우트 공세와 쇼룸 결투를 버텨낼 수 있을까!"',
     questIds: ['ep2_q1', 'ep2_q2', 'ep2_q3']
   },
   {
@@ -3190,7 +3190,7 @@ const EPISODE_CHAPTERS = [
     iconIdx: 2,
     title: '로열 하버 게이트 개방과 중견 재벌 등극',
     subtitle: '해안 신도시 노을빛 대문 개방 · Lv.10 호텔 컨시어지 · 50위권 명성 리그 진입!',
-    storyQuote: '⏱️ 태엽 올빼미 부소장: "우측 끝 거대한 노을빛 대문이 열렸습니다! 트와일라잇 하버 호텔과 요트 마리나를 개발해 50위~40위 중견 재벌 리그로 도약합시다!"',
+    storyQuote: '태엽 올빼미 부소장: "우측 끝 거대한 노을빛 대문이 열렸습니다! 트와일라잇 하버 호텔과 요트 마리나를 개발해 50위~40위 중견 재벌 리그로 도약합시다!"',
     questIds: ['ep3_q1', 'ep3_q2', 'ep3_q3']
   },
   {
@@ -3201,7 +3201,7 @@ const EPISODE_CHAPTERS = [
     iconIdx: 3,
     title: '다이아몬드 리그 제패와 갤럭시 만수르 대관식',
     subtitle: '30위 시크릿 명품 해금 · 10위 팬텀 강 회장 본진 격파 · 글로벌 서열 1위 등극!',
-    storyQuote: '🌌 갤럭시 만수르 라이온: "99위 바닥에서 출발해 내 은하 왕좌 앞까지 올라오다니... 진정한 글로벌 제1의 성군 건물주가 누구인지 마지막 쇼룸에서 가려보자!"',
+    storyQuote: '갤럭시 만수르 라이온: "99위 바닥에서 출발해 내 은하 왕좌 앞까지 올라오다니... 진정한 글로벌 제1의 성군 건물주가 누구인지 마지막 쇼룸에서 가려보자!"',
     questIds: ['ep4_q1', 'ep4_q2']
   }
 ];
@@ -3250,10 +3250,10 @@ const TITLE_LOADING_STAGES = [
 ];
 
 const TITLE_TIPS_POOL = [
-  '💡 팁: 최고층 👑 내 방에 명품 가구를 채우면 1:1 쇼룸 결투 가치가 즉시 올라가요!',
-  '💡 팁: 1층 분재 거북 소장님의 급여를 올리면 호실당 월세 상한선이 껑충 뛰어요!',
-  '💡 팁: 우측 하단 💸 돈 뿌리기 한 번이면 마을 행복도와 수익 피버가 즉시 폭발해요!',
-  '💡 팁: 100인 부자 서열을 하나씩 정복해 미니미 타운 최고의 갓물주에 등극해 보세요!'
+  '팁: 최고층 내 방에 명품 가구를 채우면 1:1 쇼룸 결투 가치가 즉시 올라가요!',
+  '팁: 1층 분재 거북 소장님의 급여를 올리면 호실당 월세 상한선이 껑충 뛰어요!',
+  '팁: 우측 하단 돈 뿌리기 한 번이면 마을 행복도와 수익 피버가 즉시 폭발해요!',
+  '팁: 100인 부자 서열을 하나씩 정복해 미니미 타운 최고의 갓물주에 등극해 보세요!'
 ];
 
 function createTitleEmblemSVG() {
@@ -3399,18 +3399,18 @@ const CHRONICLE_DAY_TIERS = [
   {
     day: 1,
     hoursRequired: 0,
-    emoji: '🌱',
+    emoji: '',
     title: '코지 타운 명예 동장',
-    badgeLabel: 'DAY 1 · 🌱 코지 타운 명예 동장',
+    badgeLabel: 'DAY 1 · 코지 타운 명예 동장',
     desc: '제1마을 본점 인형의 집 빌딩과 1층 상가 상권을 탄탄히 육성하는 기간입니다.',
     rewardText: '본점 경영 기본 자격 부여'
   },
   {
     day: 2,
     hoursRequired: 24,
-    emoji: '🏢',
+    emoji: '',
     title: '스트리트 상권 지배자',
-    badgeLabel: 'DAY 2 · 🏢 스트리트 상권 지배자',
+    badgeLabel: 'DAY 2 · 스트리트 상권 지배자',
     desc: '최초 시작 후 24시간 경과! 부티크 거리 상권을 장악한 중견 건물주로 승급합니다.',
     rewardText: '승급 출석 보너스 +50만 코인 즉시 지급',
     bonusGold: 50
@@ -3418,9 +3418,9 @@ const CHRONICLE_DAY_TIERS = [
   {
     day: 3,
     hoursRequired: 48,
-    emoji: '👑',
+    emoji: '',
     title: '로열 하버 개발 총독',
-    badgeLabel: 'DAY 3 · 👑 로열 하버 개발 총독',
+    badgeLabel: 'DAY 3 · 로열 하버 개발 총독',
     desc: '최초 시작 후 48시간 경과! 빨간 해안 아치교가 개통되며 제2마을 [트와일라잇 하버 리조트 타운] 투자권이 영구 해금됩니다!',
     rewardText: '황금 총독 인증서 수여 & 제2마을 해안 다리 영구 개통'
   }
@@ -3462,7 +3462,7 @@ const HARBOR_SHOP_UPGRADE_CATALOG = [
 const MONEYGUN_FLEX_TIERS = [
   {
     id: 'mg_10',
-    emoji: '💵',
+    emoji: '',
     title: '소소한 용돈 살포',
     costLabel: '10만 원',
     fixedCost: 10,
@@ -3475,7 +3475,7 @@ const MONEYGUN_FLEX_TIERS = [
   },
   {
     id: 'mg_50',
-    emoji: '💴',
+    emoji: '',
     title: '강남 클럽 플렉스',
     costLabel: '50만 원',
     fixedCost: 50,
@@ -3488,7 +3488,7 @@ const MONEYGUN_FLEX_TIERS = [
   },
   {
     id: 'mg_200',
-    emoji: '💰',
+    emoji: '',
     title: '건물주 자본 폭격',
     costLabel: '200만 원',
     fixedCost: 200,
@@ -3502,7 +3502,7 @@ const MONEYGUN_FLEX_TIERS = [
   },
   {
     id: 'mg_allin20',
-    emoji: '👑',
+    emoji: '',
     title: '만수르 올인 샤워',
     costLabel: '자산 20% 플렉스!',
     pctOfGold: 0.2,
@@ -3587,7 +3587,7 @@ const ANIMAL_CHARACTER_ROSTER = [
     id: 'char_01_boba_otter',
     num: 1,
     wave: 1,
-    emoji: '🧋',
+    emoji: '',
     name: '버블티 벨벳 해달',
     title: '카페·상가 수익 +20%',
     buffKey: 'shop_rev_20',
@@ -3600,7 +3600,7 @@ const ANIMAL_CHARACTER_ROSTER = [
     id: 'char_02_jelly_axolotl',
     num: 2,
     wave: 1,
-    emoji: '🔮',
+    emoji: '',
     name: '네온 젤리 우파루파',
     title: '월세 수금 보너스 +20%',
     buffKey: 'collect_20',
@@ -3613,7 +3613,7 @@ const ANIMAL_CHARACTER_ROSTER = [
     id: 'char_03_yuzu_capybara',
     num: 3,
     wave: 1,
-    emoji: '🍊',
+    emoji: '',
     name: '온천 유자 카피바라',
     title: '세입자 행복도 +25%',
     buffKey: 'happy_25',
@@ -3626,7 +3626,7 @@ const ANIMAL_CHARACTER_ROSTER = [
     id: 'char_04_berry_dragon',
     num: 4,
     wave: 1,
-    emoji: '🍓',
+    emoji: '',
     name: '딸기모찌 아기 드래곤',
     title: '쇼룸 결투 매력도 +20%',
     buffKey: 'duel_score_20',
@@ -3639,7 +3639,7 @@ const ANIMAL_CHARACTER_ROSTER = [
     id: 'char_05_astro_neko',
     num: 5,
     wave: 1,
-    emoji: '🚀',
+    emoji: '',
     name: '스타더스트 우주냥이',
     title: '해안도시 수익 +25% · 정산 +15%',
     buffKey: 'harbor_rent_25',
@@ -3652,7 +3652,7 @@ const ANIMAL_CHARACTER_ROSTER = [
     id: 'char_06_dj_redpanda',
     num: 6,
     wave: 1,
-    emoji: '🎧',
+    emoji: '',
     name: '바이닐 레서판다 DJ',
     title: '머니건 피버 시간 +30%',
     buffKey: 'fever_dur_30',
@@ -3665,7 +3665,7 @@ const ANIMAL_CHARACTER_ROSTER = [
     id: 'char_07_rain_platypus',
     num: 7,
     wave: 1,
-    emoji: '💎',
+    emoji: '',
     name: '크리스탈 우비 오리너구리',
     title: '가구 페이백 +20% · 속도 +15%',
     buffKey: 'furn_payback_20',
@@ -3678,7 +3678,7 @@ const ANIMAL_CHARACTER_ROSTER = [
     id: 'char_08_cloud_alpaca',
     num: 8,
     wave: 1,
-    emoji: '☁️',
+    emoji: '',
     name: '솜사탕 구름 알파카',
     title: 'VIP·펜트하우스 월세 +25%',
     buffKey: 'vip_rent_25',
@@ -3691,7 +3691,7 @@ const ANIMAL_CHARACTER_ROSTER = [
     id: 'char_09_cyber_penguin',
     num: 9,
     wave: 1,
-    emoji: '🐧',
+    emoji: '',
     name: '사이버 포슬린 황제펭귄',
     title: '건물·호실 수익 +20%',
     buffKey: 'rent_speed_20',
@@ -3704,7 +3704,7 @@ const ANIMAL_CHARACTER_ROSTER = [
     id: 'char_10_crystal_fennec',
     num: 10,
     wave: 1,
-    emoji: '🌸',
+    emoji: '',
     name: '자수정 크리스탈 사막여우',
     title: '결투 명성도(Fame) 획득 +25%',
     buffKey: 'fame_gain_25',
@@ -3719,7 +3719,7 @@ const ANIMAL_CHARACTER_ROSTER = [
     id: 'char_11_phantom_bat',
     num: 11,
     wave: 2,
-    emoji: '🦇',
+    emoji: '',
     name: '팬텀 젤리배트 회장',
     title: '결투 상금·위자료 +30%',
     buffKey: 'duel_prize_30',
@@ -3733,7 +3733,7 @@ const ANIMAL_CHARACTER_ROSTER = [
     id: 'char_12_avocado_dino',
     num: 12,
     wave: 2,
-    emoji: '🥑',
+    emoji: '',
     name: '골든 아보카도 디노',
     title: '1층 마트·상가 수익 +22%',
     buffKey: 'shop_rev_20',
@@ -3746,7 +3746,7 @@ const ANIMAL_CHARACTER_ROSTER = [
     id: 'char_13_jellyfish_ghost',
     num: 13,
     wave: 2,
-    emoji: '🪼',
+    emoji: '',
     name: '오로라 해파리 정령',
     title: '해안 아쿠아·상가 수익 +22%',
     buffKey: 'harbor_rent_25',
@@ -3759,7 +3759,7 @@ const ANIMAL_CHARACTER_ROSTER = [
     id: 'char_14_macaron_poodle',
     num: 14,
     wave: 2,
-    emoji: '🧁',
+    emoji: '',
     name: '마카롱 베레모 푸들',
     title: '베이커리·카페 수익 +25%',
     buffKey: 'shop_rev_20',
@@ -3772,7 +3772,7 @@ const ANIMAL_CHARACTER_ROSTER = [
     id: 'char_15_cactus_hedgie',
     num: 15,
     wave: 2,
-    emoji: '🌵',
+    emoji: '',
     name: '다육이 꽃 고슴도치',
     title: '전 세대 행복도 +25%',
     buffKey: 'happy_25',
@@ -3785,7 +3785,7 @@ const ANIMAL_CHARACTER_ROSTER = [
     id: 'char_16_clockwork_owl',
     num: 16,
     wave: 2,
-    emoji: '⏱️',
+    emoji: '',
     name: '스팀펑크 태엽 올빼미',
     title: '월세 정산 속도 +22%',
     buffKey: 'rent_speed_20',
@@ -3798,7 +3798,7 @@ const ANIMAL_CHARACTER_ROSTER = [
     id: 'char_17_frost_lemur',
     num: 17,
     wave: 2,
-    emoji: '❄️',
+    emoji: '',
     name: '눈꽃 크리스탈 여우원숭이',
     title: '드라이브·결투 점수 +20%',
     buffKey: 'duel_score_20',
@@ -3811,7 +3811,7 @@ const ANIMAL_CHARACTER_ROSTER = [
     id: 'char_18_pitaya_chameleon',
     num: 18,
     wave: 2,
-    emoji: '🐉',
+    emoji: '',
     name: '용과 팝아트 카멜레온',
     title: '쇼룸 예술 매력도 +22%',
     buffKey: 'duel_score_20',
@@ -3824,7 +3824,7 @@ const ANIMAL_CHARACTER_ROSTER = [
     id: 'char_19_stainedglass_fawn',
     num: 19,
     wave: 2,
-    emoji: '🦋',
+    emoji: '',
     name: '스테인드글라스 나비 사슴',
     title: '플라워샵·행복도 +25%',
     buffKey: 'happy_25',
@@ -3837,7 +3837,7 @@ const ANIMAL_CHARACTER_ROSTER = [
     id: 'char_20_bullion_gecko',
     num: 20,
     wave: 2,
-    emoji: '🪙',
+    emoji: '',
     name: '골드바 꼬리 도마뱀',
     title: '일괄 수금 보너스 +25%',
     buffKey: 'collect_20',
@@ -3852,7 +3852,7 @@ const ANIMAL_CHARACTER_ROSTER = [
     id: 'char_21_pearl_seal',
     num: 21,
     wave: 3,
-    emoji: '🦪',
+    emoji: '',
     name: '진주조개 머메이드 물범',
     title: '해안 요트·하버 수익 +25%',
     buffKey: 'harbor_rent_25',
@@ -3865,7 +3865,7 @@ const ANIMAL_CHARACTER_ROSTER = [
     id: 'char_22_lavalamp_bear',
     num: 22,
     wave: 3,
-    emoji: '🧪',
+    emoji: '',
     name: '라바램프 글로우 베어',
     title: '머니건 피버 시간 +30%',
     buffKey: 'fever_dur_30',
@@ -3878,7 +3878,7 @@ const ANIMAL_CHARACTER_ROSTER = [
     id: 'char_23_moonjar_spirit',
     num: 23,
     wave: 3,
-    emoji: '🏺',
+    emoji: '',
     name: '달항아리 금박 토끼령',
     title: '명성도(Fame) 획득 +25%',
     buffKey: 'fame_gain_25',
@@ -3891,7 +3891,7 @@ const ANIMAL_CHARACTER_ROSTER = [
     id: 'char_24_dream_tapir',
     num: 24,
     wave: 3,
-    emoji: '🌙',
+    emoji: '',
     name: '드림캐처 벨벳 바쿠',
     title: 'VIP 스위트 월세 +25%',
     buffKey: 'vip_rent_25',
@@ -3904,7 +3904,7 @@ const ANIMAL_CHARACTER_ROSTER = [
     id: 'char_25_chandelier_swan',
     num: 25,
     wave: 3,
-    emoji: '🦢',
+    emoji: '',
     name: '크리스탈 샹들리에 스완',
     title: '쇼룸 럭셔리 점수 +25%',
     buffKey: 'duel_score_20',
@@ -3917,7 +3917,7 @@ const ANIMAL_CHARACTER_ROSTER = [
     id: 'char_26_arcade_monkey',
     num: 26,
     wave: 3,
-    emoji: '🕹️',
+    emoji: '',
     name: '레트로 아케이드 몽키',
     title: '가구 할인 +20% · 속도 +15%',
     buffKey: 'furn_payback_20',
@@ -3930,7 +3930,7 @@ const ANIMAL_CHARACTER_ROSTER = [
     id: 'char_27_truffle_boar',
     num: 27,
     wave: 3,
-    emoji: '🍄',
+    emoji: '',
     name: '황금 트러플 아기멧돼지',
     title: '파인다이닝·상가 수익 +25%',
     buffKey: 'shop_rev_20',
@@ -3943,7 +3943,7 @@ const ANIMAL_CHARACTER_ROSTER = [
     id: 'char_28_prism_pony',
     num: 28,
     wave: 3,
-    emoji: '🦄',
+    emoji: '',
     name: '홀로그램 프리즘 포니',
     title: '결투 상금·명성 +25%',
     buffKey: 'fame_gain_25',
@@ -3956,7 +3956,7 @@ const ANIMAL_CHARACTER_ROSTER = [
     id: 'char_29_bonsai_tortoise',
     num: 29,
     wave: 3,
-    emoji: '🐢',
+    emoji: '',
     name: '황금 분재 거북소장',
     title: '월세 상한선·시설 케어 +20%',
     buffKey: 'collect_20',
@@ -3969,7 +3969,7 @@ const ANIMAL_CHARACTER_ROSTER = [
     id: 'char_30_cosmic_lion',
     num: 30,
     wave: 3,
-    emoji: '🌌',
+    emoji: '',
     name: '갤럭시 만수르 라이온',
     title: '전 수익 +25% · 서열 1위 제왕',
     buffKey: 'cosmic_emperor_25',
@@ -4074,6 +4074,23 @@ const POPMART_ASSET_PATHS = {
   uiSplash: {
     mainTitleSplash: './assets/ui_splash/main_title_splash.png'
   },
+  uiIcons3D: {
+    crown: './assets/ui_icons_3d/icon_3d_crown.png',
+    star: './assets/ui_icons_3d/icon_3d_star_sparkle.png',
+    sparkle: './assets/ui_icons_3d/icon_3d_star_sparkle.png',
+    gamepad: './assets/ui_icons_3d/icon_3d_gamepad.png',
+    coin_bag: './assets/ui_icons_3d/icon_3d_coin_bag.png',
+    coin: './assets/ui_icons_3d/icon_3d_coin_bag.png',
+    trophy: './assets/ui_icons_3d/icon_3d_trophy.png',
+    target: './assets/ui_icons_3d/icon_3d_target.png',
+    hammer: './assets/ui_icons_3d/icon_3d_hammer.png',
+    swords: './assets/ui_icons_3d/icon_3d_swords.png',
+    sofa: './assets/ui_icons_3d/icon_3d_sofa.png',
+    lock: './assets/ui_icons_3d/icon_3d_lock.png',
+    bell: './assets/ui_icons_3d/icon_3d_bell.png',
+    sportscar: './assets/ui_icons_3d/icon_3d_sportscar.png',
+    car: './assets/ui_icons_3d/icon_3d_sportscar.png'
+  },
   uiNintendo: {
     pointerVividArrow: './assets/ui_nintendo/pointer_vivid_arrow.png',
     btnBubbleMoneygun: './assets/ui_nintendo/btn_bubble_moneygun.png',
@@ -4089,3 +4106,51 @@ const POPMART_ASSET_PATHS = {
 
 window.ANIMAL_CHARACTER_ROSTER = ANIMAL_CHARACTER_ROSTER;
 window.POPMART_ASSET_PATHS = POPMART_ASSET_PATHS;
+
+const UI_3D_ICONS_FALLBACK_MAP = {
+  crown: './assets/ui_icons_3d/icon_3d_crown.png',
+  star: './assets/ui_icons_3d/icon_3d_star_sparkle.png',
+  sparkle: './assets/ui_icons_3d/icon_3d_star_sparkle.png',
+  gamepad: './assets/ui_icons_3d/icon_3d_gamepad.png',
+  coin_bag: './assets/ui_icons_3d/icon_3d_coin_bag.png',
+  coin: './assets/ui_icons_3d/icon_3d_coin_bag.png',
+  money: './assets/ui_icons_3d/icon_3d_coin_bag.png',
+  trophy: './assets/ui_icons_3d/icon_3d_trophy.png',
+  target: './assets/ui_icons_3d/icon_3d_target.png',
+  hammer: './assets/ui_icons_3d/icon_3d_hammer.png',
+  build: './assets/ui_icons_3d/icon_3d_hammer.png',
+  swords: './assets/ui_icons_3d/icon_3d_swords.png',
+  duel: './assets/ui_icons_3d/icon_3d_swords.png',
+  sofa: './assets/ui_icons_3d/icon_3d_sofa.png',
+  bed: './assets/ui_icons_3d/icon_3d_sofa.png',
+  lock: './assets/ui_icons_3d/icon_3d_lock.png',
+  bell: './assets/ui_icons_3d/icon_3d_bell.png',
+  sportscar: './assets/ui_icons_3d/icon_3d_sportscar.png',
+  car: './assets/ui_icons_3d/icon_3d_sportscar.png',
+  close: './assets/ui_nintendo/btn_pink_close.png',
+  notebook: './assets/ui_nintendo/btn_bubble_notebook.png',
+  moneygun: './assets/ui_nintendo/btn_bubble_moneygun.png',
+  weather: './assets/ui_nintendo/btn_bubble_weather.png',
+  settings: './assets/ui_nintendo/btn_bubble_settings.png',
+  manager: './assets/characters/char_29_bonsai_tortoise.png',
+  hero: './assets/characters/char_01_boba_otter.png'
+};
+
+function icon3D(key = 'star', size = 20, extraCls = '') {
+  const normKey = String(key || 'star').trim();
+  const cutoutMap = window.POPMART_ASSETS?.uiIcons3D || {};
+  const nintendoMap = window.POPMART_ASSETS?.uiNintendo || {};
+  let src = cutoutMap[normKey] || UI_3D_ICONS_FALLBACK_MAP[normKey] || UI_3D_ICONS_FALLBACK_MAP.star;
+  if (normKey === 'close' && nintendoMap.btnPinkClose) src = nintendoMap.btnPinkClose;
+  else if (normKey === 'notebook' && nintendoMap.btnBubbleNotebook) src = nintendoMap.btnBubbleNotebook;
+  else if (normKey === 'moneygun' && nintendoMap.btnBubbleMoneygun) src = nintendoMap.btnBubbleMoneygun;
+  else if (normKey === 'weather' && nintendoMap.btnBubbleWeather) src = nintendoMap.btnBubbleWeather;
+  else if (normKey === 'settings' && nintendoMap.btnBubbleSettings) src = nintendoMap.btnBubbleSettings;
+
+  const px = Math.max(12, Number(size) || 20);
+  const cls = extraCls ? `ui-3d-icon ${extraCls}` : 'ui-3d-icon';
+  return `<img data-icon3d="${normKey}" src="${src}" alt="" width="${px}" height="${px}" style="width:${px}px;height:${px}px;" class="${cls}" />`;
+}
+
+window.UI_3D_ICONS_FALLBACK_MAP = UI_3D_ICONS_FALLBACK_MAP;
+window.icon3D = icon3D;
