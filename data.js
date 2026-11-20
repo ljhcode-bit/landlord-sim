@@ -3142,7 +3142,7 @@ const EPISODE_CHAPTERS = [
     iconIdx: 0,
     title: '바닥부터 시작하는 원룸촌 임대업',
     subtitle: '낡은 101호 수리 · 황금 분재 거북소장 급여 인상 · 90위 트러플 황 사장 첫 결투!',
-    storyQuote: '🪴 황금 분재 거북소장: "회장님! 지금은 100명 중 99위 초보지만, 제 월급 한도(Rent Cap)를 올리고 가구를 채우면 90위 트러플 황 사장 코를 납작하게 해줄 수 있어요!"',
+    storyQuote: '🐢 황금 분재 거북소장: "회장님! 지금은 100명 중 99위 초보지만, 제 월급 한도(Rent Cap)를 올리고 가구를 채우면 90위 트러플 황 사장 코를 납작하게 해줄 수 있어요!"',
     questIds: ['ep1_q1', 'ep1_q2', 'ep1_q3']
   },
   {
@@ -3930,7 +3930,7 @@ const ANIMAL_CHARACTER_ROSTER = [
     id: 'char_29_bonsai_tortoise',
     num: 29,
     wave: 3,
-    emoji: '🪴',
+    emoji: '🐢',
     name: '황금 분재 거북소장',
     title: '월세 상한선·시설 케어 +20%',
     buffKey: 'collect_20',

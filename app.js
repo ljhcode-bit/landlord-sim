@@ -32,10 +32,119 @@ function getActiveHeroBuffKey() {
 
 function formatWonBig(manAmount) {
   const man = Math.max(0, Math.round(Number(manAmount) || 0));
-  if (man >= 100000) {
-    return `${(man / 10000).toFixed(1).replace(/\.0$/, '')}억원`;
+  if (man === 0) return '0원';
+  if (man >= 10000) {
+    const eok = Math.floor(man / 10000);
+    const rem = man % 10000;
+    return rem > 0
+      ? `${eok.toLocaleString('ko-KR')}억 ${rem.toLocaleString('ko-KR')}만 원`
+      : `${eok.toLocaleString('ko-KR')}억 원`;
   }
-  return `${(man * 10000).toLocaleString('ko-KR')}원`;
+  return `${man.toLocaleString('ko-KR')}만 원`;
+}
+
+// --------------------- [공통 1] 강제 가로모드 고정 & 회전 좌표 정밀 변환 헬퍼 ---------------------
+function getLogicalViewport() {
+  const rawW = Math.max(1, window.innerWidth || 800);
+  const rawH = Math.max(1, window.innerHeight || 360);
+  const isPortrait = rawW < rawH;
+  return {
+    width: isPortrait ? rawH : rawW,
+    height: isPortrait ? rawW : rawH,
+    rawW,
+    rawH,
+    isPortrait
+  };
+}
+
+function mapClientToLogical(clientX, clientY) {
+  const vp = getLogicalViewport();
+  if (!vp.isPortrait) {
+    return { x: clientX, y: clientY, width: vp.width, height: vp.height };
+  }
+  return {
+    x: clientY,
+    y: vp.rawW - clientX,
+    width: vp.width,
+    height: vp.height
+  };
+}
+
+function getLogicalElementCenter(el) {
+  if (!el) return { x: 80, y: 24, valid: false };
+  const r = el.getBoundingClientRect();
+  if (!r || (r.width === 0 && r.height === 0)) return { x: 80, y: 24, valid: false };
+  const lp = mapClientToLogical(r.left + r.width * 0.5, r.top + r.height * 0.5);
+  return { x: lp.x, y: lp.y, valid: true };
+}
+
+function tryLockLandscapeOrientation() {
+  try {
+    if (window.screen?.orientation && typeof window.screen.orientation.lock === 'function') {
+      window.screen.orientation.lock('landscape').catch(() => {});
+    }
+  } catch (err) {
+    void err;
+  }
+}
+
+function syncAutoLandscapeViewportLock() {
+  const vp = getLogicalViewport();
+  document.body?.classList.toggle('force-landscape-rot', vp.isPortrait);
+  const rootStyle = document.documentElement?.style;
+  if (rootStyle) {
+    rootStyle.setProperty('--vw-unit', vp.isPortrait ? '1vh' : '1vw');
+    rootStyle.setProperty('--vh-unit', vp.isPortrait ? '1vw' : '1vh');
+    rootStyle.setProperty('--logical-w', `${vp.width}px`);
+    rootStyle.setProperty('--logical-h', `${vp.height}px`);
+  }
+  return vp;
+}
+
+// --------------------- [공통 3] 초소형 1줄 뉴스 티커 & 클릭 시 상세 모달 ---------------------
+const miniNewsLogState = {
+  latestShort: '🔔 99위 스타트! 침대 구매 시 서열 상승',
+  latestDetail: '1층 가구 백화점에서 첫 침대를 구매하면 방 럭셔리 등급과 부자 서열이 즉시 상승합니다.',
+  history: []
+};
+
+function pushMiniNewsTicker(shortLine, detailLine = '') {
+  const cleanShort = String(shortLine || '').trim();
+  if (!cleanShort) return;
+  const fullDetail = String(detailLine || cleanShort).trim();
+  miniNewsLogState.latestShort = cleanShort.startsWith('🔔') ? cleanShort : `🔔 ${cleanShort}`;
+  miniNewsLogState.latestDetail = fullDetail;
+  miniNewsLogState.history.unshift({
+    short: miniNewsLogState.latestShort,
+    detail: fullDetail
+  });
+  if (miniNewsLogState.history.length > 8) {
+    miniNewsLogState.history.length = 8;
+  }
+  const tickerTxt = document.getElementById('mini-news-ticker-text');
+  if (tickerTxt) {
+    tickerTxt.textContent = miniNewsLogState.latestShort;
+  }
+}
+
+function openNewsDetailModal() {
+  closeAllModalsImmediate('news-detail-modal');
+  const latestBox = document.getElementById('news-detail-latest-box');
+  const listBox = document.getElementById('news-detail-history-list');
+  if (latestBox) {
+    latestBox.textContent = miniNewsLogState.latestDetail || miniNewsLogState.latestShort;
+  }
+  if (listBox) {
+    const rows = miniNewsLogState.history.length > 0
+      ? miniNewsLogState.history
+      : [{ short: miniNewsLogState.latestShort, detail: miniNewsLogState.latestDetail }];
+    listBox.innerHTML = rows.map((item, idx) => `
+      <div class="diary-subcard !py-1.5 !px-2.5 flex items-center justify-between gap-2">
+        <span class="font-bold text-[#2B1A10] truncate">${idx + 1}. ${item.detail}</span>
+      </div>
+    `).join('');
+  }
+  document.getElementById('news-detail-modal')?.classList.remove('hidden');
 }
 
 function hasAnyPaidFurnitureOrSecondRoom() {
@@ -9719,7 +9828,7 @@ function raiseManagerSalaryLevel(lotId = 'lot_main') {
   updateTopHUDTargets();
   if (focusedRoomId && focusRevealState.revealed) renderFocusedRoomInspector();
   if (!dom.notebookModal?.classList.contains('hidden')) renderNotebookUnifiedBody();
-  showToast(`🪴 [${nextDef.roleTitle}] 승급 완료! 호실 최대 월세 상한선 ${nextDef.rentCap.toLocaleString()}만 해금!`, 'mint');
+  showToast(`🐢 [${nextDef.roleTitle}] 승급! 월세 한도 ${nextDef.rentCap.toLocaleString()}만 해금!`, 'mint');
   saveGameState();
   return true;
 }
@@ -9858,20 +9967,29 @@ function updateTopHUDTargets() {
 }
 
 function showToast(msg, tone = 'mint') {
+  const fullMsg = String(msg || '').trim();
+  if (!fullMsg) return;
+
+  // 부가/장문 소식은 좌측 상단 초소형 1줄 뉴스 티커에도 자동 기록!
+  const compactMsg = fullMsg.length > 26 ? `${fullMsg.slice(0, 25)}…` : fullMsg;
+  if (fullMsg.length > 22 || tone === 'gold') {
+    pushMiniNewsTicker(compactMsg, fullMsg);
+  }
+
   if (!dom.toastContainer) return;
-  while (dom.toastContainer.children.length >= 2) {
+  while (dom.toastContainer.children.length >= 1) {
     dom.toastContainer.firstElementChild.remove();
   }
   const el = document.createElement('div');
   const icoKey = tone === 'coral' ? 'sparkle_heart_gauge' : tone === 'gold' ? 'coin_stack' : 'cash_arrow_up';
   el.className = 'pastel-toast font-title transition-all duration-300 max-w-full';
-  el.innerHTML = `${createCustomSVGIcon(icoKey, 22)}<span>${msg}</span>`;
+  el.innerHTML = `${createCustomSVGIcon(icoKey, 15)}<span>${compactMsg}</span>`;
   dom.toastContainer.appendChild(el);
   setTimeout(() => {
     el.style.opacity = '0';
-    el.style.transform = 'translateY(-8px) scale(0.95)';
-    setTimeout(() => el.remove(), 260);
-  }, 2350);
+    el.style.transform = 'translateY(-6px) scale(0.95)';
+    setTimeout(() => el.remove(), 220);
+  }, 1900);
 }
 
 // 3D 파티클 · 파동 링 · 잭팟 텍스트 · 말풍선 · 월세 버블 (동시 파티클 캡 110개로 WebGL 60fps 보장!)
@@ -10135,26 +10253,26 @@ function showSpeechBubble3D(key, wx, wy, wz, text, duration = 2.4, forceShow = f
     wx,
     wy,
     wz,
-    timer: Math.min(3.4, Math.max(2.0, duration)),
+    timer: Math.min(3.0, Math.max(1.8, duration)),
     forceShow: true,
-    forceTier3: !!(fpState.active || key.startsWith('fp_') || key.startsWith('dt_') || isRivalLine),
+    forceTier3: !!(fpState.active || key.startsWith('fp_') || key.startsWith('dt_')),
     moteEl: null
   };
 }
 
 function spawnFlyingCoinsUI(startX, startY, count = 4) {
   if (!dom.flyingCoinLayer || !dom.hudBadgeGold) return;
-  const rect = dom.hudBadgeGold.getBoundingClientRect();
-  const dstX = rect.left + rect.width * 0.35;
-  const dstY = rect.top + rect.height * 0.5;
+  const dst = getLogicalElementCenter(dom.hudBadgeGold);
+  const dstX = dst.x;
+  const dstY = dst.y;
 
   for (let i = 0; i < count; i++) {
     const coin = document.createElement('div');
     coin.className = 'flying-coin-dot';
-    coin.innerHTML = createCustomSVGIcon('coin_stack', 20);
+    coin.innerHTML = createCustomSVGIcon('coin_stack', 18);
     coin.style.position = 'fixed';
-    coin.style.left = `${startX + (Math.random() - 0.5) * 24}px`;
-    coin.style.top = `${startY + (Math.random() - 0.5) * 18}px`;
+    coin.style.left = `${startX + (Math.random() - 0.5) * 20}px`;
+    coin.style.top = `${startY + (Math.random() - 0.5) * 14}px`;
     coin.style.transition = `all ${0.46 + i * 0.06}s cubic-bezier(0.2, 0.85, 0.35, 1)`;
     dom.flyingCoinLayer.appendChild(coin);
 
@@ -10265,13 +10383,14 @@ function collectAllRentBubbles() {
         }
       }
     }
-    addGold(advanceMan, window.innerWidth * 0.5, window.innerHeight * 0.45);
+    const vp = getLogicalViewport();
+    addGold(advanceMan, vp.width * 0.5, vp.height * 0.45);
     if (typeof spawnPopMartSkillBurstVFX === 'function') {
       spawnPopMartSkillBurstVFX('rent_collect', { count: 2 });
     }
     closePocketPlanner();
     if (typeof syncPocketBigCardsUI === 'function') syncPocketBigCardsUI();
-    showToast(`💰 월세 +${formatWonBig(advanceMan)} 일괄 수금 완료!`, 'gold');
+    showToast(`💰 월세 +${formatWonBig(advanceMan)} 수금!`, 'gold');
     saveGameState();
     return;
   }
@@ -10291,14 +10410,14 @@ function collectAllRentBubbles() {
   }
   closePocketPlanner();
   if (typeof syncPocketBigCardsUI === 'function') syncPocketBigCardsUI();
-  showToast(`💰 총 +${formatWonBig(sumBase)} 일괄 수금 완료!`, 'gold');
+  showToast(`💰 총 +${formatWonBig(sumBase)} 수금!`, 'gold');
   saveGameState();
 }
 
 function updateCollectAllButtonVisibility() {
   const countBadge = document.getElementById('stamp-collect-badge');
   if (countBadge) {
-    countBadge.textContent = `${rentBubbles.length}건 대기`;
+    countBadge.textContent = `${rentBubbles.length}건`;
     countBadge.classList.toggle('hidden', rentBubbles.length === 0);
   }
   if (typeof syncPocketBigCardsUI === 'function') {
@@ -10717,7 +10836,8 @@ function closeAllModalsImmediate(exceptId = null) {
     'settings-modal',
     'flagship-shop-drawer',
     'animal-select-modal',
-    'turntable-showcase-modal'
+    'turntable-showcase-modal',
+    'news-detail-modal'
   ];
   for (const id of modalIds) {
     if (id !== exceptId) {
@@ -10789,14 +10909,15 @@ function syncTopBarsByMode() {
   // 상단 중앙 [🎯 현재 할 일 가이드 바]: 메인 타운 뷰에서만 노출!
   const showGoalNav = !inTitle && !inTour && !inDrive && !inFp && !inRoom && !inShop && !inDuel;
   document.getElementById('top-goal-navigator')?.classList.toggle('hidden', !showGoalNav);
+  document.getElementById('hud-sub-ticker-row')?.classList.toggle('hidden', !showGoalNav);
 
-  // 우측 상단 날씨 버튼(56x56) + [✕ 밖으로 나가기] 캡슐 + [⚙️ 설정](56x56)
+  // 우측 상단 날씨 버튼 + [✕ 나가기] 캡슐 + [⚙️ 설정]
   document.getElementById('top-right-action-cluster')?.classList.toggle('hidden', inTitle || inTour);
   document.getElementById('btn-weather-cycle')?.classList.toggle('hidden', inRoom || inShop || inFp || inDuel);
   const showFloatingClose = !inTitle && !inTour && (inDrive || inFp || inRoom || inShop || inDuel);
   document.getElementById('btn-focus-close-floating')?.classList.toggle('hidden', !showFloatingClose);
 
-  // [요구사항 4] 방/상가 클릭 시 자동 팝업 제로 + 황금 투시 망원경 렌즈 조리개(Golden Iris Vignette) & 하단 캡슐 바!
+  // [요구사항 5] 방/상가 클릭 시 자동 팝업 제로 + 황금 투시 망원경 렌즈 조리개 & 하단 1줄 컨트롤 바!
   document.getElementById('telescope-iris-vignette')?.classList.toggle('hidden', !(inRoom || inShop));
   const cleanCapsule = document.getElementById('focus-clean-capsule');
   const showCleanCapsule = (inRoom || inShop) && !isPoachRoom && !isBiddingShop;
@@ -10806,19 +10927,18 @@ function syncTopBarsByMode() {
       const capLabel = document.getElementById('focus-capsule-label');
       const openTxt = document.getElementById('focus-cap-open-text');
       const recBtn = document.getElementById('btn-focus-open-recruit');
+      recBtn?.classList.add('hidden');
       if (inRoom) {
         const rm = findRoomById(focusedRoomId);
         const stars = rm ? calcRoomLuxuryStars(rm) : 1;
-        if (capLabel) capLabel.textContent = rm ? `${rm.name}호 · ★${stars}` : '호실 투시';
-        if (openTxt) openTxt.textContent = showFocusDock ? '관리창 접기' : '가구 세팅 · 관리';
-        recBtn?.classList.toggle('hidden', !rm?.unlocked);
+        if (capLabel) capLabel.textContent = rm ? `${rm.name}호·★${stars}` : '호실';
+        if (openTxt) openTxt.textContent = showFocusDock ? '창 접기' : '가구 세팅';
       } else {
         const tpl = focusedShopId
           ? STANDALONE_SHOPS_TEMPLATE.find((s) => s.shopId === focusedShopId)
           : (window.FIRST_FLOOR_SHOPS_TEMPLATE || []).find((s) => s.shopId === focusedFirstFloorShopId);
-        if (capLabel) capLabel.textContent = `${tpl?.name || '매장 투시'}`;
-        if (openTxt) openTxt.textContent = showFocusDock ? '관리창 접기' : '시설 관리';
-        recBtn?.classList.add('hidden');
+        if (capLabel) capLabel.textContent = `${tpl?.name || '상가'}`;
+        if (openTxt) openTxt.textContent = showFocusDock ? '창 접기' : '시설 세팅';
       }
     }
   }
@@ -10883,15 +11003,12 @@ function setOverviewCamera(animate = true) {
   controls.maxPolarAngle = Math.PI * 0.44;
   controls.enablePan = true;
 
-  const isMobilePortrait = window.innerWidth < 640 && window.innerHeight > window.innerWidth;
   const offset = CAM_OFFSETS[camAzimuth % 4];
   const inHarbor = state.activeTownStage === 2 && !!state.harborUnlocked;
   const baseLook = inHarbor ? HARBOR_OVERVIEW_LOOK : OVERVIEW_LOOK;
-  const targetLook = isMobilePortrait
-    ? new THREE.Vector3(inHarbor ? 0.0 : -1.2, inHarbor ? 6.0 : 4.4, inHarbor ? 120.0 : 8.2)
-    : baseLook.clone();
+  const targetLook = baseLook.clone();
   const targetPos = targetLook.clone().add(offset);
-  const targetZoom = isMobilePortrait ? (inHarbor ? 0.42 : 0.45) : (inHarbor ? 0.72 : 0.78);
+  const targetZoom = inHarbor ? 0.72 : 0.78;
 
   if (typeof applyTownAtmosphere === 'function') {
     applyTownAtmosphere(inHarbor ? 2 : 1);
@@ -10952,15 +11069,27 @@ function toggleFocusedManualDrawer() {
   } else if (focusedFirstFloorShopId) {
     renderFocusedFirstFloorShopPanel();
   }
-  // 우측 340px 슬림 드로어가 열릴 때 좌측~중앙 75% 영역에 3D 방/매장이 정중앙 배치되도록 살짝 우측 오프셋 패닝!
-  if (focusRevealState.baseLook && focusRevealState.basePos && window.innerWidth >= 768) {
+  // 우측 300px 슬림 드로어가 열릴 때 좌측~중앙 영역에 3D 방/매장이 정중앙 배치되도록 살짝 우측 오프셋 패닝!
+  const vp = getLogicalViewport();
+  if (focusRevealState.baseLook && focusRevealState.basePos && vp.width >= 560) {
     const shiftedLook = focusRevealState.baseLook.clone();
-    shiftedLook.x += 2.1;
+    shiftedLook.x += 2.0;
     const shiftedPos = focusRevealState.basePos.clone();
-    shiftedPos.x += 2.1;
+    shiftedPos.x += 2.0;
     startSmoothCameraTween(shiftedPos, shiftedLook, focusRevealState.baseZoom || camera.zoom, 0.28, null);
   }
   syncTopBarsByMode();
+}
+
+function resetFocusedCameraView() {
+  if (!focusRevealState.baseLook || !focusRevealState.basePos) return;
+  const vp = getLogicalViewport();
+  const shiftX = (focusRevealState.revealed && vp.width >= 560) ? 2.0 : 0.0;
+  const targetLook = focusRevealState.baseLook.clone();
+  targetLook.x += shiftX;
+  const targetPos = focusRevealState.basePos.clone();
+  targetPos.x += shiftX;
+  startSmoothCameraTween(targetPos, targetLook, focusRevealState.baseZoom || camera.zoom, 0.32, null);
 }
 
 function closeFocusedManualDrawerKeepView() {
@@ -11069,7 +11198,8 @@ function focusCameraOnRoom(roomId) {
   const wz = lot.z + rm.lz;
 
   // [요구사항 4] 선택한 방 하나가 가로모드 화면의 85~90%를 꽉 채우도록 초대형 줌인 + 360도 회전/휠 초근접/우클릭 패닝 전부 개방!
-  const aspect = window.innerWidth / Math.max(1, window.innerHeight);
+  const vpRoom = getLogicalViewport();
+  const aspect = vpRoom.width / vpRoom.height;
   const frustumH = 38;
   const frustumW = frustumH * aspect;
   const spanW = rm.rw * 1.12 + 1.2;
@@ -11122,7 +11252,8 @@ function focusCameraOnShop(shopId) {
   rebuildStandaloneShop3D(shopId);
   renderShopSwitcherChips();
 
-  const aspect = window.innerWidth / Math.max(1, window.innerHeight);
+  const vpShop = getLogicalViewport();
+  const aspect = vpShop.width / vpShop.height;
   const frustumH = 38;
   const frustumW = frustumH * aspect;
   const isBiddingTarget = !!(rivalState.bidding.active && rivalState.bidding.shopId === shopId);
@@ -11168,7 +11299,8 @@ function focusCameraOnFirstFloorShop(shopId) {
   const wx = lot.x + (tpl?.localX || -7.15);
   const wz = lot.z + 0.15;
 
-  const aspect = window.innerWidth / Math.max(1, window.innerHeight);
+  const vp1F = getLogicalViewport();
+  const aspect = vp1F.width / vp1F.height;
   const frustumH = 38;
   const frustumW = frustumH * aspect;
   const fitZoom = THREE.MathUtils.clamp(Math.min((frustumW * 0.87) / 11.4, (frustumH * 0.86) / 8.2), 2.65, 4.65);
@@ -11738,11 +11870,11 @@ function syncDriveTopBadges() {
   }
   const cruiseLbl = document.getElementById('label-drive-cruise');
   if (cruiseLbl) {
-    cruiseLbl.textContent = driveState.autoCruise ? '자율 크루징 ON' : '수동 주행 (WASD)';
+    cruiseLbl.textContent = driveState.autoCruise ? '자율 ON' : '수동';
   }
   const ckLbl = document.getElementById('label-toggle-cockpit');
   if (ckLbl) {
-    ckLbl.textContent = driveState.cockpitView ? '3인칭 추격 시점' : '1인칭 운전석';
+    ckLbl.textContent = driveState.cockpitView ? '👀 3인칭' : '👀 운전석';
   }
   syncCockpitDashboardUI();
 }
@@ -13663,9 +13795,9 @@ function renderRoomSwitcherChips(lotId) {
     const isAct = rm.id === focusedRoomId;
     return `
       <button type="button" data-switch-room="${rm.id}" class="room-switch-chip ${isAct ? 'active' : ''}">
-        ${createCustomSVGIcon(meta.svgIcon || 'studio_unit', 16)}
-        <span>${rm.name}호 · ${meta.shortBadge}</span>
-        ${rm.unlocked ? '' : createCustomSVGIcon('padlock_gold', 14)}
+        ${createCustomSVGIcon(meta.svgIcon || 'studio_unit', 13)}
+        <span>${rm.name}호</span>
+        ${rm.unlocked ? '' : createCustomSVGIcon('padlock_gold', 12)}
       </button>
     `;
   }).join('');
@@ -13707,7 +13839,7 @@ function buildInlineRoomFurnitureSectionHTML(rm) {
   const equippedId = rm.equippedFurniture?.[activeFurnitureCategory];
   const tierMeta = window.FURNITURE_TIER_META || {};
 
-  const shortLabels = { bed: '🛏️ 침대', sofa: '🛋️ 소파', appliance: '📺 설비', decor: '💎 오브제' };
+  const shortLabels = { bed: '침대', sofa: '소파', appliance: '설비', decor: '오브제' };
   const catTabsHtml = (FURNITURE_CATEGORIES || []).map((c) => `
     <button type="button" data-rf-cat="${c.key}" class="fcat-tab-btn ${activeFurnitureCategory === c.key ? 'active' : ''}">
       <span>${shortLabels[c.key] || c.label}</span>
@@ -13723,40 +13855,44 @@ function buildInlineRoomFurnitureSectionHTML(rm) {
 
     let actionBtn = '';
     if (!rm.unlocked) {
-      actionBtn = `<button type="button" disabled class="diary-pill-badge w-full justify-center opacity-55">개방 필요</button>`;
+      actionBtn = `<span class="diary-pill-badge opacity-55">잠김</span>`;
     } else if (isEquipped) {
-      actionBtn = `<span class="kw-chip tone-mint w-full justify-center">✨ 배치됨</span>`;
+      actionBtn = `<span class="kw-chip tone-mint">✔ 배치됨</span>`;
     } else if (isOwnedInRoom) {
-      actionBtn = `<button type="button" data-rf-equip="${item.id}" class="jelly-action-btn btn-mint-lip w-full !min-h-[38px] !py-1.5 !px-2.5 !text-[15px]">배치하기</button>`;
+      actionBtn = `<button type="button" data-rf-equip="${item.id}" class="jelly-action-btn btn-mint-lip !min-h-[28px] !py-1 !px-2.5 !text-[12px]">배치</button>`;
     } else if (invCount > 0) {
-      actionBtn = `<button type="button" data-rf-inv-equip="${item.id}" class="jelly-action-btn btn-sky-lip w-full !min-h-[38px] !py-1.5 !px-2.5 !text-[15px]">📦 창고배치(${invCount})</button>`;
+      actionBtn = `<button type="button" data-rf-inv-equip="${item.id}" class="jelly-action-btn btn-sky-lip !min-h-[28px] !py-1 !px-2.5 !text-[12px]">창고(${invCount})</button>`;
     } else if (!rankUnlocked) {
-      actionBtn = `<button type="button" data-rf-locked-rank="${item.unlockRank}" class="kw-chip tone-coral w-full justify-center cursor-pointer">🔒 ${item.unlockRank}위 해금</button>`;
+      actionBtn = `<button type="button" data-rf-locked-rank="${item.unlockRank}" class="kw-chip tone-coral cursor-pointer">🔒${item.unlockRank}위</button>`;
     } else {
-      actionBtn = `<button type="button" data-rf-buy-equip="${item.id}" class="jelly-action-btn btn-gold-lip w-full !min-h-[38px] !py-1.5 !px-2.5 !text-[15px]">${item.cost.toLocaleString()}만 배치</button>`;
+      actionBtn = `<button type="button" data-rf-buy-equip="${item.id}" class="jelly-action-btn btn-gold-lip !min-h-[28px] !py-1 !px-2.5 !text-[12px]">${item.cost.toLocaleString()}만</button>`;
     }
 
     return `
       <div class="visual-showcase-card ${isEquipped ? 'equipped' : ''}">
         <div class="visual-showcase-stage">
-          <span class="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full font-extrabold text-[12px] shadow-sm" style="background:${tInfo.bg};color:${tInfo.color};">${tInfo.short}</span>
-          <span class="absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full font-extrabold text-[12px] bg-[#ECFDF5] text-[#047857] border border-[#6EE7B7]">+${item.rentAdd}만</span>
-          ${getOrRender3DCatalogPreview(item.id, 210, 126)}
+          ${getOrRender3DCatalogPreview(item.id, 96, 68)}
         </div>
-        <div class="font-title text-[16px] text-[#1E1B18] text-center truncate px-0.5">${item.name}</div>
-        <div>${actionBtn}</div>
+        <div class="min-w-0 flex-1">
+          <div class="font-title text-[12.5px] text-[#1E1B18] truncate">${item.name}</div>
+          <div class="flex items-center gap-1 mt-0.5">
+            <span class="px-1.5 py-0.5 rounded-full font-extrabold text-[10px]" style="background:${tInfo.bg};color:${tInfo.color};">${tInfo.short}</span>
+            <span class="font-num text-[11px] text-[#047857]">+${item.rentAdd}만</span>
+          </div>
+        </div>
+        <div class="shrink-0">${actionBtn}</div>
       </div>
     `;
   }).join('');
 
   return `
-    <div class="space-y-2.5 pt-2 border-t-2 border-[#EED6BE]">
-      <div class="flex items-center justify-between gap-2">
-        <span class="font-title text-[19px] text-[#1E1B18]">🛋️ 방 가구 쇼케이스</span>
-        <button type="button" id="btn-rf-goto-flagship" class="kw-chip tone-coral cursor-pointer">3D 백화점 ➔</button>
+    <div class="space-y-1.5 pt-1.5 border-t border-[#E5C9A8]">
+      <div class="flex items-center justify-between gap-1.5">
+        <span class="font-title text-[13px] text-[#1E1B18]">🛋️ 가구 리스트</span>
+        <button type="button" id="btn-rf-goto-flagship" class="kw-chip tone-coral cursor-pointer">백화점 ➔</button>
       </div>
-      <div class="grid grid-cols-4 gap-1.5">${catTabsHtml}</div>
-      <div class="grid grid-cols-2 gap-2.5">${cardsHtml}</div>
+      <div class="grid grid-cols-4 gap-1">${catTabsHtml}</div>
+      <div class="flex flex-col gap-1.5">${cardsHtml}</div>
     </div>
   `;
 }
@@ -13816,11 +13952,11 @@ function renderFocusedRoomInspector() {
 
   if (!rm.unlocked) {
     dom.rfBody.innerHTML = `
-      <div class="diary-subcard !p-4 space-y-3 text-center">
-        <div class="font-title text-[24px] text-[#1E1B18]">🔒 ${rm.name}호 (${meta.badge})</div>
-        <div class="font-num text-[28px] text-[#B45309]">개방 비용: ${formatWonBig(rm.unlockCost)}</div>
-        <button type="button" id="btn-rf-unlock" class="jelly-action-btn btn-gold-lip w-full py-3.5">
-          <span>🏗️ 지금 바로 호실 열기!</span>
+      <div class="diary-subcard !p-3 space-y-2 text-center">
+        <div class="font-title text-[14px] text-[#1E1B18]">🔒 ${rm.name}호 (${meta.badge})</div>
+        <div class="font-num text-[16px] text-[#B45309]">개방비: ${formatWonBig(rm.unlockCost)}</div>
+        <button type="button" id="btn-rf-unlock" class="jelly-action-btn btn-gold-lip w-full !min-h-[34px]">
+          <span>🏗️ 호실 개방하기</span>
         </button>
       </div>
     `;
@@ -13834,14 +13970,12 @@ function renderFocusedRoomInspector() {
   const effRent = rentDet.effectiveRent;
   const rentCapWarningHtml = (rentDet.isCapped || rentDet.onStrike)
     ? `
-      <div class="rent-cap-warning-box space-y-2">
-        <div class="font-title text-[18px] text-[#9F1239]">
-          ${rentDet.onStrike
-            ? `💢 소장 파업 중! 월세 반토막 (${effRent}만)`
-            : `🔒 월세 한도(${rentDet.rentCap}만) 도달! (잠재 ${rentDet.uncappedRent}만)`}
-        </div>
-        <button type="button" id="btn-rf-open-mgr-cap" class="jelly-action-btn btn-coral-lip w-full py-2.5">
-          <span>🪴 거북 소장 월급 올리기 ➔</span>
+      <div class="rent-cap-warning-box flex items-center justify-between gap-1.5 !py-1.5 !px-2">
+        <span class="font-title text-[11.5px] text-[#9F1239] truncate">
+          ${rentDet.onStrike ? `💢 파업 (${effRent}만)` : `🔒 한도 ${rentDet.rentCap}만`}
+        </span>
+        <button type="button" id="btn-rf-open-mgr-cap" class="jelly-action-btn btn-coral-lip !min-h-[26px] !py-0.5 !px-2 !text-[11px] shrink-0">
+          <span>🐢 승급</span>
         </button>
       </div>
     `
@@ -13849,14 +13983,14 @@ function renderFocusedRoomInspector() {
 
   if (!rm.household) {
     dom.rfBody.innerHTML = `
-      <div class="diary-subcard !p-3.5 space-y-3">
-        <div class="flex items-center justify-between gap-2">
-          <span class="font-title text-[22px] text-[#1E1B18]">${rm.name}호 공실</span>
-          <span class="font-num text-[26px] text-[#047857]">예상 +${formatWonBig(effRent)}</span>
+      <div class="diary-subcard !p-2.5 space-y-2">
+        <div class="flex items-center justify-between gap-1.5">
+          <span class="font-title text-[13.5px] text-[#1E1B18]">${rm.name}호 공실</span>
+          <span class="font-num text-[14px] text-[#047857]">+${formatWonBig(effRent)}</span>
         </div>
         ${rentCapWarningHtml}
-        <button type="button" id="btn-rf-recruit" class="jelly-action-btn btn-coral-lip w-full py-3.5">
-          <span>🤝 세입자 바로 받기!</span>
+        <button type="button" id="btn-rf-recruit" class="jelly-action-btn btn-coral-lip w-full !min-h-[32px] !py-1 !text-[12.5px]">
+          <span>🤝 세입자 받기</span>
         </button>
       </div>
       ${buildInlineRoomFurnitureSectionHTML(rm)}
@@ -13870,25 +14004,25 @@ function renderFocusedRoomInspector() {
   const hDef = HOUSEHOLD_TYPES[rm.household.type] || HOUSEHOLD_TYPES.student;
 
   dom.rfBody.innerHTML = `
-    <div class="diary-subcard !p-3 space-y-2.5">
-      <div class="flex items-center gap-3">
-        ${createHouseholdAvatarSVG(rm.household.type, 84)}
-        <div class="min-w-0 flex-1 space-y-1">
-          <div class="flex items-center gap-1.5 flex-wrap">
+    <div class="diary-subcard !p-2 space-y-1.5">
+      <div class="flex items-center gap-2">
+        ${createHouseholdAvatarSVG(rm.household.type, 40)}
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-1">
             <span class="role-accent-badge" style="background:${hDef.accentHex};">${hDef.label}</span>
+            <span class="font-num text-[13px] text-[#B45309]">+${formatWonBig(effRent)}</span>
           </div>
-          <div class="font-title text-[19px] text-[#1E1B18] truncate">${rm.household.familyName}</div>
-          <div class="font-num text-[22px] text-[#B45309]">+${formatWonBig(effRent)}</div>
+          <div class="font-title text-[13px] text-[#1E1B18] truncate mt-0.5">${rm.household.familyName}</div>
         </div>
       </div>
       ${rentCapWarningHtml}
-      <div class="grid grid-cols-2 gap-2">
+      <div class="flex items-center gap-1.5">
         ${rm.trashStage > 0 ? `
-          <button type="button" id="btn-rf-clean" class="jelly-action-btn btn-mint-lip !py-2 !text-[15.5px]">🧹 청소 ${GAME_BALANCE.specialCleanCost}만</button>` : ''}
+          <button type="button" id="btn-rf-clean" class="jelly-action-btn btn-mint-lip flex-1 !min-h-[28px] !py-1 !px-2 !text-[11.5px]">🧹 청소 ${GAME_BALANCE.specialCleanCost}만</button>` : ''}
         ${!rm.soundproofed ? `
-          <button type="button" id="btn-rf-sound" class="jelly-action-btn btn-sky-lip !py-2 !text-[15.5px]">🔨 방음 ${GAME_BALANCE.soundproofCost}만</button>` : `
-          <span class="kw-chip tone-mint justify-center py-2">✔ 방음 완료</span>`}
-        <button type="button" id="btn-rf-evict" class="jelly-action-btn btn-coral-lip !py-2 !text-[15.5px]">퇴거시키기</button>
+          <button type="button" id="btn-rf-sound" class="jelly-action-btn btn-sky-lip flex-1 !min-h-[28px] !py-1 !px-2 !text-[11.5px]">🔨 방음 ${GAME_BALANCE.soundproofCost}만</button>` : `
+          <span class="kw-chip tone-mint flex-1 justify-center">✔ 방음됨</span>`}
+        <button type="button" id="btn-rf-evict" class="jelly-action-btn btn-coral-lip !min-h-[28px] !py-1 !px-2.5 !text-[11.5px]">퇴거</button>
       </div>
     </div>
     ${buildInlineRoomFurnitureSectionHTML(rm)}
@@ -14764,65 +14898,49 @@ function renderNotebookUnifiedBody() {
     const roadmapLevels = [1, 2, 5, 10, 15, 20].map((lv) => getManagerSalaryDef(lv));
 
     dom.notebookBody.innerHTML = `
-      <div class="diary-card space-y-2.5 ${mgr.onStrike ? '!border-2 !border-[#E11D48] !bg-[#FFF1F2]' : '!border-2 !border-[#10B981] !bg-[#F0FDF4]'}">
-        <div class="flex items-center gap-3">
-          ${createHouseholdAvatarSVG('raccoon_manager', 58)}
-          <div class="min-w-0 flex-1">
-            <div class="flex items-center gap-1.5 flex-wrap">
-              <span class="px-2 py-0.5 rounded-full font-num text-[10.5px] bg-[#065F46] text-[#FFFDF7]">Lv.${curDef.level} / 20</span>
-              <span class="font-title text-[15px] text-[#3A2E2B]">${curDef.roleTitle}</span>
-            </div>
-            <div class="font-body text-[11.5px] font-bold text-[#4B5563] mt-0.5">${curDef.perkDesc}</div>
-            <div class="flex items-center gap-1.5 mt-1 flex-wrap">
-              <span class="kw-chip tone-coral !text-[10px]">정기 급여 -${curDef.salary}만/주기</span>
-              <span class="kw-chip tone-gold !text-[10px]">호실 월세 상한 ${curDef.rentCap.toLocaleString()}만</span>
+      <div class="diary-card space-y-2 ${mgr.onStrike ? '!border-[#E11D48] !bg-[#FFF1F2]' : '!border-[#10B981] !bg-[#F0FDF4]'}">
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2 min-w-0">
+            ${createHouseholdAvatarSVG('raccoon_manager', 42)}
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5">
+                <span class="px-2 py-0.5 rounded-full font-num text-[11px] bg-[#065F46] text-[#FFFDF7]">Lv.${curDef.level}/20</span>
+                <span class="font-title text-[14px] text-[#1E1B18] truncate">${curDef.roleTitle}</span>
+              </div>
+              <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                <span class="kw-chip tone-gold">한도 ${formatWonBig(curDef.rentCap)}</span>
+                <span class="kw-chip tone-coral">급여 -${curDef.salary}만</span>
+                <span class="kw-chip tone-mint">사기 ${moralePct}%</span>
+              </div>
             </div>
           </div>
+          <span class="kw-chip ${curDef.autoCollect ? 'tone-mint' : 'tone-cream'} shrink-0">${curDef.autoCollect ? '자동수금 ON' : 'Lv.5 자동화'}</span>
         </div>
 
-        <div class="space-y-1 pt-1">
-          <div class="flex items-center justify-between text-[11.5px] font-title">
-            <span class="${mgr.onStrike ? 'text-[#BE123C]' : 'text-[#065F46]'}">
-              ${mgr.onStrike ? '💢 현재 태업(파업) 돌입 중! (전 호실 월세 -50% 연체)' : `🧹 근무 사기(Morale): ${moralePct}% ${(mgr.loyaltyBuffTimer || 0) > 0 ? '· ✨ 광택 충성버프 +15%!' : ''}`}
-            </span>
-            <span class="text-[#69544C]">${curDef.autoCollect ? '자동수금 ON' : '수동수금 (Lv.5 자동화)'}</span>
-          </div>
-          <div class="candy-gauge-track !h-2.5">
-            <div class="candy-gauge-fill ${mgr.onStrike || moralePct <= 45 ? 'candy-coral' : 'candy-mint'}" style="width:${moralePct}%;"></div>
-          </div>
-        </div>
-
-        ${nextDef ? `
-          <button type="button" id="btn-raise-mgr-salary" class="jelly-action-btn ${canAffordRaise ? 'btn-gold-lip' : 'btn-coral-lip opacity-60'} w-full py-2.5 !text-[12.5px]">
-            ${mgrIconUrls[1] ? `<img src="${mgrIconUrls[1]}" alt="" class="toy-ico-img w-5 h-5" />` : createCustomSVGIcon('coin_stack', 17)}
-            <span>💰 Lv.${nextDef.level} 급여 인상 (승급비 ${nextDef.raiseCost.toLocaleString()}만 ➔ 한도 ${nextDef.rentCap.toLocaleString()}만!)</span>
+        <div class="grid grid-cols-2 gap-1.5">
+          ${nextDef ? `
+            <button type="button" id="btn-raise-mgr-salary" class="jelly-action-btn ${canAffordRaise ? 'btn-gold-lip' : 'btn-coral-lip opacity-60'} !min-h-[34px] !py-1 !px-2.5 !text-[12.5px]">
+              <span>💰 Lv.${nextDef.level} 인상 (${formatWonBig(nextDef.raiseCost)})</span>
+            </button>
+          ` : `
+            <div class="kw-chip tone-gold justify-center">👑 MAX 달성</div>
+          `}
+          <button type="button" id="btn-give-mgr-bonus" class="jelly-action-btn ${canAffordBonus ? 'btn-mint-lip' : 'btn-sky-lip opacity-60'} !min-h-[34px] !py-1 !px-2.5 !text-[12.5px]">
+            <span>🎁 성과급 (${formatWonBig(bonusCost)})</span>
           </button>
-        ` : `
-          <div class="kw-chip tone-gold w-full justify-center py-2">👑 최고 등급 Lv.20 달성! 호실당 25,000만 한도 해금 완료</div>
-        `}
-
-        <button type="button" id="btn-give-mgr-bonus" class="jelly-action-btn ${canAffordBonus ? 'btn-mint-lip' : 'btn-sky-lip opacity-60'} w-full py-2 !text-[12px]">
-          ${mgrIconUrls[3] ? `<img src="${mgrIconUrls[3]}" alt="" class="toy-ico-img w-4 h-4" />` : createCustomSVGIcon('broom_clean', 16)}
-          <span>🎁 특별 성과급 봉투 지급 (${bonusCost}만 · 사기 100% 회복 &amp; 60초 월세 +15%!)</span>
-        </button>
+        </div>
       </div>
 
-      <div class="diary-card space-y-2 !p-3">
-        <div class="font-title text-[13px] text-[#3A2E2B]">📊 관리인 직급별 호실 월세 상한선(Rent Cap) &amp; 특전 로드맵</div>
-        <div class="space-y-1.5">
+      <div class="diary-card space-y-1.5 !p-2.5">
+        <div class="font-title text-[13px] text-[#3A2E2B]">📊 직급별 월세 한도 로드맵</div>
+        <div class="grid grid-cols-2 gap-1.5">
           ${roadmapLevels.map((rd) => {
             const unlocked = mgr.salaryLv >= rd.level;
             const isCur = mgr.salaryLv === rd.level;
             return `
-              <div class="rounded-xl px-2.5 py-1.5 border flex items-center justify-between gap-2 text-[11px] ${isCur ? 'bg-[#FFFBEB] border-[#F59E0B] font-bold' : unlocked ? 'bg-[#ECFDF5] border-[#6EE7B7]' : 'bg-[#F8FAFC] border-[#E2E8F0] opacity-80'}">
-                <div class="min-w-0">
-                  <span class="font-title text-[#3A2E2B]">Lv.${rd.level} ${rd.roleTitle}</span>
-                  <div class="text-[10px] text-[#69544C]">${rd.perkDesc}</div>
-                </div>
-                <div class="text-right shrink-0 font-num">
-                  <div class="text-[#15803D]">한도 ${rd.rentCap.toLocaleString()}만</div>
-                  <div class="text-[9.5px] text-[#B91C1C]">급여 -${rd.salary}만</div>
-                </div>
+              <div class="rounded-xl px-2.5 py-1.5 border flex items-center justify-between gap-1.5 text-[12px] ${isCur ? 'bg-[#FFFBEB] border-[#F59E0B] font-bold' : unlocked ? 'bg-[#ECFDF5] border-[#6EE7B7]' : 'bg-[#F8FAFC] border-[#E2E8F0] opacity-80'}">
+                <span class="font-title text-[#1E1B18] truncate">Lv.${rd.level} ${rd.roleTitle}</span>
+                <span class="font-num text-[#15803D] shrink-0">${formatWonBig(rd.rentCap)}</span>
               </div>
             `;
           }).join('')}
@@ -15338,8 +15456,9 @@ function tickLive3DConstructionSites(dt, elapsed) {
   const keys = Object.keys(constructionState.sites);
   if (keys.length === 0) return;
 
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
+  const vp = getLogicalViewport();
+  const vw = vp.width;
+  const vh = vp.height;
   const inHiddenOverlay = titleScreenState.active || guidedTourState.active || duelState.active || fpState.active;
 
   for (const jobKey of keys) {
@@ -15863,31 +15982,17 @@ function renderMoneyGunPopover() {
   const listEl = document.getElementById('moneygun-tiers-list') || document.getElementById('moneygun-tier-list');
   if (!listEl) return;
   const tiers = window.MONEYGUN_FLEX_TIERS || [];
-  const tierIcons = [
-    POPMART_ASSETS?.ui?.quickMoneygunUrl || './assets/ui/ui_quick_moneygun.png',
-    POPMART_ASSETS?.actionIconUrls?.[0] || './assets/ui/ui_quick_moneygun.png',
-    POPMART_ASSETS?.ui?.quickTrophyUrl || './assets/ui/ui_quick_trophy.png',
-    POPMART_ASSETS?.ui?.duelTrophyCrownUrl || './assets/ui/ui_duel_trophy_crown.png'
-  ];
+  const shortBadges = ['10만', '50만', '200만', '올인'];
   listEl.innerHTML = tiers.map((t, idx) => {
     const pct = t.pctOfGold ?? t.percentOfGold;
     const actualCost = calcMoneyGunTierCost(t);
     const canAfford = (state.gold || 0) >= actualCost;
-    const costLabel = formatWonBig(actualCost);
     const isAllIn = !!pct;
-    const icoUrl = tierIcons[idx % tierIcons.length];
+    const labelTxt = isAllIn ? `올인 (${formatWonBig(actualCost)})` : `${shortBadges[idx] || `${actualCost}만`} 원`;
     return `
-      <button type="button" data-mg-tier="${t.id}" ${!canAfford ? 'disabled' : ''} class="w-full text-left rounded-2xl p-2.5 border-2 flex items-center gap-3 transition-transform active:scale-95 ${!canAfford ? 'opacity-45 cursor-not-allowed bg-[#F3EDE4] border-[#D6C5B5]' : isAllIn ? 'bg-gradient-to-r from-[#FFFBEB] to-[#FEF3C7] border-[#F59E0B] shadow-sm hover:scale-[1.01]' : 'bg-[#FFFDF9] border-[#E8CCB0] hover:border-[#F59E0B]'}">
-        <span class="w-12 h-12 rounded-xl bg-[#FFFFFF] border border-[#F59E0B] flex items-center justify-center p-1 shrink-0 shadow-sm">
-          <img src="${icoUrl}" alt="" class="w-full h-full object-contain" />
-        </span>
-        <div class="min-w-0 flex-1">
-          <div class="flex items-center justify-between gap-2">
-            <span class="font-title text-[18px] text-[#1E1B18] truncate">${t.title}</span>
-            <span class="px-2.5 py-0.5 rounded-full font-num text-[15px] shrink-0 ${canAfford ? 'bg-[#FEE2E2] text-[#B91C1C]' : 'bg-[#E5E7EB] text-[#4B5563]'}">${canAfford ? `-${costLabel}` : '부족'}</span>
-          </div>
-          <div class="font-body text-[14px] font-extrabold text-[#047857] mt-0.5">행복도 +${t.happyAdd || 15}% · 피버 ${t.feverMult || 2}배</div>
-        </div>
+      <button type="button" data-mg-tier="${t.id}" ${!canAfford ? 'disabled' : ''} class="mg-pill-btn ${isAllIn ? 'all-in' : ''} ${!canAfford ? 'opacity-45 cursor-not-allowed' : ''}">
+        <span>${isAllIn ? '👑' : '💵'} ${labelTxt}</span>
+        <span class="text-[11px] font-bold text-[#047857]">x${t.feverMult || 2}</span>
       </button>
     `;
   }).join('');
@@ -16292,20 +16397,12 @@ function checkAndTriggerHappinessMilestones(currentHappyPct) {
     syncBuildingResidents3D('lot_main');
   }
 
-  // 가장 높은 달성 단계 기준으로 제막식 배너 & 카메라 클로즈업 연출!
+  // 가장 높은 달성 단계 기준으로 1줄 뉴스 티커 기록 & 카메라 클로즈업 연출!
   const topMs = newlyUnlocked[newlyUnlocked.length - 1];
-  const banner = document.getElementById('milestone-ceremony-banner');
-  const bTitle = document.getElementById('ms-banner-title');
-  const bSub = document.getElementById('ms-banner-sub');
-  const bIco = document.getElementById('ms-banner-ico');
-  if (banner && bTitle && bSub) {
-    if (bIco) bIco.innerHTML = createCustomSVGIcon(topMs.icon || 'statue_gold', 26);
-    bTitle.textContent = `[행복도 ${topMs.threshold}% 달성] ${topMs.title}!`;
-    bSub.textContent = `${topMs.rewardDesc} · 마을에 영구 랜드마크가 건설되었습니다!`;
-    banner.classList.remove('hidden');
-    if (milestoneBannerTimeout) clearTimeout(milestoneBannerTimeout);
-    milestoneBannerTimeout = setTimeout(() => banner.classList.add('hidden'), 5200);
-  }
+  pushMiniNewsTicker(
+    `🔔 행복도 ${topMs.threshold}% 돌파! ${topMs.title}`,
+    `[행복도 ${topMs.threshold}% 달성] ${topMs.title} · ${topMs.rewardDesc}`
+  );
 
   milestoneState.ceremonyActive = true;
   milestoneState.ceremonyTimer = 4.5;
@@ -17335,12 +17432,13 @@ function tickAnimationsAndEffects(dt, elapsed, uiDt = dt) {
 
 function projectWorldToScreen(wx, wy, wz) {
   const activeCam = getActiveCamera();
+  const vp = getLogicalViewport();
   tempVec.set(wx, wy, wz);
   tempVec.project(activeCam);
   const visible = tempVec.z >= -1 && tempVec.z <= 1;
   return {
-    x: (tempVec.x * 0.5 + 0.5) * window.innerWidth,
-    y: (-tempVec.y * 0.5 + 0.5) * window.innerHeight,
+    x: (tempVec.x * 0.5 + 0.5) * vp.width,
+    y: (-tempVec.y * 0.5 + 0.5) * vp.height,
     visible
   };
 }
@@ -17392,14 +17490,13 @@ function ensureShopOverlayBadge(shopId) {
 }
 
 function isInTopHudSafeZone(x, y) {
-  const feverShown = !!(dom.hudFeverPill && !dom.hudFeverPill.classList.contains('hidden'));
-  const hudW = window.innerWidth < 640 ? window.innerWidth : 550;
-  const hudH = (window.innerWidth < 640 ? 190 : 152) + (feverShown ? 44 : 0);
-  return x < hudW && y < hudH;
+  const vp = getLogicalViewport();
+  return x < vp.width && y < 74;
 }
 
 function isInBottomRightFabZone(x, y) {
-  return x > window.innerWidth - 265 && y > window.innerHeight - 95;
+  const vp = getLogicalViewport();
+  return x > vp.width - 155 && y > vp.height - 82;
 }
 
 // =========================================================
@@ -17667,20 +17764,10 @@ function updateForbesRankAndHUD(allowCelebration = true) {
       spawnPoofParticles3D(-8 + f * 4, 8.5 + (f % 2) * 2.2, 6.0, fwCols[f % fwCols.length], 14);
     }
 
-    const banner = document.getElementById('forbes-rankup-banner');
-    const titleEl = document.getElementById('rankup-banner-title');
-    const subBannerEl = document.getElementById('rankup-banner-sub');
-    if (titleEl) {
-      titleEl.textContent = `🏆 RANK UP! '${overtaken.name}' 추월 ➔ 글로벌 서열 ${myRank}위 / 100 등극!!`;
-    }
-    if (subBannerEl) {
-      subBannerEl.textContent = `서열 추월 배당금 +${reward.toLocaleString()}만 · 칭호 [${state.vipTitle}] · 명성 배율 +${prestDef.bonusPct}%!`;
-    }
-    if (banner) {
-      banner.classList.remove('hidden');
-      if (forbesRankBannerTimeout) clearTimeout(forbesRankBannerTimeout);
-      forbesRankBannerTimeout = setTimeout(() => banner.classList.add('hidden'), 4600);
-    }
+    pushMiniNewsTicker(
+      `🔔 ${myRank}위 등극! ${overtaken.name} 추월 (+${reward}만)`,
+      `🏆 RANK UP! '${overtaken.name}' 추월 ➔ 서열 ${myRank}위 등극! (배당금 +${formatWonBig(reward)} · 칭호 [${state.vipTitle}])`
+    );
 
     const forbesModal = document.getElementById('forbes-modal');
     if (forbesModal && !forbesModal.classList.contains('hidden')) {
@@ -17707,58 +17794,26 @@ function renderForbesModal() {
   if (rankChip) rankChip.textContent = `${myRank}위 / 100`;
 
   const totalEl = document.getElementById('forbes-total-worth');
-  if (totalEl) totalEl.textContent = `${breakdown.total.toLocaleString()}점`;
+  if (totalEl) totalEl.textContent = `자산 ${breakdown.total.toLocaleString()}점`;
 
   const titleEl = document.getElementById('forbes-vip-title');
   if (titleEl) titleEl.textContent = state.vipTitle || prestDef.title;
 
   const myPortraitSlot = document.getElementById('forbes-my-hero-portrait');
   if (myPortraitSlot) {
-    myPortraitSlot.innerHTML = createHouseholdAvatarSVG('landlord_avatar', 68);
+    myPortraitSlot.innerHTML = createHouseholdAvatarSVG('landlord_avatar', 36);
   }
 
   const aheadRival = entries.find((e) => !e.isMe && e.liveRank === Math.max(1, myRank - 1)) || entries.find((e) => !e.isMe);
   const kangBtn = document.getElementById('btn-forbes-challenge-kang');
   if (kangBtn && aheadRival) {
     const lblSpan = kangBtn.querySelector('span:last-child');
-    if (lblSpan) lblSpan.textContent = `⚔️ ${aheadRival.liveRank}위 부자와 결투하기`;
+    if (lblSpan) lblSpan.textContent = `⚔️ ${aheadRival.liveRank}위 결투`;
   }
 
   const fameBox = document.getElementById('forbes-fame-summary-box');
   if (fameBox) {
-    const crestImg = (POPMART_ASSETS?.fameCrestUrls?.[prestDef.crestIdx || 0])
-      ? `<img src="${POPMART_ASSETS.fameCrestUrls[prestDef.crestIdx || 0]}" alt="" class="toy-ico-img w-10 h-10 shrink-0" />`
-      : '';
-    fameBox.innerHTML = `
-      <div class="flex items-center justify-between gap-2">
-        <div class="flex items-center gap-2 min-w-0">
-          ${crestImg}
-          <div class="min-w-0">
-            <div class="font-title text-[17px] text-[#78350F] whitespace-nowrap">✨ 명성 ${fameNow.toLocaleString()}pt</div>
-            <div class="font-body text-[13.5px] font-extrabold text-[#047857] truncate">
-              ${nextPrest ? `승리 시 다음 배율 +${nextPrest.bonusPct}%` : '최고 명성 달성!'}
-            </div>
-          </div>
-        </div>
-        <span class="kw-chip tone-mint shrink-0">월세 +${prestDef.bonusPct}%</span>
-      </div>
-    `;
-  }
-
-  const portGrid = document.getElementById('forbes-portfolio-grid');
-  if (portGrid) {
-    const items = [
-      { label: '보유 현금', val: breakdown.cash, col: '#B45309', bg: '#FEF3C7' },
-      { label: '본점·상권 감정가', val: breakdown.stage1Estate + (breakdown.harborResort || 0), col: '#1D4ED8', bg: '#DBEAFE' },
-      { label: '차량·요트 선단', val: breakdown.vehicles, col: '#BE123C', bg: '#FFE4E6' },
-      { label: '명성·결투 가치', val: breakdown.prestige, col: '#6B21A8', bg: '#F3E8FF' }
-    ];
-    portGrid.innerHTML = items.map((it) => `
-      <div class="rounded-xl py-1.5 px-2 border border-[#EED6BE]" style="background:${it.bg};">
-        <div class="font-title text-[10px]" style="color:${it.col};">${it.label}</div>
-        <div class="font-num text-[12.5px] text-[#3A2E2B]">${it.val.toLocaleString()}점</div>
-      </div>
-    `).join('');
+    fameBox.textContent = `✨ 명성 ${fameNow.toLocaleString()}pt · 월세 +${prestDef.bonusPct}%${nextPrest ? ` (다음 +${nextPrest.bonusPct}%)` : ''}`;
   }
 
   document.querySelectorAll('[data-forbes-filter]').forEach((b) => {
@@ -17778,9 +17833,9 @@ function renderForbesModal() {
   if (listEl) {
     listEl.innerHTML = visibleEntries.map((rk) => {
       const rowCls = rk.isMe
-        ? 'diary-card forbes-row-me'
+        ? 'diary-card forbes-row-me !border-[#F59E0B] !bg-[#FFFBEB]'
         : rk.isArchRival
-          ? 'diary-card forbes-row-kang'
+          ? 'diary-card forbes-row-kang !border-[#C084FC] !bg-[#FAF5FF]'
           : 'diary-card';
       const rankBadgeBg = rk.liveRank === 1
         ? 'background:linear-gradient(180deg,#FFE869,#F59E0B);color:#3A2E2B;'
@@ -17792,25 +17847,25 @@ function renderForbesModal() {
       const isNextTarget = !rk.isMe && rk.liveRank === Math.max(1, myRank - 1);
 
       return `
-        <div class="${rowCls} !p-2.5 flex items-center justify-between gap-2.5">
-          <div class="flex items-center gap-2.5 min-w-0 flex-1">
-            <div class="relative shrink-0">
-              ${createHouseholdAvatarSVG(rk.avatarRole || 'manager', 66)}
-              <span class="absolute -top-1.5 -left-1.5 px-2 py-0.5 rounded-full border border-[#1E1B18] font-num text-[12.5px] leading-none shadow-sm" style="${rankBadgeBg}">
-                ${rk.liveRank}위
-              </span>
+        <div class="${rowCls} !py-1.5 !px-2.5 flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2 min-w-0 flex-1">
+            <span class="px-2 py-0.5 rounded-full border border-[#D4AF37] font-num text-[12px] leading-none shrink-0" style="${rankBadgeBg}">
+              ${rk.liveRank}위
+            </span>
+            <div class="w-8 h-8 rounded-lg bg-[#FFFDF8] border border-[#E5C9A8] flex items-center justify-center shrink-0 overflow-hidden">
+              ${createHouseholdAvatarSVG(rk.avatarRole || 'manager', 32)}
             </div>
-            <div class="min-w-0 flex-1">
-              <div class="font-title text-[18px] ${rk.isArchRival ? 'text-[#581C87]' : 'text-[#1E1B18]'} truncate">${rk.name}</div>
-              <div class="font-num text-[19px] text-[#B45309]">${rk.netWorth.toLocaleString()}점</div>
+            <div class="min-w-0 flex-1 flex items-center justify-between gap-2">
+              <span class="font-title text-[13.5px] ${rk.isArchRival ? 'text-[#581C87]' : 'text-[#1E1B18]'} truncate">${rk.name}</span>
+              <span class="font-num text-[13.5px] text-[#B45309] shrink-0">${rk.netWorth.toLocaleString()}점</span>
             </div>
           </div>
           <div class="shrink-0">
             ${!rk.isMe ? `
-              <button type="button" data-forbes-duel-id="${rk.id}" class="jelly-action-btn ${isNextTarget ? 'btn-coral-lip' : 'btn-gold-lip'} !min-h-[40px] !py-1.5 !px-3.5 !text-[15.5px]">
+              <button type="button" data-forbes-duel-id="${rk.id}" class="jelly-action-btn ${isNextTarget ? 'btn-coral-lip' : 'btn-gold-lip'} !min-h-[28px] !py-1 !px-2.5 !text-[12px]">
                 <span>⚔️ 결투</span>
               </button>
-            ` : `<span class="kw-chip tone-mint">내 순위</span>`}
+            ` : `<span class="kw-chip tone-mint">나</span>`}
           </div>
         </div>
       `;
@@ -18612,22 +18667,15 @@ function playTitleStartFanfareSFX() {
 
 function applyTitleDollhouseShowcaseCamera(swayT = 0) {
   if (!camera || !controls) return;
-  const isMobile = window.innerWidth < 640;
+  const vp = getLogicalViewport();
   controls.enabled = false;
 
   const gentleX = Math.sin(swayT * 0.45) * 0.85;
   const gentleY = Math.cos(swayT * 0.35) * 0.35;
 
-  if (isMobile) {
-    controls.target.set(-3.8 + gentleX * 0.4, 6.2 + gentleY, -1.8);
-    camera.position.set(3.2 + gentleX, 22.0, 34.5);
-    camera.zoom = 0.62;
-  } else {
-    // 좌측 35% 플로팅 카드 여백 확보 + 우측 60~65% 지점에 3D 인형의 집 단면 빌딩 & 1층 상가 & 거리 쇼케이스 배치!
-    controls.target.set(-11.4 + gentleX * 0.5, 9.4 + gentleY, -2.6);
-    camera.position.set(-4.6 + gentleX, 23.8, 35.5);
-    camera.zoom = Math.min(1.16, Math.max(0.88, window.innerWidth / 1280));
-  }
+  controls.target.set(-10.8 + gentleX * 0.5, 9.2 + gentleY, -2.6);
+  camera.position.set(-4.2 + gentleX, 23.4, 35.5);
+  camera.zoom = Math.min(1.12, Math.max(0.84, vp.width / 1100));
   camera.updateProjectionMatrix();
   camera.lookAt(controls.target);
 }
@@ -18670,11 +18718,10 @@ function enterTownFromTitleScreen(runOnboardingTour = false) {
   controls.maxPolarAngle = Math.PI * 0.44;
   controls.enablePan = true;
 
-  const isMobilePortrait = window.innerWidth < 640 && window.innerHeight > window.innerWidth;
   const offset = CAM_OFFSETS[camAzimuth % 4];
-  const targetLook = isMobilePortrait ? new THREE.Vector3(-1.2, 4.4, 8.2) : OVERVIEW_LOOK.clone();
+  const targetLook = OVERVIEW_LOOK.clone();
   const targetPos = targetLook.clone().add(offset);
-  const targetZoom = isMobilePortrait ? 0.48 : 0.82;
+  const targetZoom = 0.82;
 
   syncTopBarsByMode();
   updateForbesRankAndHUD(false);
@@ -18986,8 +19033,9 @@ function tickGuidedSimulationTour(dt, elapsed, uiDt = dt) {
 }
 
 function updateAllProjectedOverlays(dt) {
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
+  const vp = getLogicalViewport();
+  const vw = vp.width;
+  const vh = vp.height;
 
   // 라이벌 스카우트 핀 외에 평소 메인 타운 화면의 2D 상가/부지/월세 글자 배지는 100% 숨겨 클린 뷰 보장!
   if (rivalState.poach.active && rivalState.poach.pinEl && rivalState.poach.roomId) {
@@ -19056,7 +19104,7 @@ function updateAllProjectedOverlays(dt) {
     }
 
     const pt = projectWorldToScreen(sp.wx, sp.wy, sp.wz);
-    const inBounds = pt.visible && pt.x >= 28 && pt.x <= vw - 28 && pt.y >= 72 && pt.y <= vh - 58;
+    const inBounds = pt.visible && pt.x >= 24 && pt.x <= vw - 24 && pt.y >= 48 && pt.y <= vh - 44;
     if (!inBounds || !isSpeechBubbleAllowedInCurrentView(sp.forceShow)) {
       sp.el.style.display = 'none';
     } else {
@@ -19116,7 +19164,7 @@ function computeActiveGoalStep() {
   if (!hasBoughtOrEquippedPaidBed()) {
     return {
       step: 1,
-      text: `가구 백화점 첫 침대 구매`,
+      text: `침대 구매`,
       thumbUrl: POPMART_ASSETS?.furniture?.bedTier3Canopy || './assets/furniture/bed_tier3_canopy.png',
       targetType: 'world',
       wx: 25.2,
@@ -19141,7 +19189,7 @@ function computeActiveGoalStep() {
   if (rm201NeedsSetup) {
     return {
       step: 2,
-      text: `201호 침대 배치 · 세입자 받기`,
+      text: `201호 세팅`,
       thumbUrl: POPMART_ASSETS?.characters?.char_01_boba_otter?.masterUrl || './assets/characters/char_01_boba_otter.png',
       targetType: 'world',
       wx: mainLot.x + (rm201.lx || 0),
@@ -19166,7 +19214,7 @@ function computeActiveGoalStep() {
   if (!state?.firstRentCollected) {
     return {
       step: 3,
-      text: `수첩에서 첫 월세 수금하기`,
+      text: `첫 월세 수금`,
       thumbUrl: POPMART_ASSETS?.actionIconUrls?.[0] || './assets/ui/ui_pocket_notebook.png',
       targetType: 'ui_notebook',
       execute: () => {
@@ -19191,7 +19239,7 @@ function computeActiveGoalStep() {
   if ((mgr.salaryLv || 1) < 2 || mgr.onStrike || anyRoomCapped) {
     return {
       step: 4,
-      text: `거북 소장 월급 올려 한도 돌파`,
+      text: `소장 급여 인상`,
       thumbUrl: POPMART_ASSETS?.characters?.char_29_bonsai_tortoise?.masterUrl || './assets/characters/char_29_bonsai_tortoise.png',
       targetType: 'world',
       wx: mainLot.x + 2.55,
@@ -19215,7 +19263,7 @@ function computeActiveGoalStep() {
     const site = constructionState.sites[activeSiteKeys[0]];
     return {
       step: 5,
-      text: `공사 현장 즉시 완공하기`,
+      text: `공사 즉시 완공`,
       thumbUrl: './assets/buildings/prop_construction_crane.png',
       targetType: 'world',
       wx: site.wx,
@@ -19232,7 +19280,7 @@ function computeActiveGoalStep() {
     const totMan = calcCollectableRentTotalMan();
     return {
       step: 5,
-      text: `월세 +${formatWonBig(totMan)} 일괄 수금`,
+      text: `월세 +${formatWonBig(totMan)} 수금`,
       thumbUrl: POPMART_ASSETS?.actionIconUrls?.[0] || './assets/ui/ui_pocket_notebook.png',
       targetType: 'ui_notebook',
       execute: () => {
@@ -19246,7 +19294,7 @@ function computeActiveGoalStep() {
   const nextRank = Math.max(1, (standings.myRank || 99) - 1);
   return {
     step: 5,
-    text: `${nextRank}위 부자와 쇼룸 결투`,
+    text: `${nextRank}위 쇼룸 결투`,
     thumbUrl: POPMART_ASSETS?.ui?.duelTrophyCrownUrl || './assets/ui/ui_duel_trophy_crown.png',
     targetType: 'ui_notebook',
     execute: () => {
@@ -19441,7 +19489,7 @@ function syncPocketBigCardsUI() {
     collectAmtEl.textContent = `+${formatWonBig(collectableMan)}`;
   }
   if (collectBtnLbl) {
-    collectBtnLbl.textContent = '일괄 수금하기';
+    collectBtnLbl.textContent = '일괄 수금';
   }
   if (collectArtBox) {
     const chestUrl = POPMART_ASSETS?.actionIconUrls?.[0] || './assets/ui/ui_pocket_notebook.png';
@@ -19470,7 +19518,7 @@ function syncPocketBigCardsUI() {
 
   if (expInfo.mode === 'active_site' && expInfo.site) {
     const pct = Math.min(99, Math.max(1, Math.round(expInfo.site.progress || 10)));
-    if (buildSub) buildSub.textContent = `${expInfo.site.title} 시공 중`;
+    if (buildSub) buildSub.textContent = `공정률 ${pct}%`;
     gaugeBox?.classList.remove('hidden');
     if (gaugeFill) gaugeFill.style.width = `${pct}%`;
     if (gaugeLbl) gaugeLbl.textContent = `🚧 ${pct}%`;
@@ -19479,13 +19527,17 @@ function syncPocketBigCardsUI() {
   } else {
     gaugeBox?.classList.add('hidden');
     buildBadge?.classList.add('hidden');
-    if (buildSub) buildSub.textContent = expInfo.label;
+    if (buildSub) {
+      buildSub.textContent = expInfo.mode === 'room'
+        ? `${expInfo.room.name}호 · ${formatWonBig(expInfo.cost)}`
+        : `${formatWonBig(expInfo.cost)}`;
+    }
     if (buildBtnLbl) {
       buildBtnLbl.textContent = !unlockedStep1
-        ? '🔒 첫 침대 구매 후'
+        ? '🔒 침대 구매 후'
         : expInfo.mode === 'room'
-          ? `${expInfo.room.name}호 착공하기`
-          : '새 층 · 상가 착공';
+          ? `${expInfo.room.name}호 착공`
+          : '증축 착공';
     }
   }
 
@@ -19508,15 +19560,15 @@ function syncPocketBigCardsUI() {
   }
 
   if (duelTitleEl) {
-    duelTitleEl.textContent = `${nextRank}위 부자와 결투`;
+    duelTitleEl.textContent = `🦹‍♂️ 쇼룸 결투`;
   }
   if (duelSubEl) {
-    duelSubEl.textContent = `🏆 승리 시 월세 영구 +${targetBonusPct}%`;
+    duelSubEl.textContent = `${nextRank}위 · 월세 +${targetBonusPct}%`;
   }
   if (duelBtnLbl) {
     duelBtnLbl.textContent = !unlockedStep1
-      ? '🔒 첫 침대 구매 후'
-      : '⚔️ 결투장 입장';
+      ? '🔒 침대 구매 후'
+      : '⚔️ 결투 입장';
   }
 }
 
@@ -19621,8 +19673,9 @@ function syncSmartWorldLodBubbles(anyModalOpen, prePlacedBoxes = []) {
 
   const activeKeys = new Set();
   const candidates = [];
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
+  const vpLod = getLogicalViewport();
+  const vw = vpLod.width;
+  const vh = vpLod.height;
   const inStage2 = state.activeTownStage === 2 && !!state.harborUnlocked;
 
   if (!hideAll) {
@@ -19654,10 +19707,10 @@ function syncSmartWorldLodBubbles(anyModalOpen, prePlacedBoxes = []) {
           hint: mgr.onStrike ? '💢' : 'dots',
           urgent: !!mgr.onStrike,
           text: mgr.onStrike
-            ? '사기가 바닥이에요! 성과급이나 월급 인상 부탁드려요! 💢'
+            ? '사기 바닥! 급여 인상 부탁해요! 💢'
             : anyCapped
-              ? '월급 조금만 올려주시면 월세 한도를 뚫어드릴게요! 🪴'
-              : '회장님! 오늘도 빌딩 광택 관리 완벽합니다! 🪴',
+              ? '급여 인상 시 월세 한도 상승! 🐢'
+              : '빌딩 광택 관리 완벽합니다! 🐢',
           priority: 98,
           forceTier3: true,
           onAction: () => openNotebookModal('manager')
@@ -19820,14 +19873,14 @@ function syncSmartWorldLodBubbles(anyModalOpen, prePlacedBoxes = []) {
     }
 
     const pt = projectWorldToScreen(cand.wx, cand.wy, cand.wz);
-    const inScreen = pt.visible && pt.x >= 34 && pt.x <= vw - 34 && pt.y >= 118 && pt.y <= vh - 96;
+    const inScreen = pt.visible && pt.x >= 24 && pt.x <= vw - 24 && pt.y >= 54 && pt.y <= vh - 46;
     if (!inScreen) {
       entry.el.style.display = 'none';
       continue;
     }
 
-    const boxHalfW = tier === 2 ? 22 : 108;
-    const boxH = tier === 2 ? 32 : 62;
+    const boxHalfW = tier === 2 ? 18 : 96;
+    const boxH = tier === 2 ? 24 : 32;
     const cx = THREE.MathUtils.clamp(pt.x, boxHalfW + 8, Math.max(boxHalfW + 8, vw - boxHalfW - 8));
     const cy = pt.y;
 
@@ -19914,8 +19967,9 @@ function tickGoalNavigatorAndWorldActionBadges(dt) {
     goalThumbImg.setAttribute('src', goal.thumbUrl);
   }
 
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
+  const vpGuide = getLogicalViewport();
+  const vw = vpGuide.width;
+  const vh = vpGuide.height;
 
   if (bigUiGuideState.arrowGroup3D && bigUiGuideState.arrowLabelEl) {
     const showWorldArrow = inCleanTownStage1 && !anyModalOpen && goal?.targetType === 'world';
@@ -19933,12 +19987,12 @@ function tickGoalNavigatorAndWorldActionBadges(dt) {
       bigUiGuideState.arrowLabelEl.style.display = 'none';
     } else if (showUiArrow) {
       const fabEl = document.getElementById('fab-notebook');
-      const rect = fabEl?.getBoundingClientRect();
-      if (rect && rect.width > 0) {
+      const fabCenter = getLogicalElementCenter(fabEl);
+      if (fabCenter.valid) {
         bigUiGuideState.arrowLabelEl.textContent = '▼';
         bigUiGuideState.arrowLabelEl.style.display = 'inline-flex';
-        bigUiGuideState.arrowLabelEl.style.left = `${Math.min(vw - 44, rect.left + rect.width * 0.5)}px`;
-        bigUiGuideState.arrowLabelEl.style.top = `${rect.top - 6}px`;
+        bigUiGuideState.arrowLabelEl.style.left = `${Math.min(vw - 28, fabCenter.x)}px`;
+        bigUiGuideState.arrowLabelEl.style.top = `${Math.max(40, fabCenter.y - 34)}px`;
       } else {
         bigUiGuideState.arrowLabelEl.style.display = 'none';
       }
@@ -19950,14 +20004,14 @@ function tickGoalNavigatorAndWorldActionBadges(dt) {
   // 3D 입체 한글 조각 월드 배지 3종 (`드라이브`, `가구 백화점`, `관리소장`) 투영
   const landmarkBoxes = [];
   const showWorldImgBadges = inCleanTownStage1 && !anyModalOpen;
-  const place3DImgBadge = (el, wx, wy, wz, hw = 56, hh = 28, hideInTier3 = false) => {
+  const place3DImgBadge = (el, wx, wy, wz, hw = 44, hh = 20, hideInTier3 = false) => {
     if (!el) return;
     if (!showWorldImgBadges || (hideInTier3 && getWorldSpeechLodTier(wx, wy, wz) === 3)) {
       el.style.display = 'none';
       return;
     }
     const pt = projectWorldToScreen(wx, wy, wz);
-    if (!pt.visible || pt.x < 64 || pt.x > vw - 64 || pt.y < 168 || pt.y > vh - 122) {
+    if (!pt.visible || pt.x < 44 || pt.x > vw - 44 || pt.y < 62 || pt.y > vh - 46) {
       el.style.display = 'none';
       return;
     }
@@ -20065,7 +20119,8 @@ function syncChronicleAndStageUI() {
 
   const switchPill = document.getElementById('town-stage-switch-pill');
   if (switchPill) {
-    const hideSwitch = !state.harborUnlocked || inTitle || inTour;
+    const inSubMode = !!focusedRoomId || !!focusedShopId || !!focusedFirstFloorShopId || !!driveState.active || !!fpState.active || !!duelState.active;
+    const hideSwitch = !state.harborUnlocked || inTitle || inTour || inSubMode;
     switchPill.classList.toggle('hidden', hideSwitch);
   }
   document.getElementById('btn-switch-stage-1')?.classList.toggle('active', !inHarbor);
@@ -20132,15 +20187,11 @@ function applyTownAtmosphere(stage = 1) {
 }
 
 function showHqDividendToast(amount) {
-  const pill = document.getElementById('hq-dividend-pill');
-  const txt = document.getElementById('hq-dividend-text');
-  if (!pill || !txt) return;
-  txt.textContent = `+ 본점(1마을) 자동 배당금 +${Math.round(amount).toLocaleString()}만 입금!`;
-  pill.classList.remove('hidden');
-  if (hqDividendToastTimeout) clearTimeout(hqDividendToastTimeout);
-  hqDividendToastTimeout = setTimeout(() => {
-    pill.classList.add('hidden');
-  }, 2900);
+  const amt = Math.round(amount);
+  pushMiniNewsTicker(
+    `🔔 본점 자동 배당금 +${formatWonBig(amt)} 입금`,
+    `💰 제1마을(본점) 임대·상가 자동 배당금 +${formatWonBig(amt)}이 입금되었습니다.`
+  );
 }
 
 function travelToTownStage(targetStage = 2, viaPhysicalGate = false) {
@@ -20207,16 +20258,10 @@ function travelToTownStage(targetStage = 2, viaPhysicalGate = false) {
   syncChronicleAndStageUI();
   syncTopBarsByMode();
 
-  const isMobilePortrait = window.innerWidth < 640 && window.innerHeight > window.innerWidth;
   const offset = CAM_OFFSETS[camAzimuth % 4];
-
-  const finalLook = state.activeTownStage === 2
-    ? (isMobilePortrait ? new THREE.Vector3(0.0, 6.0, 120.0) : HARBOR_OVERVIEW_LOOK.clone())
-    : (isMobilePortrait ? new THREE.Vector3(-1.2, 4.4, 8.2) : OVERVIEW_LOOK.clone());
+  const finalLook = state.activeTownStage === 2 ? HARBOR_OVERVIEW_LOOK.clone() : OVERVIEW_LOOK.clone();
   const finalPos = finalLook.clone().add(offset);
-  const finalZoom = state.activeTownStage === 2
-    ? (isMobilePortrait ? 0.42 : 0.72)
-    : (isMobilePortrait ? 0.45 : 0.78);
+  const finalZoom = state.activeTownStage === 2 ? 0.72 : 0.78;
 
   startSmoothCameraTween(finalPos, finalLook, finalZoom, 0.65, null);
 
@@ -20845,8 +20890,9 @@ function enterShowroomFlexDuel(initialTab = 'ranked', targetRivalId = null) {
 
   controls.enabled = true;
   controls.enablePan = false;
-  const aspect = window.innerWidth / Math.max(1, window.innerHeight);
-  const fitZoom = THREE.MathUtils.clamp(aspect >= 1.5 ? 1.24 : 0.92, 0.72, 1.38);
+  const vpDuel = getLogicalViewport();
+  const aspect = vpDuel.width / vpDuel.height;
+  const fitZoom = THREE.MathUtils.clamp(aspect >= 1.5 ? 1.18 : 0.92, 0.72, 1.32);
   startSmoothCameraTween(
     new THREE.Vector3(SHOWROOM_DUEL_ORIGIN.x, 14.5, SHOWROOM_DUEL_ORIGIN.z + 26.8),
     new THREE.Vector3(SHOWROOM_DUEL_ORIGIN.x, 1.85, SHOWROOM_DUEL_ORIGIN.z + 0.8),
@@ -20917,13 +20963,13 @@ function syncDuelScoreHUD() {
   const potChip = document.getElementById('duel-stake-badge') || document.getElementById('duel-prize-pot-chip');
   const tugFill = document.getElementById('duel-tug-fill');
 
-  if (myLbl) myLbl.textContent = `👑 내 럭셔리 쇼룸: ${myBrk.total.toLocaleString()}점`;
-  if (oppLbl) oppLbl.textContent = `⚔️ ${opp.liveRank ? `${opp.liveRank}위 ` : ''}${opp.name}: ${oppBrk.total.toLocaleString()}점`;
-  if (potChip) potChip.textContent = `✨ 명성 +${opp.fameGain || 18}pt · 상금 +${(opp.stakePrize * 2).toLocaleString()}만`;
+  if (myLbl) myLbl.textContent = `👑 내 방 ${myBrk.total.toLocaleString()}점`;
+  if (oppLbl) oppLbl.textContent = `⚔️ ${opp.liveRank ? `${opp.liveRank}위 ` : ''}${opp.name} ${oppBrk.total.toLocaleString()}점`;
+  if (potChip) potChip.textContent = `✨ +${opp.fameGain || 18}pt · +${formatWonBig(opp.stakePrize * 2)}`;
   const myAvSlot = document.getElementById('duel-my-avatar-slot');
-  if (myAvSlot) myAvSlot.innerHTML = createHouseholdAvatarSVG('landlord_avatar', 28);
+  if (myAvSlot) myAvSlot.innerHTML = createHouseholdAvatarSVG('landlord_avatar', 24);
   const oppAvSlot = document.getElementById('duel-opp-avatar-slot');
-  if (oppAvSlot) oppAvSlot.innerHTML = createHouseholdAvatarSVG(opp.avatarRole || 'rival_kang', 28);
+  if (oppAvSlot) oppAvSlot.innerHTML = createHouseholdAvatarSVG(opp.avatarRole || 'rival_kang', 24);
 
   const sum = Math.max(1, myBrk.total + oppBrk.total);
   const myRatio = THREE.MathUtils.clamp(Math.round((myBrk.total / sum) * 100), 12, 88);
@@ -20994,18 +21040,17 @@ function renderDuelBottomDock() {
     const itemPts = it.luxuryPts ?? it.luxuryScore ?? ((it.tier || 1) * 80);
 
     return `
-      <button type="button" data-duel-cat="${ck}" data-duel-equip="${it.id}" data-duel-needbuy="${isOwned ? '0' : '1'}" class="shrink-0 w-[176px] rounded-2xl p-2 border-2 text-left transition-transform active:scale-95 flex items-center gap-2 ${isEquipped ? 'bg-[#ECFDF5] border-[#10B981]' : isOwned ? 'bg-[#FFFDF5] border-[#F59E0B]' : !rankUnlocked ? 'bg-[#F8FAFC] border-[#CBD5E1] opacity-75' : 'bg-white/90 border-[#D6C5B5]'}">
-        <div class="w-12 h-12 rounded-xl bg-[#FFFDF7] border border-[#E8CCB0] flex items-center justify-center shrink-0 overflow-hidden">
-          ${getOrRender3DCatalogPreview(it.id, 72, 54)}
+      <button type="button" data-duel-cat="${ck}" data-duel-equip="${it.id}" data-duel-needbuy="${isOwned ? '0' : '1'}" class="shrink-0 w-[148px] rounded-xl p-1.5 border text-left transition-transform active:scale-95 flex items-center gap-1.5 ${isEquipped ? 'bg-[#ECFDF5] border-[#10B981]' : isOwned ? 'bg-[#FFFDF5] border-[#F59E0B]' : !rankUnlocked ? 'bg-[#F8FAFC] border-[#CBD5E1] opacity-75' : 'bg-white/95 border-[#D6C5B5]'}">
+        <div class="w-9 h-9 rounded-lg bg-[#FFFDF7] border border-[#E8CCB0] flex items-center justify-center shrink-0 overflow-hidden">
+          ${getOrRender3DCatalogPreview(it.id, 64, 48)}
         </div>
         <div class="min-w-0 flex-1">
-          <div class="flex items-center gap-1">
-            <span class="px-1.5 py-0.5 rounded-full font-extrabold text-[9px]" style="background:${tInfo.bg};color:${tInfo.color};">${tInfo.short}</span>
-            <span class="font-num text-[10px] text-[#7E22CE]">+${itemPts.toLocaleString()}점</span>
-          </div>
-          <div class="font-title text-[11.5px] text-[#3A2E2B] truncate mt-0.5">${it.name}</div>
-          <div class="font-title text-[10px] mt-0.5 ${isEquipped ? 'text-[#059669]' : isOwned ? 'text-[#B45309]' : !rankUnlocked ? 'text-[#64748B]' : 'text-[#DC2626]'}">
-            ${isEquipped ? '✔ 배치됨' : isOwned ? `📦 보유출격${invCnt > 0 ? `(${invCnt})` : ''}` : !rankUnlocked ? `🔒 ${it.unlockRank}위 해금` : `⚡ 현장공수 ${it.cost.toLocaleString()}만`}
+          <div class="font-title text-[11px] text-[#1E1B18] truncate">${it.name}</div>
+          <div class="flex items-center justify-between gap-1 mt-0.5">
+            <span class="font-num text-[10.5px] text-[#7E22CE]">+${itemPts.toLocaleString()}점</span>
+            <span class="font-title text-[10px] ${isEquipped ? 'text-[#059669]' : isOwned ? 'text-[#B45309]' : !rankUnlocked ? 'text-[#64748B]' : 'text-[#DC2626]'}">
+              ${isEquipped ? '배치됨' : isOwned ? `보유${invCnt > 0 ? `(${invCnt})` : ''}` : !rankUnlocked ? `🔒${it.unlockRank}위` : `${it.cost}만`}
+            </span>
           </div>
         </div>
       </button>
@@ -21186,42 +21231,39 @@ function startShowroomDuelJudging() {
     const resBody = document.getElementById('duel-result-body') || resDrawer;
     if (resBody) {
       resBody.innerHTML = `
-        <div class="rounded-2xl p-3 text-center border-2 ${isWin ? 'bg-gradient-to-b from-[#FFFBEB] to-[#FEF3C7] border-[#F59E0B]' : 'bg-[#FEF2F2] border-[#FCA5A5]'}">
-          ${trophyArt}
-          <div class="font-title text-[16.5px] mt-1 ${isWin ? 'text-[#92400E]' : 'text-[#991B1B]'}">
-            ${isWin ? '압도적 쇼룸 서열 결투 승리!!' : '아쉬운 석패 · 명성 소폭 하락'}
-          </div>
-          <div class="font-num text-[13.5px] text-[#3A2E2B] mt-1">
-            내 쇼룸 <b class="text-[#B45309]">${myBrk.total.toLocaleString()}점</b> VS 상대 <b class="text-[#6B21A8]">${oppBrk.total.toLocaleString()}점</b>
-          </div>
+        <div class="flex items-center justify-between gap-2 pb-1.5 border-b border-[#E5C9A8]">
+          <span class="font-title text-[15px] ${isWin ? 'text-[#92400E]' : 'text-[#991B1B]'}">
+            ${isWin ? '🏆 쇼룸 서열 결투 승리!' : '🔥 쇼룸 결투 석패'}
+          </span>
+          <span class="kw-chip ${isWin ? 'tone-gold' : 'tone-coral'}">서열 ${newStandings.myRank}위</span>
         </div>
 
-        <div class="diary-subcard !p-2.5 space-y-1.5 text-[11.5px]">
-          <div class="font-title text-[12px] text-[#3A2E2B] border-b border-[#EED6BE] pb-1">📸 3인 심사위원 채점표</div>
-          <div class="flex justify-between"><span>① 가구 총 럭셔리 가치 (50%)</span><b class="font-num text-[#B45309]">+${myBrk.scoreValue.toLocaleString()}점</b></div>
-          <div class="flex justify-between"><span>② 4대 카테고리 조화도 (30%)</span><b class="font-num text-[#15803D]">+${myBrk.scoreHarmony.toLocaleString()}점</b></div>
-          <div class="flex justify-between"><span>③ Tier 4 한정판 가산점 (20%)</span><b class="font-num text-[#7E22CE]">+${myBrk.scoreLimited.toLocaleString()}점</b></div>
+        <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2 rounded-xl p-2 bg-[#FFFDF8] border border-[#E5C9A8] text-center">
+          <div>
+            <div class="text-[11px] font-bold text-[#78350F]">👑 내 방</div>
+            <div class="font-num text-[16px] text-[#B45309]">${myBrk.total.toLocaleString()}점</div>
+          </div>
+          <span class="px-2 py-0.5 rounded-full bg-[#1E1B18] text-[#FFD700] font-title text-[11px]">VS</span>
+          <div>
+            <div class="text-[11px] font-bold text-[#581C87]">⚔️ 라이벌 방</div>
+            <div class="font-num text-[16px] text-[#6B21A8]">${oppBrk.total.toLocaleString()}점</div>
+          </div>
         </div>
 
         ${isWin ? `
-          <div class="rounded-2xl p-2.5 bg-[#ECFDF5] border border-[#6EE7B7] text-center space-y-1">
-            <div class="font-title text-[12.5px] text-[#065F46]">✨ 명성도 +${fameGain}pt 획득! (현재 명성 배율 +${newPrest.bonusPct}%)</div>
-            <div class="font-body text-[11px] font-extrabold text-[#047857]">💰 우승 상금 +${prize.toLocaleString()}만 · 현재 부자 서열 ${newStandings.myRank}위 / 100!</div>
+          <div class="rounded-xl py-1.5 px-2.5 bg-[#ECFDF5] border border-[#6EE7B7] text-center font-title text-[12.5px] text-[#065F46]">
+            ✨ 명성 +${fameGain}pt (월세 +${newPrest.bonusPct}%) · 💰 상금 +${formatWonBig(prize)}
           </div>
         ` : `
-          <div class="rounded-2xl p-2.5 bg-[#FFFBEB] border border-[#FDE68A] text-center space-y-1.5">
-            <div class="font-body text-[11px] font-bold text-[#92400E]">
-              💡 하단 슬림 독에서 <b>상위 침대·소파·설비</b>를 현장 공수하거나 백화점에서 장만해 재도전하세요!
-            </div>
-            <button type="button" id="btn-duel-instant-retry" class="jelly-action-btn btn-coral-lip w-full py-1.5 !text-[11.5px]">
-              ⚡ 재정비 완료 · 즉시 재도전!
-            </button>
+          <div class="flex items-center justify-between gap-2 rounded-xl py-1.5 px-2.5 bg-[#FFFBEB] border border-[#FDE68A]">
+            <span class="text-[11.5px] font-bold text-[#92400E] truncate">상위 가구 배치 후 재도전!</span>
+            <button type="button" id="btn-duel-instant-retry" class="jelly-action-btn btn-coral-lip !min-h-[28px] !py-0.5 !px-2.5 !text-[11.5px] shrink-0">⚡ 재도전</button>
           </div>
         `}
 
-        <div class="grid grid-cols-2 gap-1.5 pt-1">
-          <button type="button" id="btn-duel-rematch" class="jelly-action-btn btn-gold-lip py-2 !text-[12px]">⚔️ 다음 앞 순위 도전</button>
-          <button type="button" id="btn-duel-exit-town" class="jelly-action-btn btn-mint-lip py-2 !text-[12px]">🏡 타운 복귀</button>
+        <div class="grid grid-cols-2 gap-1.5">
+          <button type="button" id="btn-duel-rematch" class="jelly-action-btn btn-gold-lip !min-h-[34px] !py-1 !text-[12.5px]">⚔️ 다음 상대 도전</button>
+          <button type="button" id="btn-duel-exit-town" class="jelly-action-btn btn-mint-lip !min-h-[34px] !py-1 !text-[12.5px]">🏡 타운 복귀</button>
         </div>
       `;
 
@@ -23420,9 +23462,9 @@ function syncHeroMiniHudAvatar() {
   const titlePickBtn = document.getElementById('btn-title-pick-animal');
   if (titlePickBtn && def) {
     if (charAsset?.masterUrl) {
-      titlePickBtn.innerHTML = `<img src="${charAsset.masterUrl}" alt="${def.name}" class="toy-ico-img w-5 h-5" /><span>주인공: ${def.name}</span>`;
+      titlePickBtn.innerHTML = `<img src="${charAsset.masterUrl}" alt="${def.name}" class="toy-ico-img w-4 h-4" /><span>캐릭터</span>`;
     } else {
-      titlePickBtn.textContent = `주인공: ${def.name}`;
+      titlePickBtn.textContent = '🐾 캐릭터';
     }
   }
 }
@@ -23507,18 +23549,25 @@ function openGateLockCapsule() {
   const cap = document.getElementById('gate-lock-capsule');
   if (!cap) return;
   const msgEl = document.getElementById('gate-lock-msg');
+  const subEl = document.getElementById('gate-lock-sub');
   const skipBtn = document.getElementById('btn-gate-unlock-skip');
   const enterBtn = document.getElementById('btn-gate-enter-now');
 
   if (state.harborUnlocked) {
     if (msgEl) {
-      msgEl.textContent = '🌅 [대문 봉인 해제 완료!] 찬란한 노을빛 해안 도시 [트와일라잇 하버 시티]로 향하는 문이 활짝 열렸습니다! 문 안으로 걸어 들어가거나 아래 버튼을 눌러 입장하세요!';
+      msgEl.textContent = '🌅 해안 신도시 대문 개방!';
+    }
+    if (subEl) {
+      subEl.textContent = '✨ 트와일라잇 하버 리조트 타운 이동 가능';
     }
     skipBtn?.classList.add('hidden');
     enterBtn?.classList.remove('hidden');
   } else {
     if (msgEl) {
-      msgEl.textContent = '🔒 [아직 굳게 닫혀 있습니다] 문틈 너머로 신비로운 노을빛 도시의 기운이 새어 나옵니다... (3일 차 총독 칭호 획득 시 개방)';
+      msgEl.textContent = '🔒 해안 대문 잠김 (3일 차 개방)';
+    }
+    if (subEl) {
+      subEl.textContent = '👑 서열 64위 달성 또는 3일 차 총독 각성 시 오픈';
     }
     skipBtn?.classList.remove('hidden');
     enterBtn?.classList.add('hidden');
@@ -23893,8 +23942,8 @@ function resizeTurntableStageCanvas() {
   if (!turntableState.renderer || !turntableState.camera) return;
   const stageEl = document.getElementById('tt-canvas-stage');
   if (!stageEl) return;
-  const w = Math.max(280, stageEl.clientWidth || 640);
-  const h = Math.max(240, stageEl.clientHeight || 380);
+  const w = Math.max(240, stageEl.clientWidth || 540);
+  const h = Math.max(136, stageEl.clientHeight || 200);
   turntableState.renderer.setSize(w, h, false);
   turntableState.camera.aspect = w / h;
   turntableState.camera.updateProjectionMatrix();
@@ -23944,8 +23993,8 @@ function openTurntableShowcaseModal(mode = 'animal', opt = {}) {
   const headerTitle = document.getElementById('tt-header-title');
   const headerSub = document.getElementById('tt-header-sub');
   if (mode === 'animal') {
-    if (modeBadge) modeBadge.textContent = '360° 아트토이 쇼케이스';
-    if (headerTitle) headerTitle.textContent = '🎨 30종 하이브리드 아트토이 주인공 선택';
+    if (modeBadge) modeBadge.textContent = '360° 쇼케이스';
+    if (headerTitle) headerTitle.textContent = '🐾 동물 캐릭터 선택';
   } else if (mode === 'flagship') {
     if (modeBadge) modeBadge.textContent = '360° 쇼케이스';
     if (headerTitle) headerTitle.textContent = '🛋️ 가구 백화점';
@@ -24104,28 +24153,10 @@ function syncTurntableInfoAndStripUI() {
   const artImg = document.getElementById('tt-master-art-img');
 
   if (counterEl) {
-    counterEl.textContent = `${turntableState.index + 1} / ${turntableState.items.length}`;
+    counterEl.textContent = `${turntableState.index + 1}/${turntableState.items.length}`;
   }
   ownedTagEl?.classList.add('hidden');
-
-  // 초고화질 팝마트 마스터 아트 메달리온 동기화
-  let masterArtUrl = null;
-  if (entry.kind === 'animal') {
-    masterArtUrl = POPMART_ASSETS.characters[entry.data.id]?.masterUrl || null;
-  } else if (entry.kind === 'flagship' || entry.kind === 'garage') {
-    masterArtUrl = getPopMartCatalogThumbDataUrl(entry.data.id);
-  } else if (entry.kind === 'recruit') {
-    const cid = resolveAnimalIdForRole(entry.data.type, entry.idx);
-    masterArtUrl = cid ? POPMART_ASSETS.characters[cid]?.masterUrl : null;
-  }
-  if (artCard && artImg) {
-    if (masterArtUrl) {
-      artImg.src = masterArtUrl;
-      artCard.classList.remove('hidden');
-    } else {
-      artCard.classList.add('hidden');
-    }
-  }
+  artCard?.classList.add('hidden');
 
   // 필터 탭 활성 동기화
   document.querySelectorAll('[data-tt-cat]').forEach((b) => {
@@ -24135,62 +24166,51 @@ function syncTurntableInfoAndStripUI() {
     b.classList.toggle('active', b.getAttribute('data-tt-tier') === String(turntableState.flagshipTier));
   });
 
-  const trophyMini = POPMART_ASSETS.ui.quickTrophyUrl
-    ? `<img src="${POPMART_ASSETS.ui.quickTrophyUrl}" alt="" class="toy-ico-img w-3.5 h-3.5" />`
-    : '';
-  const coinMini = (POPMART_ASSETS.actionIconUrls[0] || POPMART_ASSETS.ui.quickMoneygunUrl)
-    ? `<img src="${POPMART_ASSETS.actionIconUrls[0] || POPMART_ASSETS.ui.quickMoneygunUrl}" alt="" class="toy-ico-img w-3.5 h-3.5" />`
-    : '';
+  const idxPos = `${turntableState.index + 1}/${turntableState.items.length}`;
 
   if (entry.kind === 'animal') {
     const ch = entry.data;
+    const shortName = String(ch.name || '').replace('벨벳 ', '').trim();
+    const shortBuff = String(ch.title || '').replace('카페·', '');
     if (tierPill) {
-      tierPill.textContent = `NO.${String(ch.num).padStart(2, '0')} · WAVE ${ch.wave || 1} 아트토이`;
-      tierPill.className = 'tt-big-tier-badge';
+      tierPill.textContent = `NO.${String(ch.num).padStart(2, '0')} · ${idxPos}`;
+      tierPill.className = 'tt-inline-code-pill';
     }
-    if (nameEl) nameEl.textContent = `${ch.emoji || ''} ${ch.name}`.trim();
+    if (nameEl) nameEl.textContent = `${ch.emoji || ''} ${shortName}`.trim();
     if (chipsRow) {
-      chipsRow.innerHTML = `<span class="tt-big-stat-gold">👑 ${ch.title}</span>`;
+      chipsRow.textContent = `(👑 ${shortBuff})`;
     }
     if (actionBtn) {
       actionBtn.disabled = false;
-      actionBtn.className = 'jelly-action-btn btn-gold-lip tt-big-primary-cta shrink-0 shadow-lg';
+      actionBtn.className = 'jelly-action-btn btn-gold-lip tt-slim-cta-btn';
       actionBtn.textContent = turntableState.fromTitle
-        ? '✨ 이 주인공으로 시작하기! ▶'
-        : '✨ 이 주인공으로 변경하기!';
+        ? '✨ 이 주인공으로 시작하기 ▶'
+        : '✨ 이 캐릭터 선택하기';
     }
   } else if (entry.kind === 'flagship') {
     const it = entry.data;
     const tNum = it.tier || 1;
-    const tierMeta = (window.FURNITURE_TIER_META || {})[tNum] || { badge: `Tier ${tNum}` };
     const invQty = state.furnitureInventory?.[it.id] || 0;
     const rankUnlocked = isItemUnlockedByFameRank(it);
     const effCost = getActiveHeroBuffKey() === 'furn_payback_20' ? Math.max(1, Math.round(it.cost * 0.8)) : it.cost;
     const canAfford = (state.gold || 0) >= effCost && rankUnlocked;
 
     if (tierPill) {
-      tierPill.textContent = tierMeta.badge;
-      tierPill.className = 'tt-big-tier-badge';
-    }
-    if (ownedTagEl && invQty > 0) {
-      ownedTagEl.textContent = `보유 ${invQty}개`;
-      ownedTagEl.classList.remove('hidden');
+      tierPill.textContent = `T${tNum} · ${idxPos}${invQty > 0 ? ` · 보유${invQty}` : ''}`;
+      tierPill.className = 'tt-inline-code-pill';
     }
     if (nameEl) nameEl.textContent = it.name;
     if (chipsRow) {
-      chipsRow.innerHTML = `
-        <span class="tt-big-stat-gold">💰 가격 ${formatWonBig(effCost)}</span>
-        <span class="tt-big-stat-emerald">📈 월세 +${formatWonBig(it.rentAdd)} 상승</span>
-      `;
+      chipsRow.textContent = `(💰 ${formatWonBig(effCost)} · +${it.rentAdd}만)`;
     }
     if (actionBtn) {
       actionBtn.disabled = !canAfford;
-      actionBtn.className = `jelly-action-btn ${tNum >= 3 ? 'btn-gold-lip' : 'btn-coral-lip'} tt-big-primary-cta shrink-0 shadow-lg ${!canAfford ? 'opacity-50 cursor-not-allowed' : ''}`;
+      actionBtn.className = `jelly-action-btn ${tNum >= 3 ? 'btn-gold-lip' : 'btn-coral-lip'} tt-slim-cta-btn ${!canAfford ? 'opacity-50 cursor-not-allowed' : ''}`;
       actionBtn.textContent = !rankUnlocked
         ? `🔒 서열 ${it.unlockRank}위 해금`
         : canAfford
-          ? `✨ 구매 / 방에 배치하기`
-          : `💰 잔액 부족 (${effCost.toLocaleString()}만)`;
+          ? `✨ 구매하기 (${formatWonBig(effCost)})`
+          : `💰 잔액 부족 (${formatWonBig(effCost)})`;
     }
   } else if (entry.kind === 'garage') {
     const car = entry.data;
@@ -24200,24 +24220,21 @@ function syncTurntableInfoAndStripUI() {
     const canAfford = (state.gold || 0) >= car.cost;
 
     if (tierPill) {
-      tierPill.textContent = isEquipped ? '현재 탑승 차량' : isOwned ? '보유 차량' : '슈퍼카 출고';
-      tierPill.className = 'tt-big-tier-badge';
+      tierPill.textContent = `${isEquipped ? '탑승중' : isOwned ? '보유' : '출고'} · ${idxPos}`;
+      tierPill.className = 'tt-inline-code-pill';
     }
     if (nameEl) nameEl.textContent = car.name;
     if (chipsRow) {
-      chipsRow.innerHTML = `
-        <span class="tt-big-stat-gold">💰 ${car.cost > 0 ? formatWonBig(car.cost) : '기본 보유'}</span>
-        <span class="tt-big-stat-emerald">🏎️ 수금 보너스 +${car.driveTipPct}%</span>
-      `;
+      chipsRow.textContent = `(${car.cost > 0 ? formatWonBig(car.cost) : '기본'} · 수금 +${car.driveTipPct}%)`;
     }
     if (actionBtn) {
       actionBtn.disabled = !isOwned && !canAfford;
-      actionBtn.className = `jelly-action-btn ${isEquipped ? 'btn-coral-lip' : isOwned ? 'btn-mint-lip' : 'btn-gold-lip'} tt-big-primary-cta shrink-0 shadow-lg ${(!isOwned && !canAfford) ? 'opacity-50 cursor-not-allowed' : ''}`;
+      actionBtn.className = `jelly-action-btn ${isEquipped ? 'btn-coral-lip' : isOwned ? 'btn-mint-lip' : 'btn-gold-lip'} tt-slim-cta-btn ${(!isOwned && !canAfford) ? 'opacity-50 cursor-not-allowed' : ''}`;
       actionBtn.textContent = isEquipped || isOwned
-        ? '🏎️ 드라이브 출발하기!'
+        ? '🏎️ 드라이브 출발하기'
         : canAfford
-          ? `✨ 구매하고 드라이브 출발!`
-          : `💰 잔액 부족 (${car.cost.toLocaleString()}만)`;
+          ? `✨ 구매 후 출발 (${formatWonBig(car.cost)})`
+          : `💰 잔액 부족 (${formatWonBig(car.cost)})`;
     }
   } else if (entry.kind === 'recruit') {
     const cand = entry.data;
@@ -24228,22 +24245,20 @@ function syncTurntableInfoAndStripUI() {
     const canContract = roomStars >= reqStars && rankOk;
 
     if (tierPill) {
-      tierPill.textContent = `${hDef.label} · 필요 ★${reqStars}`;
-      tierPill.className = 'tt-big-tier-badge';
+      tierPill.textContent = `★${reqStars} · ${idxPos}`;
+      tierPill.className = 'tt-inline-code-pill';
     }
     if (nameEl) nameEl.textContent = cand.familyName;
     if (chipsRow) {
-      chipsRow.innerHTML = `
-        <span class="tt-big-stat-emerald">💰 희망 월세 ${formatWonBig(cand.maxBudget)}</span>
-      `;
+      chipsRow.textContent = `(💰 한도 ${formatWonBig(cand.maxBudget)})`;
     }
     if (actionBtn) {
       actionBtn.disabled = false;
-      actionBtn.className = `jelly-action-btn ${canContract ? 'btn-gold-lip' : 'btn-sky-lip'} tt-big-primary-cta shrink-0 shadow-lg`;
+      actionBtn.className = `jelly-action-btn ${canContract ? 'btn-gold-lip' : 'btn-sky-lip'} tt-slim-cta-btn`;
       actionBtn.textContent = !rankOk
-        ? `🔒 ${hDef.unlockRank}위 결투하러 가기`
+        ? `🔒 ${hDef.unlockRank}위 결투하기`
         : canContract
-          ? `🤝 입주 계약하기!`
+          ? `🤝 입주 계약하기`
           : `🛋️ 방 가구 ★${reqStars} 맞추기`;
     }
   }
@@ -25807,7 +25822,8 @@ function initThreeScene() {
   scene.background = TEX.skyBackdrop;
   scene.fog = new THREE.FogExp2(0xE8F9FD, 0.0019);
 
-  const aspect = window.innerWidth / Math.max(1, window.innerHeight);
+  const vp = syncAutoLandscapeViewportLock();
+  const aspect = vp.width / Math.max(1, vp.height);
   const frustum = 38;
   camera = new THREE.OrthographicCamera(
     (-frustum * aspect) / 2,
@@ -25825,7 +25841,7 @@ function initThreeScene() {
 
   renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(vp.width, vp.height);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.08;
@@ -25871,8 +25887,9 @@ function initThreeScene() {
   studioRimLight.position.set(0, 22, -18);
   scene.add(studioKeyLight, studioFillLight, studioRimLight);
 
-  window.addEventListener('resize', () => {
-    const asp = window.innerWidth / Math.max(1, window.innerHeight);
+  const handleViewportResize = () => {
+    const curVp = syncAutoLandscapeViewportLock();
+    const asp = curVp.width / Math.max(1, curVp.height);
     camera.left = (-frustum * asp) / 2;
     camera.right = (frustum * asp) / 2;
     camera.top = frustum / 2;
@@ -25887,7 +25904,7 @@ function initThreeScene() {
       fpCamera.updateProjectionMatrix();
     }
 
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(curVp.width, curVp.height);
     if (turntableState.active) {
       resizeTurntableStageCanvas();
     }
@@ -25897,6 +25914,11 @@ function initThreeScene() {
     } else if (!guidedTourState.active && !duelState.active && !focusedRoomId && !focusedShopId && !focusedFirstFloorShopId && !driveState.active && !fpState.active) {
       setOverviewCamera(false);
     }
+  };
+
+  window.addEventListener('resize', handleViewportResize);
+  window.addEventListener('orientationchange', () => {
+    setTimeout(handleViewportResize, 60);
   });
 }
 
@@ -26142,6 +26164,8 @@ function cacheDOMElements() {
 function bindAllUIEvents() {
   // [요구사항 9] UI 클릭 관통(Click Bleed-Through) 원천 차단: 모든 드로어·팝오버·퀵버튼에서 3D 캔버스로 포인터 이벤트 전파 차단!
   const uiShieldSelectors = [
+    '#main-game-header',
+    '#bottom-town-bar',
     '#top-right-action-cluster',
     '#weather-switch-pill',
     '#quick-trio-stack',
@@ -26149,6 +26173,7 @@ function bindAllUIEvents() {
     '#pocket-planner-popover',
     '#focus-clean-capsule',
     '#gate-lock-capsule',
+    '#news-detail-modal',
     '#turntable-showcase-modal',
     '#room-focus-panel',
     '#shop-focus-panel',
@@ -26167,8 +26192,13 @@ function bindAllUIEvents() {
     });
   }
 
-  // 수첩 또는 머니건 팝오버 밖 화면 클릭 시 깔끔하게 접기 연동!
+  // 모달 바깥 어두운 배경 클릭 시 닫기 + 첫 터치 시 모바일 가로모드 잠금 시도
+  let didAttemptOrientationLock = false;
   window.addEventListener('pointerdown', (e) => {
+    if (!didAttemptOrientationLock) {
+      didAttemptOrientationLock = true;
+      tryLockLandscapeOrientation();
+    }
     const target = e.target;
     const pop = document.getElementById('pocket-planner-popover');
     const fab = document.getElementById('fab-notebook');
@@ -26186,24 +26216,56 @@ function bindAllUIEvents() {
     }
   });
 
+  document.getElementById('pocket-planner-popover')?.addEventListener('click', (ev) => {
+    if (ev.target === ev.currentTarget) closePocketPlanner();
+  });
+  document.getElementById('gate-lock-capsule')?.addEventListener('click', (ev) => {
+    if (ev.target === ev.currentTarget) closeGateLockCapsule();
+  });
+  document.getElementById('news-detail-modal')?.addEventListener('click', (ev) => {
+    if (ev.target === ev.currentTarget) ev.currentTarget.classList.add('hidden');
+  });
+
+  // [전 화면 공통 3] 초소형 1줄 뉴스 티커 클릭 시 상세 소식 모달 오픈!
+  document.getElementById('hud-mini-news-ticker')?.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    openNewsDetailModal();
+  });
+  document.getElementById('btn-close-news-modal')?.addEventListener('click', () => {
+    document.getElementById('news-detail-modal')?.classList.add('hidden');
+  });
+  document.getElementById('btn-news-confirm-close')?.addEventListener('click', () => {
+    document.getElementById('news-detail-modal')?.classList.add('hidden');
+  });
+  document.getElementById('btn-news-open-forbes')?.addEventListener('click', () => {
+    document.getElementById('news-detail-modal')?.classList.add('hidden');
+    openForbesModal();
+  });
+
   let downX = 0;
   let downY = 0;
   renderer.domElement.addEventListener('pointerdown', (e) => {
-    downX = e.clientX;
-    downY = e.clientY;
+    if (!didAttemptOrientationLock) {
+      didAttemptOrientationLock = true;
+      tryLockLandscapeOrientation();
+    }
+    const lp = mapClientToLogical(e.clientX, e.clientY);
+    downX = lp.x;
+    downY = lp.y;
     if (fpState.active && !guidedTourState.active) {
       fpState.draggingLook = true;
-      fpState.lastPointerX = e.clientX;
-      fpState.lastPointerY = e.clientY;
+      fpState.lastPointerX = lp.x;
+      fpState.lastPointerY = lp.y;
     }
   });
 
   window.addEventListener('pointermove', (e) => {
     if (!fpState.active || !fpState.draggingLook || guidedTourState.active) return;
-    const dx = e.clientX - fpState.lastPointerX;
-    const dy = e.clientY - fpState.lastPointerY;
-    fpState.lastPointerX = e.clientX;
-    fpState.lastPointerY = e.clientY;
+    const lp = mapClientToLogical(e.clientX, e.clientY);
+    const dx = lp.x - fpState.lastPointerX;
+    const dy = lp.y - fpState.lastPointerY;
+    fpState.lastPointerX = lp.x;
+    fpState.lastPointerY = lp.y;
     fpState.yaw -= dx * 0.0045;
     fpState.pitch = THREE.MathUtils.clamp(fpState.pitch - dy * 0.0032, -0.42, 0.42);
   });
@@ -26213,12 +26275,12 @@ function bindAllUIEvents() {
   });
 
   renderer.domElement.addEventListener('pointerup', (e) => {
-    if (Math.hypot(e.clientX - downX, e.clientY - downY) > 7) return;
+    const lp = mapClientToLogical(e.clientX, e.clientY);
+    if (Math.hypot(lp.x - downX, lp.y - downY) > 7) return;
     if (titleScreenState.active || guidedTourState.active || driveState.active || duelState.active) return;
 
-    const rect = renderer.domElement.getBoundingClientRect();
-    pointerNDC.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    pointerNDC.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    pointerNDC.x = (lp.x / Math.max(1, lp.width)) * 2 - 1;
+    pointerNDC.y = -(lp.y / Math.max(1, lp.height)) * 2 + 1;
 
     raycaster.setFromCamera(pointerNDC, getActiveCamera());
 
@@ -26240,7 +26302,7 @@ function bindAllUIEvents() {
 
     const ud = hits[0].object.userData;
     if (ud.kind === 'rentCoin3D' && ud.bubbleRef) {
-      collectRentBubble(ud.bubbleRef, 0, e.clientX, e.clientY);
+      collectRentBubble(ud.bubbleRef, 0, lp.x, lp.y);
     } else if (ud.kind === 'goalArrow3D') {
       executeCurrentGoalNavigation();
     } else if (ud.kind === 'raccoonManager') {
@@ -26350,14 +26412,16 @@ function bindAllUIEvents() {
   if (ttStage) {
     ttStage.addEventListener('pointerdown', (ev) => {
       if (ev.target && ev.target.closest('button')) return;
+      const lp = mapClientToLogical(ev.clientX, ev.clientY);
       turntableState.dragging = true;
-      turntableState.lastPointerX = ev.clientX;
+      turntableState.lastPointerX = lp.x;
       turntableState.dragVel = 0;
     });
     window.addEventListener('pointermove', (ev) => {
       if (!turntableState.active || !turntableState.dragging) return;
-      const dx = ev.clientX - turntableState.lastPointerX;
-      turntableState.lastPointerX = ev.clientX;
+      const lp = mapClientToLogical(ev.clientX, ev.clientY);
+      const dx = lp.x - turntableState.lastPointerX;
+      turntableState.lastPointerX = lp.x;
       turntableState.yaw += dx * 0.014;
       turntableState.dragVel = dx * 0.16;
     });
@@ -26511,6 +26575,9 @@ function bindAllUIEvents() {
       const targetShop = focusedShopId || focusedFirstFloorShopId;
       if (targetShop) enterFirstPersonShop(targetShop, false);
     }
+  });
+  document.getElementById('btn-focus-reset-cam')?.addEventListener('click', () => {
+    resetFocusedCameraView();
   });
   document.getElementById('btn-focus-lower-telescope')?.addEventListener('click', () => {
     if (focusedRoomId) exitRoomFocusMode();
@@ -26820,6 +26887,7 @@ function bindAllUIEvents() {
         return;
       }
       const anyOpenModal = [
+        document.getElementById('news-detail-modal'),
         document.getElementById('animal-select-modal'),
         document.getElementById('flagship-shop-drawer'),
         document.getElementById('harbor-chronicle-modal'),
@@ -26975,6 +27043,8 @@ function bindAllUIEvents() {
 // 18. 부트스트랩 및 메인 애니메이션 루프
 // =========================================================
 window.addEventListener('DOMContentLoaded', () => {
+  syncAutoLandscapeViewportLock();
+  tryLockLandscapeOrientation();
   loadGameState();
   cacheDOMElements();
   initSharedResources();

@@ -42,1284 +42,1231 @@
   </script>
   <link rel="stylesheet" href="./style.css" />
 </head>
-<body class="select-none overflow-hidden big-bold-ui">
+<body class="select-none overflow-hidden mobile-safe-clay-ui">
+  <!-- ==================== 0. 강제 가로모드 자동 회전 루트 뷰포트 래퍼 (`Auto-Landscape Viewport Lock & CSS Rotate`) ==================== -->
+  <div id="game-viewport-wrapper">
 
-  <!-- ==================== 1. WebGL 3D 파스텔 타운 뷰포트 ==================== -->
-  <div id="webgl-container"></div>
+    <!-- ==================== 1. WebGL 3D 파스텔 타운 뷰포트 ==================== -->
+    <div id="webgl-container"></div>
 
-  <!-- 전체화면 단독 룸/상가 뷰 전용 소프트 스튜디오 비네팅 & 황금 투시 망원경 조리개 렌즈 -->
-  <div id="room-isolation-vignette" class="hidden fixed inset-0 z-10 pointer-events-none"></div>
-  <div id="telescope-iris-vignette" class="hidden fixed inset-0 z-[12] pointer-events-none">
-    <div class="telescope-iris-ring"></div>
-    <div class="telescope-crosshair-h"></div>
-    <div class="telescope-crosshair-v"></div>
-    <div class="telescope-hud-tag">
-      <span id="ico-telescope-hud" class="inline-flex items-center justify-center w-6 h-6 mr-2"></span>
-      <span>🔭 360° 황금 투시 뷰 · 드래그 회전</span>
+    <!-- 전체화면 단독 룸/상가 뷰 전용 소프트 스튜디오 비네팅 & 황금 투시 망원경 조리개 렌즈 -->
+    <div id="room-isolation-vignette" class="hidden fixed inset-0 z-10 pointer-events-none"></div>
+    <div id="telescope-iris-vignette" class="hidden fixed inset-0 z-[12] pointer-events-none">
+      <div class="telescope-iris-ring"></div>
+      <div class="telescope-crosshair-h"></div>
+      <div class="telescope-crosshair-v"></div>
+      <div class="telescope-hud-tag">
+        <span id="ico-telescope-hud" class="inline-flex items-center justify-center w-4 h-4 mr-1"></span>
+        <span>🔭 360° 투시 뷰 · 드래그 회전</span>
+      </div>
     </div>
-  </div>
 
-  <!-- ==================== 2. 3D 공간 밀착 투영(Project) 오버레이 레이어 ==================== -->
-  <div id="overlay-3d-layer">
-    <div id="lots-overlay-layer"></div>
-    <div id="shops-overlay-layer"></div>
-    <div id="rooms-overlay-layer"></div>
-    <div id="world-action-badges-layer"></div>
-    <div id="goal-arrow-overlay-layer"></div>
-    <div id="construction-overlay-layer"></div>
-    <div id="crisis-pins-layer"></div>
-    <div id="rent-bubbles-layer"></div>
-    <div id="speech-overlay-layer"></div>
-    <div id="care-overlay-layer"></div>
-    <div id="rival-pins-layer"></div>
-    <div id="jackpot-overlay-layer"></div>
-  </div>
+    <!-- ==================== 2. 3D 공간 밀착 투영(Project) 오버레이 레이어 ==================== -->
+    <div id="overlay-3d-layer">
+      <div id="lots-overlay-layer"></div>
+      <div id="shops-overlay-layer"></div>
+      <div id="rooms-overlay-layer"></div>
+      <div id="world-action-badges-layer"></div>
+      <div id="goal-arrow-overlay-layer"></div>
+      <div id="construction-overlay-layer"></div>
+      <div id="crisis-pins-layer"></div>
+      <div id="rent-bubbles-layer"></div>
+      <div id="speech-overlay-layer"></div>
+      <div id="care-overlay-layer"></div>
+      <div id="rival-pins-layer"></div>
+      <div id="jackpot-overlay-layer"></div>
+    </div>
 
-  <!-- ==================== 2B. 시네마틱 비대칭 오프닝 타이틀 (빅 & 볼드 에디션) ==================== -->
-  <section id="title-screen-overlay" class="fixed inset-0 z-[90] pointer-events-none select-none">
-    <div id="title-floating-card" class="title-floating-card pointer-events-auto">
-      <h1 class="title-brand-display" aria-label="갓물주 라이프">
-        <img id="badge-img-title-hero" src="./assets/ui_badges/badge_header_title.png" alt="갓물주 라이프" class="toy-badge-header-logo-img" />
-        <span class="sr-only">갓물주 라이프</span>
-      </h1>
+    <!-- ==================== 2B. 시네마틱 오프닝 타이틀 (모바일 360px 높이 안전 설계) ==================== -->
+    <section id="title-screen-overlay" class="fixed inset-0 z-[90] pointer-events-none select-none">
+      <div id="title-floating-card" class="title-floating-card clay-glass-shell pointer-events-auto">
+        <h1 class="title-brand-display" aria-label="갓물주 라이프">
+          <img id="badge-img-title-hero" src="./assets/ui_badges/badge_header_title.png" alt="갓물주 라이프" class="toy-badge-header-logo-img" />
+          <span class="sr-only">갓물주 라이프</span>
+        </h1>
 
-      <div class="w-full mt-4 flex flex-col items-center">
-        <div id="title-loading-box" class="title-slim-loader-wrap">
-          <div class="title-slim-loader-track">
-            <div id="title-progress-fill" class="title-slim-loader-fill" style="width: 8%;"></div>
+        <div class="w-full mt-2.5 flex flex-col items-center">
+          <div id="title-loading-box" class="title-slim-loader-wrap">
+            <div class="title-slim-loader-track">
+              <div id="title-progress-fill" class="title-slim-loader-fill" style="width: 8%;"></div>
+            </div>
+          </div>
+
+          <button id="btn-start-game" type="button" class="hidden title-coral-start-btn">
+            <span>타운 시작하기</span>
+            <span class="title-start-chevron" aria-hidden="true">▶</span>
+          </button>
+        </div>
+
+        <nav class="title-sub-nav" aria-label="타이틀 서브 메뉴">
+          <button id="btn-title-pick-animal" type="button" class="title-sub-link">🐾 캐릭터</button>
+          <span class="title-sub-divider" aria-hidden="true"></span>
+          <button id="btn-continue-game" type="button" class="title-sub-link">이어하기</button>
+          <span class="title-sub-divider" aria-hidden="true"></span>
+          <button id="btn-title-settings" type="button" class="title-sub-link">⚙️ 설정</button>
+        </nav>
+      </div>
+    </section>
+
+    <!-- 코인 비행 & HUD 플로팅 텍스트 & 팝마트 스킬 VFX 연출 레이어 -->
+    <div id="flying-coin-layer" class="fixed inset-0 z-40 pointer-events-none overflow-hidden"></div>
+    <div id="skill-vfx-burst-layer" class="fixed inset-0 z-[43] pointer-events-none overflow-hidden"></div>
+
+    <!-- ==================== 3. 상단 단일 Flexbox 통합 헤더 바 (`좌측 자산/순위 | 중앙 할 일 가이드 | 우측 날씨/설정`) ==================== -->
+    <header id="main-game-header" class="hidden fixed top-0 left-0 right-0 z-[36] pointer-events-none flex flex-col gap-1">
+      <div id="top-main-hud-row" class="hud-top-flexbox-bar">
+        <!-- ① 좌측: [💰 1,446만 원 | 🏆 80위] + 마을 전환 -->
+        <div id="hud-top-left-group" class="flex items-center gap-1.5 shrink-0 min-w-0">
+          <div id="hud-badge-gold" class="hud-big-unified-capsule pointer-events-auto relative">
+            <button id="hud-hero-avatar-btn" type="button" title="내 동물 건물주 변경" class="hud-big-avatar-chip">
+              <canvas id="hud-hero-mini-canvas" width="72" height="72" class="w-7 h-7 object-contain"></canvas>
+            </button>
+
+            <div id="hud-gold-wrap" class="hud-big-money-wrap">
+              <span id="hud-money-bag-slot" class="hud-money-bag-ico inline-flex items-center justify-center w-4 h-4 shrink-0" aria-hidden="true">💰</span>
+              <span id="hud-gold" class="hud-big-money-num">55만 원</span>
+            </div>
+
+            <span class="hud-big-divider" aria-hidden="true"></span>
+
+            <button id="hud-fame-rank-pill" type="button" title="100인 글로벌 부자 서열표 열기" class="hud-big-rank-btn">
+              <span id="hud-fame-crest-slot" class="inline-flex items-center justify-center w-4 h-4 shrink-0">🏆</span>
+              <span id="hud-forbes-rank-text" class="hud-big-rank-num">99위</span>
+              <span id="hud-fame-pts-text" class="hidden">명성 +0%</span>
+            </button>
+
+            <span id="hud-net-income" class="hidden">+4.2만/s</span>
+            <button id="hud-badge-happy" type="button" class="hidden"><span id="hud-happiness">34%</span></button>
+            <div id="hud-gold-pop-anchor" class="absolute right-2 top-0 pointer-events-none"></div>
+          </div>
+
+          <div id="town-stage-switch-pill" class="hidden pointer-events-auto town-stage-switch-pill" role="group" aria-label="마을 전환 스위치">
+            <button id="btn-switch-stage-1" type="button" class="stage-seg-btn active">
+              <span id="stg-ico-sun" class="hidden"></span>
+              <span>☀️ 본점</span>
+            </button>
+            <span class="stage-seg-arrow" aria-hidden="true">⇄</span>
+            <button id="btn-switch-stage-2" type="button" class="stage-seg-btn">
+              <span id="stg-ico-harbor" class="hidden"></span>
+              <span>🌅 하버</span>
+            </button>
           </div>
         </div>
 
-        <button id="btn-start-game" type="button" class="hidden title-coral-start-btn">
-          <span>타운 시작하기</span>
-          <span class="title-start-chevron" aria-hidden="true">▶</span>
-        </button>
-      </div>
+        <!-- ② 중앙: [🎯 할 일: 침대 구매 👆] -->
+        <div id="hud-top-center-group" class="flex items-center justify-center min-w-0 flex-1 overflow-hidden">
+          <div id="top-goal-navigator" class="pointer-events-auto max-w-full">
+            <button id="btn-goal-nav-bar" type="button" class="goal-navigator-capsule" title="클릭 시 목표 위치로 즉시 이동">
+              <span id="goal-nav-thumb" class="goal-nav-thumb-box" aria-hidden="true">
+                <img id="goal-nav-thumb-img" src="./assets/furniture/bed_tier3_canopy.png" alt="" class="w-full h-full object-contain" />
+              </span>
+              <span class="goal-nav-prefix">🎯 할 일:</span>
+              <span id="goal-nav-text" class="goal-nav-label">침대 구매</span>
+              <span id="btn-goal-nav-go" class="goal-nav-finger" aria-hidden="true">👆</span>
+            </button>
+          </div>
 
-      <nav class="title-sub-nav" aria-label="타이틀 서브 메뉴">
-        <button id="btn-title-pick-animal" type="button" class="title-sub-link">🐾 동물 아바타</button>
-        <span class="title-sub-divider" aria-hidden="true"></span>
-        <button id="btn-continue-game" type="button" class="title-sub-link">이어하기</button>
-        <span class="title-sub-divider" aria-hidden="true"></span>
-        <button id="btn-title-settings" type="button" class="title-sub-link">⚙️ 설정</button>
-      </nav>
-    </div>
-  </section>
+          <!-- 방 줌인 시 호실 빠른 전환 탭 -->
+          <div id="room-focus-topbar" class="hidden pointer-events-auto flex items-center gap-1.5 min-w-0 overflow-x-auto no-scrollbar">
+            <button id="btn-room-enter-fp" type="button" class="hidden"><span id="ico-room-fp"></span></button>
+            <div id="room-switcher-chips" class="flex items-center gap-1 overflow-x-auto no-scrollbar"></div>
+          </div>
 
-  <!-- 코인 비행 & HUD 플로팅 텍스트 & 팝마트 스킬 VFX 연출 레이어 -->
-  <div id="flying-coin-layer" class="fixed inset-0 z-40 pointer-events-none overflow-hidden"></div>
-  <div id="skill-vfx-burst-layer" class="fixed inset-0 z-[43] pointer-events-none overflow-hidden"></div>
+          <!-- 상가 줌인 시 상가 빠른 전환 탭 -->
+          <div id="shop-focus-topbar" class="hidden pointer-events-auto flex items-center gap-1.5 min-w-0 overflow-x-auto no-scrollbar">
+            <button id="btn-shop-enter-fp" type="button" class="hidden"><span id="ico-shop-fp"></span></button>
+            <div id="shop-switcher-chips" class="flex items-center gap-1 overflow-x-auto no-scrollbar"></div>
+          </div>
 
-  <!-- ==================== 3A. 좌측 상단: 왕큼직 통합 자산 & 서열 캡슐 (1개 통합!) ==================== -->
-  <header id="main-game-header" class="hidden fixed top-[18px] left-[18px] z-30 flex flex-col items-start gap-2.5 pointer-events-none">
-    <div class="flex items-center gap-2.5 flex-wrap">
-      <!-- 통합 캡슐: [아바타] 💰 1,500,000원 | 🏆 99위 (명성 +5%) -->
-      <div id="hud-badge-gold" class="hud-big-unified-capsule pointer-events-auto relative">
-        <button id="hud-hero-avatar-btn" type="button" title="내 동물 건물주 변경" class="hud-big-avatar-chip">
-          <canvas id="hud-hero-mini-canvas" width="88" height="88" class="w-11 h-11 object-contain"></canvas>
-        </button>
+          <!-- 드라이브 모드 상단 슬림 칩 -->
+          <div id="drive-focus-topbar" class="hidden pointer-events-auto flex items-center gap-1 overflow-x-auto no-scrollbar">
+            <button id="btn-toggle-cockpit" type="button" class="focus-mini-icon-pill">
+              <span id="ico-toggle-cockpit" class="hidden"></span>
+              <span id="label-toggle-cockpit">👀 운전석</span>
+            </button>
+            <button id="btn-open-garage" type="button" class="focus-mini-icon-pill">
+              <span id="hud-ico-garage" class="hidden"></span>
+              <span>🏎️ 차량</span>
+            </button>
+            <button id="btn-drive-scenic-jump" type="button" class="focus-mini-icon-pill">
+              <span id="ico-drive-scenic" class="hidden"></span>
+              <span id="label-drive-scenic">🌴 해안</span>
+            </button>
+            <button id="btn-drive-rival-race" type="button" class="focus-mini-icon-pill">
+              <span id="ico-drive-race" class="hidden"></span>
+              <span>🏁 레이스</span>
+            </button>
+            <button id="btn-drive-step-out" type="button" class="focus-mini-icon-pill">
+              <span id="ico-drive-step-out" class="hidden"></span>
+              <span>🚪 매장</span>
+            </button>
+            <button id="btn-drive-rain" type="button" class="focus-mini-icon-pill">
+              <span id="ico-drive-rain" class="hidden"></span>
+              <span>💸 머니건</span>
+            </button>
+            <div class="hidden">
+              <span id="drive-car-badge"></span>
+              <span id="drive-speed-badge">62 km/h</span>
+              <span id="drive-loot-badge"></span>
+            </div>
+          </div>
 
-        <div id="hud-gold-wrap" class="hud-big-money-wrap">
-          <span id="hud-money-bag-slot" class="hud-money-bag-ico inline-flex items-center justify-center w-7 h-7 shrink-0" aria-hidden="true">💰</span>
-          <span id="hud-gold" class="hud-big-money-num">550,000원</span>
+          <!-- 1인칭 상점 · 집들이 상단 슬림 칩 -->
+          <div id="fp-focus-topbar" class="hidden pointer-events-auto flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            <span id="fp-place-badge" class="focus-mini-icon-pill">매장 내부</span>
+            <button id="btn-fp-switch-dest" type="button" class="focus-mini-icon-pill">
+              <span id="ico-fp-dest" class="hidden"></span>
+              <span>🚪 이동</span>
+            </button>
+            <button id="btn-fp-rain" type="button" class="focus-mini-icon-pill">
+              <span id="ico-fp-rain" class="hidden"></span>
+              <span>💸 머니건</span>
+            </button>
+            <div id="fp-held-chips-row" class="flex items-center gap-1"></div>
+          </div>
         </div>
 
-        <span class="hud-big-divider" aria-hidden="true"></span>
+        <!-- ③ 우측: [☀️] [⚙️] + 확대 시 [✕] -->
+        <div id="top-right-action-cluster" class="flex items-center gap-1.5 shrink-0 pointer-events-none">
+          <button id="btn-weather-cycle" type="button" title="날씨 바꾸기 (맑음 ➔ 비 ➔ 눈)" aria-label="날씨 전환" class="pointer-events-auto big-corner-square-btn">
+            <span id="weather-cycle-emoji" class="text-[17px] leading-none">☀️</span>
+          </button>
 
-        <button id="hud-fame-rank-pill" type="button" title="100인 글로벌 부자 서열 &amp; 명성도 보드 열기" class="hud-big-rank-btn">
-          <span id="hud-fame-crest-slot" class="inline-flex items-center justify-center w-7 h-7 shrink-0">🏆</span>
-          <span id="hud-forbes-rank-text" class="hud-big-rank-num">99위</span>
-          <span id="hud-fame-pts-text" class="hud-big-fame-tag">명성 +5%</span>
-        </button>
+          <div id="weather-switch-pill" class="hidden">
+            <button type="button" data-weather-btn="clear"><span id="w-ico-sun"></span></button>
+            <button type="button" data-weather-btn="rain"><span id="w-ico-rain"></span></button>
+            <button type="button" data-weather-btn="snow"><span id="w-ico-snow"></span></button>
+          </div>
 
-        <!-- 내부 데이터 연동용 보조 슬롯 (화면 복잡도 제거) -->
-        <span id="hud-net-income" class="hidden">+4.2만/s</span>
-        <button id="hud-badge-happy" type="button" class="hidden"><span id="hud-happiness">34%</span></button>
-        <div id="hud-gold-pop-anchor" class="absolute right-4 top-0 pointer-events-none"></div>
+          <button id="btn-top-settings" type="button" title="환경설정 열기" aria-label="환경설정" class="pointer-events-auto big-corner-square-btn">
+            <span id="hud-ico-top-settings" class="w-4 h-4 flex items-center justify-center">⚙️</span>
+          </button>
+
+          <button id="btn-focus-close-floating" type="button" title="타운 전체 화면으로 나가기" aria-label="밖으로 나가기" class="hidden pointer-events-auto big-exit-capsule-btn">
+            <span>✕ 나가기</span>
+          </button>
+        </div>
       </div>
 
-      <!-- 제2마을 개통 시에만 나타나는 큼직한 마을 전환 스위치 -->
-      <div id="town-stage-switch-pill" class="hidden pointer-events-auto town-stage-switch-pill" role="group" aria-label="마을 전환 스위치">
-        <button id="btn-switch-stage-1" type="button" class="stage-seg-btn active inline-flex items-center gap-1.5">
-          <span id="stg-ico-sun" class="inline-flex items-center justify-center w-5 h-5"></span>
-          <span>본점</span>
+      <!-- 좌측 상단 상태창 바로 아래: 『초소형 1줄 뉴스 티커 (height: 24px; font-size: 11px; padding: 2px 10px;)』 -->
+      <div id="hud-sub-ticker-row" class="px-3 flex items-center gap-1.5 flex-wrap pointer-events-none">
+        <button id="hud-mini-news-ticker" type="button" class="pointer-events-auto mini-news-ticker-pill" title="클릭하여 소식 상세 내역 보기">
+          <span id="mini-news-ticker-text" class="truncate">🔔 99위 스타트! 첫 침대 구매로 서열 상승 도전</span>
+          <span class="mini-news-detail-tag">[🔍 상세]</span>
         </button>
-        <span class="stage-seg-arrow" aria-hidden="true">⇄</span>
-        <button id="btn-switch-stage-2" type="button" class="stage-seg-btn inline-flex items-center gap-1.5">
-          <span id="stg-ico-harbor" class="inline-flex items-center justify-center w-5 h-5"></span>
-          <span>하버</span>
+
+        <button id="hud-manager-alert-pill" type="button" class="hidden pointer-events-auto mini-news-ticker-pill urgent-alert">
+          <span id="hud-mgr-alert-ico" class="hidden"></span>
+          <span id="hud-mgr-alert-text">💢 소장 파업! 급여 인상 필요</span>
         </button>
+
+        <div id="hud-fever-pill" class="hidden pointer-events-none mini-news-ticker-pill fever-alert">
+          <span id="hud-ico-fever" class="hidden"></span>
+          <span id="hud-fever-text">🔥 피버 2.5배!</span>
+        </div>
+
+        <div id="hq-dividend-pill" class="hidden">
+          <span id="hq-dividend-text"></span>
+        </div>
       </div>
-    </div>
 
-    <!-- 관리인 태업(파업) 긴급 시에만 뜨는 큰 알림 캡슐 -->
-    <button id="hud-manager-alert-pill" type="button" class="hidden pointer-events-auto hud-manager-alert-pill">
-      <span id="hud-mgr-alert-ico" class="inline-flex items-center justify-center w-6 h-6 shrink-0"></span>
-      <span id="hud-mgr-alert-text">💢 거북 소장 파업 중! 클릭해 월급 올리기</span>
-    </button>
-
-    <!-- 제2마을 자동 배당금 토스트 -->
-    <div id="hq-dividend-pill" class="hidden pointer-events-none hq-dividend-mini-toast">
-      <span id="hq-dividend-text">💰 본점 자동 배당금 입금!</span>
-    </div>
-
-    <!-- 골든벨 피버 타임 실시간 캡슐 -->
-    <div id="hud-fever-pill" class="hidden pointer-events-none hud-minimal-fever-pill">
-      <span id="hud-ico-fever" class="flex items-center"></span>
-      <span id="hud-fever-text">🔥 골든벨 피버 2.5배!</span>
-    </div>
-
-    <!-- 방 줌인 시 호실 빠른 전환 탭 -->
-    <div id="room-focus-topbar" class="hidden flex flex-col gap-2">
-      <div class="flex items-center gap-2 flex-wrap">
-        <button id="btn-room-enter-fp" type="button" class="pointer-events-auto focus-mini-icon-pill">
-          <span id="ico-room-fp" class="flex items-center"></span>
-          <span>🚪 집들이 입장</span>
-        </button>
-      </div>
-      <div id="room-switcher-chips" class="pointer-events-auto flex items-center gap-2 overflow-x-auto sm:overflow-visible sm:flex-wrap no-scrollbar pb-1 pr-2 sm:max-w-[calc(100vw-470px)]"></div>
-    </div>
-
-    <!-- 상가 줌인 시 상가 빠른 전환 탭 -->
-    <div id="shop-focus-topbar" class="hidden flex flex-col gap-2">
-      <div class="flex items-center gap-2 flex-wrap">
-        <button id="btn-shop-enter-fp" type="button" class="pointer-events-auto focus-mini-icon-pill">
-          <span id="ico-shop-fp" class="flex items-center"></span>
-          <span>🚪 매장 걸어 들어가기</span>
-        </button>
-      </div>
-      <div id="shop-switcher-chips" class="pointer-events-auto flex items-center gap-2 overflow-x-auto sm:overflow-visible sm:flex-wrap no-scrollbar pb-1 pr-2 sm:max-w-[calc(100vw-470px)]"></div>
-    </div>
-
-    <!-- 슈퍼카 드라이브 모드 상단 큼직한 컨트롤 칩 -->
-    <div id="drive-focus-topbar" class="hidden flex flex-col gap-2">
-      <div class="flex items-center gap-2 flex-wrap">
-        <button id="btn-toggle-cockpit" type="button" class="pointer-events-auto focus-mini-icon-pill">
-          <span id="ico-toggle-cockpit" class="flex items-center"></span>
-          <span id="label-toggle-cockpit">👀 1인칭 운전석</span>
-        </button>
-        <button id="btn-open-garage" type="button" class="pointer-events-auto focus-mini-icon-pill">
-          <span id="hud-ico-garage" class="flex items-center"></span>
-          <span>🏎️ 슈퍼카 차고</span>
-        </button>
-        <button id="btn-drive-scenic-jump" type="button" class="pointer-events-auto focus-mini-icon-pill">
-          <span id="ico-drive-scenic" class="flex items-center"></span>
-          <span id="label-drive-scenic">🌴 해안 도로</span>
-        </button>
-        <button id="btn-drive-rival-race" type="button" class="pointer-events-auto focus-mini-icon-pill">
-          <span id="ico-drive-race" class="flex items-center"></span>
-          <span>🏁 1:1 레이스</span>
-        </button>
-        <button id="btn-drive-step-out" type="button" class="pointer-events-auto focus-mini-icon-pill">
-          <span id="ico-drive-step-out" class="flex items-center"></span>
-          <span>🚪 매장 입장</span>
-        </button>
-        <button id="btn-drive-rain" type="button" class="pointer-events-auto focus-mini-icon-pill">
-          <span id="ico-drive-rain" class="flex items-center"></span>
-          <span>💸 돈 뿌리기</span>
-        </button>
-      </div>
-      <div id="drive-race-hud" class="hidden pointer-events-none diary-card !py-2.5 !px-4 !bg-[#FFFDF7]/95 flex items-center gap-3 max-w-lg">
+      <!-- 해안 1:1 레이스 진행 미니 바 (레이스 중에만 노출) -->
+      <div id="drive-race-hud" class="hidden mx-auto pointer-events-none clay-glass-shell !py-1.5 !px-3 flex items-center gap-2.5 w-[min(86vw,380px)]">
         <span id="ico-race-hud" class="flex items-center shrink-0"></span>
-        <div class="flex-1 min-w-[200px] space-y-1.5">
-          <div class="flex items-center justify-between text-[18px] font-title">
-            <span id="race-status-label" class="text-[#7E22CE]">해안 1:1 레이스!</span>
-            <span id="race-gap-label" class="text-[#15803D]">선두 질주 중!</span>
+        <div class="flex-1 min-w-0 space-y-1">
+          <div class="flex items-center justify-between text-[12px] font-title">
+            <span id="race-status-label" class="text-[#7E22CE] whitespace-nowrap">🏁 해안 1:1 레이스</span>
+            <span id="race-gap-label" class="text-[#15803D] whitespace-nowrap">선두 질주!</span>
           </div>
-          <div class="candy-gauge-track !h-4">
+          <div class="candy-gauge-track !h-2">
             <div id="race-progress-fill" class="candy-gauge-fill candy-gold" style="width: 15%;"></div>
           </div>
         </div>
       </div>
+    </header>
+
+    <!-- 레거시 타운 보조 컨트롤 호환 슬롯 (비노출) -->
+    <div id="hud-town-controls" class="hidden">
+      <button id="btn-overview-cam" type="button"><span id="hud-ico-overview"></span></button>
+      <button id="btn-enter-drive" type="button"><span id="hud-ico-drive"></span></button>
+      <button id="btn-guide-tour" type="button"><span id="hud-ico-tour"></span></button>
+      <button id="btn-harbor-town" type="button"><span id="hud-ico-harbor"></span></button>
+      <button id="btn-open-furniture-flagship" type="button"><span id="hud-ico-flagship"></span></button>
+      <button id="hud-badge-forbes" type="button"><span id="hud-ico-forbes"></span></button>
+      <button id="btn-zoom-in" type="button"></button>
+      <button id="btn-zoom-out" type="button"></button>
+      <button id="btn-cam-rotate" type="button"></button>
+      <button id="btn-reset-save" type="button"></button>
+      <span id="ico-exit-room"></span>
+      <span id="ico-exit-shop"></span>
+      <span id="ico-exit-drive"></span>
+      <span id="ico-exit-fp"></span>
+      <span id="ico-rotate-hint"></span>
+      <button id="btn-exit-room-view" type="button"></button>
+      <button id="btn-exit-shop-view" type="button"></button>
+      <button id="btn-exit-drive-mode" type="button"></button>
+      <button id="btn-exit-fp-mode" type="button"></button>
+    </div>
+
+    <!-- ==================== 3D. 소식 상세 보기 미니 팝업 (`#hud-mini-news-ticker` 클릭 시에만 오픈!) ==================== -->
+    <div id="news-detail-modal" class="hidden fixed inset-0 z-[88] pastel-modal-backdrop flex items-center justify-center p-3">
+      <div class="cozy-planner-shell clay-glass-shell w-full max-w-[440px]">
+        <div class="cozy-planner-inner flex flex-col gap-2.5">
+          <div class="flex items-center justify-between border-b border-[#E5C9A8] pb-2">
+            <span class="diary-modal-title">🔔 타운 실시간 뉴스 기록</span>
+            <button id="btn-close-news-modal" type="button" class="btn-close-round" aria-label="닫기">✕</button>
+          </div>
+          <div id="news-detail-latest-box" class="diary-card !p-2.5 !bg-[#FFFBEB] !border-[#F59E0B] text-[13px] font-bold text-[#3A2E2B]">
+            아직 기록된 주요 뉴스가 없습니다.
+          </div>
+          <div id="news-detail-history-list" class="space-y-1.5 max-h-[130px] overflow-y-auto custom-scroll text-[12px]"></div>
+          <div class="flex items-center justify-end gap-2 pt-1">
+            <button id="btn-news-open-forbes" type="button" class="jelly-action-btn btn-gold-lip !min-h-[34px] !py-1.5 !px-3.5 !text-[13px]">🏆 100인 서열표</button>
+            <button id="btn-news-confirm-close" type="button" class="tactile-pill-btn tone-cream !min-h-[34px] !py-1.5 !px-3.5 !text-[13px]">확인</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 4A. ⑤ 방 / 상가 황금 투시 망원경 하단 1줄 컨트롤 바 (`height: 40px; font-size: 13px;`) ==================== -->
+    <div id="focus-clean-capsule" class="hidden fixed bottom-[10px] left-1/2 -translate-x-1/2 z-[38] focus-manual-capsule pointer-events-auto">
+      <span id="focus-capsule-label" class="focus-cap-room-tag">101호</span>
+      <button id="btn-focus-open-drawer" type="button" class="focus-cap-action-btn primary">
+        <span id="ico-focus-cap-sofa" class="hidden"></span>
+        <span>🛋️ <span id="focus-cap-open-text">가구 세팅</span></span>
+      </button>
+      <button id="btn-focus-open-recruit" type="button" class="hidden focus-cap-action-btn">
+        <span>🤝 세입자</span>
+      </button>
+      <button id="btn-focus-enter-fp" type="button" class="focus-cap-action-btn">
+        <span id="ico-focus-cap-door" class="hidden"></span>
+        <span>👁️ 실내 보기</span>
+      </button>
+      <button id="btn-focus-reset-cam" type="button" class="focus-cap-action-btn">
+        <span>🔄 초기화</span>
+      </button>
+      <button id="btn-focus-lower-telescope" type="button" class="focus-cap-action-btn danger-soft">
+        <span>✕ 닫기</span>
+      </button>
+      <span id="ico-focus-cap-tele" class="hidden"></span>
+    </div>
+
+    <!-- ==================== 4B. ⑤ 우측 슬림 방 가구 세팅 & 세입자 관리 드로어 (`width: min(42vw, 300px); height: 78vh;`) ==================== -->
+    <aside id="room-focus-panel" class="hidden fixed right-[10px] top-[46px] z-[41] clay-glass-shell slim-side-drawer flex flex-col overflow-hidden pointer-events-auto">
+      <div class="px-3 py-2 flex items-center justify-between gap-1.5 border-b border-[#E5C9A8] shrink-0">
+        <div class="flex items-center gap-1.5 min-w-0 overflow-hidden">
+          <span id="rf-room-num" class="hotel-num-tag shrink-0">101호</span>
+          <span id="rf-type-badge" class="kw-chip tone-sky shrink-0">원룸</span>
+          <span id="rf-tier-badge" class="diary-pill-badge shrink-0">★1</span>
+          <button id="rf-btn-rename" type="button" title="빌딩 이름 변경" class="ribbon-edit-chip shrink-0"></button>
+        </div>
+        <div class="flex items-center gap-1 shrink-0">
+          <button id="btn-toggle-rf-body" type="button" class="hidden btn-close-round" aria-label="접기">▼</button>
+          <button id="btn-close-room-focus" type="button" title="관리 창 닫기" class="btn-close-round" aria-label="창 닫기">✕</button>
+        </div>
+      </div>
+      <div id="rf-body" class="p-2.5 overflow-y-auto custom-scroll space-y-2 flex-1"></div>
+    </aside>
+
+    <!-- ==================== 5. ⑤ 우측 슬림 상가 직영 인수 · 설비 증설 드로어 (`width: min(42vw, 300px); height: 78vh;`) ==================== -->
+    <aside id="shop-focus-panel" class="hidden fixed right-[10px] top-[46px] z-[41] clay-glass-shell slim-side-drawer flex flex-col overflow-hidden pointer-events-auto">
+      <div class="px-3 py-2 flex items-center justify-between gap-1.5 border-b border-[#E5C9A8] shrink-0">
+        <div class="flex items-center gap-1.5 min-w-0 overflow-hidden">
+          <span id="sf-icon-slot" class="hidden"></span>
+          <span id="sf-title" class="diary-modal-title truncate">바게트 하우스</span>
+          <span id="sf-owner-badge" class="kw-chip tone-gold shrink-0">미인수</span>
+        </div>
+        <button id="btn-close-shop-focus" type="button" title="관리 창 닫기" class="btn-close-round" aria-label="창 닫기">✕</button>
+      </div>
+      <div id="sf-body" class="p-2.5 overflow-y-auto custom-scroll space-y-2 flex-1"></div>
+    </aside>
+
+    <!-- ==================== 6. 하단 가로 카탈로그 독 (보조 호환용) ==================== -->
+    <section id="furniture-catalog-sheet" class="hidden">
+      <span id="fcat-header-ico"></span>
+      <span id="fcat-sheet-title"></span>
+      <span id="fcat-room-badge"></span>
+      <span id="fcat-bonus-badge"></span>
+      <div id="fcat-tabs-row">
+        <button type="button" data-fcat="bed"><span id="fcat-ico-bed"></span></button>
+        <button type="button" data-fcat="sofa"><span id="fcat-ico-sofa"></span></button>
+        <button type="button" data-fcat="appliance"><span id="fcat-ico-appliance"></span></button>
+        <button type="button" data-fcat="decor"><span id="fcat-ico-decor"></span></button>
+      </div>
+      <button id="btn-toggle-catalog" type="button"><span id="fcat-toggle-label"></span></button>
+      <div id="fcat-collapsible-body"><div id="fcat-items-grid"></div></div>
+    </section>
+
+    <!-- ==================== 7A. 1인칭 슈퍼카 운전석(Cockpit) 컴팩트 오버레이 ==================== -->
+    <section id="cockpit-overlay" class="hidden fixed inset-0 z-20 pointer-events-none overflow-hidden">
+      <div id="cockpit-roof-visor" class="cockpit-visor-frame roof-open"></div>
       <div class="hidden">
-        <span id="drive-car-badge"></span>
-        <span id="drive-speed-badge">62 km/h</span>
-        <span id="drive-loot-badge"></span>
+        <div id="cockpit-rearview-slot"></div>
+        <span id="cockpit-mirror-caption"></span>
       </div>
-    </div>
 
-    <!-- 1인칭 상점 · 집들이 상단 바 -->
-    <div id="fp-focus-topbar" class="hidden flex flex-col gap-2">
-      <div class="flex items-center gap-2 flex-wrap">
-        <span id="fp-place-badge" class="pointer-events-none focus-mini-icon-pill">바게트 하우스</span>
-        <button id="btn-fp-switch-dest" type="button" class="pointer-events-auto focus-mini-icon-pill">
-          <span id="ico-fp-dest" class="flex items-center"></span>
-          <span>다른 곳 이동</span>
-        </button>
-        <button id="btn-fp-rain" type="button" class="pointer-events-auto focus-mini-icon-pill">
-          <span id="ico-fp-rain" class="flex items-center"></span>
-          <span>💸 돈 뿌리기</span>
-        </button>
-      </div>
-      <div id="fp-held-chips-row" class="pointer-events-none flex items-center gap-2 flex-wrap"></div>
-    </div>
-  </header>
-
-  <!-- ==================== 3B. 상단 정중앙: 『🎯 슬림 비주얼 할 일 가이드 바 (44x44 썸네일 + 핵심 한 줄 + 3D 바로 이동 배지)』 ==================== -->
-  <div id="top-goal-navigator" class="hidden fixed top-[18px] left-1/2 -translate-x-1/2 z-[36] pointer-events-auto">
-    <button id="btn-goal-nav-bar" type="button" class="goal-navigator-capsule" title="클릭하면 목표 위치로 카메라가 즉시 이동하고 메뉴를 열어줍니다!">
-      <span id="goal-nav-thumb" class="goal-nav-thumb-box" aria-hidden="true">
-        <img id="goal-nav-thumb-img" src="./assets/furniture/bed_tier3_canopy.png" alt="" class="w-full h-full object-contain" />
-      </span>
-      <span id="goal-nav-text" class="goal-nav-label">가구 백화점 첫 침대 구매</span>
-      <span id="btn-goal-nav-go" class="goal-nav-img-badge-slot">
-        <img id="badge-img-goal-move" src="./assets/ui_badges/badge_goal_move.png" alt="바로 이동" class="toy-badge-goal-move-img" />
-        <span class="sr-only">바로 이동</span>
-      </span>
-    </button>
-  </div>
-
-  <!-- ==================== 3C. 우측 상단: 왕큼직 `[☀️ 날씨]`(52x52+) & `[⚙️ 설정]`(52x52+) & `[✕ 밖으로 나가기]` ==================== -->
-  <div id="top-right-action-cluster" class="hidden fixed top-[18px] right-[18px] z-[45] flex items-center gap-2.5 pointer-events-none">
-    <!-- 원클릭 날씨 순환 대형 버튼 (54x54: ☀️ 맑음 ➔ ☔ 비 ➔ ❄️ 눈) -->
-    <button id="btn-weather-cycle" type="button" title="날씨 바꾸기 (맑음 ➔ 비 ➔ 눈)" aria-label="날씨 전환" class="pointer-events-auto big-corner-square-btn">
-      <span id="weather-cycle-emoji" class="text-[26px] leading-none">☀️</span>
-    </button>
-
-    <!-- 레거시 날씨 아이콘 슬롯 호환 유지 (비표시) -->
-    <div id="weather-switch-pill" class="hidden">
-      <button type="button" data-weather-btn="clear"><span id="w-ico-sun"></span></button>
-      <button type="button" data-weather-btn="rain"><span id="w-ico-rain"></span></button>
-      <button type="button" data-weather-btn="snow"><span id="w-ico-snow"></span></button>
-    </div>
-
-    <!-- 방 확대 / 드라이브 / 결투 진입 시 큼직한 [ ✕ 밖으로 나가기 ] 버튼 -->
-    <button id="btn-focus-close-floating" type="button" title="타운 전체 화면으로 나가기" aria-label="밖으로 나가기" class="hidden pointer-events-auto big-exit-capsule-btn">
-      <span>✕ 밖으로 나가기</span>
-    </button>
-
-    <!-- 우측 상단 환경설정 대형 버튼 (54x54) -->
-    <button id="btn-top-settings" type="button" title="환경설정 열기" aria-label="환경설정" class="pointer-events-auto big-corner-square-btn">
-      <span id="hud-ico-top-settings" class="w-7 h-7 flex items-center justify-center">⚙️</span>
-    </button>
-  </div>
-
-  <!-- 방 / 상가 황금 투시 망원경 하단 큼직한 액션 캡슐 바 -->
-  <div id="focus-clean-capsule" class="hidden fixed bottom-[22px] left-1/2 -translate-x-1/2 z-[38] focus-manual-capsule">
-    <span class="inline-flex items-center gap-2 focus-cap-room-tag">
-      <span id="ico-focus-cap-tele" class="inline-flex items-center justify-center w-6 h-6"></span>
-      <span id="focus-capsule-label">101호</span>
-    </span>
-    <span class="focus-cap-divider" aria-hidden="true"></span>
-    <button id="btn-focus-open-drawer" type="button" class="focus-cap-action-btn primary inline-flex items-center gap-2">
-      <span id="ico-focus-cap-sofa" class="inline-flex items-center justify-center w-6 h-6"></span>
-      <span id="focus-cap-open-text">가구 배치 · 관리</span>
-    </button>
-    <button id="btn-focus-open-recruit" type="button" class="hidden focus-cap-action-btn inline-flex items-center gap-1.5">
-      <span>🤝 세입자 받기</span>
-    </button>
-    <button id="btn-focus-enter-fp" type="button" class="focus-cap-action-btn inline-flex items-center gap-2">
-      <span id="ico-focus-cap-door" class="inline-flex items-center justify-center w-6 h-6"></span>
-      <span>실내 들어가기</span>
-    </button>
-    <button id="btn-focus-lower-telescope" type="button" class="focus-cap-action-btn danger-soft">
-      <span>✕ 닫기</span>
-    </button>
-  </div>
-
-  <!-- ==================== 4. 우측 빅&볼드 방 가구 세팅 & 세입자 관리 드로어 (width: 440px) ==================== -->
-  <aside id="room-focus-panel" class="hidden fixed right-[18px] top-[84px] bottom-[22px] w-[calc(100vw-28px)] sm:w-[440px] z-[41] diary-inspector-shell slim-side-drawer flex flex-col overflow-hidden">
-    <div class="px-4 py-3.5 flex items-center justify-between gap-2 border-b-2 border-[#EED6BE] shrink-0" style="background: linear-gradient(180deg, #FFFDF7 0%, #F7EFE5 100%);">
-      <div class="flex items-center gap-2 min-w-0 flex-nowrap">
-        <span id="rf-room-num" class="hotel-num-tag shrink-0">101호</span>
-        <span id="rf-type-badge" class="kw-chip tone-sky shrink-0">원룸</span>
-        <span id="rf-tier-badge" class="diary-pill-badge shrink-0">★1</span>
-        <button id="rf-btn-rename" type="button" title="빌딩 이름 변경" class="ribbon-edit-chip shrink-0"></button>
-      </div>
-      <div class="flex items-center gap-1.5 shrink-0">
-        <button id="btn-toggle-rf-body" type="button" class="hidden btn-close-round" aria-label="접기">▼</button>
-        <button id="btn-close-room-focus" type="button" title="관리 창 닫기" class="btn-close-round" aria-label="창 닫기">✕</button>
-      </div>
-    </div>
-    <div id="rf-body" class="p-3.5 sm:p-4 overflow-y-auto custom-scroll space-y-3 flex-1"></div>
-  </aside>
-
-  <!-- ==================== 5. 우측 빅&볼드 상가 직영 인수 · 설비 증설 드로어 (width: 440px) ==================== -->
-  <aside id="shop-focus-panel" class="hidden fixed right-[18px] top-[84px] bottom-[22px] w-[calc(100vw-28px)] sm:w-[440px] z-[41] diary-inspector-shell slim-side-drawer flex flex-col overflow-hidden">
-    <div class="px-4 py-3.5 flex items-center justify-between gap-2 border-b-2 border-[#EED6BE] shrink-0" style="background: linear-gradient(180deg, #FFFDF7 0%, #F7EFE5 100%);">
-      <div class="flex items-center gap-2 min-w-0">
-        <span id="sf-icon-slot" class="flex items-center shrink-0"></span>
-        <span id="sf-title" class="font-title text-[24px] text-[#1E1B18] whitespace-nowrap">바게트 하우스</span>
-        <span id="sf-owner-badge" class="kw-chip tone-gold shrink-0">미인수</span>
-      </div>
-      <button id="btn-close-shop-focus" type="button" title="관리 창 닫기" class="btn-close-round" aria-label="창 닫기">✕</button>
-    </div>
-    <div id="sf-body" class="p-4 overflow-y-auto custom-scroll space-y-3 flex-1"></div>
-  </aside>
-
-  <!-- ==================== 6. 하단 가로 카탈로그 독 (보조 호환용) ==================== -->
-  <section id="furniture-catalog-sheet" class="hidden fixed bottom-2 left-3 right-3 sm:right-[464px] z-30 pointer-events-none flex justify-center">
-    <div class="pointer-events-auto furniture-sheet-shell slim-bottom-catalog-dock w-full max-w-4xl">
-      <div class="px-4 py-2 flex items-center justify-between gap-2 border-b border-[#EED6BE]" style="background: linear-gradient(90deg, #FFFDF7 0%, #F7EFE5 100%);">
-        <div class="flex items-center gap-2 min-w-0 flex-wrap">
-          <span id="fcat-header-ico" class="flex items-center shrink-0"></span>
-          <span id="fcat-sheet-title" class="font-title text-[20px] text-[#1E1B18] whitespace-nowrap">빠른 가구 배치</span>
-          <span id="fcat-room-badge" class="kw-chip tone-coral">101호</span>
-          <span id="fcat-bonus-badge" class="kw-chip tone-mint">+0만</span>
-        </div>
-        <div class="flex items-center gap-2 shrink-0">
-          <div id="fcat-tabs-row" class="flex items-center gap-1.5">
-            <button type="button" data-fcat="bed" class="fcat-tab-btn active"><span id="fcat-ico-bed" class="hidden"></span><span>🛏️ 침대</span></button>
-            <button type="button" data-fcat="sofa" class="fcat-tab-btn"><span id="fcat-ico-sofa" class="hidden"></span><span>🛋️ 소파</span></button>
-            <button type="button" data-fcat="appliance" class="fcat-tab-btn"><span id="fcat-ico-appliance" class="hidden"></span><span>📺 설비</span></button>
-            <button type="button" data-fcat="decor" class="fcat-tab-btn"><span id="fcat-ico-decor" class="hidden"></span><span>💎 오브제</span></button>
+      <div id="cockpit-dash-shell" class="cockpit-dash-panel fixed bottom-[58px] left-1/2 -translate-x-1/2 w-[min(92vw,500px)] pointer-events-auto">
+        <div id="cockpit-mood-strip" class="cockpit-mood-led"></div>
+        <div class="px-3 py-1.5 flex items-center justify-between gap-2.5">
+          <div class="relative w-[50px] h-[50px] -mt-3 shrink-0 flex items-center justify-center">
+            <div id="cockpit-wheel-rotator" class="w-full h-full transition-transform duration-75 ease-out"></div>
           </div>
-          <button id="btn-toggle-catalog" type="button" class="tactile-mini-toggle shrink-0">
-            <span id="fcat-toggle-label">접기</span>
-          </button>
-        </div>
-      </div>
-      <div id="fcat-collapsible-body" class="bg-[#FFFDF7]">
-        <div id="fcat-items-grid" class="fcat-cards-row slim-dock-row px-3 py-2.5 custom-scroll"></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ==================== 7A. 1인칭 슈퍼카 운전석(Cockpit) 대시보드 ==================== -->
-  <section id="cockpit-overlay" class="hidden fixed inset-0 z-20 pointer-events-none overflow-hidden">
-    <div id="cockpit-roof-visor" class="cockpit-visor-frame roof-open"></div>
-    <div class="hidden sm:flex fixed top-3 right-6 flex-col items-center pointer-events-none">
-      <div id="cockpit-rearview-slot"></div>
-      <span id="cockpit-mirror-caption" class="kw-chip tone-cream -mt-1.5">부티크 거리 주행 중</span>
-    </div>
-
-    <div id="cockpit-dash-shell" class="cockpit-dash-panel fixed bottom-[124px] sm:bottom-[92px] left-1/2 -translate-x-1/2 w-[95vw] max-w-3xl pointer-events-auto">
-      <div id="cockpit-mood-strip" class="cockpit-mood-led"></div>
-      <div class="px-3 sm:px-5 py-2.5 sm:py-3 flex items-center justify-between gap-3 sm:gap-5">
-        <div class="relative w-[80px] h-[80px] sm:w-[134px] sm:h-[134px] -mt-5 sm:-mt-10 shrink-0 flex items-center justify-center">
-          <div id="cockpit-wheel-rotator" class="w-full h-full transition-transform duration-75 ease-out"></div>
-        </div>
-        <div class="cockpit-cluster-box shrink-0 text-center px-3 sm:px-4 py-1.5 sm:py-2">
-          <div class="text-[16px] font-extrabold text-[#FFFFFF] tracking-wider">KM/H</div>
-          <div class="flex items-baseline justify-center gap-1.5">
-            <span id="cockpit-kmh-num" class="font-num text-[28px] sm:text-[34px] text-[#FFD700] leading-none">64</span>
-            <span id="cockpit-gear-tag" class="font-title text-[18px] text-[#38E54D]">D</span>
-          </div>
-        </div>
-        <div class="cockpit-audio-card flex-1 min-w-0 px-3 sm:px-4 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 overflow-hidden">
-          <div class="flex items-center gap-2 min-w-0">
-            <div id="cockpit-eq-bars" class="cockpit-eq-wrap shrink-0">
-              <span></span><span></span><span></span><span></span>
-            </div>
-            <div class="min-w-0">
-              <div id="cockpit-radio-title" class="font-title text-[18px] text-[#FFFFFF] truncate">Lo-Fi 재즈</div>
-              <div id="cockpit-radio-sub" class="hidden sm:block font-body text-[16px] font-bold text-[#FDE68A] truncate">FM 89.1</div>
+          <div class="cockpit-cluster-box shrink-0 text-center px-2.5 py-1">
+            <div class="flex items-baseline justify-center gap-1">
+              <span id="cockpit-kmh-num" class="font-num text-[18px] text-[#FFD700] leading-none">64</span>
+              <span class="text-[11px] font-extrabold text-[#FFFFFF]">km/h</span>
+              <span id="cockpit-gear-tag" class="font-title text-[12px] text-[#38E54D]">D</span>
             </div>
           </div>
-          <div class="flex items-center gap-2 shrink-0">
-            <button id="btn-cockpit-radio" type="button" class="cockpit-ctrl-pill">
-              <span id="ico-cockpit-radio" class="flex items-center"></span>
-              <span>라디오</span>
-            </button>
-            <button id="btn-cockpit-roof" type="button" class="cockpit-ctrl-pill">
-              <span id="ico-cockpit-roof" class="flex items-center"></span>
-              <span id="label-cockpit-roof">오픈카</span>
-            </button>
+          <div class="cockpit-audio-card flex-1 min-w-0 px-2.5 py-1 flex items-center justify-between gap-2 overflow-hidden">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <div id="cockpit-eq-bars" class="cockpit-eq-wrap shrink-0">
+                <span></span><span></span><span></span><span></span>
+              </div>
+              <div id="cockpit-radio-title" class="font-title text-[12px] text-[#FFFFFF] truncate">Lo-Fi 재즈</div>
+              <div id="cockpit-radio-sub" class="hidden">FM 89.1</div>
+            </div>
+            <div class="flex items-center gap-1 shrink-0">
+              <button id="btn-cockpit-radio" type="button" class="cockpit-ctrl-pill">
+                <span id="ico-cockpit-radio" class="hidden"></span>
+                <span>🎵 라디오</span>
+              </button>
+              <button id="btn-cockpit-roof" type="button" class="cockpit-ctrl-pill">
+                <span id="ico-cockpit-roof" class="hidden"></span>
+                <span id="label-cockpit-roof">오픈카</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- ==================== 7B. 상가 앞 드라이브 스루 토스트 ==================== -->
-  <div id="drive-proximity-bar" class="hidden fixed top-[84px] right-[18px] z-[39] pointer-events-auto diary-card !py-3 !px-4 flex items-center justify-between gap-3 max-w-[430px] shadow-xl">
-    <div class="flex items-center gap-2 min-w-0">
-      <span id="prox-shop-ico" class="flex items-center shrink-0"></span>
-      <div class="min-w-0">
-        <div id="prox-shop-name" class="font-title text-[20px] text-[#1E1B18] truncate">바게트 하우스</div>
-        <div class="font-body text-[16px] font-extrabold text-[#B45309] whitespace-nowrap">드라이브 스루 가능</div>
+    <!-- ==================== 7B. 상가 앞 드라이브 스루 슬림 캡슐 ==================== -->
+    <div id="drive-proximity-bar" class="hidden fixed bottom-[58px] left-1/2 -translate-x-1/2 z-[39] pointer-events-auto clay-glass-shell !py-1.5 !px-3 flex items-center justify-between gap-2 max-w-[340px]">
+      <div class="flex items-center gap-1.5 min-w-0">
+        <span id="prox-shop-ico" class="flex items-center shrink-0"></span>
+        <div id="prox-shop-name" class="font-title text-[13px] text-[#1E1B18] truncate">바게트 하우스</div>
+      </div>
+      <div class="flex items-center gap-1 shrink-0">
+        <button id="btn-drive-thru-order" type="button" class="jelly-action-btn pill btn-gold-lip !min-h-[28px] !py-1 !px-2.5 !text-[12px]">
+          <span id="ico-drive-thru" class="hidden"></span>
+          <span>☕ 픽업</span>
+        </button>
+        <button id="btn-prox-enter-fp" type="button" class="jelly-action-btn pill btn-mint-lip !min-h-[28px] !py-1 !px-2.5 !text-[12px]">
+          <span id="ico-prox-enter" class="hidden"></span>
+          <span>입장</span>
+        </button>
+        <button id="btn-close-prox-banner" type="button" class="btn-close-round !w-6 !h-6 !text-[12px]" aria-label="알림 닫기">✕</button>
       </div>
     </div>
-    <div class="flex items-center gap-1.5 shrink-0">
-      <button id="btn-drive-thru-order" type="button" class="jelly-action-btn pill btn-gold-lip !py-2 !px-3.5">
-        <span id="ico-drive-thru" class="flex items-center"></span>
-        <span>픽업</span>
-      </button>
-      <button id="btn-prox-enter-fp" type="button" class="jelly-action-btn pill btn-mint-lip !py-2 !px-3.5">
-        <span id="ico-prox-enter" class="flex items-center"></span>
-        <span>입장</span>
-      </button>
-      <button id="btn-close-prox-banner" type="button" class="pocket-mini-close ml-0.5" title="알림 닫기" aria-label="알림 닫기">✕</button>
-    </div>
-  </div>
 
-  <!-- ==================== 7C. 1인칭 갓물주 상점 쇼핑 · 골든벨 · 집들이 HUD ==================== -->
-  <section id="fp-mode-hud" class="hidden fixed bottom-3 left-3 right-3 z-30 pointer-events-none flex flex-col items-center gap-2.5">
-    <div id="fp-shop-shelf-strip" class="pointer-events-auto w-full max-w-4xl diary-card !p-2.5 flex items-center gap-2 overflow-x-auto no-scrollbar"></div>
+    <!-- ==================== 7C. 1인칭 상점 쇼핑 · 골든벨 · 집들이 슬림 가로 바 ==================== -->
+    <section id="fp-mode-hud" class="hidden fixed bottom-2 left-1/2 -translate-x-1/2 z-30 pointer-events-none flex flex-col items-center gap-1.5 w-[min(95vw,680px)]">
+      <div id="fp-shop-shelf-strip" class="pointer-events-auto w-full clay-glass-shell !p-1.5 flex items-center gap-1.5 overflow-x-auto no-scrollbar"></div>
 
-    <div class="pointer-events-auto drive-dashboard-bar w-full max-w-4xl px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
-      <div id="fp-shop-actions" class="flex items-center justify-center gap-2 flex-wrap sm:order-2">
-        <button id="btn-ring-golden-bell" type="button" class="jelly-action-btn pill btn-gold-lip golden-bell-cta !py-3 !px-5">
-          <span id="ico-golden-bell" class="flex items-center"></span>
-          <span>🔔 골든벨 울리기 (150만)</span>
-        </button>
-        <button id="btn-fp-double-bell" type="button" class="hidden rival-bolt-pill !py-3 !px-5">
-          <span id="ico-fp-double-bell" class="flex items-center"></span>
-          <span>⚡ 더블 골든벨 참교육! (200만)</span>
-        </button>
-        <button id="btn-fp-visit-tenant" type="button" class="jelly-action-btn pill btn-mint-lip !py-3 !px-5">
-          <span id="ico-fp-visit-tenant" class="flex items-center"></span>
-          <span>🏠 세입자 방 집들이</span>
-        </button>
-      </div>
-
-      <div id="fp-room-actions" class="hidden flex items-center justify-center gap-2 flex-wrap sm:order-2">
-        <button id="btn-fp-give-gift" type="button" class="jelly-action-btn pill btn-coral-lip !py-3 !px-5">
-          <span id="ico-fp-give-gift" class="flex items-center"></span>
-          <span id="label-fp-give-gift">🎁 선물 주기 (월세 영구 +20%!)</span>
-        </button>
-        <button id="btn-fp-other-room" type="button" class="jelly-action-btn pill btn-gold-lip !py-3 !px-4">
-          <span id="ico-fp-other-room" class="flex items-center"></span>
-          <span>다른 호실 보기</span>
-        </button>
-      </div>
-
-      <div class="flex items-center justify-between w-full sm:w-auto sm:contents">
-        <div class="flex items-center gap-2 shrink-0 sm:order-1">
+      <div class="pointer-events-auto slim-capsule-bar w-full flex items-center justify-between gap-1.5 px-2.5 py-1.5">
+        <div class="flex items-center gap-1 shrink-0">
           <button id="btn-fp-left" type="button" class="drive-pedal-btn" aria-label="왼쪽 시선">◀</button>
           <button id="btn-fp-right" type="button" class="drive-pedal-btn" aria-label="오른쪽 시선">▶</button>
         </div>
-        <div class="flex items-center gap-2 shrink-0 sm:order-3">
-          <button id="btn-fp-back" type="button" class="drive-pedal-btn">뒷걸음</button>
-          <button id="btn-fp-fwd" type="button" class="drive-pedal-btn gas-accent">걸어가기</button>
-        </div>
-      </div>
-    </div>
-  </section>
 
-  <!-- ==================== 7D. 슈퍼카 드라이브 대시보드 ==================== -->
-  <section id="drive-mode-hud" class="hidden fixed bottom-3 left-3 right-3 z-30 pointer-events-none flex flex-col items-center gap-2">
-    <div class="pointer-events-auto drive-dashboard-bar w-full max-w-4xl px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
-      <div class="flex items-center justify-center gap-2 flex-wrap sm:order-2">
-        <div id="drive-live-speedometer" class="drive-speedo-pill">
-          <span id="drive-hud-kmh-val" class="font-num text-[24px] text-[#FFD700]">64</span>
-          <span class="text-[16px] font-extrabold text-[#FFFFFF]">km/h</span>
-          <span id="drive-boost-tag" class="hidden text-[16px] font-extrabold text-[#FB7185] ml-1">🔥 V12</span>
-        </div>
-        <button id="btn-toggle-cruise" type="button" class="jelly-action-btn pill btn-mint-lip !py-2.5 !px-4">
-          <span id="ico-drive-cruise" class="flex items-center"></span>
-          <span id="label-drive-cruise">자율 크루징 ON</span>
-        </button>
-        <button id="btn-car-horn" type="button" class="jelly-action-btn pill btn-coral-lip !py-2.5 !px-4">
-          <span id="ico-drive-horn" class="flex items-center"></span>
-          <span>📣 경적 빵빵!</span>
-        </button>
-        <button id="btn-drive-garage" type="button" class="jelly-action-btn pill btn-gold-lip !py-2.5 !px-4">
-          <span id="ico-drive-garage" class="flex items-center"></span>
-          <span>차고</span>
-        </button>
-      </div>
-
-      <div class="flex items-center justify-between w-full sm:contents">
-        <div class="flex items-center gap-2 shrink-0 sm:order-1">
-          <button id="btn-steer-left" type="button" class="drive-pedal-btn" aria-label="좌회전">◀</button>
-          <button id="btn-steer-right" type="button" class="drive-pedal-btn" aria-label="우회전">▶</button>
-        </div>
-        <div class="flex items-center gap-2 shrink-0 sm:order-3">
-          <button id="btn-brake-pedal" type="button" class="drive-pedal-btn gap-1" aria-label="감속/후진">후진</button>
-          <button id="btn-gas-pedal" type="button" class="drive-pedal-btn gas-accent gap-1" aria-label="가속">가속</button>
-          <button id="btn-nitro-boost" type="button" class="drive-pedal-btn nitro-boost-btn gap-1">
-            <span>🔥 풀악셀</span>
+        <div id="fp-shop-actions" class="flex items-center justify-center gap-1.5 overflow-x-auto no-scrollbar">
+          <button id="btn-ring-golden-bell" type="button" class="jelly-action-btn pill btn-gold-lip !min-h-[32px] !py-1 !px-3 !text-[12.5px]">
+            <span id="ico-golden-bell" class="hidden"></span>
+            <span>🔔 골든벨 (150만)</span>
+          </button>
+          <button id="btn-fp-double-bell" type="button" class="hidden rival-bolt-pill !min-h-[32px] !py-1 !px-3 !text-[12.5px]">
+            <span id="ico-fp-double-bell" class="hidden"></span>
+            <span>⚡ 더블 골든벨 (200만)</span>
+          </button>
+          <button id="btn-fp-visit-tenant" type="button" class="jelly-action-btn pill btn-mint-lip !min-h-[32px] !py-1 !px-3 !text-[12.5px]">
+            <span id="ico-fp-visit-tenant" class="hidden"></span>
+            <span>🏠 집들이</span>
           </button>
         </div>
+
+        <div id="fp-room-actions" class="hidden flex items-center justify-center gap-1.5 overflow-x-auto no-scrollbar">
+          <button id="btn-fp-give-gift" type="button" class="jelly-action-btn pill btn-coral-lip !min-h-[32px] !py-1 !px-3 !text-[12.5px]">
+            <span id="ico-fp-give-gift" class="hidden"></span>
+            <span id="label-fp-give-gift">🎁 선물 (+20%)</span>
+          </button>
+          <button id="btn-fp-other-room" type="button" class="jelly-action-btn pill btn-gold-lip !min-h-[32px] !py-1 !px-3 !text-[12.5px]">
+            <span id="ico-fp-other-room" class="hidden"></span>
+            <span>다른 호실</span>
+          </button>
+        </div>
+
+        <div class="flex items-center gap-1 shrink-0">
+          <button id="btn-fp-back" type="button" class="drive-pedal-btn">뒤로</button>
+          <button id="btn-fp-fwd" type="button" class="drive-pedal-btn gas-accent">앞으로</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 7D. ⑧ 슈퍼카 드라이브 슬림 가로 캡슐 바 (`시야 가림 제로!`) ==================== -->
+    <section id="drive-mode-hud" class="hidden fixed bottom-[10px] left-1/2 -translate-x-1/2 z-30 pointer-events-none flex justify-center w-auto max-w-[96vw]">
+      <div class="pointer-events-auto slim-capsule-bar flex items-center gap-1.5 px-3 py-1.5">
+        <button id="btn-steer-left" type="button" class="drive-pedal-btn" aria-label="좌회전">◀</button>
+        <button id="btn-steer-right" type="button" class="drive-pedal-btn" aria-label="우회전">▶</button>
+
+        <div id="drive-live-speedometer" class="drive-speedo-pill">
+          <span id="drive-hud-kmh-val" class="font-num text-[15px] text-[#FFD700]">64</span>
+          <span class="text-[11px] font-extrabold text-[#FFFFFF]">km/h</span>
+          <span id="drive-boost-tag" class="hidden text-[11px] font-extrabold text-[#FB7185]">🔥</span>
+        </div>
+
+        <button id="btn-toggle-cruise" type="button" class="jelly-action-btn pill btn-mint-lip !min-h-[32px] !py-1 !px-2.5 !text-[12px]">
+          <span id="ico-drive-cruise" class="hidden"></span>
+          <span id="label-drive-cruise">자율 ON</span>
+        </button>
+        <button id="btn-car-horn" type="button" class="jelly-action-btn pill btn-coral-lip !min-h-[32px] !py-1 !px-2.5 !text-[12px]">
+          <span id="ico-drive-horn" class="hidden"></span>
+          <span>📣 경적</span>
+        </button>
+        <button id="btn-drive-garage" type="button" class="jelly-action-btn pill btn-gold-lip !min-h-[32px] !py-1 !px-2.5 !text-[12px]">
+          <span id="ico-drive-garage" class="hidden"></span>
+          <span>🏎️ 탈것 변경</span>
+        </button>
+
+        <button id="btn-brake-pedal" type="button" class="drive-pedal-btn" aria-label="감속/후진">후진</button>
+        <button id="btn-gas-pedal" type="button" class="drive-pedal-btn gas-accent" aria-label="가속">가속</button>
+        <button id="btn-nitro-boost" type="button" class="drive-pedal-btn nitro-boost-btn">
+          <span id="ico-nitro-boost" class="hidden"></span>
+          <span>🔥 부스트</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ==================== 8A. ② 우측 하단 메인 버튼 (`58px~64px`, `bottom: 12px; right: 12px; gap: 10px;`) ==================== -->
+    <div id="bottom-town-bar" class="hidden fixed bottom-[12px] right-[12px] z-[44] pointer-events-none flex items-end gap-[10px]">
+      <div id="quick-duo-dock" class="flex items-end gap-[10px] pointer-events-auto">
+        <button id="btn-make-it-rain" type="button" title="돈 뿌리기 (마을 행복도 &amp; 피버 상승)" aria-label="돈 뿌리기" class="giant-bottom-fab toy-img-main-fab tone-money">
+          <img id="badge-img-btn-moneygun" src="./assets/ui_badges/badge_btn_moneygun.png" alt="돈 뿌리기" class="toy-badge-main-fab-img" />
+          <span id="hud-ico-moneygun" class="hidden"></span>
+          <span class="sr-only">돈 뿌리기</span>
+        </button>
+
+        <button id="fab-notebook" type="button" aria-label="건물주 수첩 열기" title="건물주 수첩 열기" class="giant-bottom-fab toy-img-main-fab tone-diary relative">
+          <img id="badge-img-btn-notebook" src="./assets/ui_badges/badge_btn_notebook.png" alt="건물주 수첩" class="toy-badge-main-fab-img" />
+          <span id="fab-svg-slot" class="hidden"></span>
+          <span class="sr-only">건물주 수첩</span>
+          <span id="fab-red-dot" class="hidden pocket-fab-dot">!</span>
+        </button>
       </div>
     </div>
-  </section>
 
-  <!-- ==================== 8. 우측 하단: 오직 `[ 💸 돈 뿌리기 ]` + `[ 📒 건물주 수첩 ]` 딱 2개만 왕큼직하게 (76x76 + 16px Bold 라벨)! ==================== -->
-  <div id="bottom-town-bar" class="hidden fixed bottom-[22px] right-[22px] z-[44] pointer-events-none flex flex-col items-end gap-3">
-    <!-- [ 💸 ] 머니건 4단계 리얼 플렉스 금액 선택 팝오버 -->
-    <div id="moneygun-flex-popover" class="hidden moneygun-popover-card pointer-events-auto" role="dialog" aria-label="돈 뿌리기 금액 선택">
-      <div class="flex items-center justify-between gap-2 pb-2.5 mb-2.5 border-b-2 border-[#EFE3D3]">
-        <span class="font-title text-[22px] text-[#1E1B18]">💸 돈 뿌리기 금액 선택</span>
-        <button id="btn-close-moneygun-popover" type="button" class="pocket-mini-close" aria-label="닫기">✕</button>
-      </div>
-      <div id="moneygun-tiers-list" class="space-y-2"></div>
+    <!-- ==================== 8B. ⑧ 머니건 살포 금액 선택 슬림 가로 캡슐 바 (`10만 / 50만 / 200만 / 올인`) ==================== -->
+    <div id="moneygun-flex-popover" class="hidden fixed bottom-[82px] right-[12px] z-[47] moneygun-slim-capsule clay-glass-shell pointer-events-auto" role="dialog" aria-label="돈 뿌리기 금액 선택">
+      <span class="font-title text-[13px] text-[#78350F] whitespace-nowrap shrink-0 pl-1">💸 살포액:</span>
+      <div id="moneygun-tiers-list" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar"></div>
+      <button id="btn-close-moneygun-popover" type="button" class="btn-close-round !w-7 !h-7 !text-[13px] shrink-0" aria-label="닫기">✕</button>
     </div>
 
-    <!-- [ 📒 ] 비주얼 황금비율 3대 액션 카드 수첩 (`그림 ↑ 글자 ↓` · `제목 18~20px` · `수치 22~24px` · `버튼 16~18px`) -->
-    <div id="pocket-planner-popover" class="hidden pocket-planner-card pointer-events-auto" role="dialog" aria-label="건물주 수첩">
-      <div class="pocket-leather-frame">
-        <div class="pocket-paper-sheet">
-          <!-- 수첩 상단 3D 입체 로고 헤더 (`badge_header_title.png`) -->
-          <div class="flex items-center justify-between gap-2 pb-2 mb-2 border-b-2 border-[#E8D0B5]">
+    <!-- ==================== 8C. ④ 건물주 수첩 (`📒` 장부) 가로 3열 대시보드 모달 (`width: min(92vw, 720px); max-height: 80vh;`) ==================== -->
+    <div id="pocket-planner-popover" class="hidden fixed inset-0 z-[48] pastel-modal-backdrop flex items-center justify-center p-3 pointer-events-auto" role="dialog" aria-label="건물주 수첩">
+      <div class="pocket-dashboard-board clay-glass-shell">
+        <!-- 상단 컴팩트 헤더 -->
+        <div class="flex items-center justify-between gap-2 pb-2 mb-2.5 border-b border-[#E5C9A8]">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="text-[18px] leading-none">📒</span>
+            <span class="diary-modal-title">건물주 수첩</span>
+            <span id="pocket-header-mini-ico" class="hidden"></span>
+            <img id="badge-img-pocket-header" src="./assets/ui_badges/badge_header_title.png" alt="" class="hidden" />
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button id="btn-pocket-manager-hr" type="button" class="pocket-ledger-big-pill">
+              <span id="hud-ico-raccoon-mgr" class="hidden"></span>
+              <span>🐢 관리소장</span>
+              <span id="stamp-manager-badge" class="hidden"></span>
+            </button>
+            <button id="btn-open-ledger-modal" type="button" class="pocket-ledger-big-pill">
+              <span id="hud-ico-ledger" class="hidden"></span>
+              <span>📋 상세 장부</span>
+            </button>
+            <button id="btn-close-pocket-planner" type="button" class="btn-close-round" aria-label="수첩 닫기">✕</button>
+          </div>
+        </div>
+
+        <!-- 가로 3열 핵심 카드 그리드 (`grid-template-columns: repeat(3, 1fr); gap: 10px;`) -->
+        <div class="pocket-three-col-grid">
+          <!-- 카드 1: [🪙 월세 수금] -->
+          <div class="pocket-giant-action-card tone-gold">
+            <div class="flex items-center justify-between w-full">
+              <span class="pocket-giant-card-title">🪙 월세 수금</span>
+              <span id="stamp-collect-badge" class="hidden pocket-giant-count-pill">대기</span>
+            </div>
+            <div id="pocket-art-collect" class="pocket-art-showcase-box">
+              <img src="./assets/ui/ui_pocket_notebook.png" alt="월세 수금" class="w-full h-full object-contain" />
+            </div>
+            <div id="pocket-collect-amount" class="pocket-giant-hero-number text-[#B45309]">+15만 원</div>
+            <button id="btn-collect-all" type="button" class="jelly-action-btn btn-gold-lip pocket-col-cta-btn">
+              <span id="hud-ico-collect" class="hidden"></span>
+              <span id="pocket-collect-btn-label">일괄 수금</span>
+            </button>
+          </div>
+
+          <!-- 카드 2: [🏗️ 증축 착공] -->
+          <div class="pocket-giant-action-card tone-sky">
+            <div class="flex items-center justify-between w-full">
+              <span class="pocket-giant-card-title">🏗️ 증축 착공</span>
+              <span id="stamp-build-badge" class="hidden pocket-giant-count-pill !bg-[#0284C7]">시공중</span>
+            </div>
+            <div id="pocket-art-build" class="pocket-art-showcase-box">
+              <img src="./assets/buildings/prop_construction_crane.png" alt="증축 착공" class="w-full h-full object-contain" />
+            </div>
+            <div id="pocket-build-subtext" class="pocket-giant-sub-highlight text-[#1E1B18]">201호 · 80만 원</div>
+            <div id="pocket-build-gauge-box" class="hidden w-full">
+              <div class="pocket-thick-gauge-track">
+                <div id="pocket-build-gauge-fill" class="pocket-thick-gauge-fill" style="width: 65%;"></div>
+                <span id="pocket-build-gauge-label" class="pocket-thick-gauge-text">🚧 65%</span>
+              </div>
+            </div>
+            <button id="btn-quick-expand" type="button" class="jelly-action-btn btn-sky-lip pocket-col-cta-btn">
+              <span id="hud-ico-expand" class="hidden"></span>
+              <span id="pocket-build-btn-label">착공하기</span>
+            </button>
+          </div>
+
+          <!-- 카드 3: [🦹‍♂️ 쇼룸 결투] -->
+          <div class="pocket-giant-action-card tone-lavender">
+            <div class="flex items-center justify-between w-full">
+              <span id="pocket-duel-card-title" class="pocket-giant-card-title">🦹‍♂️ 쇼룸 결투</span>
+            </div>
+            <div id="pocket-art-duel" class="pocket-art-showcase-box">
+              <img src="./assets/ui/ui_duel_trophy_crown.png" alt="쇼룸 결투" class="w-full h-full object-contain" />
+            </div>
+            <div id="pocket-duel-subtext" class="pocket-giant-sub-highlight text-[#047857]">98위 · 월세 +8%</div>
+            <button id="btn-rival-battle" type="button" class="jelly-action-btn btn-coral-lip pocket-col-cta-btn">
+              <span id="hud-ico-rival" class="hidden"></span>
+              <span id="pocket-duel-btn-label">결투 입장</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 내부 호환용 숨김 슬롯 -->
+        <div class="hidden">
+          <button id="btn-open-chronicle-header" type="button"><span id="pocket-day-title-text"></span></button>
+          <button id="pocket-episode-card" type="button"><span id="pocket-ep-ico"></span><span id="pocket-ep-code"></span><span id="pocket-ep-prog"></span><span id="pocket-ep-title"></span></button>
+          <span id="pocket-mgr-subtext"></span>
+          <img id="badge-img-action-collect" src="./assets/ui_badges/badge_action_collect.png" alt="" />
+          <img id="badge-img-action-construct" src="./assets/ui_badges/badge_action_construct.png" alt="" />
+          <img id="badge-img-action-duel" src="./assets/ui_badges/badge_action_duel.png" alt="" />
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 9. 슈퍼카 차고 모달 (호환 안전 유지) ==================== -->
+    <div id="garage-modal" class="hidden fixed inset-0 z-50 pastel-modal-backdrop flex items-center justify-center p-3">
+      <div class="cozy-planner-shell clay-glass-shell slim-drawer-shell">
+        <div class="cozy-planner-inner flex flex-col overflow-hidden">
+          <div class="pb-2 mb-2 flex items-center justify-between border-b border-[#E5C9A8] shrink-0">
+            <div class="flex items-center gap-2 min-w-0">
+              <span id="garage-ico-header" class="flex items-center shrink-0"></span>
+              <span class="diary-modal-title truncate">🏎️ 슈퍼카 차고</span>
+            </div>
+            <button id="btn-close-garage" type="button" class="btn-close-round" aria-label="닫기">✕</button>
+          </div>
+          <div id="garage-cards-grid" class="grid grid-cols-2 gap-2 overflow-y-auto custom-scroll flex-1"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 10. ⑥ 타운 경영 상세 장부 & 관리소장 급여 인상 모달 (`max-height: 82vh`) ==================== -->
+    <div id="notebook-modal" class="hidden fixed inset-0 z-50 pastel-modal-backdrop flex items-center justify-center p-3">
+      <div class="cozy-planner-shell clay-glass-shell slim-drawer-shell">
+        <div id="notebook-binder-rings" class="hidden"></div>
+
+        <div class="cozy-planner-inner flex flex-col overflow-hidden h-full">
+          <div class="pb-2 flex items-center justify-between border-b border-[#E5C9A8] shrink-0">
             <div class="flex items-center gap-1.5 min-w-0">
-              <span id="pocket-header-mini-ico" class="hidden"></span>
-              <img id="badge-img-pocket-header" src="./assets/ui_badges/badge_header_title.png" alt="갓물주 라이프" class="toy-badge-pocket-logo-img" />
+              <span id="modal-ico-notebook" class="flex items-center shrink-0"></span>
+              <span class="diary-modal-title whitespace-nowrap">📋 상세 장부 · 인사 관리</span>
+              <span id="modal-quest-summary" class="kw-chip tone-gold shrink-0">0/11</span>
+              <span id="modal-alert-summary" class="hidden kw-chip tone-coral shrink-0"></span>
+            </div>
+            <button id="btn-close-notebook" type="button" class="btn-close-round" aria-label="닫기">✕</button>
+          </div>
+
+          <div class="grid grid-cols-4 gap-1.5 py-2 border-b border-[#E5C9A8] shrink-0">
+            <button type="button" data-ntab="quests" class="ntab-btn diary-index-tab active">
+              <span id="tab-ico-quests" class="hidden"></span>
+              <span>🎯 미션</span>
+              <span id="tab-dot-quests" class="hidden w-2 h-2 rounded-full bg-[#FF6B6B] shrink-0"></span>
+            </button>
+            <button type="button" data-ntab="manager" class="ntab-btn diary-index-tab">
+              <span id="tab-ico-manager" class="hidden"></span>
+              <span>🐢 관리소장</span>
+              <span id="tab-dot-manager" class="hidden w-2 h-2 rounded-full bg-[#E11D48] shrink-0"></span>
+            </button>
+            <button type="button" data-ntab="tenants" class="ntab-btn diary-index-tab">
+              <span id="tab-ico-tenants" class="hidden"></span>
+              <span>🏠 호실·도감</span>
+              <span id="tab-dot-tenants" class="hidden w-2 h-2 rounded-full bg-[#FF6B6B] shrink-0"></span>
+            </button>
+            <button type="button" data-ntab="infra" class="ntab-btn diary-index-tab">
+              <span id="tab-ico-infra" class="hidden"></span>
+              <span>🏪 설비·상가</span>
+            </button>
+          </div>
+
+          <div id="notebook-unified-body" class="planner-unified-sheet flex-1 min-h-0 overflow-y-auto custom-scroll pt-2 space-y-2"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 11. 신규 부지 착공 & 증축 모달 ==================== -->
+    <div id="lot-dev-modal" class="hidden fixed inset-0 z-50 pastel-modal-backdrop flex items-center justify-center p-3">
+      <div class="cozy-planner-shell clay-glass-shell slim-drawer-shell">
+        <div class="cozy-planner-inner flex flex-col overflow-hidden">
+          <div class="pb-2 mb-2 flex items-center justify-between border-b border-[#E5C9A8] shrink-0">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <span id="dev-ico-header" class="flex items-center"></span>
+              <span class="diary-modal-title">🏗️ 부지 매입 · 착공</span>
+              <span id="dev-lot-badge" class="kw-chip tone-mint"></span>
+            </div>
+            <button id="btn-close-dev-modal" type="button" class="btn-close-round" aria-label="닫기">✕</button>
+          </div>
+          <div id="dev-cards-grid" class="grid grid-cols-2 gap-2 overflow-y-auto custom-scroll flex-1"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 12. 세입자 입주 계약 심사 모달 ==================== -->
+    <div id="recruit-modal" class="hidden fixed inset-0 z-[52] pastel-modal-backdrop flex items-center justify-center p-3">
+      <div class="cozy-planner-shell clay-glass-shell slim-drawer-shell">
+        <div class="cozy-planner-inner flex flex-col overflow-hidden">
+          <div class="pb-2 mb-2 flex items-center justify-between border-b border-[#E5C9A8] shrink-0">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <span id="rec-ico-header" class="flex items-center shrink-0"></span>
+              <span class="diary-modal-title">🤝 세입자 받기</span>
+              <span id="rec-room-title" class="kw-chip tone-coral"></span>
             </div>
             <div class="flex items-center gap-1.5 shrink-0">
-              <button id="btn-open-ledger-modal" type="button" class="pocket-ledger-big-pill" title="전체 퀘스트 · 관리인 · 호실 장부 열기">
-                <span id="hud-ico-ledger" class="inline-flex items-center justify-center w-5 h-5"></span>
-                <span>📋 상세 장부</span>
-              </button>
-              <button id="btn-close-pocket-planner" type="button" class="pocket-mini-close" aria-label="수첩 닫기">✕</button>
+              <button id="btn-refresh-rec" type="button" class="jelly-action-btn pill btn-gold-lip !min-h-[30px] !py-1 !px-3 !text-[12px]">새로고침 10만</button>
+              <button id="btn-close-recruit" type="button" class="btn-close-round" aria-label="닫기">✕</button>
             </div>
           </div>
+          <div id="rec-cards-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2 overflow-y-auto custom-scroll flex-1"></div>
+        </div>
+      </div>
+    </div>
 
-          <!-- 3대 비주얼 쇼케이스 액션 카드 (큼직한 3D 일러스트 + 핵심 한 줄 + 3D 입체 한글 토이 배지 버튼) -->
-          <div class="space-y-2">
-            <!-- ① 전 호실 월세 수금 카드 (`badge_action_collect.png`) -->
-            <div class="pocket-giant-action-card tone-gold">
-              <div class="pocket-visual-card-row">
-                <div id="pocket-art-collect" class="pocket-art-showcase-box">
-                  <img src="./assets/ui/ui_pocket_notebook.png" alt="월세 수금" class="w-full h-full object-contain" />
-                </div>
-                <div class="pocket-visual-card-meta">
-                  <div class="flex items-center justify-between gap-1.5">
-                    <span class="pocket-giant-card-title">전 호실 월세 수금</span>
-                    <span id="stamp-collect-badge" class="hidden pocket-giant-count-pill">1건</span>
-                  </div>
-                  <div id="pocket-collect-amount" class="pocket-giant-hero-number text-[#B45309]">+150,000원</div>
-                  <button id="btn-collect-all" type="button" class="toy-img-action-btn" aria-label="일괄 수금">
-                    <img id="badge-img-action-collect" src="./assets/ui_badges/badge_action_collect.png" alt="일괄 수금" class="toy-badge-wide-cta-img" />
-                    <span id="hud-ico-collect" class="hidden"></span>
-                    <span id="pocket-collect-btn-label" class="sr-only">일괄 수금</span>
-                  </button>
-                </div>
+    <!-- ==================== 13. 빌딩 이름 현판 각인 모달 ==================== -->
+    <div id="rename-building-modal" class="hidden fixed inset-0 z-[58] pastel-modal-backdrop flex items-center justify-center p-3">
+      <div class="cozy-planner-shell clay-glass-shell w-full max-w-[400px]">
+        <div class="cozy-planner-inner space-y-2.5">
+          <div class="flex items-center justify-between border-b border-[#E5C9A8] pb-2">
+            <div class="flex items-center gap-1.5">
+              <span id="rename-ico-crown" class="flex items-center"></span>
+              <span class="diary-modal-title">빌딩 현판 이름 변경</span>
+            </div>
+            <button id="btn-close-rename" type="button" class="btn-close-round" aria-label="닫기">✕</button>
+          </div>
+
+          <input id="input-building-name" type="text" maxlength="16" placeholder="예: 럭키 팰리스" class="diary-rename-input" />
+          <div id="rename-presets-row" class="flex flex-wrap gap-1.5"></div>
+
+          <div class="flex justify-end gap-2 pt-1">
+            <button id="btn-cancel-rename" type="button" class="tactile-pill-btn tone-cream !min-h-[34px] !px-4 !py-1.5 !text-[13px]">취소</button>
+            <button id="btn-confirm-rename" type="button" class="jelly-action-btn btn-coral-lip !min-h-[34px] !px-4 !py-1.5 !text-[13px]">
+              <span id="rename-ico-pen" class="flex items-center"></span>
+              <span>저장</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 14. 퇴거 도장 스탬프 연출 오버레이 ==================== -->
+    <div id="eviction-stamp-overlay" class="hidden fixed inset-0 z-[60] pointer-events-none">
+      <div id="eviction-stamp-box" class="stamp-slam-anim absolute left-1/2 top-1/2 clay-glass-shell !border-[#FF6B6B] !px-5 !py-2.5 flex items-center gap-2 font-title text-[18px] text-[#D6384C]">
+        <span id="stamp-ico-slot" class="flex items-center"></span>
+        <span>퇴거 집행 완료!</span>
+      </div>
+    </div>
+
+    <!-- ==================== 15. 비중요 배너 숨김 슬롯 (초소형 1줄 뉴스 티커로 통합!) ==================== -->
+    <div id="golden-bell-banner" class="hidden"><span id="banner-ico-bell"></span></div>
+    <div id="milestone-ceremony-banner" class="hidden"><span id="ms-banner-ico"></span><span id="ms-banner-title"></span><span id="ms-banner-sub"></span></div>
+    <div id="forbes-rankup-banner" class="hidden"><span id="rankup-banner-ico"></span><span id="rankup-banner-title"></span><span id="rankup-banner-sub"></span></div>
+    <div id="day3-coronation-banner" class="hidden"></div>
+
+    <!-- ==================== 16. 1인칭 상점 입장 & 집들이 선택 모달 ==================== -->
+    <div id="fp-visit-modal" class="hidden fixed inset-0 z-[56] pastel-modal-backdrop flex items-center justify-center p-3">
+      <div class="cozy-planner-shell clay-glass-shell w-full max-w-[560px]">
+        <div class="cozy-planner-inner flex flex-col overflow-hidden">
+          <div class="pb-2 flex items-center justify-between border-b border-[#E5C9A8] shrink-0">
+            <div class="flex items-center gap-1.5">
+              <span id="fp-modal-ico" class="flex items-center"></span>
+              <span id="fp-modal-title" class="diary-modal-title">🚪 1인칭 방문지 선택</span>
+            </div>
+            <button id="btn-close-fp-modal" type="button" class="btn-close-round" aria-label="닫기">✕</button>
+          </div>
+          <div class="grid grid-cols-2 gap-1.5 py-2 border-b border-[#E5C9A8] shrink-0">
+            <button type="button" id="fp-tab-shops" class="fcat-tab-btn active">🏪 매장 방문</button>
+            <button type="button" id="fp-tab-rooms" class="fcat-tab-btn">🏠 세입자 집들이</button>
+          </div>
+          <div id="fp-visit-cards-grid" class="pt-2 space-y-2 overflow-y-auto custom-scroll flex-1"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 17. 행복도 마일스톤 모달 ==================== -->
+    <div id="happiness-milestone-modal" class="hidden fixed inset-0 z-[57] pastel-modal-backdrop flex items-center justify-center p-3">
+      <div class="cozy-planner-shell clay-glass-shell w-full max-w-[540px]">
+        <div class="cozy-planner-inner flex flex-col overflow-hidden">
+          <div class="pb-2 flex items-center justify-between border-b border-[#E5C9A8] shrink-0">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span id="ms-modal-ico" class="flex items-center"></span>
+              <span class="diary-modal-title">💖 행복도 보상</span>
+              <span id="ms-modal-pct-chip" class="kw-chip tone-coral">34%</span>
+              <span id="ms-modal-title-chip" class="hidden kw-chip tone-gold">전설의 성군</span>
+            </div>
+            <button id="btn-close-ms-modal" type="button" class="btn-close-round" aria-label="닫기">✕</button>
+          </div>
+          <div class="pt-2 space-y-2 overflow-y-auto custom-scroll flex-1">
+            <div class="diary-card !p-2.5 !bg-[#FFFBEB] !border-[#FFD93D] space-y-2">
+              <div class="flex items-center justify-between gap-2">
+                <span class="font-title text-[13px] text-[#1E1B18]">행복도 달성 시 랜드마크 건설</span>
+                <button id="btn-ms-trigger-rain" type="button" class="jelly-action-btn pill btn-gold-lip !min-h-[30px] !py-1 !px-3 !text-[12px]">
+                  <span id="ico-ms-rain" class="hidden"></span>
+                  <span>💸 머니건</span>
+                </button>
+              </div>
+              <div class="candy-gauge-track !h-2.5">
+                <div id="ms-modal-gauge-fill" class="candy-gauge-fill candy-coral" style="width: 34%;"></div>
               </div>
             </div>
+            <div id="ms-cards-list" class="space-y-2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-            <!-- ② 새 층 · 상가 착공 카드 (`badge_action_construct.png`) -->
-            <div class="pocket-giant-action-card tone-sky">
-              <div class="pocket-visual-card-row">
-                <div id="pocket-art-build" class="pocket-art-showcase-box">
-                  <img src="./assets/buildings/prop_construction_crane.png" alt="새 층 착공" class="w-full h-full object-contain" />
-                </div>
-                <div class="pocket-visual-card-meta">
-                  <div class="flex items-center justify-between gap-1.5">
-                    <span class="pocket-giant-card-title">새 층 · 상가 착공</span>
-                    <span id="stamp-build-badge" class="hidden pocket-giant-count-pill !bg-[#0284C7]">시공중</span>
-                  </div>
-                  <div id="pocket-build-subtext" class="pocket-giant-sub-highlight text-[#1E1B18]">201호 증축 · 95만</div>
-                  <div id="pocket-build-gauge-box" class="hidden pt-0.5">
-                    <div class="pocket-thick-gauge-track">
-                      <div id="pocket-build-gauge-fill" class="pocket-thick-gauge-fill" style="width: 65%;"></div>
-                      <span id="pocket-build-gauge-label" class="pocket-thick-gauge-text">🚧 65%</span>
-                    </div>
-                  </div>
-                  <button id="btn-quick-expand" type="button" class="toy-img-action-btn" aria-label="증축 착공">
-                    <img id="badge-img-action-construct" src="./assets/ui_badges/badge_action_construct.png" alt="증축 착공" class="toy-badge-wide-cta-img" />
-                    <span id="hud-ico-expand" class="hidden"></span>
-                    <span id="pocket-build-btn-label" class="sr-only">증축 착공</span>
-                  </button>
-                </div>
+    <!-- ==================== 19. 라이벌 강 회장 승부 허브 모달 ==================== -->
+    <div id="rival-battle-hub-modal" class="hidden fixed inset-0 z-[65] pastel-modal-backdrop flex items-center justify-center p-3">
+      <div class="cozy-planner-shell clay-glass-shell w-full max-w-[540px]">
+        <div class="cozy-planner-inner flex flex-col overflow-hidden">
+          <div class="pb-2 flex items-center justify-between border-b border-[#E5C9A8] shrink-0">
+            <div class="flex items-center gap-1.5">
+              <span id="rival-hub-ico" class="flex items-center"></span>
+              <span class="diary-modal-title text-[#581C87]">⚔️ 라이벌 대결</span>
+              <span id="rival-win-badge" class="kw-chip tone-gold">0승</span>
+            </div>
+            <button id="btn-close-rival-hub" type="button" class="btn-close-round" aria-label="닫기">✕</button>
+          </div>
+          <div class="pt-2 space-y-2 overflow-y-auto custom-scroll flex-1">
+            <div class="diary-card !p-2.5 !bg-[#FAF5FF] !border-[#D8B4FE] flex items-center gap-2.5">
+              <div id="rival-kang-avatar-slot" class="shrink-0"></div>
+              <div class="min-w-0">
+                <div id="rival-kang-rank-title" class="font-title text-[14px] text-[#581C87]">블랙타워 강 회장 (10위)</div>
+                <div class="text-[12px] font-bold text-[#6B21A8]">자본력 정면 승부!</div>
               </div>
             </div>
-
-            <!-- ③ 앞 순위 부자와 쇼룸 결투 카드 (`badge_action_duel.png`) -->
-            <div class="pocket-giant-action-card tone-lavender">
-              <div class="pocket-visual-card-row">
-                <div id="pocket-art-duel" class="pocket-art-showcase-box">
-                  <img src="./assets/ui/ui_duel_trophy_crown.png" alt="쇼룸 결투" class="w-full h-full object-contain" />
-                </div>
-                <div class="pocket-visual-card-meta">
-                  <div class="flex items-center justify-between gap-1.5">
-                    <span id="pocket-duel-card-title" class="pocket-giant-card-title">98위 부자와 결투</span>
-                  </div>
-                  <div id="pocket-duel-subtext" class="pocket-giant-sub-highlight text-[#047857]">🏆 승리 시 월세 +15%</div>
-                  <button id="btn-rival-battle" type="button" class="toy-img-action-btn" aria-label="쇼룸 결투">
-                    <img id="badge-img-action-duel" src="./assets/ui_badges/badge_action_duel.png" alt="쇼룸 결투" class="toy-badge-wide-cta-img" />
-                    <span id="hud-ico-rival" class="hidden"></span>
-                    <span id="pocket-duel-btn-label" class="sr-only">쇼룸 결투</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 내부 호환용 숨김 슬롯 -->
-          <div class="hidden">
-            <button id="btn-open-chronicle-header" type="button"><span id="pocket-day-title-text"></span></button>
-            <button id="pocket-episode-card" type="button"><span id="pocket-ep-ico"></span><span id="pocket-ep-code"></span><span id="pocket-ep-prog"></span><span id="pocket-ep-title"></span></button>
-            <button id="btn-pocket-manager-hr" type="button"><span id="hud-ico-raccoon-mgr"></span><span id="pocket-mgr-subtext"></span><span id="stamp-manager-badge"></span></button>
+            <div id="rival-modes-grid" class="grid grid-cols-2 gap-2"></div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 우측 하단 2대 메인 버튼 (`badge_btn_moneygun.png` & `badge_btn_notebook.png` 3D 입체 한글 일체형 배지!) -->
-    <div id="quick-duo-dock" class="flex items-end gap-3 pointer-events-auto">
-      <button id="btn-make-it-rain" type="button" title="돈 뿌리기 (마을 행복도 &amp; 피버 상승)" aria-label="돈 뿌리기" class="giant-bottom-fab toy-img-main-fab tone-money">
-        <img id="badge-img-btn-moneygun" src="./assets/ui_badges/badge_btn_moneygun.png" alt="돈 뿌리기" class="toy-badge-main-fab-img" />
-        <span id="hud-ico-moneygun" class="hidden"></span>
-        <span class="sr-only">돈 뿌리기</span>
-      </button>
-
-      <button id="fab-notebook" type="button" aria-label="건물주 수첩 열기" title="건물주 수첩 열기" class="giant-bottom-fab toy-img-main-fab tone-diary relative">
-        <img id="badge-img-btn-notebook" src="./assets/ui_badges/badge_btn_notebook.png" alt="건물주 수첩" class="toy-badge-main-fab-img" />
-        <span id="fab-svg-slot" class="hidden"></span>
-        <span class="sr-only">건물주 수첩</span>
-        <span id="fab-red-dot" class="hidden pocket-fab-dot">!</span>
-      </button>
-    </div>
-  </div>
-
-  <!-- ==================== 9. 건물주 VIP 슈퍼카 차고 (width: 440px) ==================== -->
-  <div id="garage-modal" class="hidden slim-right-drawer-modal z-50">
-    <div class="cozy-planner-shell slim-drawer-shell">
-      <div class="cozy-planner-inner">
-        <div class="px-4 py-3.5 flex items-center justify-between border-b-2 border-[#EED6BE] shrink-0" style="background: linear-gradient(90deg, #FFFDF7 0%, #F7EFE5 100%);">
-          <div class="flex items-center gap-2.5 min-w-0">
-            <span id="garage-ico-header" class="flex items-center shrink-0"></span>
-            <span class="diary-modal-title truncate">🏎️ 슈퍼카 차고</span>
+    <!-- ==================== 20A. 스카우트 방어전 하단 컴팩트 독 ==================== -->
+    <section id="rival-poach-dock" class="hidden fixed bottom-2 left-1/2 -translate-x-1/2 z-[55] pointer-events-none flex justify-center w-[min(94vw,600px)]">
+      <div class="pointer-events-auto clay-glass-shell !border-[#A855F7] w-full p-2.5 space-y-2">
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-1.5">
+            <span id="poach-dock-ico" class="flex items-center"></span>
+            <span id="poach-dock-title" class="diary-modal-title text-[#581C87]">스카우트 방어전</span>
+            <span class="kw-chip tone-coral">승리 시 +30%</span>
           </div>
-          <button id="btn-close-garage" type="button" class="btn-close-round" aria-label="닫기">✕</button>
+          <button id="btn-close-poach-dock" type="button" class="btn-close-round" aria-label="닫기">✕</button>
         </div>
-        <div id="garage-cards-grid" class="p-4 grid grid-cols-1 gap-3 overflow-y-auto custom-scroll"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== 10. 타운 경영 상세 장부 (width: 460px) ==================== -->
-  <div id="notebook-modal" class="hidden slim-right-drawer-modal z-50">
-    <div class="cozy-planner-shell slim-drawer-shell">
-      <div id="notebook-binder-rings" class="hidden"></div>
-
-      <div class="cozy-planner-inner">
-        <div class="px-4 py-3.5 flex items-center justify-between border-b-2 border-[#EED6BE] shrink-0" style="background: linear-gradient(90deg, #FFFDF7 0%, #F7EFE5 100%);">
-          <div class="flex items-center gap-2 min-w-0">
-            <span id="modal-ico-notebook" class="flex items-center shrink-0"></span>
-            <span class="diary-modal-title whitespace-nowrap">📋 상세 경영 장부</span>
-            <span id="modal-quest-summary" class="kw-chip tone-gold shrink-0">0/11</span>
-            <span id="modal-alert-summary" class="hidden kw-chip tone-coral shrink-0"></span>
-          </div>
-          <button id="btn-close-notebook" type="button" class="btn-close-round" aria-label="닫기">✕</button>
-        </div>
-
-        <div class="grid grid-cols-4 gap-1.5 px-3 py-2.5 bg-[#F7EFE5] border-b-2 border-[#EED6BE] shrink-0">
-          <button type="button" data-ntab="quests" class="ntab-btn diary-index-tab active">
-            <span id="tab-ico-quests" class="hidden"></span>
-            <span>미션</span>
-            <span id="tab-dot-quests" class="hidden w-2.5 h-2.5 rounded-full bg-[#FF6B6B] border border-white shrink-0"></span>
+        <div id="poach-taunt-text" class="hidden"></div>
+        <div class="grid grid-cols-3 gap-1.5">
+          <button id="btn-poach-def-furn" type="button" class="jelly-action-btn btn-sky-lip !min-h-[34px] !py-1.5 !px-2 !text-[12px]">
+            <span id="ico-poach-furn" class="hidden"></span>
+            <span>🛋️ 가구 (110만)</span>
           </button>
-          <button type="button" data-ntab="manager" class="ntab-btn diary-index-tab">
-            <span id="tab-ico-manager" class="hidden"></span>
-            <span>🪴 소장</span>
-            <span id="tab-dot-manager" class="hidden w-2.5 h-2.5 rounded-full bg-[#E11D48] shrink-0 animate-ping"></span>
+          <button id="btn-poach-def-gift" type="button" class="jelly-action-btn btn-mint-lip !min-h-[34px] !py-1.5 !px-2 !text-[12px]">
+            <span id="ico-poach-gift" class="hidden"></span>
+            <span>🎁 선물 (80만)</span>
           </button>
-          <button type="button" data-ntab="tenants" class="ntab-btn diary-index-tab">
-            <span id="tab-ico-tenants" class="hidden"></span>
-            <span>호실</span>
-            <span id="tab-dot-tenants" class="hidden w-2.5 h-2.5 rounded-full bg-[#FF6B6B] shrink-0 animate-ping"></span>
-          </button>
-          <button type="button" data-ntab="infra" class="ntab-btn diary-index-tab">
-            <span id="tab-ico-infra" class="hidden"></span>
-            <span>상가</span>
-          </button>
-        </div>
-
-        <div id="notebook-unified-body" class="planner-unified-sheet flex-1 overflow-y-auto custom-scroll p-3.5 space-y-3"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== 11. 신규 부지 착공 & 증축 (width: 440px) ==================== -->
-  <div id="lot-dev-modal" class="hidden slim-right-drawer-modal z-50">
-    <div class="cozy-planner-shell slim-drawer-shell">
-      <div class="cozy-planner-inner">
-        <div class="px-4 py-3.5 flex items-center justify-between border-b-2 border-[#EED6BE] shrink-0" style="background: linear-gradient(90deg, #FFFDF7 0%, #F7EFE5 100%);">
-          <div class="flex items-center gap-2 min-w-0 flex-wrap">
-            <span id="dev-ico-header" class="flex items-center"></span>
-            <span class="diary-modal-title">🏗️ 새 층 · 부지 착공</span>
-            <span id="dev-lot-badge" class="kw-chip tone-mint"></span>
-          </div>
-          <button id="btn-close-dev-modal" type="button" class="btn-close-round" aria-label="닫기">✕</button>
-        </div>
-        <div id="dev-cards-grid" class="p-4 grid grid-cols-1 gap-3 overflow-y-auto custom-scroll"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== 12. 세입자 입주 계약 심사 (width: 440px) ==================== -->
-  <div id="recruit-modal" class="hidden slim-right-drawer-modal z-[52]">
-    <div class="cozy-planner-shell slim-drawer-shell">
-      <div class="cozy-planner-inner">
-        <div class="px-4 py-3.5 flex items-center justify-between border-b-2 border-[#EED6BE] shrink-0" style="background: linear-gradient(90deg, #FFFDF7 0%, #F7EFE5 100%);">
-          <div class="flex items-center gap-2 min-w-0 flex-wrap">
-            <span id="rec-ico-header" class="flex items-center shrink-0"></span>
-            <span class="diary-modal-title">🤝 세입자 받기</span>
-            <span id="rec-room-title" class="kw-chip tone-coral"></span>
-          </div>
-          <div class="flex items-center gap-2 shrink-0">
-            <button id="btn-refresh-rec" type="button" class="jelly-action-btn pill btn-gold-lip !py-2 !px-3.5">새로고침 10만</button>
-            <button id="btn-close-recruit" type="button" class="btn-close-round" aria-label="닫기">✕</button>
-          </div>
-        </div>
-        <div id="rec-cards-grid" class="p-4 grid grid-cols-1 gap-3 overflow-y-auto custom-scroll"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== 13. 빌딩 이름 현판 각인 모달 ==================== -->
-  <div id="rename-building-modal" class="hidden fixed inset-0 z-[58] pastel-modal-backdrop flex items-center justify-center p-4">
-    <div class="cozy-planner-shell w-full max-w-md">
-      <div class="cozy-planner-inner p-5 space-y-4">
-        <div class="flex items-center justify-between border-b-2 border-[#EED6BE] pb-3">
-          <div class="flex items-center gap-2">
-            <span id="rename-ico-crown" class="flex items-center"></span>
-            <span class="diary-modal-title">빌딩 이름 바꾸기</span>
-          </div>
-          <button id="btn-close-rename" type="button" class="btn-close-round" aria-label="닫기">✕</button>
-        </div>
-
-        <input id="input-building-name" type="text" maxlength="16" placeholder="예: 럭키 팰리스" class="diary-rename-input" />
-        <div id="rename-presets-row" class="flex flex-wrap gap-2"></div>
-
-        <div class="flex justify-end gap-2.5 pt-1">
-          <button id="btn-cancel-rename" type="button" class="tactile-pill-btn tone-cream !px-5 !py-2.5">취소</button>
-          <button id="btn-confirm-rename" type="button" class="jelly-action-btn btn-coral-lip px-5 py-2.5">
-            <span id="rename-ico-pen" class="flex items-center"></span>
-            <span>이름 저장</span>
+          <button id="btn-poach-def-rain" type="button" class="jelly-action-btn btn-gold-lip !min-h-[34px] !py-1.5 !px-2 !text-[12px]">
+            <span id="ico-poach-rain" class="hidden"></span>
+            <span>💸 머니건 (130만)</span>
           </button>
         </div>
       </div>
-    </div>
-  </div>
+    </section>
 
-  <!-- ==================== 14. 퇴거 도장 스탬프 연출 오버레이 ==================== -->
-  <div id="eviction-stamp-overlay" class="hidden fixed inset-0 z-[60] pointer-events-none">
-    <div id="eviction-stamp-box" class="stamp-slam-anim absolute left-1/2 top-1/2 diary-card !bg-[#FFFDF7] !border-4 !border-[#FF6B6B] !px-8 !py-4 flex items-center gap-3 font-title text-[28px] text-[#D6384C]">
-      <span id="stamp-ico-slot" class="flex items-center"></span>
-      <span>퇴거 집행 완료!</span>
-    </div>
-  </div>
-
-  <!-- ==================== 15. 골든벨 플렉스 선언 배너 ==================== -->
-  <div id="golden-bell-banner" class="hidden fixed inset-x-3 top-[104px] z-[62] pointer-events-none flex justify-center">
-    <div class="golden-bell-slam diary-card !bg-[#FFFBEB] !border-4 !border-[#FFD93D] px-6 py-4 max-w-xl text-center space-y-1.5 shadow-2xl">
-      <div class="flex items-center justify-center gap-2 font-title text-[24px] text-[#B45309]">
-        <span id="banner-ico-bell" class="flex items-center"></span>
-        <span>땡땡땡!! 오늘 이 가게는 건물주가 전부 쏩니다!!</span>
-      </div>
-      <div class="font-body text-[18px] font-extrabold text-[#D6384C]">
-        60초간 전 호실 월세 &amp; 상가 매출 2.5배 피버!!
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== 16. 1인칭 상점 입장 & 집들이 선택 모달 ==================== -->
-  <div id="fp-visit-modal" class="hidden fixed inset-0 z-[56] pastel-modal-backdrop flex items-center justify-center p-4">
-    <div class="cozy-planner-shell w-full max-w-2xl max-h-[88vh]">
-      <div class="cozy-planner-inner">
-        <div class="px-5 py-4 flex items-center justify-between border-b-2 border-[#EED6BE] shrink-0" style="background: linear-gradient(90deg, #FFFDF7 0%, #F7EFE5 100%);">
-          <div class="flex items-center gap-2.5">
-            <span id="fp-modal-ico" class="flex items-center"></span>
-            <span id="fp-modal-title" class="diary-modal-title">🚪 1인칭 방문지 선택</span>
+    <!-- ==================== 20B. 실시간 1:1 입찰 경매 하단 컴팩트 독 ==================== -->
+    <section id="bidding-war-dock" class="hidden fixed bottom-2 left-1/2 -translate-x-1/2 z-[55] pointer-events-none flex justify-center w-[min(94vw,600px)]">
+      <div class="pointer-events-auto clay-glass-shell w-full p-2.5 space-y-2">
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-1.5">
+            <span id="bid-dock-ico" class="flex items-center"></span>
+            <span id="bid-shop-title" class="diary-modal-title">상가 1:1 입찰 경매</span>
+            <span class="kw-chip tone-gold">낙찰 +40%</span>
           </div>
-          <button id="btn-close-fp-modal" type="button" class="btn-close-round" aria-label="닫기">✕</button>
+          <button id="btn-close-bid-dock" type="button" class="btn-close-round" aria-label="닫기">✕</button>
         </div>
-        <div class="grid grid-cols-2 gap-2.5 px-4 py-3 bg-[#F7EFE5] border-b-2 border-[#EED6BE] shrink-0">
-          <button type="button" id="fp-tab-shops" class="fcat-tab-btn active">상가 · 매장 방문</button>
-          <button type="button" id="fp-tab-rooms" class="fcat-tab-btn">세입자 방 집들이</button>
-        </div>
-        <div id="fp-visit-cards-grid" class="p-4 space-y-3 overflow-y-auto custom-scroll"></div>
-      </div>
-    </div>
-  </div>
 
-  <!-- ==================== 17. 행복도 마일스톤 모달 ==================== -->
-  <div id="happiness-milestone-modal" class="hidden fixed inset-0 z-[57] pastel-modal-backdrop flex items-center justify-center p-4">
-    <div class="cozy-planner-shell w-full max-w-2xl max-h-[90vh]">
-      <div class="cozy-planner-inner">
-        <div class="px-5 py-4 flex items-center justify-between border-b-2 border-[#EED6BE] shrink-0" style="background: linear-gradient(90deg, #FFFDF7 0%, #FFE8EE 100%);">
-          <div class="flex items-center gap-2.5 flex-wrap">
-            <span id="ms-modal-ico" class="flex items-center"></span>
-            <span class="diary-modal-title">마을 행복도 보상</span>
-            <span id="ms-modal-pct-chip" class="kw-chip tone-coral">현재 34%</span>
-            <span id="ms-modal-title-chip" class="hidden kw-chip tone-gold">전설의 성군</span>
+        <div class="grid grid-cols-2 gap-2 text-center">
+          <div class="bg-[#FFFBEB] border border-[#FACC15] rounded-xl py-1 px-2 flex items-center justify-between">
+            <span class="font-title text-[12px] text-[#9A4E04]">내 입찰</span>
+            <span id="bid-my-price" class="font-num text-[15px] text-[#15803D]">360만</span>
           </div>
-          <button id="btn-close-ms-modal" type="button" class="btn-close-round" aria-label="닫기">✕</button>
+          <div class="bg-[#FAF5FF] border border-[#C084FC] rounded-xl py-1 px-2 flex items-center justify-between">
+            <span class="font-title text-[12px] text-[#6B21A8]">강 회장</span>
+            <span id="bid-rival-price" class="font-num text-[15px] text-[#7E22CE]">390만!</span>
+          </div>
         </div>
-        <div class="p-4 space-y-3.5 overflow-y-auto custom-scroll">
-          <div class="diary-card !bg-[#FFFBEB] !border-[#FFD93D] space-y-3">
-            <div class="flex items-center justify-between gap-2 flex-wrap">
-              <div class="font-title text-[20px] text-[#1E1B18]">행복도가 오르면 영구 랜드마크가 세워집니다!</div>
-              <button id="btn-ms-trigger-rain" type="button" class="jelly-action-btn pill btn-gold-lip !py-2.5 !px-4">
-                <span id="ico-ms-rain" class="flex items-center"></span>
-                <span>💸 돈 뿌리기 (100만)</span>
-              </button>
+        <div id="bid-status-msg" class="hidden"></div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <button id="btn-bid-step-up" type="button" class="jelly-action-btn btn-mint-lip !min-h-[34px] !py-1.5 !px-3 !text-[12.5px]">
+            <span id="ico-bid-up" class="hidden"></span>
+            <span id="label-bid-step-up">+10% 호가 입찰</span>
+          </button>
+          <button id="btn-bid-briefcase-slam" type="button" class="jelly-action-btn btn-gold-lip !min-h-[34px] !py-1.5 !px-3 !text-[12.5px]">
+            <span id="ico-bid-briefcase" class="hidden"></span>
+            <span id="label-bid-briefcase">💼 즉시 낙찰</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 21. ⑥ 100인 글로벌 부자 서열표 모달 (`모바일 360px 높이 안전 컴팩트 설계`) ==================== -->
+    <div id="forbes-modal" class="hidden fixed inset-0 z-[66] pastel-modal-backdrop flex items-center justify-center p-3">
+      <div class="cozy-planner-shell clay-glass-shell slim-drawer-shell w-full max-w-[620px]">
+        <div class="cozy-planner-inner flex flex-col overflow-hidden h-full gap-2">
+          <div class="pb-1.5 flex items-center justify-between border-b border-[#E5C9A8] shrink-0">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <span id="forbes-modal-ico" class="flex items-center shrink-0"></span>
+              <span class="diary-modal-title text-[#78350F] whitespace-nowrap">🏆 100인 부자 서열표</span>
+              <span id="forbes-my-rank-chip" class="kw-chip tone-gold shrink-0">99위 / 100</span>
             </div>
-            <div class="candy-gauge-track !h-4">
-              <div id="ms-modal-gauge-fill" class="candy-gauge-fill candy-coral" style="width: 34%;"></div>
-            </div>
+            <button id="btn-close-forbes" type="button" class="btn-close-round" aria-label="닫기">✕</button>
           </div>
-          <div id="ms-cards-list" class="space-y-3"></div>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- ==================== 18. 행복도 마일스톤 제막식 축하 배너 ==================== -->
-  <div id="milestone-ceremony-banner" class="hidden fixed inset-x-3 top-[104px] z-[63] pointer-events-none flex justify-center">
-    <div class="golden-bell-slam diary-card !bg-[#FFFDF2] !border-4 !border-[#FFD93D] px-6 py-4 max-w-xl text-center space-y-1.5 shadow-2xl">
-      <div class="flex items-center justify-center gap-2 font-title text-[24px] text-[#B45309] break-keep">
-        <span id="ms-banner-ico" class="flex items-center shrink-0"></span>
-        <span id="ms-banner-title">행복도 50% 돌파!</span>
-      </div>
-      <div id="ms-banner-sub" class="font-body text-[18px] font-extrabold text-[#D6384C]">
-        마을 기본 임대 수익 영구 상승!
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== 19. 라이벌 강 회장 승부 허브 모달 ==================== -->
-  <div id="rival-battle-hub-modal" class="hidden fixed inset-0 z-[65] pastel-modal-backdrop flex items-center justify-center p-4">
-    <div class="cozy-planner-shell w-full max-w-2xl max-h-[90vh]">
-      <div class="cozy-planner-inner">
-        <div class="px-5 py-4 flex items-center justify-between border-b-2 border-[#EED6BE] shrink-0" style="background: linear-gradient(90deg, #FDF4FF 0%, #F3E8FF 100%);">
-          <div class="flex items-center gap-2.5 flex-wrap">
-            <span id="rival-hub-ico" class="flex items-center"></span>
-            <span class="diary-modal-title text-[#581C87]">⚔️ 라이벌 자본력 대결</span>
-            <span id="rival-win-badge" class="kw-chip tone-gold">0승</span>
-          </div>
-          <button id="btn-close-rival-hub" type="button" class="btn-close-round" aria-label="닫기">✕</button>
-        </div>
-        <div class="p-4 space-y-3.5 overflow-y-auto custom-scroll">
-          <div class="diary-card !bg-[#FAF5FF] !border-[#D8B4FE] flex items-center gap-3.5">
-            <div id="rival-kang-avatar-slot" class="shrink-0"></div>
-            <div class="space-y-1 min-w-0">
-              <div id="rival-kang-rank-title" class="font-title text-[22px] text-[#581C87]">블랙타워 강 회장 (10위)</div>
-              <div class="font-body text-[17px] font-bold text-[#6B21A8] break-keep">
-                "자본력으로 정면 승부해 볼 테냐?"
-              </div>
-            </div>
-          </div>
-          <div id="rival-modes-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== 20A. 스카우트 방어전 하단 액션 독 ==================== -->
-  <section id="rival-poach-dock" class="hidden fixed bottom-3 left-3 right-3 z-[55] pointer-events-none flex justify-center">
-    <div class="pointer-events-auto furniture-sheet-shell !border-[#A855F7] w-full max-w-4xl p-4 space-y-3 shadow-2xl">
-      <div class="flex items-center justify-between gap-2 flex-wrap">
-        <div class="flex items-center gap-2.5">
-          <span id="poach-dock-ico" class="flex items-center"></span>
-          <span id="poach-dock-title" class="font-title text-[24px] text-[#581C87]">세입자 스카우트 방어전!</span>
-          <span class="kw-chip tone-coral">성공 시 월세 영구 +30%</span>
-        </div>
-        <button id="btn-close-poach-dock" type="button" class="btn-close-round" aria-label="닫기">✕</button>
-      </div>
-      <div id="poach-taunt-text" class="font-body text-[18px] font-extrabold text-[#6B21A8] bg-[#FAF5FF] border-2 border-[#E9D5FF] rounded-2xl px-4 py-2.5">
-        강 회장이 세입자를 빼가려 합니다!
-      </div>
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-        <button id="btn-poach-def-furn" type="button" class="jelly-action-btn btn-sky-lip py-3.5 px-4">
-          <span id="ico-poach-furn" class="flex items-center"></span>
-          <span>🛋️ 가구 업그레이드 (110만)</span>
-        </button>
-        <button id="btn-poach-def-gift" type="button" class="jelly-action-btn btn-mint-lip py-3.5 px-4">
-          <span id="ico-poach-gift" class="flex items-center"></span>
-          <span>🎁 케이크 선물 (80만)</span>
-        </button>
-        <button id="btn-poach-def-rain" type="button" class="jelly-action-btn btn-gold-lip py-3.5 px-4">
-          <span id="ico-poach-rain" class="flex items-center"></span>
-          <span>💸 머니건 발사! (130만)</span>
-        </button>
-      </div>
-    </div>
-  </section>
-
-  <!-- ==================== 20B. 실시간 1:1 입찰 경매 배틀 하단 독 ==================== -->
-  <section id="bidding-war-dock" class="hidden fixed bottom-3 left-3 right-3 z-[55] pointer-events-none flex justify-center">
-    <div class="pointer-events-auto furniture-sheet-shell !border-[#F59E0B] w-full max-w-4xl p-4 space-y-3 shadow-2xl">
-      <div class="flex items-center justify-between gap-2 flex-wrap">
-        <div class="flex items-center gap-2.5">
-          <span id="bid-dock-ico" class="flex items-center"></span>
-          <span id="bid-shop-title" class="font-title text-[24px] text-[#1E1B18]">상가 1:1 입찰 경매!</span>
-          <span class="kw-chip tone-gold">낙찰 시 수익 +40%</span>
-        </div>
-        <button id="btn-close-bid-dock" type="button" class="btn-close-round" aria-label="닫기">✕</button>
-      </div>
-
-      <div class="grid grid-cols-2 gap-3 text-center">
-        <div class="bg-[#FFFBEB] border-2 border-[#FACC15] rounded-2xl py-3 px-4">
-          <div class="font-title text-[18px] text-[#9A4E04]">내 입찰가</div>
-          <div id="bid-my-price" class="font-num text-[28px] text-[#15803D]">360만</div>
-        </div>
-        <div class="bg-[#FAF5FF] border-2 border-[#C084FC] rounded-2xl py-3 px-4">
-          <div class="font-title text-[18px] text-[#6B21A8]">강 회장 입찰가</div>
-          <div id="bid-rival-price" class="font-num text-[28px] text-[#7E22CE]">390만!</div>
-        </div>
-      </div>
-
-      <div id="bid-status-msg" class="font-body text-[18px] font-extrabold text-[#1E1B18] text-center">
-        맞불 입찰하거나 황금 돈가방으로 즉시 낙찰받으세요!
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <button id="btn-bid-step-up" type="button" class="jelly-action-btn btn-mint-lip py-3.5 px-4">
-          <span id="ico-bid-up" class="flex items-center"></span>
-          <span id="label-bid-step-up">+10% 호가 올리기</span>
-        </button>
-        <button id="btn-bid-briefcase-slam" type="button" class="jelly-action-btn btn-gold-lip py-3.5 px-4">
-          <span id="ico-bid-briefcase" class="flex items-center"></span>
-          <span id="label-bid-briefcase">💼 황금 돈가방 즉시 낙찰!</span>
-        </button>
-      </div>
-    </div>
-  </section>
-
-  <!-- ==================== 21. 100인 글로벌 부자 서열 & 명성도 보드 (width: 460px) ==================== -->
-  <div id="forbes-modal" class="hidden slim-right-drawer-modal z-[66]">
-    <div class="cozy-planner-shell slim-drawer-shell">
-      <div class="cozy-planner-inner">
-        <div class="px-4 py-3.5 flex items-center justify-between border-b-2 border-[#EED6BE] shrink-0" style="background: linear-gradient(90deg, #FFFDF5 0%, #FEF3C7 100%);">
-          <div class="flex items-center gap-2 min-w-0">
-            <span id="forbes-modal-ico" class="flex items-center shrink-0"></span>
-            <span class="diary-modal-title text-[#78350F] truncate">🏆 100인 부자 서열</span>
-            <span id="forbes-my-rank-chip" class="kw-chip tone-gold shrink-0">99위</span>
-          </div>
-          <button id="btn-close-forbes" type="button" class="btn-close-round" aria-label="닫기">✕</button>
-        </div>
-
-        <div class="p-4 space-y-3 overflow-y-auto custom-scroll">
-          <div class="diary-card !bg-[#FFFBEB] !border-2 !border-[#F59E0B] space-y-2.5 !p-3">
-            <div class="flex items-center gap-3">
-              <div id="forbes-my-hero-portrait" class="w-[74px] h-[74px] rounded-2xl bg-[#FFFDF8] border-2 border-[#F59E0B] flex items-center justify-center shrink-0 overflow-hidden shadow-sm"></div>
-              <div class="min-w-0 flex-1 space-y-1">
-                <div class="font-title text-[15px] text-[#9A4E04]">내 종합 자산 점수</div>
-                <div class="flex items-baseline gap-2 flex-wrap">
-                  <span id="forbes-total-worth" class="font-num text-[24px] text-[#1E1B18]">230점</span>
-                  <span id="forbes-vip-title" class="kw-chip tone-coral">99위 초보 임대업자</span>
+          <!-- 상단 내 자산 요약 1줄 가로 바 -->
+          <div class="diary-card !p-2 !bg-[#FFFBEB] !border-[#F59E0B] flex items-center justify-between gap-2 shrink-0">
+            <div class="flex items-center gap-2 min-w-0">
+              <div id="forbes-my-hero-portrait" class="w-10 h-10 rounded-xl bg-[#FFFDF8] border border-[#F59E0B] flex items-center justify-center shrink-0 overflow-hidden"></div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span id="forbes-total-worth" class="font-num text-[15px] text-[#1E1B18] whitespace-nowrap">230점</span>
+                  <span id="forbes-vip-title" class="kw-chip tone-coral">초보 건물주</span>
                 </div>
+                <div id="forbes-fame-summary-box" class="text-[11.5px] font-bold text-[#047857] truncate"></div>
               </div>
             </div>
-            <div id="forbes-fame-summary-box" class="rounded-2xl p-2.5 bg-[#FFFDF9] border-2 border-[#FDE68A]"></div>
-            <button id="btn-forbes-challenge-kang" type="button" class="jelly-action-btn btn-coral-lip w-full !py-2.5">
-              <span id="ico-forbes-kang" class="flex items-center"></span>
-              <span>⚔️ 98위 부자와 결투하기</span>
+            <button id="btn-forbes-challenge-kang" type="button" class="jelly-action-btn btn-coral-lip shrink-0 !min-h-[34px] !py-1.5 !px-3 !text-[12.5px]">
+              <span id="ico-forbes-kang" class="hidden"></span>
+              <span>⚔️ 앞 순위 결투</span>
             </button>
             <div id="forbes-portfolio-grid" class="hidden"></div>
           </div>
 
-          <div id="forbes-tier-filters" class="grid grid-cols-4 gap-1.5">
+          <!-- 필터 탭 1줄 -->
+          <div id="forbes-tier-filters" class="grid grid-cols-4 gap-1.5 shrink-0">
             <button type="button" data-forbes-filter="near" class="forbes-filter-pill active">내 주변</button>
             <button type="button" data-forbes-filter="top20" class="forbes-filter-pill">1~20위</button>
             <button type="button" data-forbes-filter="mid50" class="forbes-filter-pill">21~60위</button>
             <button type="button" data-forbes-filter="low100" class="forbes-filter-pill">61~100위</button>
           </div>
 
-          <div id="forbes-ranking-list" class="space-y-2.5"></div>
+          <!-- 100인 서열 스크롤 리스트 (`font-size: 13px~15px`) -->
+          <div id="forbes-ranking-list" class="space-y-1.5 flex-1 min-h-0 overflow-y-auto custom-scroll pr-0.5"></div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- ==================== 22. RANK UP 축하 배너 ==================== -->
-  <div id="forbes-rankup-banner" class="hidden fixed inset-x-3 top-[104px] z-[68] pointer-events-none flex justify-center">
-    <div class="golden-bell-slam diary-card !bg-[#FFFBEB] !border-4 !border-[#F59E0B] px-6 py-4 max-w-xl text-center space-y-1.5 shadow-2xl">
-      <div class="flex items-center justify-center gap-2 font-title text-[24px] text-[#9A4E04] break-keep">
-        <span id="rankup-banner-ico" class="flex items-center shrink-0"></span>
-        <span id="rankup-banner-title">🏆 RANK UP! 부자 서열 상승!!</span>
-      </div>
-      <div id="rankup-banner-sub" class="font-body text-[18px] font-extrabold text-[#15803D]">
-        서열 추월 배당금 지급 완료!
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== 23. 가이드 투어 하단 캡슐 바 ==================== -->
-  <section id="cinematic-tour-bar" class="hidden fixed bottom-5 left-3 right-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-[82] pointer-events-none flex justify-center">
-    <div class="cinematic-tour-capsule pointer-events-auto">
-      <span id="tour-step-badge" class="tour-step-pill shrink-0">STEP 1 / 5</span>
-      <p id="tour-step-caption" class="tour-caption-line">
-        건물과 상가를 클릭해 가구를 배치하고 월세를 키워보세요!
-      </p>
-      <div class="flex items-center gap-2 shrink-0">
-        <button id="btn-tour-next" type="button" class="tour-next-btn">다음 ▶</button>
-        <button id="btn-tour-skip" type="button" class="tour-skip-btn">건너뛰기 ✕</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- ==================== 24. 환경설정 (`🔓 개발자 전체 해금` 대형 토글 포함!) ==================== -->
-  <div id="settings-modal" class="hidden slim-right-drawer-modal z-[95]">
-    <div class="cozy-planner-shell slim-drawer-shell !h-auto max-h-[calc(100vh-96px)]">
-      <div class="cozy-planner-inner p-4 space-y-3.5">
-        <div class="flex items-center justify-between border-b-2 border-[#EED6BE] pb-3">
-          <div class="flex items-center gap-2">
-            <span id="settings-ico-header" class="flex items-center"></span>
-            <span class="diary-modal-title">⚙️ 환경설정</span>
-          </div>
-          <button id="btn-close-settings" type="button" class="btn-close-round" aria-label="닫기">✕</button>
-        </div>
-
-        <div class="space-y-2.5">
-          <div class="diary-card flex items-center justify-between gap-3 !p-3.5 !bg-[#FFFBEB] !border-2 !border-[#F59E0B]">
-            <span class="font-title text-[20px] text-[#1E1B18]">🔓 개발자 전체 해금</span>
-            <button id="btn-toggle-dev-unlock" type="button" class="tactile-pill-btn tone-cream !px-4 !py-2">OFF</button>
-          </div>
-
-          <div class="diary-card flex items-center justify-between gap-3 !p-3.5">
-            <span class="font-title text-[20px] text-[#1E1B18]">🔊 효과음 &amp; 사운드</span>
-            <button id="btn-toggle-sfx" type="button" class="tactile-pill-btn tone-mint !px-4 !py-2">ON</button>
-          </div>
-
-          <div class="diary-card flex items-center justify-between gap-3 !p-3.5">
-            <span class="font-title text-[20px] text-[#1E1B18]">🌤️ 입체 그림자 품질</span>
-            <button id="btn-toggle-shadows" type="button" class="tactile-pill-btn tone-gold !px-4 !py-2">고품질</button>
-          </div>
-
-          <div class="diary-card flex items-center justify-between gap-3 !p-3.5">
-            <span class="font-title text-[20px] text-[#1E1B18]">🎬 가이드 투어 보기</span>
-            <button id="btn-settings-run-tour" type="button" class="tactile-pill-btn tone-cream !px-4 !py-2">재생</button>
-          </div>
-
-          <div class="diary-card flex items-center justify-between gap-3 !p-3.5">
-            <span class="font-title text-[20px] text-[#1E1B18]">🗑️ 처음부터 초기화</span>
-            <button id="btn-settings-reset" type="button" class="tactile-pill-btn tone-coral !px-4 !py-2">초기화</button>
-          </div>
+    <!-- ==================== 23. 가이드 투어 하단 슬림 캡슐 바 ==================== -->
+    <section id="cinematic-tour-bar" class="hidden fixed bottom-3 left-1/2 -translate-x-1/2 z-[82] pointer-events-none flex justify-center w-[min(94vw,620px)]">
+      <div class="cinematic-tour-capsule clay-glass-shell pointer-events-auto flex items-center justify-between gap-2 px-3 py-2 w-full">
+        <span id="tour-step-badge" class="kw-chip tone-gold shrink-0">1 / 5</span>
+        <p id="tour-step-caption" class="text-[12.5px] font-bold text-[#1E1B18] truncate flex-1">
+          건물과 상가를 클릭해 가구를 배치하고 월세를 키워보세요!
+        </p>
+        <div class="flex items-center gap-1.5 shrink-0">
+          <button id="btn-tour-next" type="button" class="jelly-action-btn btn-gold-lip !min-h-[30px] !py-1 !px-3 !text-[12px]">다음 ▶</button>
+          <button id="btn-tour-skip" type="button" class="tactile-pill-btn tone-cream !min-h-[30px] !py-1 !px-2.5 !text-[12px]">✕</button>
         </div>
       </div>
-    </div>
-  </div>
+    </section>
 
-  <!-- ==================== 25. 3일 마스터 칭호 & 해안 신도시 개통 현황판 ==================== -->
-  <div id="harbor-chronicle-modal" class="hidden slim-right-drawer-modal z-[94]">
-    <div class="cozy-planner-shell slim-drawer-shell">
-      <div class="cozy-planner-inner p-4 space-y-3 overflow-y-auto custom-scroll">
-        <div class="flex items-center justify-between border-b-2 border-[#EED6BE] pb-3">
-          <div class="flex items-center gap-2">
-            <span id="chronicle-ico-header" class="flex items-center"></span>
-            <div>
-              <div class="diary-modal-title">🌅 해안 신도시 연대기</div>
-              <div id="chronicle-elapsed-badge" class="text-[16px] font-bold text-[#5C4938]">경과 시간 측정 중...</div>
+    <!-- ==================== 24. 환경설정 모달 (`max-height: 82vh`) ==================== -->
+    <div id="settings-modal" class="hidden fixed inset-0 z-[95] pastel-modal-backdrop flex items-center justify-center p-3">
+      <div class="cozy-planner-shell clay-glass-shell slim-drawer-shell w-full max-w-[420px]">
+        <div class="cozy-planner-inner flex flex-col gap-2 overflow-y-auto custom-scroll">
+          <div class="flex items-center justify-between border-b border-[#E5C9A8] pb-1.5">
+            <div class="flex items-center gap-1.5">
+              <span id="settings-ico-header" class="flex items-center"></span>
+              <span class="diary-modal-title">⚙️ 환경설정</span>
+            </div>
+            <button id="btn-close-settings" type="button" class="btn-close-round" aria-label="닫기">✕</button>
+          </div>
+
+          <div class="space-y-1.5">
+            <div class="diary-card flex items-center justify-between gap-2 !p-2 !bg-[#FFFBEB] !border-[#F59E0B]">
+              <span class="font-title text-[13.5px] text-[#1E1B18]">🔓 개발자 전체 해금</span>
+              <button id="btn-toggle-dev-unlock" type="button" class="tactile-pill-btn tone-cream !min-h-[30px] !px-3 !py-1 !text-[12.5px]">OFF</button>
+            </div>
+
+            <div class="diary-card flex items-center justify-between gap-2 !p-2">
+              <span class="font-title text-[13.5px] text-[#1E1B18]">🔊 효과음 &amp; 사운드</span>
+              <button id="btn-toggle-sfx" type="button" class="tactile-pill-btn tone-mint !min-h-[30px] !px-3 !py-1 !text-[12.5px]">ON</button>
+            </div>
+
+            <div class="diary-card flex items-center justify-between gap-2 !p-2">
+              <span class="font-title text-[13.5px] text-[#1E1B18]">🌤️ 입체 그림자 품질</span>
+              <button id="btn-toggle-shadows" type="button" class="tactile-pill-btn tone-gold !min-h-[30px] !px-3 !py-1 !text-[12.5px]">고품질</button>
+            </div>
+
+            <div class="diary-card flex items-center justify-between gap-2 !p-2">
+              <span class="font-title text-[13.5px] text-[#1E1B18]">🎬 가이드 투어 보기</span>
+              <button id="btn-settings-run-tour" type="button" class="tactile-pill-btn tone-cream !min-h-[30px] !px-3 !py-1 !text-[12.5px]">재생</button>
+            </div>
+
+            <div class="diary-card flex items-center justify-between gap-2 !p-2">
+              <span class="font-title text-[13.5px] text-[#1E1B18]">🗑️ 데이터 초기화</span>
+              <button id="btn-settings-reset" type="button" class="tactile-pill-btn tone-coral !min-h-[30px] !px-3 !py-1 !text-[12.5px]">초기화</button>
             </div>
           </div>
-          <button id="btn-close-chronicle" type="button" class="btn-close-round" aria-label="닫기">✕</button>
-        </div>
-
-        <div id="chronicle-current-banner" class="chronicle-hero-card"></div>
-        <div id="chronicle-days-list" class="space-y-2.5"></div>
-
-        <div class="pt-1 space-y-2.5">
-          <button id="btn-chronicle-travel-harbor" type="button" class="hidden jelly-action-btn btn-coral-lip w-full py-3.5">
-            <span>🌅 제2마을 해안 리조트 이동 ➔</span>
-          </button>
-          <button id="btn-skip-day3-test" type="button" class="jelly-action-btn btn-gold-lip w-full py-3.5">
-            <span>⚡ 제2마을 즉시 개방하기</span>
-          </button>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- ==================== 26. 『🛋️ 가구 백화점』 우측 빅&볼드 드로어 (width: 440px) ==================== -->
-  <aside id="flagship-shop-drawer" class="hidden fixed right-[18px] top-[84px] bottom-[22px] w-[calc(100vw-28px)] sm:w-[440px] z-[64] diary-inspector-shell slim-side-drawer flex flex-col overflow-hidden">
-    <div class="px-4 py-3.5 flex items-center justify-between gap-2 border-b-2 border-[#EED6BE] shrink-0" style="background: linear-gradient(90deg, #FFFDF7 0%, #FEF3C7 100%);">
-      <div class="flex items-center gap-2 min-w-0">
-        <span id="flagship-drawer-ico" class="flex items-center shrink-0"></span>
-        <div class="min-w-0">
-          <div class="diary-modal-title truncate">🛋️ 가구 백화점</div>
-          <div id="flagship-inv-summary" class="font-body text-[16px] font-extrabold text-[#B45309]">창고 보유 가구</div>
-        </div>
-      </div>
-      <button id="btn-close-flagship-drawer" type="button" class="btn-close-round" aria-label="닫기">✕</button>
-    </div>
-
-    <div id="flagship-cat-tabs" class="grid grid-cols-4 gap-1.5 px-3 py-2.5 bg-[#F7EFE5] border-b border-[#EED6BE] shrink-0">
-      <button type="button" data-shopcat="bed" class="fcat-tab-btn active">🛏️ 침대</button>
-      <button type="button" data-shopcat="sofa" class="fcat-tab-btn">🛋️ 소파</button>
-      <button type="button" data-shopcat="appliance" class="fcat-tab-btn">📺 설비</button>
-      <button type="button" data-shopcat="decor" class="fcat-tab-btn">💎 오브제</button>
-    </div>
-
-    <div id="flagship-tier-tabs" class="flex items-center gap-1.5 px-3 py-2 bg-[#FFFDF9] border-b border-[#EFE3D3] overflow-x-auto no-scrollbar shrink-0">
-      <button type="button" data-shoptier="0" class="tier-filter-pill active">전체</button>
-      <button type="button" data-shoptier="1" class="tier-filter-pill">T1</button>
-      <button type="button" data-shoptier="2" class="tier-filter-pill">T2</button>
-      <button type="button" data-shoptier="3" class="tier-filter-pill">T3</button>
-      <button type="button" data-shoptier="4" class="tier-filter-pill">T4</button>
-    </div>
-
-    <div id="flagship-items-list" class="p-3.5 space-y-3 overflow-y-auto custom-scroll flex-1"></div>
-  </aside>
-
-  <!-- ==================== 27. 『1:1 럭셔리 쇼룸 결투』 빅 & 볼드 HUD ==================== -->
-  <section id="showroom-duel-hud" class="hidden fixed inset-0 z-[58] pointer-events-none">
-    <div id="duel-camera-flash" class="hidden fixed inset-0 bg-white/80 z-[62] pointer-events-none"></div>
-
-    <div id="duel-vs-topbar" class="fixed top-[84px] lg:top-[18px] left-1/2 -translate-x-1/2 w-[min(680px,calc(100vw-460px))] min-w-[360px] pointer-events-auto duel-vs-card">
-      <div class="flex items-center justify-between gap-2 flex-wrap pb-2 border-b-2 border-[#EFE3D3]">
-        <div class="flex items-center gap-1.5 flex-wrap">
-          <button id="btn-duel-tab-ranked" type="button" class="duel-mode-pill active">서열 결투</button>
-          <button id="btn-duel-tab-rival" type="button" class="duel-mode-pill">강 회장전</button>
-          <button id="btn-duel-tab-pvp" type="button" class="duel-mode-pill">상위 랭커</button>
-        </div>
-        <div class="flex items-center gap-2">
-          <span id="duel-stake-badge" class="kw-chip tone-gold">승리 시 명성 +18pt</span>
-          <button id="btn-duel-judge-now" type="button" class="duel-judge-cta-btn">✨ 심사 시작!</button>
-        </div>
-      </div>
-
-      <div class="pt-2 space-y-1.5">
-        <div class="flex items-center justify-between gap-2 text-[20px] font-extrabold">
-          <div class="flex items-center gap-2 min-w-0">
-            <span id="duel-my-avatar-slot" class="w-9 h-9 rounded-xl bg-[#FFFDF8] border-2 border-[#F59E0B] flex items-center justify-center overflow-hidden shrink-0"></span>
-            <span id="duel-my-score-label" class="text-[#B45309] truncate">👑 내 쇼룸: 0점</span>
+    <!-- ==================== 25. 3일 마스터 칭호 & 해안 신도시 개통 현황판 ==================== -->
+    <div id="harbor-chronicle-modal" class="hidden fixed inset-0 z-[94] pastel-modal-backdrop flex items-center justify-center p-3">
+      <div class="cozy-planner-shell clay-glass-shell slim-drawer-shell w-full max-w-[520px]">
+        <div class="cozy-planner-inner flex flex-col gap-2 overflow-y-auto custom-scroll">
+          <div class="flex items-center justify-between border-b border-[#E5C9A8] pb-1.5">
+            <div class="flex items-center gap-1.5">
+              <span id="chronicle-ico-header" class="flex items-center"></span>
+              <span class="diary-modal-title">🌅 해안 신도시 연대기</span>
+              <span id="chronicle-elapsed-badge" class="kw-chip tone-gold">측정 중</span>
+            </div>
+            <button id="btn-close-chronicle" type="button" class="btn-close-round" aria-label="닫기">✕</button>
           </div>
-          <span class="px-3 py-0.5 rounded-full bg-[#1E1B18] text-[#FFD700] font-title text-[16px] shrink-0">VS</span>
-          <div class="flex items-center gap-2 min-w-0">
-            <span id="duel-opp-score-label" class="text-[#6B21A8] truncate">상대: 0점</span>
-            <span id="duel-opp-avatar-slot" class="w-9 h-9 rounded-xl bg-[#F3E8FF] border-2 border-[#9333EA] flex items-center justify-center overflow-hidden shrink-0"></span>
+
+          <div id="chronicle-current-banner" class="chronicle-hero-card"></div>
+          <div id="chronicle-days-list" class="space-y-1.5"></div>
+
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <button id="btn-chronicle-travel-harbor" type="button" class="hidden jelly-action-btn btn-coral-lip !min-h-[34px] !py-1.5 !text-[13px] col-span-2">
+              <span>🌅 제2마을 해안 리조트 이동 ➔</span>
+            </button>
+            <button id="btn-skip-day3-test" type="button" class="jelly-action-btn btn-gold-lip !min-h-[34px] !py-1.5 !text-[13px] col-span-2">
+              <span>⚡ 즉시 개방하기</span>
+            </button>
           </div>
         </div>
-        <div class="duel-tug-track">
+      </div>
+    </div>
+
+    <!-- ==================== 26. 가구 백화점 우측 슬림 드로어 (보조 호환) ==================== -->
+    <aside id="flagship-shop-drawer" class="hidden fixed right-[10px] top-[46px] z-[64] clay-glass-shell slim-side-drawer flex flex-col overflow-hidden pointer-events-auto">
+      <div class="px-3 py-2 flex items-center justify-between gap-1.5 border-b border-[#E5C9A8] shrink-0">
+        <div class="flex items-center gap-1.5 min-w-0">
+          <span id="flagship-drawer-ico" class="flex items-center shrink-0"></span>
+          <span class="diary-modal-title truncate">🛋️ 가구 백화점</span>
+          <span id="flagship-inv-summary" class="hidden"></span>
+        </div>
+        <button id="btn-close-flagship-drawer" type="button" class="btn-close-round" aria-label="닫기">✕</button>
+      </div>
+
+      <div id="flagship-cat-tabs" class="grid grid-cols-4 gap-1 px-2.5 py-1.5 border-b border-[#E5C9A8] shrink-0">
+        <button type="button" data-shopcat="bed" class="fcat-tab-btn active">침대</button>
+        <button type="button" data-shopcat="sofa" class="fcat-tab-btn">소파</button>
+        <button type="button" data-shopcat="appliance" class="fcat-tab-btn">설비</button>
+        <button type="button" data-shopcat="decor" class="fcat-tab-btn">오브제</button>
+      </div>
+
+      <div id="flagship-tier-tabs" class="flex items-center gap-1 px-2.5 py-1 border-b border-[#EFE3D3] overflow-x-auto no-scrollbar shrink-0">
+        <button type="button" data-shoptier="0" class="tier-filter-pill active">전체</button>
+        <button type="button" data-shoptier="1" class="tier-filter-pill">T1</button>
+        <button type="button" data-shoptier="2" class="tier-filter-pill">T2</button>
+        <button type="button" data-shoptier="3" class="tier-filter-pill">T3</button>
+        <button type="button" data-shoptier="4" class="tier-filter-pill">T4</button>
+      </div>
+
+      <div id="flagship-items-list" class="p-2.5 space-y-2 overflow-y-auto custom-scroll flex-1"></div>
+    </aside>
+
+    <!-- ==================== 27. ⑦ 『1:1 럭셔리 쇼룸 결투』 좌우 대칭 가로 레이아웃 ==================== -->
+    <section id="showroom-duel-hud" class="hidden fixed inset-0 z-[58] pointer-events-none">
+      <div id="duel-camera-flash" class="hidden fixed inset-0 bg-white/80 z-[62] pointer-events-none"></div>
+
+      <!-- 상단 좌우 대칭 내 방 vs 라이벌 방 점수 비교 바 -->
+      <div id="duel-vs-topbar" class="fixed top-[46px] left-1/2 -translate-x-1/2 w-[min(92vw,620px)] pointer-events-auto clay-glass-shell !p-2 !rounded-2xl space-y-1.5">
+        <div class="flex items-center justify-between gap-1.5">
+          <div class="flex items-center gap-1">
+            <button id="btn-duel-tab-ranked" type="button" class="duel-mode-pill active">서열 결투</button>
+            <button id="btn-duel-tab-rival" type="button" class="duel-mode-pill">강 회장전</button>
+            <button id="btn-duel-tab-pvp" type="button" class="duel-mode-pill">상위 랭커</button>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <span id="duel-stake-badge" class="kw-chip tone-gold">✨ +18pt</span>
+            <button id="btn-duel-judge-now" type="button" class="jelly-action-btn btn-coral-lip !min-h-[28px] !py-1 !px-3 !text-[12.5px]">📸 심사 시작!</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+          <div class="flex items-center gap-1.5 min-w-0">
+            <span id="duel-my-avatar-slot" class="w-7 h-7 rounded-lg bg-[#FFFDF8] border border-[#F59E0B] flex items-center justify-center overflow-hidden shrink-0"></span>
+            <span id="duel-my-score-label" class="font-title text-[13px] text-[#B45309] truncate">👑 내 방 0점</span>
+          </div>
+          <span class="px-2 py-0.5 rounded-full bg-[#1E1B18] text-[#FFD700] font-title text-[11px] shrink-0">VS</span>
+          <div class="flex items-center justify-end gap-1.5 min-w-0">
+            <span id="duel-opp-score-label" class="font-title text-[13px] text-[#6B21A8] truncate">상대 0점</span>
+            <span id="duel-opp-avatar-slot" class="w-7 h-7 rounded-lg bg-[#F3E8FF] border border-[#9333EA] flex items-center justify-center overflow-hidden shrink-0"></span>
+          </div>
+        </div>
+
+        <div class="duel-tug-track !h-2">
           <div id="duel-tug-fill" class="duel-tug-my-fill" style="width: 50%;"></div>
         </div>
       </div>
-    </div>
 
-    <div id="duel-catalog-dock" class="fixed bottom-[14px] left-[16px] right-[16px] pointer-events-auto duel-bottom-dock">
-      <div class="px-4 py-2 flex items-center justify-between gap-2 border-b-2 border-[#EED6BE] bg-[#FFFDF7]">
-        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar">
-          <span class="font-title text-[20px] text-[#1E1B18] shrink-0">🛋️ 가구 배치:</span>
-          <button type="button" data-duelcat="all" class="tier-filter-pill active">전체</button>
-          <button type="button" data-duelcat="bed" class="tier-filter-pill">🛏️ 침대</button>
-          <button type="button" data-duelcat="sofa" class="tier-filter-pill">🛋️ 소파</button>
-          <button type="button" data-duelcat="appliance" class="tier-filter-pill">📺 설비</button>
-          <button type="button" data-duelcat="decor" class="tier-filter-pill">💎 오브제</button>
-        </div>
-        <button id="btn-duel-open-shop-quick" type="button" class="kw-chip tone-coral cursor-pointer shrink-0">🛒 가구백화점</button>
-      </div>
-      <div id="duel-items-row" class="px-3 py-2.5 flex items-stretch gap-2.5 overflow-x-auto custom-scroll"></div>
-    </div>
-
-    <aside id="duel-result-drawer" class="hidden fixed right-[18px] top-[84px] w-[430px] max-h-[calc(100vh-106px)] pointer-events-auto diary-inspector-shell slim-side-drawer p-4 space-y-3.5 overflow-y-auto custom-scroll"></aside>
-  </section>
-
-  <!-- 3일 차 총독 수여 배너 -->
-  <div id="day3-coronation-banner" class="hidden fixed inset-x-3 top-[104px] z-[96] pointer-events-none flex justify-center">
-    <div class="coronation-royal-certificate">
-      <div class="text-[16px] font-extrabold tracking-widest text-[#B45309]">ROYAL HARBOR OPEN</div>
-      <div class="mt-1 text-[26px] font-extrabold text-[#1E1B18]">👑 제2마을 해안 리조트 대문 개방!</div>
-    </div>
-  </div>
-
-  <!-- ==================== 28. 동물 건물주 선택 모달 ==================== -->
-  <div id="animal-select-modal" class="hidden fixed inset-0 z-[95] pastel-modal-backdrop flex items-center justify-center p-4">
-    <div class="cozy-planner-shell w-full max-w-[960px] max-h-[90vh]">
-      <div class="cozy-planner-inner flex flex-col overflow-hidden">
-        <div class="px-5 py-4 flex items-center justify-between border-b-2 border-[#EED6BE] shrink-0" style="background: linear-gradient(90deg, #FFFDF7 0%, #FFE8EE 50%, #FEF3C7 100%);">
-          <div class="flex items-center gap-2.5">
-            <span class="text-[28px]">🐾</span>
-            <div class="diary-modal-title">내 동물 건물주 선택</div>
+      <!-- 하단 슬림 가구 배치 독 -->
+      <div id="duel-catalog-dock" class="fixed bottom-[8px] left-1/2 -translate-x-1/2 w-[min(94vw,680px)] pointer-events-auto clay-glass-shell !p-2 !rounded-2xl">
+        <div class="flex items-center justify-between gap-1.5 pb-1.5 border-b border-[#E5C9A8]">
+          <div class="flex items-center gap-1 overflow-x-auto no-scrollbar">
+            <span class="font-title text-[12.5px] text-[#1E1B18] shrink-0">🛋️ 배치:</span>
+            <button type="button" data-duelcat="all" class="tier-filter-pill active">전체</button>
+            <button type="button" data-duelcat="bed" class="tier-filter-pill">침대</button>
+            <button type="button" data-duelcat="sofa" class="tier-filter-pill">소파</button>
+            <button type="button" data-duelcat="appliance" class="tier-filter-pill">설비</button>
+            <button type="button" data-duelcat="decor" class="tier-filter-pill">오브제</button>
           </div>
-          <button id="btn-close-animal-modal" type="button" class="btn-close-round" aria-label="닫기">✕</button>
+          <button id="btn-duel-open-shop-quick" type="button" class="kw-chip tone-coral cursor-pointer shrink-0">🛒 백화점</button>
         </div>
-        <div id="animal-roster-grid" class="p-4 grid grid-cols-2 sm:grid-cols-5 gap-3 overflow-y-auto custom-scroll flex-1"></div>
-        <div class="px-5 py-3.5 bg-[#FFFDF7] border-t-2 border-[#EED6BE] flex items-center justify-between gap-3 shrink-0">
-          <div id="animal-selected-summary" class="font-title text-[22px] text-[#1E1B18] truncate">🧋 버블티 벨벳 해달 선택됨</div>
-          <button id="btn-confirm-animal-hero" type="button" class="jelly-action-btn btn-coral-lip px-6 py-3 shrink-0">
-            <span>✨ 이 캐릭터로 시작하기!</span>
+        <div id="duel-items-row" class="pt-1.5 flex items-stretch gap-1.5 overflow-x-auto custom-scroll"></div>
+      </div>
+
+      <!-- 정중앙 대칭 승리/패배 결과 팝업 -->
+      <aside id="duel-result-drawer" class="hidden fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[63] w-[min(90vw,460px)] pointer-events-auto clay-glass-shell p-3 space-y-2 overflow-y-auto custom-scroll"></aside>
+    </section>
+
+    <!-- ==================== 28. 동물 건물주 선택 모달 (호환 안전 유지) ==================== -->
+    <div id="animal-select-modal" class="hidden fixed inset-0 z-[95] pastel-modal-backdrop flex items-center justify-center p-3">
+      <div class="cozy-planner-shell clay-glass-shell w-full max-w-[640px]">
+        <div class="cozy-planner-inner flex flex-col overflow-hidden">
+          <div class="pb-2 flex items-center justify-between border-b border-[#E5C9A8] shrink-0">
+            <div class="diary-modal-title">🐾 내 동물 건물주 선택</div>
+            <button id="btn-close-animal-modal" type="button" class="btn-close-round" aria-label="닫기">✕</button>
+          </div>
+          <div id="animal-roster-grid" class="py-2 grid grid-cols-3 sm:grid-cols-5 gap-2 overflow-y-auto custom-scroll flex-1"></div>
+          <div class="pt-2 border-t border-[#E5C9A8] flex items-center justify-between gap-2 shrink-0">
+            <div id="animal-selected-summary" class="font-title text-[14px] text-[#1E1B18] truncate">버블티 해달</div>
+            <button id="btn-confirm-animal-hero" type="button" class="jelly-action-btn btn-coral-lip !min-h-[34px] !px-4 !py-1.5 !text-[13px]">✨ 시작하기</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 28B. ⑨ 해안 신도시 대문 잠금/개방 정중앙 컴팩트 팝업 ==================== -->
+    <section id="gate-lock-capsule" class="hidden fixed inset-0 z-[72] pastel-modal-backdrop flex items-center justify-center p-3 pointer-events-auto">
+      <div class="gate-lock-glass-card clay-glass-shell">
+        <div class="flex items-center justify-between gap-2">
+          <div id="gate-lock-msg" class="gate-popup-title">🔒 해안 대문 잠김 (3일 차 개방)</div>
+          <button id="btn-close-gate-capsule" type="button" class="btn-close-round shrink-0" aria-label="닫기">✕</button>
+        </div>
+        <div id="gate-lock-sub" class="text-[12px] font-bold text-[#69544C] mt-1 whitespace-nowrap">
+          👑 서열 64위 달성 또는 3일 차 총독 각성 시 오픈
+        </div>
+        <div class="mt-2.5 flex items-center justify-center gap-2">
+          <button id="btn-gate-unlock-skip" type="button" class="jelly-action-btn btn-gold-lip w-full !min-h-[38px] !py-1.5 !px-4 !text-[14px]">
+            <span>⚡ 즉시 개방</span>
+          </button>
+          <button id="btn-gate-enter-now" type="button" class="hidden jelly-action-btn btn-coral-lip w-full !min-h-[38px] !py-1.5 !px-4 !text-[14px]">
+            <span>🌅 제2마을 입장 →</span>
           </button>
         </div>
       </div>
-    </div>
-  </div>
+    </section>
 
-  <!-- ==================== 28B. 우측 끝 잠긴 대문 안내 캡슐 ==================== -->
-  <section id="gate-lock-capsule" class="hidden fixed bottom-[28px] left-1/2 -translate-x-1/2 z-[72] w-[min(700px,94vw)] pointer-events-auto">
-    <div class="gate-lock-glass-card">
-      <button id="btn-close-gate-capsule" type="button" class="gate-capsule-close" aria-label="닫기">✕</button>
-      <div id="gate-lock-msg" class="font-title text-[20px] text-[#1E1B18] leading-snug pr-8 break-keep">
-        🔒 64위 달성 또는 3일 차에 제2마을 해안 도시가 열립니다!
-      </div>
-      <div class="mt-3 flex items-center justify-center gap-2.5 flex-wrap">
-        <button id="btn-gate-unlock-skip" type="button" class="gate-awakening-cta-btn">
-          <span>⚡ 지금 바로 대문 열기</span>
-        </button>
-        <button id="btn-gate-enter-now" type="button" class="hidden gate-awakening-cta-btn unlocked-portal">
-          <span>🌅 제2마을 입장하기 ➔</span>
-        </button>
-      </div>
-    </div>
-  </section>
-
-  <!-- ==================== 29. 『화면 정중앙 대형 3D 360도 턴테이블 쇼케이스 (아이템명 26px · 가격/효과 22px · 구매버튼 22px!)』 ==================== -->
-  <section id="turntable-showcase-modal" class="hidden fixed inset-0 z-[96] turntable-backdrop flex flex-col items-center justify-between py-4 px-4 select-none">
-    <!-- 상단 헤더 & 필터 탭 바 -->
-    <div class="w-full max-w-[1000px] flex flex-col items-center gap-2.5 pointer-events-auto z-10">
-      <div class="w-full flex items-center justify-between gap-3 turntable-top-pill">
-        <div class="flex items-center gap-2.5 min-w-0">
-          <img id="badge-img-tt-brand" src="./assets/ui_badges/badge_header_title.png" alt="갓물주 라이프" class="toy-badge-tt-logo-img" />
-          <span id="tt-header-badge" class="hidden">360° 쇼케이스</span>
-          <div id="tt-header-title" class="font-title text-[20px] sm:text-[22px] text-[#2C1E18] truncate">🛋️ 가구 백화점</div>
-          <div id="tt-header-sub" class="hidden"></div>
-        </div>
-        <div class="flex items-center gap-2.5 shrink-0">
-          <div class="px-4 py-1.5 rounded-full bg-black/55 border-2 border-[#FFD700] font-num text-[22px] text-[#FFD700] inline-flex items-center gap-2">
-            <span id="tt-ico-coin" class="inline-flex items-center justify-center w-5 h-5">💰</span>
-            <span id="tt-gold-display">550,000원</span>
+    <!-- ==================== 29. ③ 캐릭터(30종) & 가구 백화점 3D 턴테이블 쇼케이스 ==================== -->
+    <section id="turntable-showcase-modal" class="hidden fixed inset-0 z-[96] turntable-backdrop flex flex-col items-center justify-between py-2 px-3 select-none">
+      <!-- 상단 슬림 헤더 & 1줄 카테고리 탭 (`font-size: 13px; padding: 6px 12px;`) -->
+      <div class="w-full max-w-[740px] flex flex-col items-center gap-1.5 pointer-events-auto z-10 shrink-0">
+        <div class="w-full flex items-center justify-between gap-2 turntable-top-pill clay-glass-shell !py-1.5 !px-3 !rounded-full">
+          <div class="flex items-center gap-2 min-w-0">
+            <img id="badge-img-tt-brand" src="./assets/ui_badges/badge_header_title.png" alt="" class="hidden" />
+            <span id="tt-header-badge" class="hidden">360° 쇼케이스</span>
+            <div id="tt-header-title" class="font-title text-[14.5px] text-[#2C1E18] whitespace-nowrap">🛋️ 가구 백화점</div>
+            <div id="tt-header-sub" class="hidden"></div>
           </div>
-          <button id="btn-close-turntable" type="button" class="tt-close-circle" aria-label="쇼케이스 닫기">✕</button>
-        </div>
-      </div>
 
-      <!-- 가구 백화점 모드 카테고리 & 등급 필터 -->
-      <div id="tt-furniture-filters" class="hidden flex items-center justify-center gap-2 flex-wrap">
-        <div class="flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/30">
-          <button type="button" data-tt-cat="bed" class="tt-filter-chip active inline-flex items-center gap-1.5"><span id="tt-cat-ico-bed" class="hidden"></span><span>🛏️ 침대</span></button>
-          <button type="button" data-tt-cat="sofa" class="tt-filter-chip inline-flex items-center gap-1.5"><span id="tt-cat-ico-sofa" class="hidden"></span><span>🛋️ 소파·피아노</span></button>
-          <button type="button" data-tt-cat="appliance" class="tt-filter-chip inline-flex items-center gap-1.5"><span id="tt-cat-ico-app" class="hidden"></span><span>📺 설비·수조</span></button>
-          <button type="button" data-tt-cat="decor" class="tt-filter-chip inline-flex items-center gap-1.5"><span id="tt-cat-ico-decor" class="hidden"></span><span>💎 오브제</span></button>
-        </div>
-        <div class="flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/30">
-          <button type="button" data-tt-tier="0" class="tt-filter-chip active">전체</button>
-          <button type="button" data-tt-tier="1" class="tt-filter-chip">T1</button>
-          <button type="button" data-tt-tier="2" class="tt-filter-chip">T2</button>
-          <button type="button" data-tt-tier="3" class="tt-filter-chip">T3</button>
-          <button type="button" data-tt-tier="4" class="tt-filter-chip">T4</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 정중앙 대형 3D 360도 회전 단상 -->
-    <div class="relative w-full max-w-[960px] h-[40vh] min-h-[210px] max-h-[420px] flex items-center justify-center pointer-events-auto my-auto">
-      <div id="tt-golden-halo-aura" class="hidden tt-golden-halo-css pointer-events-none"></div>
-
-      <button id="btn-tt-prev" type="button" class="tt-nav-arrow left-2 sm:left-6" aria-label="이전 항목">◀</button>
-
-      <div id="tt-canvas-stage" class="relative w-full h-full flex items-center justify-center cursor-grab active:cursor-grabbing">
-        <canvas id="turntable-webgl-canvas" class="w-full h-full block"></canvas>
-        <div id="tt-master-art-card" class="hidden tt-master-art-card pointer-events-none">
-          <img id="tt-master-art-img" src="" alt="3D Master Art" class="w-full h-full object-contain" />
-        </div>
-        <div class="tt-drag-hint-pill pointer-events-none">↻ 드래그하여 360° 회전</div>
-        <div id="tt-emote-float-badge" class="hidden tt-emote-float-badge pointer-events-none">&gt; ◡ ◕</div>
-      </div>
-
-      <button id="btn-tt-next" type="button" class="tt-nav-arrow right-2 sm:right-6" aria-label="다음 항목">▶</button>
-    </div>
-
-    <!-- 하단 쇼케이스 왕큼직 스펙 카드 (`이름 26px`, `등급 18px`, `가격/효과 22px`, `구매버튼 22px`) -->
-    <div class="w-full max-w-[920px] flex flex-col items-center gap-2.5 pointer-events-auto z-10">
-      <div class="w-full turntable-info-dock">
-        <div class="min-w-0 flex-1 space-y-1.5">
-          <div class="flex items-center gap-2 flex-wrap">
-            <span id="tt-item-badge" class="tt-big-tier-badge">🌱 Tier 1 · 베이직</span>
-            <span id="tt-index-counter" class="px-3 py-1 rounded-full font-num text-[16px] bg-[#F3EDE4] text-[#1E1B18]">1 / 30</span>
-            <span id="tt-item-owned-tag" class="hidden px-3 py-1 rounded-full font-extrabold text-[16px] bg-[#DCFCE7] text-[#047857]">보유 1개</span>
+          <!-- 가구 백화점 모드 카테고리 탭 (한 줄 가로 정렬!) -->
+          <div id="tt-furniture-filters" class="hidden items-center justify-center gap-1 overflow-x-auto no-scrollbar">
+            <button type="button" data-tt-cat="bed" class="tt-filter-chip active"><span id="tt-cat-ico-bed" class="hidden"></span><span>침대</span></button>
+            <button type="button" data-tt-cat="sofa" class="tt-filter-chip"><span id="tt-cat-ico-sofa" class="hidden"></span><span>소파·피아노</span></button>
+            <button type="button" data-tt-cat="appliance" class="tt-filter-chip"><span id="tt-cat-ico-app" class="hidden"></span><span>설비·수조</span></button>
+            <button type="button" data-tt-cat="decor" class="tt-filter-chip"><span id="tt-cat-ico-decor" class="hidden"></span><span>오브제</span></button>
+            <div class="hidden">
+              <button type="button" data-tt-tier="0" class="tt-filter-chip active">전체</button>
+              <button type="button" data-tt-tier="1" class="tt-filter-chip">T1</button>
+              <button type="button" data-tt-tier="2" class="tt-filter-chip">T2</button>
+              <button type="button" data-tt-tier="3" class="tt-filter-chip">T3</button>
+              <button type="button" data-tt-tier="4" class="tt-filter-chip">T4</button>
+            </div>
           </div>
-          <div id="tt-item-name" class="tt-big-item-name">코지 원목 싱글 침대</div>
-          <div id="tt-item-desc" class="hidden"></div>
-          <div id="tt-item-stats-row" class="flex items-center gap-3 flex-wrap pt-0.5"></div>
+
+          <div class="flex items-center gap-1.5 shrink-0">
+            <div class="px-2.5 py-1 rounded-full bg-[#1E1B18] border border-[#FFD700] font-num text-[12.5px] text-[#FFD700] inline-flex items-center gap-1 whitespace-nowrap">
+              <span id="tt-ico-coin" class="inline-flex items-center justify-center w-3.5 h-3.5">💰</span>
+              <span id="tt-gold-display">55만 원</span>
+            </div>
+            <button id="btn-close-turntable" type="button" class="btn-close-round" aria-label="쇼케이스 닫기">✕</button>
+          </div>
         </div>
-        <div class="flex items-center gap-2 shrink-0">
-          <button id="btn-tt-primary-action" type="button" class="jelly-action-btn btn-gold-lip tt-big-primary-cta">
-            <span>✨ 구매 / 방에 배치하기</span>
+      </div>
+
+      <!-- 중앙: 오직 3D 회전 프리뷰 딱 1개 + 좌우 `<` `>` 버튼 (중복 2D 썸네일 카드 제거!) -->
+      <div class="relative w-full max-w-[680px] flex-1 min-h-[140px] flex items-center justify-center pointer-events-auto my-0.5">
+        <div id="tt-golden-halo-aura" class="hidden tt-golden-halo-css pointer-events-none"></div>
+
+        <button id="btn-tt-prev" type="button" class="tt-nav-arrow left-1 sm:left-4" aria-label="이전 항목">◀</button>
+
+        <div id="tt-canvas-stage" class="relative w-full h-full flex items-center justify-center cursor-grab active:cursor-grabbing">
+          <canvas id="turntable-webgl-canvas" class="w-full h-full block"></canvas>
+          <div id="tt-master-art-card" class="hidden" aria-hidden="true">
+            <img id="tt-master-art-img" src="" alt="" />
+          </div>
+          <div id="tt-emote-float-badge" class="hidden tt-emote-float-badge pointer-events-none">😉 ♥</div>
+        </div>
+
+        <button id="btn-tt-next" type="button" class="tt-nav-arrow right-1 sm:right-4" aria-label="다음 항목">▶</button>
+      </div>
+
+      <!-- 하단: 슬림한 가로형 2단 캡슐 카드 (`max-width: 440px; padding: 10px 16px;`) -->
+      <div class="w-full flex flex-col items-center pointer-events-auto z-10 shrink-0">
+        <div class="turntable-info-dock clay-glass-shell">
+          <!-- 1줄: [NO.01 · 1/30]  🧋 버블티 해달  (👑 상가 수익 +20%) -->
+          <div id="tt-summary-line-1" class="tt-summary-one-line">
+            <span id="tt-item-badge" class="tt-inline-code-pill">[NO.01 · 1/30]</span>
+            <span id="tt-item-name" class="tt-inline-item-name">🧋 버블티 해달</span>
+            <span id="tt-item-stats-row" class="tt-inline-stat-paren">(👑 상가 수익 +20%)</span>
+            <span id="tt-index-counter" class="hidden">1 / 30</span>
+            <span id="tt-item-owned-tag" class="hidden"></span>
+            <span id="tt-item-desc" class="hidden"></span>
+          </div>
+          <!-- 2줄: [ ✨ 선택 / 구매하기 ] 버튼 (글자와 절대 겹치지 않게 아래 배치!) -->
+          <button id="btn-tt-primary-action" type="button" class="jelly-action-btn btn-gold-lip tt-slim-cta-btn">
+            <span>✨ 선택 / 구매하기</span>
           </button>
         </div>
+
+        <div id="tt-quick-strip" class="hidden"></div>
       </div>
+    </section>
 
-      <div id="tt-quick-strip" class="w-full flex items-center justify-start gap-2 overflow-x-auto no-scrollbar py-1 px-2"></div>
-    </div>
-  </section>
+    <!-- 직접 조작 피드백용 초슬림 토스트 컨테이너 -->
+    <div id="toast-container" class="fixed top-[78px] left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-1 pointer-events-none max-w-[340px]"></div>
 
-  <!-- 토스트 알림 컨테이너 -->
-  <div id="toast-container" class="fixed top-[92px] left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2 pointer-events-none w-[92vw] sm:w-auto sm:max-w-[540px]"></div>
+  </div>
 
   <script src="./data.js"></script>
   <script type="module" src="./app.js"></script>
