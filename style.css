@@ -2067,6 +2067,27 @@ input[type='range'].golden-coin-range::-webkit-slider-thumb {
   flex-shrink: 0 !important;
 }
 
+#settings-modal .cozy-planner-inner {
+  overflow-x: hidden !important;
+}
+
+@media (max-width: 920px) {
+  #room-focus-topbar,
+  #shop-focus-topbar {
+    max-width: calc(var(--vw-unit, 1vw) * 48) !important;
+  }
+  #room-switcher-chips button,
+  #shop-switcher-chips button {
+    padding: 3px 7px !important;
+    font-size: 11px !important;
+  }
+  body:has(#room-focus-panel:not(.hidden)) #focus-clean-capsule,
+  body:has(#shop-focus-panel:not(.hidden)) #focus-clean-capsule {
+    left: 28% !important;
+    max-width: calc(var(--vw-unit, 1vw) * 52) !important;
+  }
+}
+
 html body [id].hidden,
 html body .hidden {
   display: none !important;
@@ -4827,6 +4848,809 @@ body:has(#shop-focus-panel:not(.hidden)) #focus-clean-capsule:not(.hidden) {
   align-items: center !important;
   gap: 3px !important;
   flex-shrink: 0 !important;
+}
+
+#settings-modal .cozy-planner-inner {
+  overflow-x: hidden !important;
+}
+
+@media (max-width: 920px) {
+  #room-focus-topbar,
+  #shop-focus-topbar {
+    max-width: calc(var(--vw-unit, 1vw) * 48) !important;
+  }
+  #room-switcher-chips button,
+  #shop-switcher-chips button {
+    padding: 3px 7px !important;
+    font-size: 11px !important;
+  }
+  body:has(#room-focus-panel:not(.hidden)) #focus-clean-capsule,
+  body:has(#shop-focus-panel:not(.hidden)) #focus-clean-capsule {
+    left: 28% !important;
+    max-width: calc(var(--vw-unit, 1vw) * 52) !important;
+  }
+}
+
+html body [id].hidden,
+html body .hidden {
+  display: none !important;
+}
+
+
+/* ==========================================================================
+   [3대 메이저 업그레이드 PART 3]
+   『꽉 찬 3D 월넛 우드 보드 & 도톰한 파스텔 매트 클레이 블록 UI』 전 화면 통합 스타일
+   - 1px 얇은 실선 · 흰색 빈 여백 · 콩알 사각형 아이콘 100% 퇴출
+   - 외곽 1단 월넛 우드 프레임 + 내부 2단 크림 클레이 속판 + 3단 파스텔 클레이 블록 + 4단 홈 푸시 버튼
+   - GPU translate3d(x, y, 0) 말풍선/배지 무지연 투영
+   ========================================================================== */
+
+/* 상단 내 방(회장님 펜트하우스) 퀵 캡슐 */
+.hud-penthouse-pill {
+  height: 36px !important;
+  padding: 0 11px !important;
+  border-radius: 999px !important;
+  background: linear-gradient(180deg, #FFE885 0%, #F2B735 100%) !important;
+  border: 2.5px solid #8A5E35 !important;
+  box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.78), 0 4px 0 #9A6412, 0 6px 12px rgba(0, 0, 0, 0.24) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  font-family: 'TmoneyRoundWind', 'Jua', sans-serif !important;
+  font-size: 12.5px !important;
+  font-weight: 900 !important;
+  color: #3A2208 !important;
+  white-space: nowrap !important;
+  cursor: pointer;
+  transition: transform 0.12s ease !important;
+}
+
+.hud-penthouse-pill:active {
+  transform: translateY(2px) !important;
+}
+
+.hud-penthouse-val {
+  padding: 1px 7px !important;
+  border-radius: 999px !important;
+  background: #3A2208 !important;
+  color: #FFE885 !important;
+  font-family: 'Fredoka', 'Pretendard', sans-serif !important;
+  font-size: 11.5px !important;
+  font-weight: 900 !important;
+}
+
+/* -------------------- 외곽 1단: 도톰한 3D 월넛 우드 프레임 -------------------- */
+.wood-board-frame {
+  position: relative;
+  background: linear-gradient(180deg, #C89D70 0%, #A6784B 100%) !important;
+  background-image: linear-gradient(180deg, #C89D70 0%, #A6784B 100%) !important;
+  border-radius: 28px !important;
+  padding: 10px 14px 14px 14px !important;
+  border: 3px solid #8A5E35 !important;
+  box-shadow:
+    inset 0 3px 4px rgba(255, 255, 255, 0.45),
+    inset 0 -4px 6px rgba(80, 45, 15, 0.4),
+    0 8px 0 #754F2B,
+    0 20px 36px rgba(0, 0, 0, 0.45) !important;
+  box-sizing: border-box !important;
+}
+
+@media (min-height: 540px) {
+  .wood-board-frame {
+    padding: 14px 18px 18px 18px !important;
+    box-shadow:
+      inset 0 3px 4px rgba(255, 255, 255, 0.45),
+      inset 0 -4px 6px rgba(80, 45, 15, 0.4),
+      0 10px 0 #754F2B,
+      0 22px 38px rgba(0, 0, 0, 0.45) !important;
+  }
+}
+
+/* 좌우 금속 경첩(Hinge) 입체 장식 */
+.pocket-dashboard-board::before,
+.pocket-dashboard-board::after,
+.flagship-boutique-board::before,
+.flagship-boutique-board::after,
+.cozy-planner-shell.wood-board-frame::before,
+.cozy-planner-shell.wood-board-frame::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 7px;
+  height: 44px;
+  border-radius: 5px;
+  background: linear-gradient(180deg, #FCE38A 0%, #D99B26 52%, #8F5D14 100%);
+  border: 1.5px solid #5C3A14;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 2px 4px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  z-index: 4;
+}
+
+.pocket-dashboard-board::before,
+.flagship-boutique-board::before,
+.cozy-planner-shell.wood-board-frame::before {
+  left: -5px;
+}
+
+.pocket-dashboard-board::after,
+.flagship-boutique-board::after,
+.cozy-planner-shell.wood-board-frame::after {
+  right: -5px;
+}
+
+.wood-header-bar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  padding: 0 2px 8px 2px !important;
+  margin: 0 !important;
+  border: none !important;
+  flex-shrink: 0 !important;
+}
+
+.wood-title-cluster {
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  min-width: 0 !important;
+}
+
+.wood-star-rivet {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 999px !important;
+  background: radial-gradient(circle at 35% 30%, #FFF7B2 0%, #F59E0B 68%, #9A5811 100%) !important;
+  border: 1.5px solid #5C3811 !important;
+  box-shadow: inset 0 1.5px 1px rgba(255, 255, 255, 0.85), 0 2px 0 #5C3811 !important;
+  color: #4A2808 !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  flex-shrink: 0 !important;
+}
+
+.wood-embossed-title {
+  font-family: 'TmoneyRoundWind', 'Jua', 'Pretendard', sans-serif !important;
+  font-size: 17px !important;
+  font-weight: 900 !important;
+  color: #FFFDF5 !important;
+  text-shadow: 0 2px 0 #6E4726, 0 4px 0 #4A2E16 !important;
+  letter-spacing: -0.02em !important;
+  white-space: nowrap !important;
+  line-height: 1.2 !important;
+}
+
+@media (min-height: 540px) {
+  .wood-embossed-title {
+    font-size: 19px !important;
+  }
+}
+
+/* 수첩 상단 입체 클립보드 상세 장부 태그 & 우드 알약 태그 */
+.wood-clipboard-tag-btn {
+  height: 32px !important;
+  padding: 0 11px 0 7px !important;
+  border-radius: 999px !important;
+  background: linear-gradient(180deg, #FFF7E2 0%, #EDD5B1 100%) !important;
+  border: 2px solid #754F2B !important;
+  box-shadow: inset 0 2px 2px #FFFFFF, 0 3px 0 #6E4726 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  font-family: 'TmoneyRoundWind', 'Jua', sans-serif !important;
+  font-size: 12.5px !important;
+  font-weight: 900 !important;
+  color: #3E2410 !important;
+  white-space: nowrap !important;
+  cursor: pointer;
+}
+
+.wood-clipboard-tag-btn:active,
+.wood-tag-pill:active {
+  transform: translateY(2px) !important;
+}
+
+.clipboard-tag-illust {
+  width: 24px !important;
+  height: 24px !important;
+  object-fit: contain !important;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.28));
+  flex-shrink: 0 !important;
+}
+
+.wood-tag-pill {
+  height: 30px !important;
+  padding: 0 10px !important;
+  border-radius: 999px !important;
+  font-family: 'TmoneyRoundWind', 'Jua', sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  white-space: nowrap !important;
+  cursor: pointer;
+  border: 2px solid #6E4726 !important;
+}
+
+.wood-tag-pill.tag-gold {
+  background: linear-gradient(180deg, #FFE885 0%, #F2BA3B 100%) !important;
+  color: #3A2208 !important;
+  box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.8), 0 3px 0 #7C4D12 !important;
+}
+
+.wood-tag-pill.tag-mint {
+  background: linear-gradient(180deg, #B8F5DF 0%, #73DCB8 100%) !important;
+  color: #064E3B !important;
+  box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.8), 0 3px 0 #24785D !important;
+}
+
+/* 우측 상단 3D 코럴레드 토이 닫기 단추 */
+.btn-close-round {
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  min-height: 34px !important;
+  padding: 0 !important;
+  border-radius: 999px !important;
+  background: radial-gradient(circle at 35% 28%, #FF8A7A 0%, #E5483A 72%, #B42318 100%) !important;
+  border: 2px solid #6E2019 !important;
+  box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.65), 0 4px 0 #7A1E16, 0 6px 10px rgba(0, 0, 0, 0.3) !important;
+  color: #FFFFFF !important;
+  font-size: 15px !important;
+  font-weight: 900 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer;
+  overflow: hidden !important;
+  transition: transform 0.1s ease !important;
+}
+
+.btn-close-round:active {
+  transform: translateY(3px) !important;
+  box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.5), 0 1px 0 #7A1E16 !important;
+}
+
+.close-toy-img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  transform: scale(1.18) !important;
+  pointer-events: none !important;
+}
+
+/* -------------------- 내부 2단: 크림 매트 클레이 속판 (Cream Tray) -------------------- */
+.clay-cream-tray,
+.wood-board-frame .cozy-planner-inner {
+  background: linear-gradient(180deg, #F7EFE1 0%, #EAE0CE 100%) !important;
+  border-radius: 22px !important;
+  padding: 10px !important;
+  border: none !important;
+  box-shadow:
+    inset 0 3px 6px rgba(130, 95, 60, 0.22),
+    0 2px 0 rgba(255, 255, 255, 0.7) !important;
+  box-sizing: border-box !important;
+}
+
+@media (min-height: 540px) {
+  .clay-cream-tray,
+  .wood-board-frame .cozy-planner-inner {
+    padding: 14px !important;
+  }
+}
+
+/* 3D 클레이 상단 카테고리 탭 버튼 */
+.clay-tab-pill {
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 10px !important;
+  border-radius: 14px !important;
+  background: linear-gradient(180deg, #F3E5D0 0%, #DFC9AC 100%) !important;
+  border: none !important;
+  box-shadow:
+    inset 0 2px 3px rgba(255, 255, 255, 0.75),
+    0 4px 0 #8C6239,
+    0 6px 10px rgba(0, 0, 0, 0.16) !important;
+  font-family: 'TmoneyRoundWind', 'Jua', sans-serif !important;
+  font-size: 12.5px !important;
+  font-weight: 900 !important;
+  color: #4A2E16 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  white-space: nowrap !important;
+  cursor: pointer;
+  transition: transform 0.12s ease !important;
+}
+
+.clay-tab-pill.active {
+  background: linear-gradient(180deg, #FFE680 0%, #F4B93B 100%) !important;
+  color: #3A2006 !important;
+  box-shadow:
+    inset 0 3px 4px rgba(255, 255, 255, 0.85),
+    0 4px 0 #A86D14,
+    0 7px 12px rgba(0, 0, 0, 0.22) !important;
+}
+
+.clay-tab-pill:active {
+  transform: translateY(2px) !important;
+}
+
+/* -------------------- 핵심 3단: 빈 여백 없이 꽉 차는 4색 3D 파스텔 매트 클레이 블록 -------------------- */
+.clay-block-yellow,
+.clay-block-blue,
+.clay-block-purple,
+.clay-block-mint,
+.diary-card,
+.diary-subcard {
+  border-radius: 22px !important;
+  border: none !important;
+  padding: 10px 12px !important;
+  box-sizing: border-box !important;
+}
+
+.clay-block-yellow {
+  background: linear-gradient(180deg, #F9E29C 0%, #F0CA6D 100%) !important;
+  box-shadow:
+    inset 0 4px 6px rgba(255, 255, 255, 0.75),
+    inset 0 -4px 6px rgba(180, 130, 30, 0.25),
+    0 6px 0 #C89E3A,
+    0 11px 16px rgba(0, 0, 0, 0.18) !important;
+}
+
+.clay-block-blue {
+  background: linear-gradient(180deg, #9ADAFD 0%, #6EC0F5 100%) !important;
+  box-shadow:
+    inset 0 4px 6px rgba(255, 255, 255, 0.75),
+    inset 0 -4px 6px rgba(30, 110, 170, 0.25),
+    0 6px 0 #4594CA,
+    0 11px 16px rgba(0, 0, 0, 0.18) !important;
+}
+
+.clay-block-purple {
+  background: linear-gradient(180deg, #E2BFFB 0%, #CCA0F2 100%) !important;
+  box-shadow:
+    inset 0 4px 6px rgba(255, 255, 255, 0.75),
+    inset 0 -4px 6px rgba(110, 50, 160, 0.25),
+    0 6px 0 #9B6BC6,
+    0 11px 16px rgba(0, 0, 0, 0.18) !important;
+}
+
+.clay-block-mint,
+.diary-card,
+.diary-subcard {
+  background: linear-gradient(180deg, #A8F0D8 0%, #78DEC0 100%) !important;
+  box-shadow:
+    inset 0 4px 6px rgba(255, 255, 255, 0.75),
+    inset 0 -4px 6px rgba(30, 130, 100, 0.25),
+    0 6px 0 #4BB093,
+    0 11px 16px rgba(0, 0, 0, 0.18) !important;
+}
+
+@media (min-height: 540px) {
+  .clay-block-yellow,
+  .clay-block-blue,
+  .clay-block-purple,
+  .clay-block-mint {
+    padding: 13px 14px !important;
+  }
+}
+
+.clay-block-title {
+  font-family: 'TmoneyRoundWind', 'Jua', sans-serif !important;
+  font-size: 14.5px !important;
+  font-weight: 900 !important;
+  color: #2A190D !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65) !important;
+  white-space: nowrap !important;
+}
+
+@media (min-height: 540px) {
+  .clay-block-title {
+    font-size: 16px !important;
+  }
+}
+
+/* 도톰한 3D 코너 카운트 배지 (`3건`, `👑 VS` 등) */
+.clay-corner-pill {
+  padding: 2px 9px !important;
+  border-radius: 999px !important;
+  font-family: 'TmoneyRoundWind', 'Fredoka', sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: none !important;
+}
+
+.clay-corner-pill.pill-pink {
+  background: linear-gradient(180deg, #FF7597 0%, #E11D48 100%) !important;
+  color: #FFFFFF !important;
+  box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.55), 0 3px 0 #9F1239 !important;
+}
+
+.clay-corner-pill.pill-blue {
+  background: linear-gradient(180deg, #38BDF8 0%, #0284C7 100%) !important;
+  color: #FFFFFF !important;
+  box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.55), 0 3px 0 #075985 !important;
+}
+
+.clay-corner-pill.pill-purple {
+  background: linear-gradient(180deg, #A855F7 0%, #6B21A8 100%) !important;
+  color: #FFFBEB !important;
+  box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.45), 0 3px 0 #4C1D95 !important;
+}
+
+.clay-corner-pill.pill-gold {
+  background: linear-gradient(180deg, #FFF099 0%, #F59E0B 100%) !important;
+  color: #3A2006 !important;
+  box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.75), 0 3px 0 #B45309 !important;
+}
+
+.clay-corner-pill.pill-mint {
+  background: linear-gradient(180deg, #6EE7B7 0%, #059669 100%) !important;
+  color: #FFFFFF !important;
+  box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.55), 0 3px 0 #065F46 !important;
+}
+
+/* 카드 중앙 55%+ 면적을 꽉 채우는 투명 누끼 대형 3D 일러스트 (흰색 사각형 박스 완전 제거!) */
+.clay-illust-hero-slot {
+  width: 100% !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 2px 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 1 1 auto !important;
+}
+
+.clay-hero-illust {
+  width: auto !important;
+  max-width: 94% !important;
+  height: 80px !important;
+  object-fit: contain !important;
+  background: transparent !important;
+  border: none !important;
+  filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.22)) !important;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+@media (min-height: 540px) {
+  .clay-hero-illust {
+    height: 124px !important;
+  }
+}
+
+.pocket-giant-action-card:hover .clay-hero-illust {
+  transform: translateY(-3px) scale(1.05) !important;
+}
+
+.clay-block-stat {
+  font-family: 'TmoneyRoundWind', 'Fredoka', 'Pretendard', sans-serif !important;
+  font-size: 13.5px !important;
+  font-weight: 900 !important;
+  line-height: 1.25 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100% !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65) !important;
+}
+
+@media (min-height: 540px) {
+  .clay-block-stat {
+    font-size: 15px !important;
+  }
+}
+
+/* -------------------- 하단 4단: 홈 속에 박힌 3D 젤리 푸시 버튼 -------------------- */
+.clay-btn-groove {
+  width: 100%;
+  padding: 4px !important;
+  background: rgba(0, 0, 0, 0.14) !important;
+  border-radius: 999px !important;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25) !important;
+  box-sizing: border-box !important;
+}
+
+.clay-jelly-push {
+  min-height: 32px !important;
+  height: 32px !important;
+  padding: 0 12px !important;
+  border-radius: 999px !important;
+  border: none !important;
+  font-family: 'TmoneyRoundWind', 'Jua', sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  white-space: nowrap !important;
+  cursor: pointer;
+  transition: transform 0.1s ease, filter 0.12s ease !important;
+}
+
+@media (min-height: 540px) {
+  .clay-jelly-push {
+    min-height: 38px !important;
+    height: 38px !important;
+    font-size: 14.5px !important;
+  }
+}
+
+.clay-jelly-push.push-gold {
+  background: linear-gradient(180deg, #FFE869 0%, #F5A614 100%) !important;
+  color: #3B2004 !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65) !important;
+  box-shadow: inset 0 3px 3px rgba(255, 255, 255, 0.8), 0 4px 0 #B87209 !important;
+}
+
+.clay-jelly-push.push-cyan {
+  background: linear-gradient(180deg, #56CCF2 0%, #1D8FE1 100%) !important;
+  color: #FFFFFF !important;
+  text-shadow: 0 1.5px 0 #0D5C9E !important;
+  box-shadow: inset 0 3px 3px rgba(255, 255, 255, 0.65), 0 4px 0 #0F5E9C !important;
+}
+
+.clay-jelly-push.push-coral {
+  background: linear-gradient(180deg, #FF7E82 0%, #EE4256 100%) !important;
+  color: #FFFFFF !important;
+  text-shadow: 0 1.5px 0 #9E1B2B !important;
+  box-shadow: inset 0 3px 3px rgba(255, 255, 255, 0.65), 0 4px 0 #A81D31 !important;
+}
+
+.clay-jelly-push.push-mint {
+  background: linear-gradient(180deg, #6CE8B5 0%, #1AB881 100%) !important;
+  color: #043927 !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+  box-shadow: inset 0 3px 3px rgba(255, 255, 255, 0.75), 0 4px 0 #0E7C56 !important;
+}
+
+.clay-jelly-push:active:not(:disabled) {
+  transform: translateY(3px) !important;
+  box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.5), 0 1px 0 rgba(0, 0, 0, 0.3) !important;
+}
+
+.clay-jelly-push:disabled {
+  opacity: 0.55 !important;
+  cursor: not-allowed !important;
+}
+
+/* -------------------- 5대 핵심 모달 모바일(`800x360`) & PC(`1280x720`) 반응형 피팅 -------------------- */
+.pocket-dashboard-board,
+.flagship-boutique-board {
+  width: min(calc(var(--vw-unit, 1vw) * 94), 760px) !important;
+  max-width: min(calc(var(--vw-unit, 1vw) * 94), 760px) !important;
+  max-height: calc(var(--vh-unit, 1vh) * 84) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.flagship-boutique-board {
+  height: calc(var(--vh-unit, 1vh) * 84) !important;
+}
+
+/* 가구 백화점 풀 모달 백드롭 재정의 (기존 우측 300px 슬림 드로어 규칙 완전 오버라이드) */
+#flagship-shop-drawer:not(.hidden) {
+  position: fixed !important;
+  inset: 0 !important;
+  top: 0 !important;
+  right: 0 !important;
+  left: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+  height: 100% !important;
+  max-height: none !important;
+  padding: 10px !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: rgba(24, 15, 8, 0.48) !important;
+  backdrop-filter: blur(5px) !important;
+  box-shadow: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+#notebook-modal .cozy-planner-shell,
+#forbes-modal .cozy-planner-shell {
+  width: min(calc(var(--vw-unit, 1vw) * 94), 740px) !important;
+  max-width: min(calc(var(--vw-unit, 1vw) * 94), 740px) !important;
+  height: calc(var(--vh-unit, 1vh) * 84) !important;
+  max-height: calc(var(--vh-unit, 1vh) * 84) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.pocket-three-col-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+@media (min-height: 540px) {
+  .pocket-three-col-grid {
+    gap: 14px !important;
+  }
+}
+
+.pocket-giant-action-card {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 5px !important;
+  min-width: 0 !important;
+}
+
+@media (min-height: 540px) {
+  .pocket-giant-action-card {
+    gap: 9px !important;
+  }
+}
+
+/* 가구 백화점 & 내 방 꾸미기 상품 파스텔 클레이 블록 그리드 */
+.flagship-clay-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+@media (min-height: 540px) {
+  .flagship-clay-grid {
+    gap: 14px !important;
+  }
+}
+
+.flagship-product-clay-card {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 5px !important;
+  text-align: center !important;
+  min-width: 0 !important;
+}
+
+.flagship-product-art {
+  width: auto !important;
+  max-width: 90% !important;
+  height: 66px !important;
+  object-fit: contain !important;
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.22)) !important;
+}
+
+@media (min-height: 540px) {
+  .flagship-product-art {
+    height: 102px !important;
+  }
+}
+
+/* 우측 슬림 호실/내방/상가 관리 드로어 내부 우드 & 클레이 정비 */
+#room-focus-panel,
+#shop-focus-panel {
+  top: 46px !important;
+  right: 10px !important;
+  width: min(calc(var(--vw-unit, 1vw) * 44), 316px) !important;
+  max-width: min(calc(var(--vw-unit, 1vw) * 44), 316px) !important;
+  height: calc(var(--vh-unit, 1vh) * 76) !important;
+  max-height: calc(var(--vh-unit, 1vh) * 76) !important;
+  padding: 8px 10px 10px 10px !important;
+  border-radius: 24px !important;
+  overflow: hidden !important;
+}
+
+/* 1:1 쇼룸 재력 결투 대면 일러스트 & 실시간 황금 가격표 팝업 애니메이션 */
+.duel-versus-illust {
+  width: 68px !important;
+  height: 68px !important;
+  object-fit: contain !important;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.26)) !important;
+}
+
+@media (min-height: 540px) {
+  .duel-versus-illust {
+    width: 96px !important;
+    height: 96px !important;
+  }
+}
+
+.duel-price-pop-tag {
+  position: fixed;
+  left: 0;
+  top: 0;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #FFF3A1 0%, #F59E0B 100%);
+  border: 2.5px solid #5C3408;
+  box-shadow: 0 4px 0 #7C4303, 0 8px 16px rgba(0, 0, 0, 0.35);
+  font-family: 'Fredoka', 'TmoneyRoundWind', sans-serif;
+  font-size: 14px;
+  font-weight: 900;
+  color: #3A1F04;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: duelPricePopAnim 1.15s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.duel-price-pop-tag.opp-tag {
+  background: linear-gradient(180deg, #F3E8FF 0%, #C084FC 100%);
+  border-color: #4C1D95;
+  box-shadow: 0 4px 0 #4C1D95, 0 8px 16px rgba(0, 0, 0, 0.32);
+  color: #2E1065;
+}
+
+@keyframes duelPricePopAnim {
+  0% {
+    opacity: 0;
+    transform: translate3d(var(--px, 0px), var(--py, 0px), 0) translate(-50%, -20%) scale(0.45);
+  }
+  22% {
+    opacity: 1;
+    transform: translate3d(var(--px, 0px), calc(var(--py, 0px) - 22px), 0) translate(-50%, -50%) scale(1.12);
+  }
+  78% {
+    opacity: 1;
+    transform: translate3d(var(--px, 0px), calc(var(--py, 0px) - 42px), 0) translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--px, 0px), calc(var(--py, 0px) - 58px), 0) translate(-50%, -50%) scale(0.88);
+  }
+}
+
+.gate-lock-glass-card {
+  width: min(calc(var(--vw-unit, 1vw) * 90), 420px) !important;
+  max-width: 420px !important;
+  max-height: calc(var(--vh-unit, 1vh) * 84) !important;
+}
+
+/* -------------------- [PART 1.3] 3D 말풍선 & 월드 배지 100% GPU translate3d 가속 (미세 스터터링 박멸!) -------------------- */
+.lod-world-bubble,
+.speech-cloud,
+.world-3d-img-badge,
+.goal-3d-arrow-label {
+  left: 0 !important;
+  top: 0 !important;
+  will-change: transform, opacity !important;
+  transform: translate3d(var(--tx, -9999px), var(--ty, -9999px), 0) translate(-50%, -100%) !important;
+  transition: opacity 0.14s ease !important;
+}
+
+#settings-modal .cozy-planner-inner {
+  overflow-x: hidden !important;
+}
+
+@media (max-width: 920px) {
+  #room-focus-topbar,
+  #shop-focus-topbar {
+    max-width: calc(var(--vw-unit, 1vw) * 48) !important;
+  }
+  #room-switcher-chips button,
+  #shop-switcher-chips button {
+    padding: 3px 7px !important;
+    font-size: 11px !important;
+  }
+  body:has(#room-focus-panel:not(.hidden)) #focus-clean-capsule,
+  body:has(#shop-focus-panel:not(.hidden)) #focus-clean-capsule {
+    left: 28% !important;
+    max-width: calc(var(--vw-unit, 1vw) * 52) !important;
+  }
 }
 
 html body [id].hidden,

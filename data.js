@@ -1668,8 +1668,34 @@ const ROOM_TYPE_META = {
     tone: 'gold',
     specialty: '원목 실내계단+2층 다락 · VIP 특화',
     preferredBy: ['streamer', 'newlywed', 'student']
+  },
+  penthouse: {
+    key: 'penthouse',
+    badge: '회장님 마스터 펜트하우스',
+    shortBadge: '내 방',
+    svgIcon: 'crown_badge',
+    tone: 'gold',
+    specialty: '주인공 전용 영구 쇼룸 · 총 투자금 1:1 결투 출격',
+    preferredBy: []
   }
 };
+
+const MY_PENTHOUSE_TEMPLATE = {
+  id: 'lot_main_penthouse',
+  lotId: 'lot_main',
+  subId: 'PH',
+  name: '👑 내 방',
+  layoutType: 'penthouse',
+  floor: 4,
+  lx: 0.0,
+  ly: 22.35,
+  lz: 0.15,
+  rw: 23.6,
+  rd: 7.6,
+  rh: 5.35,
+  baseFoundationMan: 50
+};
+window.MY_PENTHOUSE_TEMPLATE = MY_PENTHOUSE_TEMPLATE;
 
 const ROOM_SLOTS_TEMPLATE = [
   {
@@ -4058,6 +4084,14 @@ const POPMART_ASSET_PATHS = {
     worldManager: './assets/ui_badges/badge_world_manager.png',
     headerTitle: './assets/ui_badges/badge_header_title.png',
     goalMove: './assets/ui_badges/badge_goal_move.png'
+  },
+  uiIllustrations: {
+    rentChest: './assets/ui_illustrations/illust_rent_chest.png',
+    constructDiorama: './assets/ui_illustrations/illust_construct_diorama.png',
+    duelStage: './assets/ui_illustrations/illust_duel_stage.png',
+    penthouseMyroom: './assets/ui_illustrations/illust_penthouse_myroom.png',
+    clipboardTag: './assets/ui_illustrations/illust_clipboard_tag.png',
+    redCloseBtn: './assets/ui_illustrations/illust_red_close_btn.png'
   }
 };
 
