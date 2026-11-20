@@ -4063,35 +4063,24 @@ const POPMART_ASSET_PATHS = {
     pocketNotebook: './assets/ui/ui_pocket_notebook.png',
     quickIconsSheet: './assets/ui/ui_quick_icons_sheet.png'
   },
-  uiSkins: {
-    topStatusCapsule: './assets/ui_skins/skin_top_status_capsule.png',
-    speechBubble: './assets/ui_skins/skin_speech_bubble.png',
-    systemAlertModal: './assets/ui_skins/skin_system_alert_modal.png',
-    notebookBoard: './assets/ui_skins/skin_notebook_board.png',
-    btnPrimaryGold: './assets/ui_skins/skin_btn_primary_gold.png',
-    btnActionCoral: './assets/ui_skins/skin_btn_action_coral.png',
-    roundBadgeFrame: './assets/ui_skins/skin_round_badge_frame.png',
-    drawerSidePanel: './assets/ui_skins/skin_drawer_side_panel.png'
-  },
-  uiBadges: {
-    btnMoneygun: './assets/ui_badges/badge_btn_moneygun.png',
-    btnNotebook: './assets/ui_badges/badge_btn_notebook.png',
-    actionCollect: './assets/ui_badges/badge_action_collect.png',
-    actionConstruct: './assets/ui_badges/badge_action_construct.png',
-    actionDuel: './assets/ui_badges/badge_action_duel.png',
-    worldDrive: './assets/ui_badges/badge_world_drive.png',
-    worldFurniture: './assets/ui_badges/badge_world_furniture.png',
-    worldManager: './assets/ui_badges/badge_world_manager.png',
-    headerTitle: './assets/ui_badges/badge_header_title.png',
-    goalMove: './assets/ui_badges/badge_goal_move.png'
-  },
   uiIllustrations: {
-    rentChest: './assets/ui_illustrations/illust_rent_chest.png',
-    constructDiorama: './assets/ui_illustrations/illust_construct_diorama.png',
-    duelStage: './assets/ui_illustrations/illust_duel_stage.png',
+    rentChest: './assets/ui_nintendo/illust_piggy_coins.png',
+    constructDiorama: './assets/ui_nintendo/illust_pastel_crane.png',
+    duelStage: './assets/ui_nintendo/illust_star_stage.png',
     penthouseMyroom: './assets/ui_illustrations/illust_penthouse_myroom.png',
     clipboardTag: './assets/ui_illustrations/illust_clipboard_tag.png',
-    redCloseBtn: './assets/ui_illustrations/illust_red_close_btn.png'
+    redCloseBtn: './assets/ui_nintendo/btn_pink_close.png'
+  },
+  uiNintendo: {
+    pointerVividArrow: './assets/ui_nintendo/pointer_vivid_arrow.png',
+    btnBubbleMoneygun: './assets/ui_nintendo/btn_bubble_moneygun.png',
+    btnBubbleNotebook: './assets/ui_nintendo/btn_bubble_notebook.png',
+    btnBubbleWeather: './assets/ui_nintendo/btn_bubble_weather.png',
+    btnBubbleSettings: './assets/ui_nintendo/btn_bubble_settings.png',
+    btnPinkClose: './assets/ui_nintendo/btn_pink_close.png',
+    illustPiggyCoins: './assets/ui_nintendo/illust_piggy_coins.png',
+    illustPastelCrane: './assets/ui_nintendo/illust_pastel_crane.png',
+    illustStarStage: './assets/ui_nintendo/illust_star_stage.png'
   }
 };
 

@@ -2088,6 +2088,48 @@ input[type='range'].golden-coin-range::-webkit-slider-thumb {
   }
 }
 
+@media (max-height: 440px) {
+  .hud-top-flexbox-bar {
+    padding: 4px 10px !important;
+  }
+  .goal-navigator-capsule {
+    height: 31px !important;
+    min-height: 31px !important;
+    padding: 2px 9px 2px 5px !important;
+    box-shadow: 0 3px 0 #E11D84, 0 5px 10px rgba(236, 72, 153, 0.18) !important;
+  }
+  .goal-nav-prefix {
+    display: none !important;
+  }
+  .goal-nav-label {
+    font-size: 12px !important;
+    max-width: 150px !important;
+  }
+  #pocket-planner-popover .pocket-dashboard-board {
+    padding: 7px 11px 9px 11px !important;
+    max-height: calc(var(--vh-unit, 1vh) * 90) !important;
+    gap: 5px !important;
+  }
+  #pocket-planner-popover .wood-header-bar {
+    padding: 1px 2px 3px 2px !important;
+  }
+  #pocket-planner-popover .clay-cream-tray {
+    padding: 7px 9px !important;
+  }
+  #pocket-planner-popover .pocket-giant-action-card {
+    padding: 7px 9px !important;
+    gap: 3px !important;
+  }
+  #pocket-planner-popover .clay-hero-illust {
+    height: 62px !important;
+  }
+  #pocket-planner-popover .clay-jelly-push {
+    min-height: 29px !important;
+    height: 29px !important;
+    font-size: 12px !important;
+  }
+}
+
 html body [id].hidden,
 html body .hidden {
   display: none !important;
@@ -3719,7 +3761,7 @@ body.mobile-safe-clay-ui img {
   white-space: nowrap !important;
 }
 
-/* 찌그러지는 스킨 이미지 대신 선명한 고해상도 3D 클레이/글래스 CSS 골격 */
+/* 찌그러지는 스킨 이미지 대신 선명한 고해상도 3D 마시멜로 & 소다 블루 실리콘 골격 */
 .clay-glass-shell,
 .cozy-planner-shell,
 .diary-inspector-shell,
@@ -3728,11 +3770,11 @@ body.mobile-safe-clay-ui img {
 .gate-lock-glass-card,
 .slim-capsule-bar,
 .moneygun-slim-capsule {
-  background: linear-gradient(180deg, #FFFDF9 0%, #F5E6D3 100%) !important;
-  background-image: linear-gradient(180deg, #FFFDF9 0%, #F5E6D3 100%) !important;
-  border: 3px solid #D4AF37 !important;
+  background: linear-gradient(180deg, #FFFFFF 0%, #F0F9FF 100%) !important;
+  background-image: linear-gradient(180deg, #FFFFFF 0%, #F0F9FF 100%) !important;
+  border: 3px solid #4DC4F0 !important;
   border-radius: 22px !important;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35), inset 0 2px 0 #FFFFFF !important;
+  box-shadow: 0 5px 0 #289FD1, 0 10px 22px rgba(14, 165, 233, 0.22), inset 0 2px 0 #FFFFFF !important;
 }
 
 .cozy-planner-inner {
@@ -3796,9 +3838,9 @@ body.mobile-safe-clay-ui img {
   min-width: 28px !important;
   min-height: 28px !important;
   border-radius: 999px !important;
-  background: #FFFDF8 !important;
-  border: 2px solid #D4AF37 !important;
-  color: #3A2518 !important;
+  background: #FFFFFF !important;
+  border: 2px solid #FF69B4 !important;
+  color: #BE185D !important;
   font-size: 13px !important;
   font-weight: 900 !important;
   display: inline-flex !important;
@@ -3806,7 +3848,7 @@ body.mobile-safe-clay-ui img {
   justify-content: center !important;
   cursor: pointer;
   flex-shrink: 0 !important;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.14) !important;
+  box-shadow: 0 2px 5px rgba(236, 72, 153, 0.2) !important;
 }
 
 .kw-chip,
@@ -3927,9 +3969,9 @@ body.mobile-safe-clay-ui img {
   min-height: 36px !important;
   padding: 3px 10px 3px 4px !important;
   border-radius: 999px !important;
-  background: linear-gradient(180deg, #FFFDF9 0%, #F5E6D3 100%) !important;
-  border: 2.5px solid #D4AF37 !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.24), inset 0 1.5px 0 #FFFFFF !important;
+  background: #FFFFFF !important;
+  border: 3px solid #4DC4F0 !important;
+  box-shadow: 0 4px 0 #289FD1, 0 8px 16px rgba(14, 165, 233, 0.2), inset 0 1.5px 0 #FFFFFF !important;
   white-space: nowrap !important;
 }
 
@@ -3997,9 +4039,9 @@ body.mobile-safe-clay-ui img {
   height: 32px !important;
   padding: 2px 6px !important;
   border-radius: 999px !important;
-  background: linear-gradient(180deg, #FFFDF9 0%, #F5E6D3 100%) !important;
-  border: 2px solid #D4AF37 !important;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2) !important;
+  background: #FFFFFF !important;
+  border: 2.5px solid #4DC4F0 !important;
+  box-shadow: 0 3px 0 #289FD1, 0 6px 12px rgba(14, 165, 233, 0.18) !important;
   white-space: nowrap !important;
 }
 
@@ -4020,9 +4062,9 @@ body.mobile-safe-clay-ui img {
   max-width: 100% !important;
   padding: 3px 11px 3px 6px !important;
   border-radius: 999px !important;
-  background: linear-gradient(180deg, #FFFDF9 0%, #FEF3C7 100%) !important;
-  border: 2.5px solid #D4AF37 !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22), inset 0 1.5px 0 #FFFFFF !important;
+  background: #FFFFFF !important;
+  border: 3px solid #FF69B4 !important;
+  box-shadow: 0 4px 0 #E11D84, 0 8px 16px rgba(236, 72, 153, 0.2), inset 0 1.5px 0 #FFFFFF !important;
   white-space: nowrap !important;
   cursor: pointer;
 }
@@ -4069,9 +4111,9 @@ body.mobile-safe-clay-ui img {
   min-width: 34px !important;
   min-height: 34px !important;
   border-radius: 11px !important;
-  background: linear-gradient(180deg, #FFFDF9 0%, #F5E6D3 100%) !important;
-  border: 2.5px solid #D4AF37 !important;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.24), inset 0 1.5px 0 #FFFFFF !important;
+  background: #FFFFFF !important;
+  border: 2.5px solid #4DC4F0 !important;
+  box-shadow: 0 4px 0 #289FD1, 0 6px 12px rgba(14, 165, 233, 0.2), inset 0 1.5px 0 #FFFFFF !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -4085,9 +4127,9 @@ body.mobile-safe-clay-ui img {
   min-height: 34px !important;
   padding: 0 11px !important;
   border-radius: 999px !important;
-  background: linear-gradient(180deg, #FF6B6B 0%, #DC2626 100%) !important;
-  border: 2px solid #FFFFFF !important;
-  box-shadow: 0 3px 10px rgba(220, 38, 38, 0.35) !important;
+  background: linear-gradient(180deg, #FF708D 0%, #F43F5E 100%) !important;
+  border: 2.5px solid #FFFFFF !important;
+  box-shadow: 0 4px 0 #BE123C, 0 6px 12px rgba(244, 63, 94, 0.3) !important;
   font-size: 12.5px !important;
   font-weight: 900 !important;
   color: #FFFFFF !important;
@@ -4103,30 +4145,30 @@ body.mobile-safe-clay-ui img {
   height: 28px !important;
   padding: 0 9px !important;
   border-radius: 999px !important;
-  background: rgba(255, 253, 249, 0.95) !important;
-  border: 1.5px solid #D4AF37 !important;
+  background: #FFFFFF !important;
+  border: 2px solid #4DC4F0 !important;
   font-size: 11.5px !important;
   font-weight: 800 !important;
-  color: #2B1A10 !important;
+  color: #1E293B !important;
   white-space: nowrap !important;
   display: inline-flex !important;
   align-items: center !important;
   gap: 4px !important;
 }
 
-/* -------------------- [공통 3] 초소형 1줄 뉴스 티커 (height: 24px; font-size: 11px; padding: 2px 10px;) -------------------- */
+/* -------------------- [공통 3] 초소형 1줄 라벤더-화이트 뉴스 티커 -------------------- */
 .mini-news-ticker-pill {
   height: 24px !important;
   min-height: 24px !important;
   max-height: 24px !important;
   padding: 2px 10px !important;
   border-radius: 999px !important;
-  background: rgba(28, 21, 17, 0.84) !important;
-  border: 1.5px solid #D4AF37 !important;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.22) !important;
+  background: rgba(250, 245, 255, 0.96) !important;
+  border: 2px solid #A855F7 !important;
+  box-shadow: 0 3px 0 #7E22CE, 0 6px 12px rgba(168, 85, 247, 0.18) !important;
   font-size: 11px !important;
-  font-weight: 700 !important;
-  color: #FFFDF7 !important;
+  font-weight: 800 !important;
+  color: #581C87 !important;
   display: inline-flex !important;
   align-items: center !important;
   gap: 5px !important;
@@ -4136,39 +4178,39 @@ body.mobile-safe-clay-ui img {
 }
 
 .mini-news-detail-tag {
-  color: #FDE047 !important;
-  font-weight: 800 !important;
+  color: #E11D48 !important;
+  font-weight: 900 !important;
   font-size: 11px !important;
   flex-shrink: 0 !important;
 }
 
 .mini-news-ticker-pill.urgent-alert {
-  background: rgba(159, 18, 57, 0.92) !important;
-  border-color: #FDA4AF !important;
-  color: #FFFFFF !important;
+  background: #FFF1F2 !important;
+  border-color: #F43F5E !important;
+  color: #9F1239 !important;
 }
 
 .mini-news-ticker-pill.fever-alert {
-  background: linear-gradient(90deg, #B45309 0%, #EA580C 100%) !important;
-  border-color: #FDE047 !important;
-  color: #FFFBEB !important;
+  background: linear-gradient(90deg, #FFFBEB 0%, #FEF08A 100%) !important;
+  border-color: #F59E0B !important;
+  color: #92400E !important;
 }
 
 .pastel-toast {
-  height: 26px !important;
-  min-height: 26px !important;
-  padding: 2px 10px !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  padding: 2px 12px !important;
   border-radius: 999px !important;
-  background: rgba(28, 21, 17, 0.88) !important;
-  border: 1.5px solid #D4AF37 !important;
+  background: #FFFFFF !important;
+  border: 2.5px solid #FF69B4 !important;
   font-size: 11.5px !important;
   font-weight: 800 !important;
-  color: #FFFDF9 !important;
+  color: #1E293B !important;
   display: inline-flex !important;
   align-items: center !important;
   gap: 5px !important;
   white-space: nowrap !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28) !important;
+  box-shadow: 0 4px 0 #E11D84, 0 8px 16px rgba(236, 72, 153, 0.22) !important;
 }
 
 /* -------------------- ② 우측 하단 메인 버튼 (`58px ~ 64px`, `bottom: 12px; right: 12px; gap: 10px;`) -------------------- */
@@ -4341,11 +4383,11 @@ body.mobile-safe-clay-ui img {
   min-height: 28px !important;
   padding: 0 10px !important;
   border-radius: 999px !important;
-  background: #FFFBEB !important;
-  border: 1.5px solid #D4AF37 !important;
+  background: #FFFFFF !important;
+  border: 2px solid #4DC4F0 !important;
   font-size: 12px !important;
   font-weight: 800 !important;
-  color: #78350F !important;
+  color: #0369A1 !important;
   white-space: nowrap !important;
   display: inline-flex !important;
   align-items: center !important;
@@ -4474,9 +4516,9 @@ body.mobile-safe-clay-ui img {
   max-height: 40px !important;
   padding: 4px 10px !important;
   border-radius: 999px !important;
-  background: linear-gradient(180deg, #FFFDF9 0%, #F5E6D3 100%) !important;
-  border: 2.5px solid #D4AF37 !important;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1.5px 0 #FFFFFF !important;
+  background: #FFFFFF !important;
+  border: 3px solid #4DC4F0 !important;
+  box-shadow: 0 5px 0 #289FD1, 0 8px 18px rgba(14, 165, 233, 0.24), inset 0 1.5px 0 #FFFFFF !important;
   display: inline-flex !important;
   align-items: center !important;
   gap: 5px !important;
@@ -4495,7 +4537,7 @@ body:has(#shop-focus-panel:not(.hidden)) #focus-clean-capsule:not(.hidden) {
   font-family: 'TmoneyRoundWind', 'Jua', sans-serif !important;
   font-size: 13px !important;
   font-weight: 900 !important;
-  color: #78350F !important;
+  color: #0369A1 !important;
   padding: 0 6px !important;
   white-space: nowrap !important;
 }
@@ -4507,9 +4549,9 @@ body:has(#shop-focus-panel:not(.hidden)) #focus-clean-capsule:not(.hidden) {
   border-radius: 999px !important;
   font-size: 13px !important;
   font-weight: 800 !important;
-  background: #FFFDF8 !important;
-  border: 1.5px solid #D4AF37 !important;
-  color: #2B1A10 !important;
+  background: #F0F9FF !important;
+  border: 2px solid #4DC4F0 !important;
+  color: #0369A1 !important;
   white-space: nowrap !important;
   display: inline-flex !important;
   align-items: center !important;
@@ -4535,10 +4577,9 @@ body:has(#shop-focus-panel:not(.hidden)) #focus-clean-capsule:not(.hidden) {
   padding: 3px 10px !important;
 }
 
-/* 우측 슬림 드로어 (`width: min(42vw, 300px); height: 78vh;`) */
+/* 우측 슬림 드로어 (`width: min(42vw, 300px); height: 76vh;`) */
 #room-focus-panel,
-#shop-focus-panel,
-#flagship-shop-drawer {
+#shop-focus-panel {
   top: 46px !important;
   right: 10px !important;
   width: min(calc(var(--vw-unit, 1vw) * 42), 300px) !important;
@@ -4649,8 +4690,8 @@ body:has(#shop-focus-panel:not(.hidden)) #focus-clean-capsule:not(.hidden) {
   height: 32px !important;
   padding: 0 10px !important;
   border-radius: 999px !important;
-  background: #1E1B18 !important;
-  border: 1.5px solid #D4AF37 !important;
+  background: #0F172A !important;
+  border: 2px solid #4DC4F0 !important;
   display: inline-flex !important;
   align-items: center !important;
   gap: 3px !important;
@@ -4698,12 +4739,12 @@ body:has(#shop-focus-panel:not(.hidden)) #focus-clean-capsule:not(.hidden) {
 .speech-cloud {
   position: fixed !important;
   transform: translate(-50%, -100%) !important;
-  background: linear-gradient(180deg, #FFFDF9 0%, #FEF3C7 100%) !important;
+  background: #FFFFFF !important;
   background-image: none !important;
-  border: 2px solid #D4AF37 !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22) !important;
+  border: 2.5px solid #4DC4F0 !important;
+  box-shadow: 0 4px 0 #289FD1, 0 6px 14px rgba(14, 165, 233, 0.22) !important;
   border-radius: 999px !important;
-  color: #2B1A10 !important;
+  color: #1E293B !important;
   z-index: 25 !important;
   white-space: nowrap !important;
   transition: opacity 0.16s ease, transform 0.16s ease !important;
@@ -4871,6 +4912,48 @@ body:has(#shop-focus-panel:not(.hidden)) #focus-clean-capsule:not(.hidden) {
   }
 }
 
+@media (max-height: 440px) {
+  .hud-top-flexbox-bar {
+    padding: 4px 10px !important;
+  }
+  .goal-navigator-capsule {
+    height: 31px !important;
+    min-height: 31px !important;
+    padding: 2px 9px 2px 5px !important;
+    box-shadow: 0 3px 0 #E11D84, 0 5px 10px rgba(236, 72, 153, 0.18) !important;
+  }
+  .goal-nav-prefix {
+    display: none !important;
+  }
+  .goal-nav-label {
+    font-size: 12px !important;
+    max-width: 150px !important;
+  }
+  #pocket-planner-popover .pocket-dashboard-board {
+    padding: 7px 11px 9px 11px !important;
+    max-height: calc(var(--vh-unit, 1vh) * 90) !important;
+    gap: 5px !important;
+  }
+  #pocket-planner-popover .wood-header-bar {
+    padding: 1px 2px 3px 2px !important;
+  }
+  #pocket-planner-popover .clay-cream-tray {
+    padding: 7px 9px !important;
+  }
+  #pocket-planner-popover .pocket-giant-action-card {
+    padding: 7px 9px !important;
+    gap: 3px !important;
+  }
+  #pocket-planner-popover .clay-hero-illust {
+    height: 62px !important;
+  }
+  #pocket-planner-popover .clay-jelly-push {
+    min-height: 29px !important;
+    height: 29px !important;
+    font-size: 12px !important;
+  }
+}
+
 html body [id].hidden,
 html body .hidden {
   display: none !important;
@@ -4878,28 +4961,100 @@ html body .hidden {
 
 
 /* ==========================================================================
-   [3대 메이저 업그레이드 PART 3]
-   『꽉 찬 3D 월넛 우드 보드 & 도톰한 파스텔 매트 클레이 블록 UI』 전 화면 통합 스타일
-   - 1px 얇은 실선 · 흰색 빈 여백 · 콩알 사각형 아이콘 100% 퇴출
-   - 외곽 1단 월넛 우드 프레임 + 내부 2단 크림 클레이 속판 + 3단 파스텔 클레이 블록 + 4단 홈 푸시 버튼
-   - GPU translate3d(x, y, 0) 말풍선/배지 무지연 투영
+   [닌텐도 스위치 전면 리스킨 (Full Nintendo Marshmallow & Candy Pop Reskin)]
+   - 삼국지풍 황동 금속(#D4AF37) · 어두운 갈색 나무(#754F2B) · 시커먼 배경 100% 영구 퇴출!
+   - 소다 스카이 블루 실리콘 보드 + 마시멜로 밀크 화이트 속판 + 4색 캔디 클레이 쿠션 카드
+   - 3D 월드 고채도·고대비 바운싱 화살표 핀(▼, 34x40px, 호버/근접 시에만 미니 캡슐 표시)
    ========================================================================== */
 
-/* 상단 내 방(회장님 펜트하우스) 퀵 캡슐 */
-.hud-penthouse-pill {
-  height: 36px !important;
-  padding: 0 11px !important;
+/* -------------------- 0. 모달 배경 & 3D 턴테이블 스튜디오 파스텔화 (시커먼 배경 0%!) -------------------- */
+.pastel-modal-backdrop,
+#flagship-shop-drawer:not(.hidden) {
+  background: rgba(186, 230, 253, 0.44) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+#flagship-shop-drawer:not(.hidden) {
+  position: fixed !important;
+  inset: 0 !important;
+  top: 0 !important;
+  right: 0 !important;
+  left: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+  height: 100% !important;
+  max-height: none !important;
+  padding: 10px !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.turntable-backdrop {
+  background: radial-gradient(circle, #FFFFFF 0%, #E0F2FE 65%, #FCE7F3 100%) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+}
+
+/* -------------------- 1. 상단 HUD 헤더 바 (마시멜로 밀크 화이트 + 소다 블루 캔디 테두리 + 고대비 텍스트) -------------------- */
+#hud-badge-gold,
+.hud-big-unified-capsule {
+  background: #FFFFFF !important;
+  background-image: none !important;
+  border: 3.5px solid #4DC4F0 !important;
   border-radius: 999px !important;
-  background: linear-gradient(180deg, #FFE885 0%, #F2B735 100%) !important;
-  border: 2.5px solid #8A5E35 !important;
-  box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.78), 0 4px 0 #9A6412, 0 6px 12px rgba(0, 0, 0, 0.24) !important;
+  box-shadow: 0 5px 0 #289FD1, 0 8px 16px rgba(40, 159, 209, 0.28) !important;
+}
+
+.hud-big-avatar-chip {
+  background: linear-gradient(180deg, #E0F2FE 0%, #BAE6FD 100%) !important;
+  border: 2px solid #38BDF8 !important;
+  box-shadow: inset 0 2px 2px #FFFFFF !important;
+}
+
+.hud-big-money-num {
+  color: #1E293B !important;
+  font-size: 14.5px !important;
+  font-weight: 900 !important;
+  text-shadow: none !important;
+}
+
+.hud-big-divider {
+  background: #BAE6FD !important;
+  width: 2px !important;
+}
+
+.hud-big-rank-btn {
+  background: linear-gradient(180deg, #FFE4F2 0%, #FFB3D9 100%) !important;
+  border: 2px solid #FF80BF !important;
+  box-shadow: 0 2px 0 #DB4D94 !important;
+  color: #9F1239 !important;
+}
+
+.hud-big-rank-num {
+  color: #BE123C !important;
+  font-weight: 900 !important;
+}
+
+.hud-penthouse-pill {
+  height: 38px !important;
+  padding: 0 12px !important;
+  border-radius: 999px !important;
+  background: linear-gradient(180deg, #FFF078 0%, #FFD633 100%) !important;
+  border: 3.5px solid #FFFFFF !important;
+  box-shadow: 0 5px 0 #D9A700, 0 8px 16px rgba(217, 167, 0, 0.28) !important;
   display: inline-flex !important;
   align-items: center !important;
   gap: 5px !important;
-  font-family: 'TmoneyRoundWind', 'Jua', sans-serif !important;
-  font-size: 12.5px !important;
+  font-family: 'TmoneyRoundWind', 'CookieRun', 'Jua', sans-serif !important;
+  font-size: 13px !important;
   font-weight: 900 !important;
-  color: #3A2208 !important;
+  color: #422006 !important;
   white-space: nowrap !important;
   cursor: pointer;
   transition: transform 0.12s ease !important;
@@ -4910,73 +5065,260 @@ html body .hidden {
 }
 
 .hud-penthouse-val {
-  padding: 1px 7px !important;
+  padding: 1.5px 8px !important;
   border-radius: 999px !important;
-  background: #3A2208 !important;
-  color: #FFE885 !important;
+  background: #E11D48 !important;
+  color: #FFFFFF !important;
   font-family: 'Fredoka', 'Pretendard', sans-serif !important;
   font-size: 11.5px !important;
   font-weight: 900 !important;
 }
 
-/* -------------------- 외곽 1단: 도톰한 3D 월넛 우드 프레임 -------------------- */
-.wood-board-frame {
+.town-stage-switch-pill {
+  background: #FFFFFF !important;
+  border: 3px solid #4DC4F0 !important;
+  box-shadow: 0 4px 0 #289FD1, 0 8px 14px rgba(40, 159, 209, 0.25) !important;
+}
+
+.goal-navigator-capsule {
+  height: 38px !important;
+  min-height: 38px !important;
+  padding: 3px 13px 3px 6px !important;
+  border-radius: 999px !important;
+  background: #FFFFFF !important;
+  background-image: none !important;
+  border: 3.5px solid #FF6BA9 !important;
+  box-shadow: 0 5px 0 #DB2777, 0 8px 16px rgba(219, 39, 119, 0.26) !important;
+}
+
+.goal-nav-thumb-box {
+  width: 26px !important;
+  height: 26px !important;
+  background: #FFF0F6 !important;
+  border: 2px solid #FF80BF !important;
+}
+
+.goal-nav-prefix {
+  color: #E11D48 !important;
+  font-size: 12.5px !important;
+  font-weight: 900 !important;
+}
+
+.goal-nav-label {
+  color: #1E293B !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+}
+
+/* 우측 상단 닌텐도 구름·무지개 날씨 & 라벤더 별-톱니 설정 3D 마시멜로 원형 버튼 */
+.nintendo-top-bubble-btn {
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  min-height: 42px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer;
+  flex-shrink: 0 !important;
+  transition: transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+.nintendo-top-bubble-btn:hover {
+  transform: translateY(-2px) scale(1.06) !important;
+}
+
+.nintendo-top-bubble-btn:active {
+  transform: translateY(2px) scale(0.94) !important;
+}
+
+.nintendo-top-bubble-img {
+  width: 42px !important;
+  height: 42px !important;
+  object-fit: contain !important;
+  pointer-events: none !important;
+  filter: drop-shadow(0 4px 8px rgba(30, 75, 120, 0.28)) !important;
+}
+
+.nintendo-weather-mini-badge {
+  position: absolute;
+  right: -3px;
+  bottom: -2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #FFFFFF;
+  border: 2px solid #4DC4F0;
+  font-size: 10px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.18);
+  pointer-events: none;
+}
+
+.big-exit-capsule-btn {
+  height: 36px !important;
+  padding: 0 13px !important;
+  border-radius: 999px !important;
+  background: linear-gradient(180deg, #FF6BA9 0%, #F43F5E 100%) !important;
+  border: 3px solid #FFFFFF !important;
+  box-shadow: 0 4px 0 #BE123C, 0 8px 14px rgba(244, 63, 94, 0.32) !important;
+  color: #FFFFFF !important;
+  font-weight: 900 !important;
+}
+
+/* 좌측 상단 초소형 1줄 랭크 뉴스 배지 (라벤더 화이트 고대비 캡슐!) */
+.mini-news-ticker-pill {
+  height: 24px !important;
+  min-height: 24px !important;
+  max-height: 24px !important;
+  padding: 2px 11px !important;
+  border-radius: 999px !important;
+  background: rgba(250, 245, 255, 0.96) !important;
+  border: 2px solid #A855F7 !important;
+  box-shadow: 0 3px 0 #9333EA, 0 5px 10px rgba(147, 51, 234, 0.2) !important;
+  font-size: 11.5px !important;
+  font-weight: 800 !important;
+  color: #581C87 !important;
+}
+
+.mini-news-detail-tag {
+  color: #E11D48 !important;
+  font-weight: 900 !important;
+}
+
+.pastel-toast {
+  height: 30px !important;
+  min-height: 30px !important;
+  padding: 3px 13px !important;
+  border-radius: 999px !important;
+  background: #FFFFFF !important;
+  border: 3px solid #4DC4F0 !important;
+  box-shadow: 0 4px 0 #289FD1, 0 8px 16px rgba(40, 159, 209, 0.28) !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  color: #1E293B !important;
+}
+
+/* 우측 하단 `돈 뿌리기` & `건물주 수첩` 원형 마시멜로 버블 버튼 */
+.toy-img-main-fab {
+  width: 64px !important;
+  height: 64px !important;
+}
+
+.toy-badge-main-fab-img {
+  width: 64px !important;
+  height: 64px !important;
+  filter: drop-shadow(0 6px 12px rgba(25, 65, 110, 0.3)) !important;
+}
+
+@media (min-height: 540px) {
+  .toy-img-main-fab,
+  .toy-badge-main-fab-img {
+    width: 74px !important;
+    height: 74px !important;
+  }
+}
+
+/* 오프닝 타이틀 로고 */
+.nintendo-hero-logo-title {
+  font-family: 'TmoneyRoundWind', 'CookieRun', 'Jua', sans-serif !important;
+  font-size: 28px !important;
+  font-weight: 900 !important;
+  color: #FFFFFF !important;
+  -webkit-text-stroke: 2px #F43F5E !important;
+  paint-order: stroke fill !important;
+  text-shadow: 0 4px 0 #BE123C, 0 7px 14px rgba(244, 63, 94, 0.38) !important;
+  letter-spacing: -0.02em !important;
+  line-height: 1.15 !important;
+}
+
+.title-coral-start-btn {
+  width: 100% !important;
+  height: 44px !important;
+  border-radius: 999px !important;
+  background: linear-gradient(180deg, #FF75A0 0%, #F43F5E 100%) !important;
+  border: 3px solid #FFFFFF !important;
+  box-shadow: 0 5px 0 #BE123C, 0 8px 16px rgba(244, 63, 94, 0.35) !important;
+  font-family: 'TmoneyRoundWind', 'CookieRun', sans-serif !important;
+  font-size: 16px !important;
+  font-weight: 900 !important;
+  color: #FFFFFF !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+}
+
+.title-sub-link {
+  color: #0369A1 !important;
+  font-weight: 900 !important;
+}
+
+/* -------------------- 2. 모든 팝업·모달·드로어 공통 외곽 프레임 (`소다 스카이 블루 & 마시멜로 화이트 2중 실리콘 보드`) -------------------- */
+.wood-board-frame,
+.cozy-planner-shell.wood-board-frame {
   position: relative;
-  background: linear-gradient(180deg, #C89D70 0%, #A6784B 100%) !important;
-  background-image: linear-gradient(180deg, #C89D70 0%, #A6784B 100%) !important;
-  border-radius: 28px !important;
-  padding: 10px 14px 14px 14px !important;
-  border: 3px solid #8A5E35 !important;
+  background: linear-gradient(180deg, #7CE0FF 0%, #47B8F5 100%) !important;
+  background-image: linear-gradient(180deg, #7CE0FF 0%, #47B8F5 100%) !important;
+  border-radius: 34px !important;
+  padding: 11px 15px 15px 15px !important;
+  border: 4px solid #FFFFFF !important;
   box-shadow:
-    inset 0 3px 4px rgba(255, 255, 255, 0.45),
-    inset 0 -4px 6px rgba(80, 45, 15, 0.4),
-    0 8px 0 #754F2B,
-    0 20px 36px rgba(0, 0, 0, 0.45) !important;
+    inset 0 4px 6px rgba(255, 255, 255, 0.85),
+    0 10px 0 #2894D1,
+    0 20px 35px rgba(20, 75, 120, 0.32) !important;
   box-sizing: border-box !important;
 }
 
 @media (min-height: 540px) {
-  .wood-board-frame {
+  .wood-board-frame,
+  .cozy-planner-shell.wood-board-frame {
     padding: 14px 18px 18px 18px !important;
-    box-shadow:
-      inset 0 3px 4px rgba(255, 255, 255, 0.45),
-      inset 0 -4px 6px rgba(80, 45, 15, 0.4),
-      0 10px 0 #754F2B,
-      0 22px 38px rgba(0, 0, 0, 0.45) !important;
   }
 }
 
-/* 좌우 금속 경첩(Hinge) 입체 장식 */
+/* 삼국지풍 금속 경첩 완전 제거 -> 귀여운 노란 별 스티커 ⭐ 로 전환! */
 .pocket-dashboard-board::before,
 .pocket-dashboard-board::after,
 .flagship-boutique-board::before,
 .flagship-boutique-board::after,
 .cozy-planner-shell.wood-board-frame::before,
 .cozy-planner-shell.wood-board-frame::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 7px;
-  height: 44px;
-  border-radius: 5px;
-  background: linear-gradient(180deg, #FCE38A 0%, #D99B26 52%, #8F5D14 100%);
-  border: 1.5px solid #5C3A14;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 2px 4px rgba(0, 0, 0, 0.35);
-  pointer-events: none;
-  z-index: 4;
+  content: '⭐' !important;
+  position: absolute !important;
+  top: auto !important;
+  bottom: 8px !important;
+  transform: none !important;
+  width: auto !important;
+  height: auto !important;
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  font-size: 13px !important;
+  line-height: 1 !important;
+  filter: drop-shadow(0 2px 2px rgba(20, 75, 120, 0.25)) !important;
+  pointer-events: none !important;
+  z-index: 4 !important;
 }
 
 .pocket-dashboard-board::before,
 .flagship-boutique-board::before,
 .cozy-planner-shell.wood-board-frame::before {
-  left: -5px;
+  left: 11px !important;
 }
 
 .pocket-dashboard-board::after,
 .flagship-boutique-board::after,
 .cozy-planner-shell.wood-board-frame::after {
-  right: -5px;
+  right: 11px !important;
 }
 
 .wood-header-bar {
@@ -4997,74 +5339,46 @@ html body .hidden {
   min-width: 0 !important;
 }
 
+/* 노란 별 스티커 배지 (`⭐`) */
 .wood-star-rivet {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  width: 22px !important;
-  height: 22px !important;
+  width: 24px !important;
+  height: 24px !important;
   border-radius: 999px !important;
-  background: radial-gradient(circle at 35% 30%, #FFF7B2 0%, #F59E0B 68%, #9A5811 100%) !important;
-  border: 1.5px solid #5C3811 !important;
-  box-shadow: inset 0 1.5px 1px rgba(255, 255, 255, 0.85), 0 2px 0 #5C3811 !important;
-  color: #4A2808 !important;
-  font-size: 12px !important;
-  font-weight: 900 !important;
+  background: #FFF9C4 !important;
+  border: 2px solid #FFFFFF !important;
+  box-shadow: 0 3px 0 #F59E0B !important;
+  font-size: 13px !important;
   flex-shrink: 0 !important;
 }
 
+/* 모달 상단 타이틀: 새하얀 3D 버블 한글 + 핫핑크 아웃라인 & 볼륨 그림자! */
 .wood-embossed-title {
-  font-family: 'TmoneyRoundWind', 'Jua', 'Pretendard', sans-serif !important;
-  font-size: 17px !important;
+  font-family: 'TmoneyRoundWind', 'CookieRun', 'Jua', sans-serif !important;
+  font-size: 17.5px !important;
   font-weight: 900 !important;
-  color: #FFFDF5 !important;
-  text-shadow: 0 2px 0 #6E4726, 0 4px 0 #4A2E16 !important;
-  letter-spacing: -0.02em !important;
+  color: #FFFFFF !important;
+  -webkit-text-stroke: 1.5px #F43F5E !important;
+  paint-order: stroke fill !important;
+  text-shadow: 0 3px 0 #BE123C, 0 5px 10px rgba(244, 63, 94, 0.35) !important;
+  letter-spacing: -0.01em !important;
   white-space: nowrap !important;
   line-height: 1.2 !important;
 }
 
 @media (min-height: 540px) {
   .wood-embossed-title {
-    font-size: 19px !important;
+    font-size: 20px !important;
   }
 }
 
-/* 수첩 상단 입체 클립보드 상세 장부 태그 & 우드 알약 태그 */
-.wood-clipboard-tag-btn {
-  height: 32px !important;
-  padding: 0 11px 0 7px !important;
-  border-radius: 999px !important;
-  background: linear-gradient(180deg, #FFF7E2 0%, #EDD5B1 100%) !important;
-  border: 2px solid #754F2B !important;
-  box-shadow: inset 0 2px 2px #FFFFFF, 0 3px 0 #6E4726 !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 5px !important;
-  font-family: 'TmoneyRoundWind', 'Jua', sans-serif !important;
-  font-size: 12.5px !important;
-  font-weight: 900 !important;
-  color: #3E2410 !important;
-  white-space: nowrap !important;
-  cursor: pointer;
-}
-
-.wood-clipboard-tag-btn:active,
-.wood-tag-pill:active {
-  transform: translateY(2px) !important;
-}
-
-.clipboard-tag-illust {
-  width: 24px !important;
-  height: 24px !important;
-  object-fit: contain !important;
-  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.28));
-  flex-shrink: 0 !important;
-}
-
+/* 상단 보조 알약 버튼 (마시멜로 캔디 필) */
+.wood-clipboard-tag-btn,
 .wood-tag-pill {
-  height: 30px !important;
-  padding: 0 10px !important;
+  height: 31px !important;
+  padding: 0 11px !important;
   border-radius: 999px !important;
   font-family: 'TmoneyRoundWind', 'Jua', sans-serif !important;
   font-size: 12px !important;
@@ -5074,66 +5388,79 @@ html body .hidden {
   gap: 4px !important;
   white-space: nowrap !important;
   cursor: pointer;
-  border: 2px solid #6E4726 !important;
+  border: 2.5px solid #FFFFFF !important;
+}
+
+.wood-clipboard-tag-btn {
+  background: linear-gradient(180deg, #FFFFFF 0%, #F3E8FF 100%) !important;
+  color: #4C1D95 !important;
+  box-shadow: 0 3px 0 #9333EA !important;
 }
 
 .wood-tag-pill.tag-gold {
-  background: linear-gradient(180deg, #FFE885 0%, #F2BA3B 100%) !important;
-  color: #3A2208 !important;
-  box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.8), 0 3px 0 #7C4D12 !important;
+  background: linear-gradient(180deg, #FFF078 0%, #FFD633 100%) !important;
+  color: #422006 !important;
+  box-shadow: 0 3px 0 #D9A700 !important;
 }
 
 .wood-tag-pill.tag-mint {
-  background: linear-gradient(180deg, #B8F5DF 0%, #73DCB8 100%) !important;
-  color: #064E3B !important;
-  box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.8), 0 3px 0 #24785D !important;
+  background: linear-gradient(180deg, #A7F3D0 0%, #34D399 100%) !important;
+  color: #042F2E !important;
+  box-shadow: 0 3px 0 #0D9488 !important;
 }
 
-/* 우측 상단 3D 코럴레드 토이 닫기 단추 */
+.clipboard-tag-illust {
+  width: 22px !important;
+  height: 22px !important;
+  object-fit: contain !important;
+  flex-shrink: 0 !important;
+}
+
+/* 모든 모달 우측 상단 `✕` — 핫핑크 3D 마시멜로 닫기 단추 (`btn_pink_close.png`) */
 .btn-close-round {
-  width: 34px !important;
-  height: 34px !important;
-  min-width: 34px !important;
-  min-height: 34px !important;
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  min-height: 36px !important;
   padding: 0 !important;
   border-radius: 999px !important;
-  background: radial-gradient(circle at 35% 28%, #FF8A7A 0%, #E5483A 72%, #B42318 100%) !important;
-  border: 2px solid #6E2019 !important;
-  box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.65), 0 4px 0 #7A1E16, 0 6px 10px rgba(0, 0, 0, 0.3) !important;
-  color: #FFFFFF !important;
-  font-size: 15px !important;
-  font-weight: 900 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
   cursor: pointer;
-  overflow: hidden !important;
-  transition: transform 0.1s ease !important;
+  overflow: visible !important;
+  transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+.btn-close-round:hover {
+  transform: scale(1.08) !important;
 }
 
 .btn-close-round:active {
-  transform: translateY(3px) !important;
-  box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.5), 0 1px 0 #7A1E16 !important;
+  transform: translateY(2px) scale(0.92) !important;
 }
 
 .close-toy-img {
   width: 100% !important;
   height: 100% !important;
   object-fit: contain !important;
-  transform: scale(1.18) !important;
+  transform: scale(1.08) !important;
+  filter: drop-shadow(0 4px 6px rgba(190, 18, 60, 0.32)) !important;
   pointer-events: none !important;
 }
 
-/* -------------------- 내부 2단: 크림 매트 클레이 속판 (Cream Tray) -------------------- */
+/* 안쪽 트레이: 마시멜로 밀크 화이트 속판 (`#FFFDF9`) */
 .clay-cream-tray,
 .wood-board-frame .cozy-planner-inner {
-  background: linear-gradient(180deg, #F7EFE1 0%, #EAE0CE 100%) !important;
-  border-radius: 22px !important;
-  padding: 10px !important;
+  background: #FFFDF9 !important;
+  background-image: none !important;
+  border-radius: 26px !important;
+  padding: 11px !important;
   border: none !important;
-  box-shadow:
-    inset 0 3px 6px rgba(130, 95, 60, 0.22),
-    0 2px 0 rgba(255, 255, 255, 0.7) !important;
+  box-shadow: inset 0 3px 8px rgba(120, 175, 210, 0.22) !important;
   box-sizing: border-box !important;
 }
 
@@ -5144,97 +5471,94 @@ html body .hidden {
   }
 }
 
-/* 3D 클레이 상단 카테고리 탭 버튼 */
-.clay-tab-pill {
+/* 카테고리 탭 필 (마시멜로 & 버블검 핑크/옐로우) */
+.clay-tab-pill,
+.tt-filter-chip {
   height: 32px !important;
   min-height: 32px !important;
-  padding: 0 10px !important;
-  border-radius: 14px !important;
-  background: linear-gradient(180deg, #F3E5D0 0%, #DFC9AC 100%) !important;
-  border: none !important;
-  box-shadow:
-    inset 0 2px 3px rgba(255, 255, 255, 0.75),
-    0 4px 0 #8C6239,
-    0 6px 10px rgba(0, 0, 0, 0.16) !important;
+  padding: 0 11px !important;
+  border-radius: 999px !important;
+  background: #FFFFFF !important;
+  border: 2.5px solid #BAE6FD !important;
+  box-shadow: 0 3px 0 #38BDF8 !important;
   font-family: 'TmoneyRoundWind', 'Jua', sans-serif !important;
   font-size: 12.5px !important;
   font-weight: 900 !important;
-  color: #4A2E16 !important;
+  color: #0369A1 !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
   gap: 4px !important;
   white-space: nowrap !important;
   cursor: pointer;
-  transition: transform 0.12s ease !important;
 }
 
-.clay-tab-pill.active {
-  background: linear-gradient(180deg, #FFE680 0%, #F4B93B 100%) !important;
-  color: #3A2006 !important;
-  box-shadow:
-    inset 0 3px 4px rgba(255, 255, 255, 0.85),
-    0 4px 0 #A86D14,
-    0 7px 12px rgba(0, 0, 0, 0.22) !important;
+.clay-tab-pill.active,
+.tt-filter-chip.active {
+  background: linear-gradient(180deg, #FFF078 0%, #FFD633 100%) !important;
+  border-color: #FFFFFF !important;
+  color: #422006 !important;
+  box-shadow: 0 4px 0 #D9A700, 0 6px 12px rgba(217, 167, 0, 0.28) !important;
 }
 
-.clay-tab-pill:active {
-  transform: translateY(2px) !important;
-}
-
-/* -------------------- 핵심 3단: 빈 여백 없이 꽉 차는 4색 3D 파스텔 매트 클레이 블록 -------------------- */
+/* -------------------- 3. 4색 캔디 클레이 쿠션 카드 & 초대형 3D 일러스트 -------------------- */
 .clay-block-yellow,
+.clay-block-pink,
 .clay-block-blue,
 .clay-block-purple,
 .clay-block-mint,
 .diary-card,
 .diary-subcard {
-  border-radius: 22px !important;
-  border: none !important;
+  border-radius: 24px !important;
   padding: 10px 12px !important;
   box-sizing: border-box !important;
 }
 
+/* 🍋 레몬 옐로우 쿠션 (`월세 수금` / `내 방 가치`) */
 .clay-block-yellow {
-  background: linear-gradient(180deg, #F9E29C 0%, #F0CA6D 100%) !important;
-  box-shadow:
-    inset 0 4px 6px rgba(255, 255, 255, 0.75),
-    inset 0 -4px 6px rgba(180, 130, 30, 0.25),
-    0 6px 0 #C89E3A,
-    0 11px 16px rgba(0, 0, 0, 0.18) !important;
+  background: linear-gradient(180deg, #FFF078 0%, #FFD633 100%) !important;
+  border: 3px solid #FFF9C4 !important;
+  box-shadow: inset 0 4px 6px rgba(255, 255, 255, 0.9), 0 7px 0 #D9A700, 0 12px 18px rgba(217, 167, 0, 0.2) !important;
+  color: #422006 !important;
 }
 
-.clay-block-blue {
-  background: linear-gradient(180deg, #9ADAFD 0%, #6EC0F5 100%) !important;
-  box-shadow:
-    inset 0 4px 6px rgba(255, 255, 255, 0.75),
-    inset 0 -4px 6px rgba(30, 110, 170, 0.25),
-    0 6px 0 #4594CA,
-    0 11px 16px rgba(0, 0, 0, 0.18) !important;
+/* 🍓 버블검 핑크 쿠션 (`증축 착공` / `침대·소파`) */
+.clay-block-pink {
+  background: linear-gradient(180deg, #FFB3D9 0%, #FF80BF 100%) !important;
+  border: 3px solid #FFE4F2 !important;
+  box-shadow: inset 0 4px 6px rgba(255, 255, 255, 0.9), 0 7px 0 #DB4D94, 0 12px 18px rgba(219, 77, 148, 0.2) !important;
+  color: #500724 !important;
 }
 
+/* 🍇 라벤더 퍼플 쿠션 (`쇼룸 결투` / `라이벌 부자`) */
 .clay-block-purple {
-  background: linear-gradient(180deg, #E2BFFB 0%, #CCA0F2 100%) !important;
-  box-shadow:
-    inset 0 4px 6px rgba(255, 255, 255, 0.75),
-    inset 0 -4px 6px rgba(110, 50, 160, 0.25),
-    0 6px 0 #9B6BC6,
-    0 11px 16px rgba(0, 0, 0, 0.18) !important;
+  background: linear-gradient(180deg, #E2C4FF 0%, #C499FF 100%) !important;
+  border: 3px solid #F3E8FF !important;
+  box-shadow: inset 0 4px 6px rgba(255, 255, 255, 0.9), 0 7px 0 #9353D3, 0 12px 18px rgba(147, 83, 211, 0.2) !important;
+  color: #3B0764 !important;
 }
 
+/* 🍏 애플 민트 쿠션 (`관리소장 인사` / `설비·수조`) */
 .clay-block-mint,
 .diary-card,
 .diary-subcard {
-  background: linear-gradient(180deg, #A8F0D8 0%, #78DEC0 100%) !important;
-  box-shadow:
-    inset 0 4px 6px rgba(255, 255, 255, 0.75),
-    inset 0 -4px 6px rgba(30, 130, 100, 0.25),
-    0 6px 0 #4BB093,
-    0 11px 16px rgba(0, 0, 0, 0.18) !important;
+  background: linear-gradient(180deg, #A7F3D0 0%, #5EEAD4 100%) !important;
+  border: 3px solid #CCFBF1 !important;
+  box-shadow: inset 0 4px 6px rgba(255, 255, 255, 0.9), 0 7px 0 #14B8A6, 0 12px 18px rgba(20, 184, 166, 0.18) !important;
+  color: #042F2E !important;
+}
+
+/* 💎 소다 블루 쿠션 (보조 스카이 블록) */
+.clay-block-blue {
+  background: linear-gradient(180deg, #BAE6FD 0%, #7DD3FC 100%) !important;
+  border: 3px solid #E0F2FE !important;
+  box-shadow: inset 0 4px 6px rgba(255, 255, 255, 0.9), 0 7px 0 #0284C7, 0 12px 18px rgba(2, 132, 199, 0.18) !important;
+  color: #0C4A6E !important;
 }
 
 @media (min-height: 540px) {
   .clay-block-yellow,
+  .clay-block-pink,
   .clay-block-blue,
   .clay-block-purple,
   .clay-block-mint {
@@ -5243,11 +5567,11 @@ html body .hidden {
 }
 
 .clay-block-title {
-  font-family: 'TmoneyRoundWind', 'Jua', sans-serif !important;
+  font-family: 'TmoneyRoundWind', 'CookieRun', 'Jua', sans-serif !important;
   font-size: 14.5px !important;
   font-weight: 900 !important;
-  color: #2A190D !important;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65) !important;
+  color: #1E293B !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) !important;
   white-space: nowrap !important;
 }
 
@@ -5257,7 +5581,7 @@ html body .hidden {
   }
 }
 
-/* 도톰한 3D 코너 카운트 배지 (`3건`, `👑 VS` 등) */
+/* 도톰한 3D 코너 카운트 배지 */
 .clay-corner-pill {
   padding: 2px 9px !important;
   border-radius: 999px !important;
@@ -5268,40 +5592,40 @@ html body .hidden {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  border: none !important;
+  border: 1.5px solid #FFFFFF !important;
 }
 
 .clay-corner-pill.pill-pink {
-  background: linear-gradient(180deg, #FF7597 0%, #E11D48 100%) !important;
+  background: linear-gradient(180deg, #FF6BA9 0%, #E11D48 100%) !important;
   color: #FFFFFF !important;
-  box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.55), 0 3px 0 #9F1239 !important;
+  box-shadow: 0 2.5px 0 #9F1239 !important;
 }
 
 .clay-corner-pill.pill-blue {
   background: linear-gradient(180deg, #38BDF8 0%, #0284C7 100%) !important;
   color: #FFFFFF !important;
-  box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.55), 0 3px 0 #075985 !important;
+  box-shadow: 0 2.5px 0 #075985 !important;
 }
 
 .clay-corner-pill.pill-purple {
-  background: linear-gradient(180deg, #A855F7 0%, #6B21A8 100%) !important;
-  color: #FFFBEB !important;
-  box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.45), 0 3px 0 #4C1D95 !important;
+  background: linear-gradient(180deg, #A855F7 0%, #7E22CE 100%) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 2.5px 0 #581C87 !important;
 }
 
 .clay-corner-pill.pill-gold {
-  background: linear-gradient(180deg, #FFF099 0%, #F59E0B 100%) !important;
-  color: #3A2006 !important;
-  box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.75), 0 3px 0 #B45309 !important;
+  background: linear-gradient(180deg, #FFF078 0%, #F59E0B 100%) !important;
+  color: #422006 !important;
+  box-shadow: 0 2.5px 0 #B45309 !important;
 }
 
 .clay-corner-pill.pill-mint {
-  background: linear-gradient(180deg, #6EE7B7 0%, #059669 100%) !important;
+  background: linear-gradient(180deg, #34D399 0%, #059669 100%) !important;
   color: #FFFFFF !important;
-  box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.55), 0 3px 0 #065F46 !important;
+  box-shadow: 0 2.5px 0 #065F46 !important;
 }
 
-/* 카드 중앙 55%+ 면적을 꽉 채우는 투명 누끼 대형 3D 일러스트 (흰색 사각형 박스 완전 제거!) */
+/* 카드 중앙 55~60%를 꽉 채우는 투명 누끼 대형 3D 일러스트 (흰색 사각형 박스 0%!) */
 .clay-illust-hero-slot {
   width: 100% !important;
   background: transparent !important;
@@ -5317,23 +5641,23 @@ html body .hidden {
 
 .clay-hero-illust {
   width: auto !important;
-  max-width: 94% !important;
-  height: 80px !important;
+  max-width: 96% !important;
+  height: 84px !important;
   object-fit: contain !important;
   background: transparent !important;
   border: none !important;
-  filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.22)) !important;
+  filter: drop-shadow(0 8px 12px rgba(25, 45, 80, 0.22)) !important;
   transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
 }
 
 @media (min-height: 540px) {
   .clay-hero-illust {
-    height: 124px !important;
+    height: 128px !important;
   }
 }
 
 .pocket-giant-action-card:hover .clay-hero-illust {
-  transform: translateY(-3px) scale(1.05) !important;
+  transform: translateY(-4px) scale(1.06) !important;
 }
 
 .clay-block-stat {
@@ -5345,7 +5669,7 @@ html body .hidden {
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   max-width: 100% !important;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65) !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) !important;
 }
 
 @media (min-height: 540px) {
@@ -5354,23 +5678,23 @@ html body .hidden {
   }
 }
 
-/* -------------------- 하단 4단: 홈 속에 박힌 3D 젤리 푸시 버튼 -------------------- */
+/* -------------------- 4. 비비드 3D 캔디 버블 푸시 버튼 (`#22C55E` / `#0EA5E9` / `#FF5A36` / `#F59E0B`) -------------------- */
 .clay-btn-groove {
   width: 100%;
   padding: 4px !important;
-  background: rgba(0, 0, 0, 0.14) !important;
+  background: rgba(255, 255, 255, 0.48) !important;
   border-radius: 999px !important;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25) !important;
+  box-shadow: inset 0 2px 4px rgba(15, 40, 80, 0.16) !important;
   box-sizing: border-box !important;
 }
 
 .clay-jelly-push {
-  min-height: 32px !important;
-  height: 32px !important;
+  min-height: 33px !important;
+  height: 33px !important;
   padding: 0 12px !important;
   border-radius: 999px !important;
-  border: none !important;
-  font-family: 'TmoneyRoundWind', 'Jua', sans-serif !important;
+  border: 2px solid rgba(255, 255, 255, 0.9) !important;
+  font-family: 'TmoneyRoundWind', 'CookieRun', 'Jua', sans-serif !important;
   font-size: 13px !important;
   font-weight: 900 !important;
   display: inline-flex !important;
@@ -5384,51 +5708,251 @@ html body .hidden {
 
 @media (min-height: 540px) {
   .clay-jelly-push {
-    min-height: 38px !important;
-    height: 38px !important;
+    min-height: 39px !important;
+    height: 39px !important;
     font-size: 14.5px !important;
   }
 }
 
-.clay-jelly-push.push-gold {
-  background: linear-gradient(180deg, #FFE869 0%, #F5A614 100%) !important;
-  color: #3B2004 !important;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65) !important;
-  box-shadow: inset 0 3px 3px rgba(255, 255, 255, 0.8), 0 4px 0 #B87209 !important;
-}
-
-.clay-jelly-push.push-cyan {
-  background: linear-gradient(180deg, #56CCF2 0%, #1D8FE1 100%) !important;
-  color: #FFFFFF !important;
-  text-shadow: 0 1.5px 0 #0D5C9E !important;
-  box-shadow: inset 0 3px 3px rgba(255, 255, 255, 0.65), 0 4px 0 #0F5E9C !important;
-}
-
-.clay-jelly-push.push-coral {
-  background: linear-gradient(180deg, #FF7E82 0%, #EE4256 100%) !important;
-  color: #FFFFFF !important;
-  text-shadow: 0 1.5px 0 #9E1B2B !important;
-  box-shadow: inset 0 3px 3px rgba(255, 255, 255, 0.65), 0 4px 0 #A81D31 !important;
-}
-
+/* 비비드 그린 3D 버블 버튼 (`#22C55E` — 월세 수금) */
+.clay-jelly-push.push-green,
 .clay-jelly-push.push-mint {
-  background: linear-gradient(180deg, #6CE8B5 0%, #1AB881 100%) !important;
-  color: #043927 !important;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) !important;
-  box-shadow: inset 0 3px 3px rgba(255, 255, 255, 0.75), 0 4px 0 #0E7C56 !important;
+  background: linear-gradient(180deg, #4ADE80 0%, #22C55E 100%) !important;
+  color: #FFFFFF !important;
+  text-shadow: 0 1.5px 0 #15803D !important;
+  box-shadow: inset 0 3px 3px rgba(255, 255, 255, 0.65), 0 4px 0 #15803D !important;
+}
+
+/* 비비드 블루 3D 버블 버튼 (`#0EA5E9` — 증축 착공) */
+.clay-jelly-push.push-cyan {
+  background: linear-gradient(180deg, #38BDF8 0%, #0EA5E9 100%) !important;
+  color: #FFFFFF !important;
+  text-shadow: 0 1.5px 0 #0369A1 !important;
+  box-shadow: inset 0 3px 3px rgba(255, 255, 255, 0.65), 0 4px 0 #0369A1 !important;
+}
+
+/* 비비드 코럴오렌지 3D 버블 버튼 (`#FF5A36` — 쇼룸 결투) */
+.clay-jelly-push.push-coral {
+  background: linear-gradient(180deg, #FF7B5C 0%, #FF5A36 100%) !important;
+  color: #FFFFFF !important;
+  text-shadow: 0 1.5px 0 #C23315 !important;
+  box-shadow: inset 0 3px 3px rgba(255, 255, 255, 0.65), 0 4px 0 #C23315 !important;
+}
+
+/* 비비드 골드 3D 버블 버튼 (`#F59E0B` — 관리소장 / 내 방) */
+.clay-jelly-push.push-gold {
+  background: linear-gradient(180deg, #FDE047 0%, #F59E0B 100%) !important;
+  color: #422006 !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+  box-shadow: inset 0 3px 3px rgba(255, 255, 255, 0.8), 0 4px 0 #B45309 !important;
 }
 
 .clay-jelly-push:active:not(:disabled) {
   transform: translateY(3px) !important;
-  box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.5), 0 1px 0 rgba(0, 0, 0, 0.3) !important;
+  box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.5), 0 1px 0 rgba(0, 0, 0, 0.25) !important;
 }
 
 .clay-jelly-push:disabled {
-  opacity: 0.55 !important;
+  opacity: 0.52 !important;
   cursor: not-allowed !important;
 }
 
-/* -------------------- 5대 핵심 모달 모바일(`800x360`) & PC(`1280x720`) 반응형 피팅 -------------------- */
+/* -------------------- 5. 투시 망원경 뷰(`🔭`) & 3D 턴테이블 캡슐 바 닌텐도화 -------------------- */
+#focus-clean-capsule:not(.hidden) {
+  background: #FFFFFF !important;
+  border: 3.5px solid #4DC4F0 !important;
+  box-shadow: 0 5px 0 #289FD1, 0 10px 20px rgba(40, 159, 209, 0.3) !important;
+}
+
+.focus-cap-room-tag {
+  color: #0369A1 !important;
+  font-weight: 900 !important;
+}
+
+.focus-cap-action-btn {
+  background: #F0F9FF !important;
+  border: 2px solid #7DD3FC !important;
+  color: #0C4A6E !important;
+}
+
+.focus-cap-action-btn.primary {
+  background: linear-gradient(180deg, #FFF078 0%, #FFD633 100%) !important;
+  border-color: #F59E0B !important;
+  color: #422006 !important;
+}
+
+.focus-cap-action-btn.danger-soft {
+  background: linear-gradient(180deg, #FF75A0 0%, #F43F5E 100%) !important;
+  border-color: #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+.telescope-hud-tag {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border: 2.5px solid #4DC4F0 !important;
+  box-shadow: 0 4px 0 #289FD1 !important;
+  color: #0369A1 !important;
+  font-weight: 900 !important;
+}
+
+.room-switch-chip,
+.focus-mini-icon-pill {
+  background: #FFFFFF !important;
+  border: 2px solid #4DC4F0 !important;
+  box-shadow: 0 2.5px 0 #289FD1 !important;
+  color: #1E293B !important;
+}
+
+.tt-nav-arrow {
+  background: #FFFFFF !important;
+  border: 3.5px solid #FF80BF !important;
+  box-shadow: 0 5px 0 #DB4D94, 0 10px 20px rgba(219, 77, 148, 0.25) !important;
+  color: #E11D48 !important;
+}
+
+.mg-pill-btn {
+  border: 2.5px solid #7DD3FC !important;
+  background: #FFFFFF !important;
+  color: #0C4A6E !important;
+  box-shadow: 0 3px 0 #38BDF8 !important;
+}
+
+.mg-pill-btn.all-in {
+  background: linear-gradient(180deg, #FFF078 0%, #FFD633 100%) !important;
+  border-color: #FFFFFF !important;
+  color: #422006 !important;
+  box-shadow: 0 3px 0 #D9A700 !important;
+}
+
+.drive-speedo-pill {
+  background: #FFFFFF !important;
+  border: 2.5px solid #4DC4F0 !important;
+  color: #1E293B !important;
+}
+
+#drive-hud-kmh-val {
+  color: #E11D48 !important;
+}
+
+#drive-live-speedometer span {
+  color: #1E293B !important;
+}
+
+/* -------------------- 6. [최우선 수정 1] 3D 월드 고채도·고대비 바운싱 화살표 핀(`▼`, `36px x 42px` 이내) -------------------- */
+.lod-world-bubble,
+.speech-cloud {
+  background: #FFFFFF !important;
+  border: 2.5px solid #4DC4F0 !important;
+  box-shadow: 0 4px 0 #289FD1, 0 6px 14px rgba(30, 75, 120, 0.22) !important;
+  color: #1E293B !important;
+}
+
+.world-vivid-arrow-pin {
+  position: fixed !important;
+  left: 0 !important;
+  top: 0 !important;
+  width: 34px !important;
+  height: 40px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  display: inline-flex;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  z-index: 25 !important;
+  will-change: transform, opacity !important;
+  transform: translate3d(var(--tx, -9999px), var(--ty, -9999px), 0) translate(-50%, -100%) !important;
+}
+
+.vivid-pin-bouncer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  animation: vividArrowPinBounce 0.95s ease-in-out infinite alternate;
+}
+
+/* 작은 원형 고대비 심플 아이콘 배지 (`🪴` / `🏎️` / `🛋️` / `👑` / `🌅`) */
+.vivid-pin-mini-ico {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 2.5px solid #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11.5px;
+  line-height: 1;
+  margin-bottom: -4px;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.42);
+}
+
+.world-vivid-arrow-pin.pin-coral .vivid-pin-mini-ico {
+  background: #FF2A5F;
+}
+
+.world-vivid-arrow-pin.pin-gold .vivid-pin-mini-ico {
+  background: #FFD000;
+}
+
+.world-vivid-arrow-pin.pin-emerald .vivid-pin-mini-ico {
+  background: #00E676;
+}
+
+.vivid-pin-arrow-img {
+  width: 28px !important;
+  height: 26px !important;
+  object-fit: contain !important;
+  pointer-events: none !important;
+  filter:
+    drop-shadow(0 0 1.5px #FFFFFF)
+    drop-shadow(0 1.5px 0 #FFFFFF)
+    drop-shadow(0 6px 8px rgba(0, 0, 0, 0.48)) !important;
+}
+
+/* 평소에는 글자 0%! 마우스 호버 또는 카메라 근접(`.near-cam`) 시에만 2~4글자 고대비 캡슐 팝업! */
+.vivid-pin-hover-tag {
+  position: absolute;
+  bottom: 44px;
+  left: 50%;
+  transform: translateX(-50%) translateY(4px) scale(0.88);
+  opacity: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #1E293B;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.42);
+  font-family: 'TmoneyRoundWind', 'Pretendard', sans-serif;
+  font-size: 11px;
+  font-weight: 900;
+  color: #FFD000;
+  white-space: nowrap;
+  pointer-events: none;
+  transition: opacity 0.14s ease, transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.world-vivid-arrow-pin:hover .vivid-pin-hover-tag,
+.world-vivid-arrow-pin.near-cam .vivid-pin-hover-tag {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0) scale(1);
+}
+
+@keyframes vividArrowPinBounce {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    transform: translateY(-7px) scale(1.06);
+  }
+}
+
+/* -------------------- 7. 5대 핵심 모달 모바일(`800x360`) & PC(`1280x720`) 반응형 피팅 -------------------- */
 .pocket-dashboard-board,
 .flagship-boutique-board {
   width: min(calc(var(--vw-unit, 1vw) * 94), 760px) !important;
@@ -5441,29 +5965,6 @@ html body .hidden {
 
 .flagship-boutique-board {
   height: calc(var(--vh-unit, 1vh) * 84) !important;
-}
-
-/* 가구 백화점 풀 모달 백드롭 재정의 (기존 우측 300px 슬림 드로어 규칙 완전 오버라이드) */
-#flagship-shop-drawer:not(.hidden) {
-  position: fixed !important;
-  inset: 0 !important;
-  top: 0 !important;
-  right: 0 !important;
-  left: 0 !important;
-  bottom: 0 !important;
-  width: 100% !important;
-  max-width: none !important;
-  height: 100% !important;
-  max-height: none !important;
-  padding: 10px !important;
-  border: none !important;
-  border-radius: 0 !important;
-  background: rgba(24, 15, 8, 0.48) !important;
-  backdrop-filter: blur(5px) !important;
-  box-shadow: none !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
 }
 
 #notebook-modal .cozy-planner-shell,
@@ -5504,7 +6005,6 @@ html body .hidden {
   }
 }
 
-/* 가구 백화점 & 내 방 꾸미기 상품 파스텔 클레이 블록 그리드 */
 .flagship-clay-grid {
   display: grid !important;
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
@@ -5532,7 +6032,7 @@ html body .hidden {
   max-width: 90% !important;
   height: 66px !important;
   object-fit: contain !important;
-  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.22)) !important;
+  filter: drop-shadow(0 6px 8px rgba(25, 45, 80, 0.2)) !important;
 }
 
 @media (min-height: 540px) {
@@ -5541,7 +6041,6 @@ html body .hidden {
   }
 }
 
-/* 우측 슬림 호실/내방/상가 관리 드로어 내부 우드 & 클레이 정비 */
 #room-focus-panel,
 #shop-focus-panel {
   top: 46px !important;
@@ -5551,16 +6050,15 @@ html body .hidden {
   height: calc(var(--vh-unit, 1vh) * 76) !important;
   max-height: calc(var(--vh-unit, 1vh) * 76) !important;
   padding: 8px 10px 10px 10px !important;
-  border-radius: 24px !important;
+  border-radius: 26px !important;
   overflow: hidden !important;
 }
 
-/* 1:1 쇼룸 재력 결투 대면 일러스트 & 실시간 황금 가격표 팝업 애니메이션 */
 .duel-versus-illust {
   width: 68px !important;
   height: 68px !important;
   object-fit: contain !important;
-  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.26)) !important;
+  filter: drop-shadow(0 6px 10px rgba(25, 45, 80, 0.22)) !important;
 }
 
 @media (min-height: 540px) {
@@ -5576,23 +6074,23 @@ html body .hidden {
   top: 0;
   padding: 4px 12px;
   border-radius: 999px;
-  background: linear-gradient(180deg, #FFF3A1 0%, #F59E0B 100%);
-  border: 2.5px solid #5C3408;
-  box-shadow: 0 4px 0 #7C4303, 0 8px 16px rgba(0, 0, 0, 0.35);
+  background: linear-gradient(180deg, #FFF078 0%, #FFD633 100%);
+  border: 3px solid #FFFFFF;
+  box-shadow: 0 4px 0 #D9A700, 0 8px 16px rgba(0, 0, 0, 0.3);
   font-family: 'Fredoka', 'TmoneyRoundWind', sans-serif;
   font-size: 14px;
   font-weight: 900;
-  color: #3A1F04;
+  color: #422006;
   white-space: nowrap;
   pointer-events: none;
   animation: duelPricePopAnim 1.15s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .duel-price-pop-tag.opp-tag {
-  background: linear-gradient(180deg, #F3E8FF 0%, #C084FC 100%);
-  border-color: #4C1D95;
-  box-shadow: 0 4px 0 #4C1D95, 0 8px 16px rgba(0, 0, 0, 0.32);
-  color: #2E1065;
+  background: linear-gradient(180deg, #FFB3D9 0%, #FF80BF 100%);
+  border-color: #FFFFFF;
+  box-shadow: 0 4px 0 #DB4D94, 0 8px 16px rgba(0, 0, 0, 0.28);
+  color: #500724;
 }
 
 @keyframes duelPricePopAnim {
@@ -5620,7 +6118,6 @@ html body .hidden {
   max-height: calc(var(--vh-unit, 1vh) * 84) !important;
 }
 
-/* -------------------- [PART 1.3] 3D 말풍선 & 월드 배지 100% GPU translate3d 가속 (미세 스터터링 박멸!) -------------------- */
 .lod-world-bubble,
 .speech-cloud,
 .world-3d-img-badge,
@@ -5650,6 +6147,48 @@ html body .hidden {
   body:has(#shop-focus-panel:not(.hidden)) #focus-clean-capsule {
     left: 28% !important;
     max-width: calc(var(--vw-unit, 1vw) * 52) !important;
+  }
+}
+
+@media (max-height: 440px) {
+  .hud-top-flexbox-bar {
+    padding: 4px 10px !important;
+  }
+  .goal-navigator-capsule {
+    height: 31px !important;
+    min-height: 31px !important;
+    padding: 2px 9px 2px 5px !important;
+    box-shadow: 0 3px 0 #E11D84, 0 5px 10px rgba(236, 72, 153, 0.18) !important;
+  }
+  .goal-nav-prefix {
+    display: none !important;
+  }
+  .goal-nav-label {
+    font-size: 12px !important;
+    max-width: 150px !important;
+  }
+  #pocket-planner-popover .pocket-dashboard-board {
+    padding: 7px 11px 9px 11px !important;
+    max-height: calc(var(--vh-unit, 1vh) * 90) !important;
+    gap: 5px !important;
+  }
+  #pocket-planner-popover .wood-header-bar {
+    padding: 1px 2px 3px 2px !important;
+  }
+  #pocket-planner-popover .clay-cream-tray {
+    padding: 7px 9px !important;
+  }
+  #pocket-planner-popover .pocket-giant-action-card {
+    padding: 7px 9px !important;
+    gap: 3px !important;
+  }
+  #pocket-planner-popover .clay-hero-illust {
+    height: 62px !important;
+  }
+  #pocket-planner-popover .clay-jelly-push {
+    min-height: 29px !important;
+    height: 29px !important;
+    font-size: 12px !important;
   }
 }
 

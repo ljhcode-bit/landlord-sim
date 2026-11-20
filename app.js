@@ -7055,22 +7055,22 @@ function createPenthouseRibbonPlateTexture(totalMan = 50) {
   cv.height = 88;
   const ctx = cv.getContext('2d');
   const grad = ctx.createLinearGradient(0, 0, 512, 88);
-  grad.addColorStop(0, '#3B0764');
-  grad.addColorStop(0.5, '#581C87');
-  grad.addColorStop(1, '#3B0764');
+  grad.addColorStop(0, '#FF2A5F');
+  grad.addColorStop(0.5, '#F43F5E');
+  grad.addColorStop(1, '#EC4899');
   ctx.fillStyle = grad;
   ctx.beginPath();
   ctx.roundRect(6, 6, 500, 76, 38);
   ctx.fill();
-  ctx.lineWidth = 7;
-  ctx.strokeStyle = '#FFD700';
+  ctx.lineWidth = 8;
+  ctx.strokeStyle = '#FFFFFF';
   ctx.stroke();
 
   ctx.font = '900 32px TmoneyRoundWind, Jua, sans-serif';
-  ctx.fillStyle = '#FFE885';
+  ctx.fillStyle = '#FFFFFF';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(`👑 내 방 (펜트하우스) · ${formatWonBig(totalMan)}`, 256, 46);
+  ctx.fillText(`👑 내 방 · ${formatWonBig(totalMan)}`, 256, 46);
 
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -14399,7 +14399,7 @@ function buildInlineRoomFurnitureSectionHTML(rm) {
       : tNum === 3
         ? 'clay-block-purple'
         : tNum === 2
-          ? 'clay-block-blue'
+          ? 'clay-block-pink'
           : 'clay-block-mint';
 
     let actionBtn = '';
@@ -14408,11 +14408,11 @@ function buildInlineRoomFurnitureSectionHTML(rm) {
     } else if (isPenthouse && isOwnedInRoom) {
       actionBtn = isEquipped
         ? `<span class="clay-corner-pill pill-mint">👑 진열됨</span>`
-        : `<button type="button" data-rf-equip="${item.id}" class="clay-jelly-push push-mint !min-h-[26px] !h-[26px] !px-2.5 !text-[11.5px]">전면배치</button>`;
+        : `<button type="button" data-rf-equip="${item.id}" class="clay-jelly-push push-green !min-h-[26px] !h-[26px] !px-2.5 !text-[11.5px]">전면배치</button>`;
     } else if (!isPenthouse && isEquipped) {
       actionBtn = `<span class="clay-corner-pill pill-mint">✔ 배치됨</span>`;
     } else if (isOwnedInRoom) {
-      actionBtn = `<button type="button" data-rf-equip="${item.id}" class="clay-jelly-push push-mint !min-h-[26px] !h-[26px] !px-2.5 !text-[11.5px]">배치</button>`;
+      actionBtn = `<button type="button" data-rf-equip="${item.id}" class="clay-jelly-push push-green !min-h-[26px] !h-[26px] !px-2.5 !text-[11.5px]">배치</button>`;
     } else if (invCount > 0) {
       actionBtn = `<button type="button" data-rf-inv-equip="${item.id}" class="clay-jelly-push push-cyan !min-h-[26px] !h-[26px] !px-2.5 !text-[11.5px]">창고(${invCount})</button>`;
     } else if (!rankUnlocked) {
@@ -14427,14 +14427,14 @@ function buildInlineRoomFurnitureSectionHTML(rm) {
 
     return `
       <div class="${blockCls} !p-2 flex items-center justify-between gap-2">
-        <div class="visual-showcase-stage !bg-white/70 !border-none">
+        <div class="visual-showcase-stage !bg-white/80 !border-none">
           ${getOrRender3DCatalogPreview(item.id, 96, 68)}
         </div>
         <div class="min-w-0 flex-1">
-          <div class="font-title text-[12px] text-[#221409] truncate">${item.name}</div>
+          <div class="font-title text-[12px] text-[#1E293B] truncate">${item.name}</div>
           <div class="flex items-center gap-1 mt-0.5">
             <span class="clay-corner-pill pill-gold !py-0 !px-1.5 !text-[10px]">${tInfo.short}</span>
-            <span class="font-num text-[11px] text-[#065F46]">${statLine}</span>
+            <span class="font-num text-[11px] text-[#047857]">${statLine}</span>
           </div>
         </div>
         <div class="shrink-0">${actionBtn}</div>
@@ -14445,7 +14445,7 @@ function buildInlineRoomFurnitureSectionHTML(rm) {
   return `
     <div class="space-y-2 pt-1">
       <div class="flex items-center justify-between gap-1.5">
-        <span class="font-title text-[13px] text-[#3A2510]">${isPenthouse ? '👑 내 방 명품 컬렉션' : '🛋️ 가구 세팅'}</span>
+        <span class="font-title text-[13px] text-[#1E293B]">${isPenthouse ? '👑 내 방 명품 컬렉션' : '🛋️ 가구 세팅'}</span>
         <button type="button" id="btn-rf-goto-flagship" class="clay-corner-pill pill-pink cursor-pointer">🛋️ 백화점 ➔</button>
       </div>
       <div class="grid grid-cols-4 gap-1">${catTabsHtml}</div>
@@ -15461,10 +15461,10 @@ function renderNotebookUnifiedBody() {
           ${(window.ANIMAL_CHARACTER_ROSTER || []).map((ch) => {
             const isPicked = ch.id === curHeroId;
             return `
-              <button type="button" data-pick-arttoy="${ch.id}" class="rounded-2xl p-2 border-2 text-center transition-transform active:scale-95 flex flex-col items-center gap-1 ${isPicked ? 'bg-[#FFFBEB] border-[#F59E0B] shadow-md' : 'bg-[#FFFDF7] border-[#E8CCB0]'}">
+              <button type="button" data-pick-arttoy="${ch.id}" class="rounded-2xl p-2 border-2 text-center transition-transform active:scale-95 flex flex-col items-center gap-1 ${isPicked ? 'bg-[#FFFBEB] border-[#F43F5E] shadow-md' : 'bg-[#FFFFFF] border-[#BAE6FD]'}">
                 ${createHouseholdAvatarSVG(ch.id, 52)}
-                <div class="font-title text-[14px] text-[#1E1B18] leading-tight line-clamp-1">${ch.name}</div>
-                <span class="px-2 py-0.5 rounded-full font-extrabold text-[12px] bg-[#FEF3C7] text-[#B45309] line-clamp-1">${ch.title}</span>
+                <div class="font-title text-[14px] text-[#1E293B] leading-tight line-clamp-1">${ch.name}</div>
+                <span class="px-2 py-0.5 rounded-full font-extrabold text-[12px] bg-[#FCE7F3] text-[#BE185D] line-clamp-1">${ch.title}</span>
               </button>
             `;
           }).join('')}
@@ -15505,52 +15505,52 @@ function renderNotebookUnifiedBody() {
 
     dom.notebookBody.innerHTML = `
       <div class="grid grid-cols-2 gap-3 items-stretch">
-        <!-- 좌측: 🟢 민트 클레이 블록 (3D 거북 소장 대형 투명 누끼 + 직급·사기·자동화) -->
+        <!-- 좌측: 🍏 애플 민트 쿠션 (3D 거북 소장 대형 투명 누끼 + 직급·사기·성과급) -->
         <div class="clay-block-mint !p-3 flex flex-col justify-between gap-2 text-center">
           <div class="flex items-center justify-between gap-1">
             <span class="clay-corner-pill pill-mint">Lv.${curDef.level}/20</span>
             <span class="clay-corner-pill ${mgr.onStrike ? 'pill-pink' : curDef.autoCollect ? 'pill-gold' : 'pill-blue'}">${mgr.onStrike ? '💢 태업중' : curDef.autoCollect ? '⚡ 자동수금 ON' : `사기 ${moralePct}%`}</span>
           </div>
           <div class="flex items-center justify-center py-0.5">
-            <img src="${tortoiseUrl}" alt="관리소장" class="h-[74px] sm:h-[96px] w-auto object-contain drop-shadow-[0_8px_10px_rgba(0,0,0,0.22)]" />
+            <img src="${tortoiseUrl}" alt="관리소장" class="h-[74px] sm:h-[96px] w-auto object-contain drop-shadow-[0_8px_10px_rgba(14,165,233,0.22)]" />
           </div>
           <div>
             <div class="clay-block-title !text-[15px] justify-center">${curDef.roleTitle}</div>
-            <div class="text-[12px] font-extrabold text-[#065F46] mt-0.5">주기 급여 -${curDef.salary}만 · Lv.5 자동수금</div>
+            <div class="text-[12px] font-extrabold text-[#042F2E] mt-0.5">주기 급여 -${curDef.salary}만 · Lv.5 자동수금</div>
           </div>
           <div class="clay-btn-groove">
-            <button type="button" id="btn-give-mgr-bonus" ${!canAffordBonus ? 'disabled' : ''} class="clay-jelly-push push-mint w-full">
+            <button type="button" id="btn-give-mgr-bonus" ${!canAffordBonus ? 'disabled' : ''} class="clay-jelly-push push-gold w-full">
               <span>🎁 성과급 지급 (${formatWonBig(bonusCost)})</span>
             </button>
           </div>
         </div>
 
-        <!-- 우측: 🟡 옐로우 클레이 블록 (호실당 월세 상한선 전/후 비교 + 월급 인상하기) -->
+        <!-- 우측: 🍋 레몬 옐로우 쿠션 (호실당 월세 상한선 전/후 비교 + 월급 인상하기) -->
         <div class="clay-block-yellow !p-3 flex flex-col justify-between gap-2 text-center">
           <div class="flex items-center justify-between gap-1">
             <span class="clay-block-title !text-[14px]">📈 호실당 월세 한도</span>
             <img src="${clipboardUrl}" alt="" class="w-8 h-8 object-contain drop-shadow" />
           </div>
 
-          <div class="rounded-2xl bg-white/60 px-2.5 py-2.5 flex items-center justify-center gap-2 shadow-inner">
+          <div class="rounded-2xl bg-white/80 px-2.5 py-2.5 flex items-center justify-center gap-2 shadow-inner border-2 border-white">
             <div>
-              <div class="text-[11px] font-extrabold text-[#78350F]">현재 한도</div>
-              <div class="font-num text-[17px] sm:text-[19px] text-[#3B2004]">${formatWonBig(curDef.rentCap)}</div>
+              <div class="text-[11px] font-extrabold text-[#64748B]">현재 한도</div>
+              <div class="font-num text-[17px] sm:text-[19px] text-[#1E293B]">${formatWonBig(curDef.rentCap)}</div>
             </div>
-            <span class="font-title text-[18px] text-[#D97706]">➔</span>
+            <span class="font-title text-[18px] text-[#E11D48]">➔</span>
             <div>
-              <div class="text-[11px] font-extrabold text-[#047857]">${nextDef ? `Lv.${nextDef.level} 인상 시` : '최고 직급'}</div>
-              <div class="font-num text-[18px] sm:text-[21px] text-[#047857]">${nextDef ? formatWonBig(nextDef.rentCap) : 'MAX'}</div>
+              <div class="text-[11px] font-extrabold text-[#059669]">${nextDef ? `Lv.${nextDef.level} 인상 시` : '최고 직급'}</div>
+              <div class="font-num text-[18px] sm:text-[21px] text-[#059669]">${nextDef ? formatWonBig(nextDef.rentCap) : 'MAX'}</div>
             </div>
           </div>
 
-          <div class="text-[12px] font-extrabold text-[#78350F]">
+          <div class="text-[12px] font-extrabold text-[#422006]">
             ${nextDef ? `인상 시 호실당 +${formatWonBig(nextDef.rentCap - curDef.rentCap)} 상향!` : '전 호실 최고 월세 한도 개방 완료!'}
           </div>
 
           <div class="clay-btn-groove">
             ${nextDef ? `
-              <button type="button" id="btn-raise-mgr-salary" ${!canAffordRaise ? 'disabled' : ''} class="clay-jelly-push push-gold w-full">
+              <button type="button" id="btn-raise-mgr-salary" ${!canAffordRaise ? 'disabled' : ''} class="clay-jelly-push push-green w-full">
                 <span>💰 월급 인상하기 (${formatWonBig(nextDef.raiseCost)})</span>
               </button>
             ` : `
@@ -15565,9 +15565,9 @@ function renderNotebookUnifiedBody() {
           const unlocked = mgr.salaryLv >= rd.level;
           const isCur = mgr.salaryLv === rd.level;
           return `
-            <div class="${isCur ? 'clay-block-yellow' : unlocked ? 'clay-block-mint' : 'clay-block-blue opacity-75'} !p-2 flex items-center justify-between gap-1">
-              <span class="font-title text-[11.5px] text-[#2B1B12] truncate">Lv.${rd.level}</span>
-              <span class="font-num text-[12px] text-[#065F46] shrink-0">${formatWonBig(rd.rentCap)}</span>
+            <div class="${isCur ? 'clay-block-yellow' : unlocked ? 'clay-block-mint' : 'clay-block-pink opacity-85'} !p-2 flex items-center justify-between gap-1">
+              <span class="font-title text-[11.5px] text-[#1E293B] truncate">Lv.${rd.level}</span>
+              <span class="font-num text-[12px] text-[#047857] shrink-0">${formatWonBig(rd.rentCap)}</span>
             </div>
           `;
         }).join('')}
@@ -18455,7 +18455,7 @@ function renderForbesModal() {
         : rk.isArchRival
           ? 'clay-block-purple'
           : rk.liveRank <= 20
-            ? 'clay-block-blue'
+            ? 'clay-block-pink'
             : 'clay-block-mint';
       const rankPillCls = rk.liveRank === 1
         ? 'clay-corner-pill pill-gold'
@@ -18472,18 +18472,18 @@ function renderForbesModal() {
             <span class="${rankPillCls} shrink-0">
               ${rk.liveRank}위
             </span>
-            <div class="w-9 h-9 rounded-xl bg-white/65 flex items-center justify-center shrink-0 overflow-hidden">
+            <div class="w-9 h-9 rounded-xl bg-white/80 flex items-center justify-center shrink-0 overflow-hidden border border-white">
               ${createHouseholdAvatarSVG(rk.avatarRole || 'manager', 34)}
             </div>
             <div class="min-w-0 flex-1 flex items-center justify-between gap-2">
-              <span class="font-title text-[13.5px] text-[#22150A] truncate">${rk.name}</span>
-              <span class="font-num text-[14px] text-[#6B3706] shrink-0">${rk.netWorth.toLocaleString()}점</span>
+              <span class="font-title text-[13.5px] text-[#1E293B] truncate">${rk.name}</span>
+              <span class="font-num text-[14px] text-[#E11D48] shrink-0">${rk.netWorth.toLocaleString()}점</span>
             </div>
           </div>
           <div class="shrink-0">
             ${!rk.isMe ? `
               <div class="clay-btn-groove !w-auto">
-                <button type="button" data-forbes-duel-id="${rk.id}" class="clay-jelly-push ${isNextTarget ? 'push-coral' : 'push-gold'} !min-h-[28px] !h-[28px] !px-3 !text-[12px]">
+                <button type="button" data-forbes-duel-id="${rk.id}" class="clay-jelly-push ${isNextTarget ? 'push-coral' : 'push-cyan'} !min-h-[28px] !h-[28px] !px-3 !text-[12px]">
                   <span>⚔️ 결투</span>
                 </button>
               </div>
@@ -19937,23 +19937,32 @@ function executeCurrentGoalNavigation() {
 function ensureGoalArrowAndBadgesCreated() {
   if (!bigUiGuideState.arrowGroup3D && scene) {
     const grp = new THREE.Group();
-    const goldMat = MAT.pureGold24k || new THREE.MeshStandardMaterial({
-      color: 0xFFD700,
-      emissive: 0xF59E0B,
-      emissiveIntensity: 0.45,
-      roughness: 0.22,
-      metalness: 0.65
+    const coralPinMat = new THREE.MeshStandardMaterial({
+      color: 0xFF2A5F,
+      emissive: 0xE11D48,
+      emissiveIntensity: 0.36,
+      roughness: 0.24,
+      metalness: 0.08
     });
-    const cone = new THREE.Mesh(new THREE.ConeGeometry(1.05, 1.85, 20), goldMat);
+    const whiteTrimMat = new THREE.MeshStandardMaterial({
+      color: 0xFFFFFF,
+      roughness: 0.22,
+      metalness: 0.04
+    });
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(1.02, 1.82, 24), coralPinMat);
     cone.rotation.x = Math.PI;
     cone.position.y = 0.95;
 
-    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 1.55, 16), goldMat);
+    const collar = new THREE.Mesh(new THREE.TorusGeometry(0.88, 0.14, 12, 24), whiteTrimMat);
+    collar.rotation.x = Math.PI * 0.5;
+    collar.position.y = 1.78;
+
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.36, 1.48, 18), coralPinMat);
     shaft.position.y = 2.45;
 
     const ring = new THREE.Mesh(
-      new THREE.RingGeometry(1.15, 1.68, 32),
-      new THREE.MeshBasicMaterial({ color: 0xFFD700, transparent: true, opacity: 0.85, side: THREE.DoubleSide })
+      new THREE.RingGeometry(1.15, 1.65, 32),
+      new THREE.MeshBasicMaterial({ color: 0x00E676, transparent: true, opacity: 0.88, side: THREE.DoubleSide })
     );
     ring.rotation.x = -Math.PI * 0.5;
     ring.position.y = -1.65;
@@ -19963,7 +19972,7 @@ function ensureGoalArrowAndBadgesCreated() {
     hit.userData = { kind: 'goalArrow3D' };
     pickableMeshes.push(hit);
 
-    grp.add(cone, shaft, ring, hit);
+    grp.add(cone, collar, shaft, ring, hit);
     grp.visible = false;
     scene.add(grp);
 
@@ -19987,51 +19996,73 @@ function ensureGoalArrowAndBadgesCreated() {
     bigUiGuideState.arrowLabelEl = btn;
   }
 
-  // 3D 월드 플로팅 입체 한글 조각 배지 3종 (`드라이브`, `가구 백화점`, `관리소장`) 생성
+  // [PART 1 전면 개편] 거대한 글자 명판 100% 영구 삭제 -> 『눈에 확 띄는 고채도·고대비 3D 바운싱 화살표 핀(▼)』 5종 + 바닥 타깃 링!
   const worldLayer = document.getElementById('world-action-badges-layer');
-  if (worldLayer && !bigUiGuideState.carBadgeEl) {
-    const badgePaths = window.POPMART_ASSET_PATHS?.uiBadges || {};
+  if (worldLayer && !bigUiGuideState.vividWorldPinsCreated) {
+    bigUiGuideState.vividWorldPinsCreated = true;
+    const arrowUrl = window.POPMART_ASSETS?.uiNintendo?.pointerVividArrow
+      || window.POPMART_ASSET_PATHS?.uiNintendo?.pointerVividArrow
+      || './assets/ui_nintendo/pointer_vivid_arrow.png';
 
-    const carBtn = document.createElement('button');
-    carBtn.type = 'button';
-    carBtn.className = 'world-3d-img-badge badge-drive';
-    carBtn.setAttribute('aria-label', '드라이브');
-    carBtn.innerHTML = `<img id="badge-img-world-drive" src="${badgePaths.worldDrive || './assets/ui_badges/badge_world_drive.png'}" alt="드라이브" />`;
-    carBtn.style.display = 'none';
-    carBtn.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      enterDriveMode();
+    const makeVividArrowPin = (pinToneCls, emoji, hoverLabel, onClickFn) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `world-vivid-arrow-pin ${pinToneCls}`;
+      btn.setAttribute('aria-label', hoverLabel);
+      btn.innerHTML = `
+        <span class="vivid-pin-hover-tag">${hoverLabel}</span>
+        <span class="vivid-pin-bouncer">
+          <span class="vivid-pin-mini-ico">${emoji}</span>
+          <img data-ui-nintendo="pointerVividArrow" src="${arrowUrl}" alt="" class="vivid-pin-arrow-img" />
+        </span>
+      `;
+      btn.style.display = 'none';
+      btn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        onClickFn();
+      });
+      worldLayer.appendChild(btn);
+      return btn;
+    };
+
+    bigUiGuideState.mgrPinEl = makeVividArrowPin('pin-emerald', '🪴', '관리소장', () => openNotebookModal('manager'));
+    bigUiGuideState.carPinEl = makeVividArrowPin('pin-coral', '🏎️', '드라이브', () => enterDriveMode());
+    bigUiGuideState.shopPinEl = makeVividArrowPin('pin-gold', '🛋️', '가구점', () => openFurnitureFlagshipDrawer('bed'));
+    bigUiGuideState.penthousePinEl = makeVividArrowPin('pin-coral', '👑', '내 방', () => focusCameraOnMyPenthouse(false));
+    bigUiGuideState.gatePinEl = makeVividArrowPin('pin-emerald', '🌅', '해안 대문', () => {
+      if (state?.harborUnlocked) travelToTownStage(2, true);
+      else rattleLockedHarborGate(true);
     });
+  }
 
-    const mgrBtn = document.createElement('button');
-    mgrBtn.type = 'button';
-    mgrBtn.className = 'world-3d-img-badge badge-manager';
-    mgrBtn.setAttribute('aria-label', '관리소장');
-    mgrBtn.innerHTML = `<img id="badge-img-world-manager" src="${badgePaths.worldManager || './assets/ui_badges/badge_world_manager.png'}" alt="관리소장" />`;
-    mgrBtn.style.display = 'none';
-    mgrBtn.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      openNotebookModal('manager');
+  // 클릭 가능한 5대 핵심 월드 오브젝트 발밑 고대비 3D 타깃 링(Target Ring) 생성
+  if (!bigUiGuideState.targetGroundRings && scene) {
+    const ringGrp = new THREE.Group();
+    ringGrp.name = 'vivid_world_target_rings';
+    scene.add(ringGrp);
+    bigUiGuideState.targetGroundRingGroup = ringGrp;
+
+    const ringDefs = [
+      { key: 'mgr', color: 0x00E676, rIn: 0.95, rOut: 1.32 },
+      { key: 'car', color: 0xFF2A5F, rIn: 1.45, rOut: 1.92 },
+      { key: 'shop', color: 0xFFD000, rIn: 1.55, rOut: 2.05 },
+      { key: 'penthouse', color: 0xFF2A5F, rIn: 1.35, rOut: 1.78 },
+      { key: 'gate', color: 0x00E676, rIn: 1.65, rOut: 2.18 }
+    ];
+    bigUiGuideState.targetGroundRings = ringDefs.map((rd) => {
+      const mat = new THREE.MeshBasicMaterial({
+        color: rd.color,
+        transparent: true,
+        opacity: 0.65,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      });
+      const mesh = new THREE.Mesh(new THREE.RingGeometry(rd.rIn, rd.rOut, 36), mat);
+      mesh.rotation.x = -Math.PI * 0.5;
+      mesh.visible = false;
+      ringGrp.add(mesh);
+      return { key: rd.key, mesh, mat };
     });
-
-    const shopBtn = document.createElement('button');
-    shopBtn.type = 'button';
-    shopBtn.className = 'world-3d-img-badge badge-furniture';
-    shopBtn.setAttribute('aria-label', '가구 백화점');
-    shopBtn.innerHTML = `<img id="badge-img-world-furniture" src="${badgePaths.worldFurniture || './assets/ui_badges/badge_world_furniture.png'}" alt="가구 백화점" />`;
-    shopBtn.style.display = 'none';
-    shopBtn.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      openFurnitureFlagshipDrawer('bed');
-    });
-
-    worldLayer.appendChild(carBtn);
-    worldLayer.appendChild(mgrBtn);
-    worldLayer.appendChild(shopBtn);
-
-    bigUiGuideState.carBadgeEl = carBtn;
-    bigUiGuideState.mgrBadgeEl = mgrBtn;
-    bigUiGuideState.shopBadgeEl = shopBtn;
   }
 }
 
@@ -20121,8 +20152,9 @@ function syncPocketBigCardsUI() {
   if (collectBtnLbl) {
     collectBtnLbl.textContent = '일괄 수금 🪙';
   }
-  if (collectImg && POPMART_ASSETS?.uiIllustrations?.rentChest && collectImg.getAttribute('src') !== POPMART_ASSETS.uiIllustrations.rentChest) {
-    collectImg.setAttribute('src', POPMART_ASSETS.uiIllustrations.rentChest);
+  const piggySrc = POPMART_ASSETS?.uiNintendo?.illustPiggyCoins || POPMART_ASSETS?.uiIllustrations?.rentChest;
+  if (collectImg && piggySrc && collectImg.getAttribute('src') !== piggySrc) {
+    collectImg.setAttribute('src', piggySrc);
   }
 
   const buildSub = document.getElementById('pocket-build-subtext');
@@ -20136,8 +20168,9 @@ function syncPocketBigCardsUI() {
   const expInfo = getNextExpansionTargetInfo();
   const unlockedStep1 = hasAnyPaidFurnitureOrSecondRoom();
 
-  if (buildImg && POPMART_ASSETS?.uiIllustrations?.constructDiorama && buildImg.getAttribute('src') !== POPMART_ASSETS.uiIllustrations.constructDiorama) {
-    buildImg.setAttribute('src', POPMART_ASSETS.uiIllustrations.constructDiorama);
+  const craneSrc = POPMART_ASSETS?.uiNintendo?.illustPastelCrane || POPMART_ASSETS?.uiIllustrations?.constructDiorama;
+  if (buildImg && craneSrc && buildImg.getAttribute('src') !== craneSrc) {
+    buildImg.setAttribute('src', craneSrc);
   }
 
   if (expInfo.mode === 'active_site' && expInfo.site) {
@@ -20176,8 +20209,9 @@ function syncPocketBigCardsUI() {
   const oppValMan = calcOpponentPenthouseValueMan({ modeTab: 'ranked', liveRank: nextRank });
   const winReady = myPhVal >= oppValMan;
 
-  if (duelImg && POPMART_ASSETS?.uiIllustrations?.duelStage && duelImg.getAttribute('src') !== POPMART_ASSETS.uiIllustrations.duelStage) {
-    duelImg.setAttribute('src', POPMART_ASSETS.uiIllustrations.duelStage);
+  const starStageSrc = POPMART_ASSETS?.uiNintendo?.illustStarStage || POPMART_ASSETS?.uiIllustrations?.duelStage;
+  if (duelImg && starStageSrc && duelImg.getAttribute('src') !== starStageSrc) {
+    duelImg.setAttribute('src', starStageSrc);
   }
   if (duelTitleEl) {
     duelTitleEl.textContent = `🦹‍♂️ 쇼룸 결투`;
@@ -20186,7 +20220,7 @@ function syncPocketBigCardsUI() {
     duelBadgeEl.textContent = winReady ? '승리예상🔥' : `${nextRank}위전`;
   }
   if (duelSubEl) {
-    duelSubEl.textContent = `내 방 ${formatWonBig(myPhVal).replace(' 원', '')} VS ${nextRank}위 ${formatWonBig(oppValMan).replace(' 원', '')}`;
+    duelSubEl.textContent = `${formatWonBig(myPhVal).replace(' 원', '')} VS ${nextRank}위 ${formatWonBig(oppValMan).replace(' 원', '')}`;
   }
   if (duelBtnLbl) {
     duelBtnLbl.textContent = winReady ? '⚔️ 결투 승리하기!' : '⚔️ 결투 입장';
@@ -20622,33 +20656,64 @@ function tickGoalNavigatorAndWorldActionBadges(dt) {
     }
   }
 
-  // 3D 입체 한글 조각 월드 배지 3종 (`드라이브`, `가구 백화점`, `관리소장`) 투영
+  // [PART 1 전면 개편] 5대 클릭 가능 월드 요소 위 『고채도·고대비 3D 바운싱 화살표 핀(▼)』 + 발밑 타깃 링 투영 (평소 글자 0%!)
   const landmarkBoxes = [];
-  const showWorldImgBadges = inCleanTownStage1 && !anyModalOpen;
-  const place3DImgBadge = (el, wx, wy, wz, hw = 44, hh = 20, hideInTier3 = false) => {
-    if (!el) return;
-    if (!showWorldImgBadges || (hideInTier3 && getWorldSpeechLodTier(wx, wy, wz) === 3)) {
-      el.style.display = 'none';
-      return;
-    }
-    const pt = projectWorldToScreen(wx, wy, wz);
-    if (!pt.visible || pt.x < 44 || pt.x > vw - 44 || pt.y < 62 || pt.y > vh - 46) {
-      el.style.display = 'none';
-      return;
-    }
-    el.style.display = 'inline-flex';
-    el.style.setProperty('--tx', `${pt.x}px`);
-    el.style.setProperty('--ty', `${pt.y}px`);
-    landmarkBoxes.push({ cx: pt.x, cy: pt.y, hw, hh });
-  };
+  const showWorldPins = inCleanTownStage1 && !anyModalOpen;
+  const isNearCamZoom = (camera?.zoom || 0.78) >= 1.85;
 
   const mainLot = state?.lots?.find((l) => l.lotId === 'lot_main') || { x: -4.2, z: -6.4 };
   const D = GAME_BALANCE.buildingDepth || 8.0;
   const carPos = driveState.carRootGroup ? driveState.carRootGroup.position : VIP_PARKING_POS;
+  const phTpl = window.MY_PENTHOUSE_TEMPLATE || { ly: 22.35, rh: 5.35 };
 
-  place3DImgBadge(bigUiGuideState.carBadgeEl, carPos.x, 3.05, carPos.z, 54, 28, false);
-  place3DImgBadge(bigUiGuideState.mgrBadgeEl, mainLot.x + 2.55, 3.85, mainLot.z + D * 0.5 + 1.1, 60, 26, true);
-  place3DImgBadge(bigUiGuideState.shopBadgeEl, 25.2, goal?.step === 1 ? 6.1 : 7.3, -3.5, 68, 30, false);
+  // 1) 발밑 3D 타깃 링 위치 & 맥동 업데이트
+  if (Array.isArray(bigUiGuideState.targetGroundRings)) {
+    const ringCoords = {
+      mgr: [mainLot.x + 2.55, 0.30, mainLot.z + D * 0.5 + 1.1],
+      car: [carPos.x, 0.28, carPos.z],
+      shop: [25.2, 0.30, 0.85],
+      penthouse: [mainLot.x, phTpl.ly + 0.14, mainLot.z + 2.15],
+      gate: [39.2, 0.32, 17.8]
+    };
+    bigUiGuideState.targetGroundRings.forEach((rg, idx) => {
+      const pos = ringCoords[rg.key];
+      rg.mesh.visible = showWorldPins && !!pos;
+      if (rg.mesh.visible && pos) {
+        rg.mesh.position.set(pos[0], pos[1], pos[2]);
+        const pulse = 0.94 + Math.sin(bigUiGuideState.elapsed * 4.2 + idx * 1.15) * 0.11;
+        rg.mesh.scale.setScalar(pulse);
+        rg.mat.opacity = 0.52 + Math.sin(bigUiGuideState.elapsed * 4.2 + idx * 1.15) * 0.22;
+      }
+    });
+  }
+
+  // 2) 머리 위 바운싱 [▼] 화살표 핀 투영 (가로 34px 이하 컴팩트 핀, 캐릭터/건물 가림 0%!)
+  const placeVividArrowPin = (el, wx, wy, wz, hideInTier3 = false) => {
+    if (!el) return;
+    if (!showWorldPins || (hideInTier3 && getWorldSpeechLodTier(wx, wy, wz) === 3)) {
+      el.classList.add('hidden');
+      el.style.display = 'none';
+      return;
+    }
+    const pt = projectWorldToScreen(wx, wy, wz);
+    if (!pt.visible || pt.x < 28 || pt.x > vw - 28 || pt.y < 52 || pt.y > vh - 38) {
+      el.classList.add('hidden');
+      el.style.display = 'none';
+      return;
+    }
+    el.classList.remove('hidden');
+    el.style.display = 'inline-flex';
+    el.classList.toggle('near-cam', isNearCamZoom);
+    el.style.setProperty('--tx', `${pt.x}px`);
+    el.style.setProperty('--ty', `${pt.y}px`);
+    landmarkBoxes.push({ cx: pt.x, cy: pt.y - 16, hw: 20, hh: 22 });
+  };
+
+  placeVividArrowPin(bigUiGuideState.carPinEl, carPos.x, 2.85, carPos.z, false);
+  placeVividArrowPin(bigUiGuideState.mgrPinEl, mainLot.x + 2.55, 3.65, mainLot.z + D * 0.5 + 1.1, true);
+  placeVividArrowPin(bigUiGuideState.shopPinEl, 25.2, 6.85, -1.8, false);
+  placeVividArrowPin(bigUiGuideState.penthousePinEl, mainLot.x, phTpl.ly + phTpl.rh + 1.15, mainLot.z + 2.2, false);
+  placeVividArrowPin(bigUiGuideState.gatePinEl, 41.2, 6.9, 17.8, false);
 
   syncSmartWorldLodBubbles(anyModalOpen, landmarkBoxes);
 }
@@ -21105,9 +21170,9 @@ function renderFurnitureFlagshipDrawer() {
       : tNum === 3
         ? 'clay-block-purple'
         : tNum === 2
-          ? 'clay-block-blue'
+          ? 'clay-block-pink'
           : 'clay-block-mint';
-    const tierLabel = tNum >= 4 ? '👑 로열 T4' : tNum === 3 ? '✨ 명품 T3' : tNum === 2 ? '💎 호텔 T2' : '🌿 모던 T1';
+    const tierLabel = tNum >= 4 ? '👑 로열 T4' : tNum === 3 ? '✨ 명품 T3' : tNum === 2 ? '🍓 스위트 T2' : '🍏 모던 T1';
     const invQty = state.furnitureInventory?.[it.id] || 0;
     const inPenthouse = ph.collection.includes(it.id) || ph.equipped[flagshipShopTab] === it.id;
     const rankUnlocked = isItemUnlockedByFameRank(it);
@@ -21116,7 +21181,7 @@ function renderFurnitureFlagshipDrawer() {
       : it.cost;
     const freePlace = invQty > 0 && !inPenthouse;
     const canAct = rankUnlocked && (freePlace || (state.gold || 0) >= effCost);
-    const btnTone = !rankUnlocked ? 'push-coral' : tNum >= 4 ? 'push-gold' : inPenthouse ? 'push-cyan' : 'push-mint';
+    const btnTone = !rankUnlocked ? 'push-coral' : tNum >= 4 ? 'push-gold' : inPenthouse ? 'push-cyan' : 'push-green';
 
     const statusBadge = inPenthouse
       ? `<span class="clay-corner-pill pill-gold">👑 내방 진열중${invQty > 0 ? ` · 창고${invQty}` : ''}</span>`
@@ -21127,10 +21192,10 @@ function renderFurnitureFlagshipDrawer() {
     const btnLabel = !rankUnlocked
       ? `🔒 ${it.unlockRank}위 해금`
       : freePlace
-        ? `👑 내 방 무료 진열`
+        ? `👑 무료 진열`
         : inPenthouse
-          ? `➕ 추가 구매 · ${formatWonBig(effCost)}`
-          : `👑 구매·내방 진열 ${formatWonBig(effCost)}`;
+          ? `➕ 추가 · ${formatWonBig(effCost).replace(' 원', '')}`
+          : `👑 진열 · ${formatWonBig(effCost).replace(' 원', '')}`;
 
     return `
       <div class="${clayTone} flagship-product-clay-card">
@@ -21143,7 +21208,7 @@ function renderFurnitureFlagshipDrawer() {
         </div>
         <div class="w-full text-center">
           <div class="clay-block-title !text-[14px] justify-center truncate">${it.name}</div>
-          <div class="font-title text-[11.5px] text-[#5C3A1B] truncate">가치 +${formatWonBig(it.cost)} · 월세 +${it.rentAdd || (tNum * 12)}만</div>
+          <div class="font-title text-[11.5px] text-[#1E293B] truncate">가치 +${formatWonBig(it.cost)} · 월세 +${it.rentAdd || (tNum * 12)}만</div>
         </div>
         <div class="clay-btn-groove w-full">
           <button type="button" data-buy-flagship="${it.id}" ${!canAct ? 'disabled' : ''} class="clay-jelly-push ${btnTone} w-full">
@@ -21262,29 +21327,39 @@ function calcOpponentPenthouseValueMan(opp) {
 
 function createDuelOverheadSign3D(titleText, subText, isOpponent = false) {
   const cv = document.createElement('canvas');
-  cv.width = 512;
+  cv.width = 640;
   cv.height = 128;
   const ctx = cv.getContext('2d');
-  ctx.fillStyle = isOpponent ? '#2E1065' : '#3E2513';
-  ctx.fillRect(0, 0, 512, 128);
-  ctx.strokeStyle = isOpponent ? '#C084FC' : '#FBBF24';
+  const grad = ctx.createLinearGradient(0, 0, 0, 128);
+  if (isOpponent) {
+    grad.addColorStop(0, '#A855F7');
+    grad.addColorStop(1, '#7E22CE');
+  } else {
+    grad.addColorStop(0, '#38BDF8');
+    grad.addColorStop(1, '#0284C7');
+  }
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.roundRect(6, 6, 628, 116, 28);
+  ctx.fill();
+  ctx.strokeStyle = '#FFFFFF';
   ctx.lineWidth = 10;
-  ctx.strokeRect(8, 8, 496, 112);
+  ctx.stroke();
 
-  ctx.fillStyle = isOpponent ? '#F3E8FF' : '#FEF3C7';
-  ctx.font = 'bold 36px Jua, sans-serif';
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'bold 31px TmoneyRoundWind, Jua, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText(titleText, 256, 56);
+  ctx.fillText(titleText, 320, 54, 592);
 
-  ctx.fillStyle = isOpponent ? '#FBBF24' : '#6EE7B7';
-  ctx.font = 'bold 26px Jua, sans-serif';
-  ctx.fillText(subText, 256, 98);
+  ctx.fillStyle = isOpponent ? '#FDE047' : '#FEF08A';
+  ctx.font = 'bold 26px TmoneyRoundWind, Jua, sans-serif';
+  ctx.fillText(subText, 320, 98, 592);
 
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;
-  const mat = new THREE.MeshBasicMaterial({ map: tex });
+  const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true });
   const mesh = new THREE.Mesh(GEO.quad, mat);
-  mesh.scale.set(9.4, 2.3, 1);
+  mesh.scale.set(10.6, 2.25, 1);
   return mesh;
 }
 
@@ -21929,18 +22004,20 @@ function finishShowroomDuelAppraisal() {
   const newStandings = getForbesStandings();
   const newPrest = getFamePrestigeDef();
   const resDrawer = document.getElementById('duel-result-drawer');
-  const closeRedSrc = POPMART_ASSETS?.uiIllustrations?.redCloseBtn || './assets/ui_illustrations/illust_red_close_btn.png';
+  const closePinkSrc = POPMART_ASSETS?.uiNintendo?.btnPinkClose
+    || POPMART_ASSETS?.uiIllustrations?.redCloseBtn
+    || './assets/ui_nintendo/btn_pink_close.png';
 
   if (resDrawer) {
     resDrawer.innerHTML = `
       <div class="wood-header-bar">
         <div class="wood-title-cluster">
-          <span class="wood-star-rivet" aria-hidden="true">★</span>
+          <span class="wood-star-rivet" aria-hidden="true">⭐</span>
           <span class="wood-embossed-title">${isWin ? '🏆 압도적 재력 승리!!' : '💸 재력 감정 석패'}</span>
           <span class="clay-corner-pill pill-gold">서열 ${newStandings.myRank}위</span>
         </div>
         <button id="btn-close-duel-res" type="button" class="btn-close-round" aria-label="닫기">
-          <img src="${closeRedSrc}" alt="닫기" class="close-toy-img" />
+          <img data-ui-nintendo="btnPinkClose" src="${closePinkSrc}" alt="닫기" class="close-toy-img" />
         </button>
       </div>
 
@@ -21948,31 +22025,31 @@ function finishShowroomDuelAppraisal() {
         <div class="grid grid-cols-2 gap-2.5">
           <div class="clay-block-yellow !p-2.5 text-center">
             <div class="clay-block-title !text-[12.5px] justify-center">👑 내 방 총 투자금</div>
-            <div class="font-num text-[19px] text-[#6B3706] mt-0.5">${formatWonBig(myVal.totalMan)}</div>
-            <div class="text-[11px] font-extrabold text-[#92400E] mt-0.5">${myVal.hasSynergy ? '✨ 시너지 +20% 포함' : '누적 가구 가치 100%'}</div>
+            <div class="font-num text-[19px] text-[#1E293B] mt-0.5">${formatWonBig(myVal.totalMan)}</div>
+            <div class="text-[11px] font-extrabold text-[#422006] mt-0.5">${myVal.hasSynergy ? '✨ 시너지 +20% 포함' : '누적 가구 가치 100%'}</div>
           </div>
           <div class="clay-block-purple !p-2.5 text-center">
             <div class="clay-block-title !text-[12.5px] justify-center truncate">⚔️ ${opp.liveRank ? `${opp.liveRank}위 ` : ''}${opp.name}</div>
             <div class="font-num text-[19px] text-[#3B0764] mt-0.5">${formatWonBig(oppValMan)}</div>
-            <div class="text-[11px] font-extrabold text-[#6B21A8] mt-0.5">상대 럭셔리 쇼룸</div>
+            <div class="text-[11px] font-extrabold text-[#581C87] mt-0.5">상대 럭셔리 쇼룸</div>
           </div>
         </div>
 
         ${isWin ? `
           <div class="clay-block-mint !p-2.5 text-center">
-            <div class="font-title text-[13.5px] text-[#064E3B]">✨ 명성도 보너스 상승! 전 호실 월세 영구 +${newPrest.bonusPct}% · 배당금 +${formatWonBig(prize)}</div>
+            <div class="font-title text-[13.5px] text-[#042F2E]">✨ 명성도 보너스 상승! 전 호실 월세 영구 +${newPrest.bonusPct}% · 배당금 +${formatWonBig(prize)}</div>
           </div>
           <div class="grid grid-cols-2 gap-2">
             <div class="clay-btn-groove">
-              <button type="button" id="btn-duel-rematch" class="clay-jelly-push push-gold w-full">⚔️ 다음 상대 도전</button>
+              <button type="button" id="btn-duel-rematch" class="clay-jelly-push push-coral w-full">⚔️ 다음 상대 도전</button>
             </div>
             <div class="clay-btn-groove">
-              <button type="button" id="btn-duel-exit-town" class="clay-jelly-push push-mint w-full">🏡 타운 복귀</button>
+              <button type="button" id="btn-duel-exit-town" class="clay-jelly-push push-green w-full">🏡 타운 복귀</button>
             </div>
           </div>
         ` : `
-          <div class="clay-block-blue !p-2.5 text-center">
-            <div class="font-title text-[12.5px] text-[#0C4A6E]">💸 재력 부족! 내 방에 고가 가구를 더 배치해 방 가치를 높인 뒤 재도전하세요!</div>
+          <div class="clay-block-pink !p-2.5 text-center">
+            <div class="font-title text-[12.5px] text-[#500724]">💸 재력 부족! 내 방에 고가 가구를 더 배치해 방 가치를 높인 뒤 재도전하세요!</div>
           </div>
           <div class="grid grid-cols-2 gap-2">
             <div class="clay-btn-groove">
@@ -24903,26 +24980,26 @@ function initTurntableStage3D() {
   rim.position.set(0, 5.5, -5.5);
   ttScene.add(hemi, key, fill, rim);
 
-  // 크림 대리석 + 24K 순금 테두리 3D 회전 원형 쇼케이스 원판(Pedestal)
+  // 마시멜로 밀크화이트 + 캔디 핑크 & 소다 스카이블루 3D 회전 쇼케이스 원판(Pedestal)
   const pedestalGrp = new THREE.Group();
   const baseDisc = new THREE.Mesh(
     new THREE.CylinderGeometry(1.85, 2.02, 0.24, 48),
-    makeClayMat(0xFFF9F0, { roughness: 0.35, metalness: 0.06 })
+    makeClayMat(0xFFFFFF, { roughness: 0.26, metalness: 0.03 })
   );
   baseDisc.position.y = -0.12;
-  const goldTrim = new THREE.Mesh(
-    new THREE.TorusGeometry(1.9, 0.055, 14, 48),
-    MAT.pureGold24k
+  const candyPinkTrim = new THREE.Mesh(
+    new THREE.TorusGeometry(1.9, 0.058, 16, 48),
+    makeClayMat(0xFF80BF, { roughness: 0.28, metalness: 0.04 })
   );
-  goldTrim.rotation.x = Math.PI * 0.5;
-  goldTrim.position.y = -0.02;
-  const innerInlay = new THREE.Mesh(
-    new THREE.RingGeometry(1.42, 1.5, 44),
-    MAT.pureGold24k
+  candyPinkTrim.rotation.x = Math.PI * 0.5;
+  candyPinkTrim.position.y = -0.02;
+  const sodaBlueInlay = new THREE.Mesh(
+    new THREE.RingGeometry(1.42, 1.51, 44),
+    makeClayMat(0x4DC4F0, { roughness: 0.28, metalness: 0.04 })
   );
-  innerInlay.rotation.x = -Math.PI * 0.5;
-  innerInlay.position.y = 0.008;
-  pedestalGrp.add(baseDisc, goldTrim, innerInlay);
+  sodaBlueInlay.rotation.x = -Math.PI * 0.5;
+  sodaBlueInlay.position.y = 0.008;
+  pedestalGrp.add(baseDisc, candyPinkTrim, sodaBlueInlay);
   ttScene.add(pedestalGrp);
 
   const subjectHolder = new THREE.Group();
@@ -26013,13 +26090,13 @@ function applyPopMartWorldDecorations() {
     attachGoldStatuePopMartSprite3D(milestoneState.statueGroup, milestoneState.statueGroup.userData?.fallbackHeroMesh);
   }
 
-  // 5) 세입자·지배인·라이벌·쇼룸 결투·포브스 초상화를 10종 팝마트 초고화질 마스터 이미지로 업그레이드
+  // 5) 세입자·지배인·라이벌·쇼룸 결투·포브스 초상화를 팝마트 초고화질 마스터 이미지로 업그레이드 (소다 블루 테두리)
   if (origCreateHouseholdAvatarSVG) {
     window.createHouseholdAvatarSVG = (roleKey = 'student', size = 44) => {
       const cid = resolveAnimalIdForRole(roleKey, 0);
       const masterUrl = cid ? POPMART_ASSETS.characters[cid]?.masterUrl : null;
       if (masterUrl) {
-        return `<span class="inline-flex items-center justify-center rounded-2xl bg-[#FFFDF8] border border-[#E8CCB0] overflow-hidden shrink-0 shadow-sm" style="width:${size}px;height:${size}px;"><img src="${masterUrl}" alt="${roleKey}" style="width:94%;height:94%;object-fit:contain;" /></span>`;
+        return `<span class="inline-flex items-center justify-center rounded-2xl bg-[#FFFFFF] border-2 border-[#BAE6FD] overflow-hidden shrink-0 shadow-sm" style="width:${size}px;height:${size}px;"><img src="${masterUrl}" alt="${roleKey}" style="width:94%;height:94%;object-fit:contain;" /></span>`;
       }
       return origCreateHouseholdAvatarSVG(roleKey, size);
     };
@@ -26131,7 +26208,7 @@ function cleanUiSkinOuterWhiteToDataUrl(rawImg) {
   return out.toDataURL('image/png');
 }
 
-function cleanUiIllustToDataUrl(rawImg, outSize = 512) {
+function cleanUiIllustToDataUrl(rawImg, outSize = 512, strictWhite = false) {
   const w = rawImg.naturalWidth || rawImg.width;
   const h = rawImg.naturalHeight || rawImg.height;
   const cv = document.createElement('canvas');
@@ -26147,7 +26224,7 @@ function cleanUiIllustToDataUrl(rawImg, outSize = 512) {
   let head = 0;
   let tail = 0;
 
-  // 외곽 스튜디오 #FFFFFF 배경만 BFS로 제거하고 내부 흰색('X' 마크, 대리석, 종이 등)은 100% 보존!
+  // 외곽 스튜디오 #FFFFFF 배경만 BFS로 제거하고 내부 흰색('X' 마크, 흰색 마시멜로 쿠션 입체 베벨, 글자 외곽선 등)은 100% 보존!
   const isOuterStudioWhite = (i4) => {
     if (d[i4 + 3] < 24) return true;
     const r = d[i4];
@@ -26156,7 +26233,10 @@ function cleanUiIllustToDataUrl(rawImg, outSize = 512) {
     const minC = Math.min(r, g, b);
     const maxC = Math.max(r, g, b);
     const chroma = maxC - minC;
-    return (minC >= 236 && chroma <= 18) || (minC >= 218 && chroma <= 8);
+    if (strictWhite) {
+      return minC >= 250 && chroma <= 6;
+    }
+    return (minC >= 238 && chroma <= 16) || (minC >= 224 && chroma <= 6);
   };
 
   const trySeed = (x, y) => {
@@ -26190,17 +26270,19 @@ function cleanUiIllustToDataUrl(rawImg, outSize = 512) {
   }
 
   // 외곽 경계 1px 소프트 안티앨리어싱 페더링
-  for (let y = 1; y < h - 1; y++) {
-    const row = y * w;
-    for (let x = 1; x < w - 1; x++) {
-      const p = row + x;
-      if (visited[p]) continue;
-      if (visited[p - 1] || visited[p + 1] || visited[p - w] || visited[p + w]) {
-        const i4 = p * 4;
-        const minCh = Math.min(d[i4], d[i4 + 1], d[i4 + 2]);
-        if (minCh > 222) {
-          const factor = Math.max(0.08, Math.min(1, (244 - minCh) / 22));
-          d[i4 + 3] = Math.round(d[i4 + 3] * factor);
+  if (!strictWhite) {
+    for (let y = 1; y < h - 1; y++) {
+      const row = y * w;
+      for (let x = 1; x < w - 1; x++) {
+        const p = row + x;
+        if (visited[p]) continue;
+        if (visited[p - 1] || visited[p + 1] || visited[p - w] || visited[p + w]) {
+          const i4 = p * 4;
+          const minCh = Math.min(d[i4], d[i4 + 1], d[i4 + 2]);
+          if (minCh > 226) {
+            const factor = Math.max(0.12, Math.min(1, (246 - minCh) / 20));
+            d[i4 + 3] = Math.round(d[i4 + 3] * factor);
+          }
         }
       }
     }
@@ -26222,65 +26304,37 @@ async function initPopMartAssetsAsync() {
   const paths = window.POPMART_ASSET_PATHS || {};
   const maxAniso = renderer?.capabilities?.getMaxAnisotropy ? renderer.capabilities.getMaxAnisotropy() : 8;
 
-  // 0) 8종 3D 토이 UI 프레임 템플릿 스킨(`assets/ui_skins/skin_*.png`) 로드 & 외곽 #FFFFFF 100% 투명 마스킹 후 CSS 변수 바인딩!
-  if (paths.uiSkins) {
-    const skinVarMap = [
-      ['topStatusCapsule', '--skin-top-status-capsule'],
-      ['speechBubble', '--skin-speech-bubble'],
-      ['systemAlertModal', '--skin-system-alert-modal'],
-      ['notebookBoard', '--skin-notebook-board'],
-      ['btnPrimaryGold', '--skin-btn-primary-gold'],
-      ['btnActionCoral', '--skin-btn-action-coral'],
-      ['roundBadgeFrame', '--skin-round-badge-frame'],
-      ['drawerSidePanel', '--skin-drawer-side-panel']
-    ];
-    await Promise.all(skinVarMap.map(async ([key, cssVar]) => {
+  // 0-A) 닌텐도 파스텔 마시멜로 & 캔디 팝 9종 UI 에셋(`assets/ui_nintendo/*.png`) 외곽 #FFFFFF 투명 누끼 처리 후 [data-ui-nintendo] 바인딩!
+  if (paths.uiNintendo) {
+    POPMART_ASSETS.uiNintendo = POPMART_ASSETS.uiNintendo || {};
+    const strictWhiteKeys = new Set([
+      'pointerVividArrow',
+      'btnBubbleWeather',
+      'btnBubbleSettings',
+      'btnBubbleMoneygun',
+      'btnBubbleNotebook',
+      'btnPinkClose'
+    ]);
+    const nintendoEntries = Object.entries(paths.uiNintendo);
+    await Promise.all(nintendoEntries.map(async ([nKey, nSrc]) => {
       try {
-        const skinSrc = paths.uiSkins[key];
-        if (!skinSrc) return;
-        const rawSkinImg = await loadRawImagePromise(skinSrc);
-        const cleanDataUrl = cleanUiSkinOuterWhiteToDataUrl(rawSkinImg);
-        document.documentElement.style.setProperty(cssVar, `url("${cleanDataUrl}")`);
+        if (!nSrc) return;
+        const rawNin = await loadRawImagePromise(nSrc);
+        const outRes = (nKey === 'pointerVividArrow' || nKey === 'btnPinkClose' || nKey === 'btnBubbleWeather' || nKey === 'btnBubbleSettings')
+          ? 256
+          : 512;
+        const cleanNinUrl = cleanUiIllustToDataUrl(rawNin, outRes, strictWhiteKeys.has(nKey));
+        POPMART_ASSETS.uiNintendo[nKey] = cleanNinUrl;
+        document.querySelectorAll(`[data-ui-nintendo="${nKey}"]`).forEach((el) => {
+          if (el.tagName === 'IMG') el.src = cleanNinUrl;
+        });
       } catch (e) {
-        // 개별 스킨 실패 시 CSS 기본 로컬 파일 경로 유지
+        // 개별 에셋 로드 실패 시 정적 PNG 경로 유지
       }
     }));
   }
 
-  // 0-B) 10종 3D 입체 한글 조각 일체형 배지(`assets/ui_badges/badge_*.png`) 로드 & 외곽 #FFFFFF 자동 투명 누끼 처리 후 DOM 바인딩!
-  if (paths.uiBadges) {
-    POPMART_ASSETS.uiBadges = POPMART_ASSETS.uiBadges || {};
-    const badgeDomTargets = [
-      ['btnMoneygun', ['badge-img-btn-moneygun']],
-      ['btnNotebook', ['badge-img-btn-notebook']],
-      ['actionCollect', ['badge-img-action-collect']],
-      ['actionConstruct', ['badge-img-action-construct']],
-      ['actionDuel', ['badge-img-action-duel']],
-      ['worldDrive', ['badge-img-world-drive']],
-      ['worldFurniture', ['badge-img-world-furniture']],
-      ['worldManager', ['badge-img-world-manager']],
-      ['headerTitle', ['badge-img-title-hero', 'badge-img-pocket-header', 'badge-img-tt-brand']],
-      ['goalMove', ['badge-img-goal-move']]
-    ];
-    await Promise.all(badgeDomTargets.map(async ([bKey, domIds]) => {
-      try {
-        const bSrc = paths.uiBadges[bKey];
-        if (!bSrc) return;
-        const rawBadgeImg = await loadRawImagePromise(bSrc);
-        const cleanBadgeCv = removeWhiteBackground(rawBadgeImg, 'single', 242);
-        const cleanBadgeUrl = cleanUiSkinOuterWhiteToDataUrl(cleanBadgeCv);
-        POPMART_ASSETS.uiBadges[bKey] = cleanBadgeUrl;
-        for (const did of domIds) {
-          const el = document.getElementById(did);
-          if (el) el.src = cleanBadgeUrl;
-        }
-      } catch (e) {
-        // 로드 실패 시 기본 정적 PNG 경로 유지
-      }
-    }));
-  }
-
-  // 0-C) 6종 대형 3D 클레이 디오라마 일러스트(`assets/ui_illustrations/illust_*.png`) 외곽 #FFFFFF 완벽 투명 누끼 & [data-ui-illust] 일괄 주입!
+  // 0-B) 3D 클레이 디오라마 일러스트(`paths.uiIllustrations`) 외곽 #FFFFFF 완벽 투명 누끼 & [data-ui-illust] 일괄 주입!
   if (paths.uiIllustrations) {
     POPMART_ASSETS.uiIllustrations = POPMART_ASSETS.uiIllustrations || {};
     const illustEntries = Object.entries(paths.uiIllustrations);
@@ -26289,7 +26343,7 @@ async function initPopMartAssetsAsync() {
         if (!iSrc) return;
         const rawIllust = await loadRawImagePromise(iSrc);
         const outRes = iKey === 'redCloseBtn' ? 256 : 512;
-        const cleanIllustUrl = cleanUiIllustToDataUrl(rawIllust, outRes);
+        const cleanIllustUrl = cleanUiIllustToDataUrl(rawIllust, outRes, iKey === 'redCloseBtn');
         POPMART_ASSETS.uiIllustrations[iKey] = cleanIllustUrl;
         document.querySelectorAll(`[data-ui-illust="${iKey}"]`).forEach((el) => {
           if (el.tagName === 'IMG') el.src = cleanIllustUrl;

@@ -77,14 +77,12 @@
       <div id="jackpot-overlay-layer"></div>
     </div>
 
-    <!-- ==================== 2B. 시네마틱 오프닝 타이틀 (3D 우드 & 클레이 디자인) ==================== -->
+    <!-- ==================== 2B. 시네마틱 오프닝 타이틀 (닌텐도 스위치 마시멜로 & 캔디 팝 디자인) ==================== -->
     <section id="title-screen-overlay" class="fixed inset-0 z-[90] pointer-events-none select-none">
       <div id="title-floating-card" class="title-floating-card wood-board-frame pointer-events-auto">
         <div class="clay-cream-tray flex flex-col items-center w-full">
-          <h1 class="title-brand-display" aria-label="갓물주 라이프">
-            <img id="badge-img-title-hero" src="./assets/ui_badges/badge_header_title.png" alt="갓물주 라이프" class="toy-badge-header-logo-img" />
-            <span class="sr-only">갓물주 라이프</span>
-          </h1>
+          <span class="clay-corner-pill pill-pink mb-1">⭐ NINTENDO TOY TOWN EDITION ⭐</span>
+          <h1 class="nintendo-hero-logo-title" aria-label="갓물주 라이프 3D">갓물주 라이프 3D</h1>
 
           <div class="w-full mt-2.5 flex flex-col items-center">
             <div id="title-loading-box" class="title-slim-loader-wrap">
@@ -235,10 +233,11 @@
           </div>
         </div>
 
-        <!-- ③ 우측: [☀️] [⚙️] + 확대 시 [✕] -->
+        <!-- ③ 우측: 3D 구름·무지개 날씨 마시멜로 버튼 & 3D 라벤더 별-톱니 설정 마시멜로 버튼 + 확대 시 [✕ 나가기] -->
         <div id="top-right-action-cluster" class="flex items-center gap-1.5 shrink-0 pointer-events-none">
-          <button id="btn-weather-cycle" type="button" title="날씨 바꾸기 (맑음 ➔ 비 ➔ 눈)" aria-label="날씨 전환" class="pointer-events-auto big-corner-square-btn">
-            <span id="weather-cycle-emoji" class="text-[17px] leading-none">☀️</span>
+          <button id="btn-weather-cycle" type="button" title="날씨 바꾸기 (맑음 ➔ 비 ➔ 눈)" aria-label="날씨 전환" class="pointer-events-auto nintendo-top-bubble-btn relative">
+            <img id="img-nintendo-weather-btn" data-ui-nintendo="btnBubbleWeather" src="./assets/ui_nintendo/btn_bubble_weather.png" alt="날씨 전환" class="nintendo-top-bubble-img" />
+            <span id="weather-cycle-emoji" class="nintendo-weather-mini-badge">☀️</span>
           </button>
 
           <div id="weather-switch-pill" class="hidden">
@@ -247,8 +246,9 @@
             <button type="button" data-weather-btn="snow"><span id="w-ico-snow"></span></button>
           </div>
 
-          <button id="btn-top-settings" type="button" title="환경설정 열기" aria-label="환경설정" class="pointer-events-auto big-corner-square-btn">
-            <span id="hud-ico-top-settings" class="w-4 h-4 flex items-center justify-center">⚙️</span>
+          <button id="btn-top-settings" type="button" title="환경설정 열기" aria-label="환경설정" class="pointer-events-auto nintendo-top-bubble-btn">
+            <img id="img-nintendo-settings-btn" data-ui-nintendo="btnBubbleSettings" src="./assets/ui_nintendo/btn_bubble_settings.png" alt="환경설정" class="nintendo-top-bubble-img" />
+            <span id="hud-ico-top-settings" class="hidden"></span>
           </button>
 
           <button id="btn-focus-close-floating" type="button" title="타운 전체 화면으로 나가기" aria-label="밖으로 나가기" class="hidden pointer-events-auto big-exit-capsule-btn">
@@ -322,11 +322,11 @@
       <div class="cozy-planner-shell wood-board-frame w-full max-w-[480px]">
         <div class="wood-header-bar">
           <div class="wood-title-cluster">
-            <span class="wood-star-rivet" aria-hidden="true">★</span>
+            <span class="wood-star-rivet" aria-hidden="true">⭐</span>
             <span class="wood-embossed-title">🔔 타운 실시간 뉴스</span>
           </div>
           <button id="btn-close-news-modal" type="button" class="btn-close-round" aria-label="닫기">
-            <img data-ui-illust="redCloseBtn" src="./assets/ui_illustrations/illust_red_close_btn.png" alt="닫기" class="close-toy-img" />
+            <img data-ui-nintendo="btnPinkClose" src="./assets/ui_nintendo/btn_pink_close.png" alt="닫기" class="close-toy-img" />
           </button>
         </div>
         <div class="cozy-planner-inner clay-cream-tray flex flex-col gap-2.5">
@@ -381,7 +381,7 @@
         <div class="flex items-center gap-1 shrink-0">
           <button id="btn-toggle-rf-body" type="button" class="hidden btn-close-round" aria-label="접기">▼</button>
           <button id="btn-close-room-focus" type="button" title="관리 창 닫기" class="btn-close-round" aria-label="창 닫기">
-            <img data-ui-illust="redCloseBtn" src="./assets/ui_illustrations/illust_red_close_btn.png" alt="닫기" class="close-toy-img" />
+            <img data-ui-nintendo="btnPinkClose" src="./assets/ui_nintendo/btn_pink_close.png" alt="닫기" class="close-toy-img" />
           </button>
         </div>
       </div>
@@ -397,7 +397,7 @@
           <span id="sf-owner-badge" class="kw-chip tone-gold shrink-0">미인수</span>
         </div>
         <button id="btn-close-shop-focus" type="button" title="관리 창 닫기" class="btn-close-round" aria-label="창 닫기">
-          <img data-ui-illust="redCloseBtn" src="./assets/ui_illustrations/illust_red_close_btn.png" alt="닫기" class="close-toy-img" />
+          <img data-ui-nintendo="btnPinkClose" src="./assets/ui_nintendo/btn_pink_close.png" alt="닫기" class="close-toy-img" />
         </button>
       </div>
       <div id="sf-body" class="clay-cream-tray !p-2.5 overflow-y-auto custom-scroll space-y-2.5 flex-1"></div>
@@ -479,7 +479,7 @@
           <span>입장</span>
         </button>
         <button id="btn-close-prox-banner" type="button" class="btn-close-round !w-6 !h-6" aria-label="알림 닫기">
-          <img data-ui-illust="redCloseBtn" src="./assets/ui_illustrations/illust_red_close_btn.png" alt="닫기" class="close-toy-img" />
+          <img data-ui-nintendo="btnPinkClose" src="./assets/ui_nintendo/btn_pink_close.png" alt="닫기" class="close-toy-img" />
         </button>
       </div>
     </div>
@@ -561,17 +561,17 @@
       </div>
     </section>
 
-    <!-- ==================== 8A. ② 우측 하단 메인 버튼 (`60px`, `bottom: 12px; right: 12px; gap: 10px;`) ==================== -->
-    <div id="bottom-town-bar" class="hidden fixed bottom-[12px] right-[12px] z-[44] pointer-events-none flex items-end gap-[10px]">
+    <!-- ==================== 8A. ② 우측 하단 닌텐도 마시멜로 버블 메인 버튼 2종 (`돈 뿌리기`, `건물주 수첩`) ==================== -->
+    <div id="bottom-town-bar" class="hidden fixed bottom-[10px] right-[12px] z-[44] pointer-events-none flex items-end gap-[10px]">
       <div id="quick-duo-dock" class="flex items-end gap-[10px] pointer-events-auto">
         <button id="btn-make-it-rain" type="button" title="돈 뿌리기 (마을 행복도 &amp; 피버 상승)" aria-label="돈 뿌리기" class="giant-bottom-fab toy-img-main-fab tone-money">
-          <img id="badge-img-btn-moneygun" src="./assets/ui_badges/badge_btn_moneygun.png" alt="돈 뿌리기" class="toy-badge-main-fab-img" />
+          <img id="badge-img-btn-moneygun" data-ui-nintendo="btnBubbleMoneygun" src="./assets/ui_nintendo/btn_bubble_moneygun.png" alt="돈 뿌리기" class="toy-badge-main-fab-img" />
           <span id="hud-ico-moneygun" class="hidden"></span>
           <span class="sr-only">돈 뿌리기</span>
         </button>
 
         <button id="fab-notebook" type="button" aria-label="건물주 수첩 열기" title="건물주 수첩 열기" class="giant-bottom-fab toy-img-main-fab tone-diary relative">
-          <img id="badge-img-btn-notebook" src="./assets/ui_badges/badge_btn_notebook.png" alt="건물주 수첩" class="toy-badge-main-fab-img" />
+          <img id="badge-img-btn-notebook" data-ui-nintendo="btnBubbleNotebook" src="./assets/ui_nintendo/btn_bubble_notebook.png" alt="건물주 수첩" class="toy-badge-main-fab-img" />
           <span id="fab-svg-slot" class="hidden"></span>
           <span class="sr-only">건물주 수첩</span>
           <span id="fab-red-dot" class="hidden pocket-fab-dot">!</span>
@@ -579,35 +579,33 @@
       </div>
     </div>
 
-    <!-- ==================== 8B. ⑧ 머니건 살포 금액 선택 슬림 가로 우드 캡슐 바 ==================== -->
-    <div id="moneygun-flex-popover" class="hidden fixed bottom-[82px] right-[12px] z-[47] moneygun-slim-capsule wood-board-frame pointer-events-auto" role="dialog" aria-label="돈 뿌리기 금액 선택">
-      <span class="wood-embossed-title !text-[13px] whitespace-nowrap shrink-0 pl-1">💸 살포액:</span>
+    <!-- ==================== 8B. ⑧ 머니건 살포 금액 선택 소다 스카이 마시멜로 캡슐 바 ==================== -->
+    <div id="moneygun-flex-popover" class="hidden fixed bottom-[84px] right-[12px] z-[47] moneygun-slim-capsule wood-board-frame pointer-events-auto" role="dialog" aria-label="돈 뿌리기 금액 선택">
+      <span class="wood-embossed-title !text-[13.5px] whitespace-nowrap shrink-0 pl-1">💸 살포액:</span>
       <div id="moneygun-tiers-list" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar"></div>
       <button id="btn-close-moneygun-popover" type="button" class="btn-close-round !w-7 !h-7 shrink-0" aria-label="닫기">
-        <img data-ui-illust="redCloseBtn" src="./assets/ui_illustrations/illust_red_close_btn.png" alt="닫기" class="close-toy-img" />
+        <img data-ui-nintendo="btnPinkClose" src="./assets/ui_nintendo/btn_pink_close.png" alt="닫기" class="close-toy-img" />
       </button>
     </div>
 
-    <!-- ==================== 8C. ① 건물주 수첩 (`📒` 3D 월넛 우드 프레임 + 크림 트레이 + 파스텔 클레이 블록 3열) ==================== -->
+    <!-- ==================== 8C. ① 건물주 수첩 (`📒` 소다 스카이 실리콘 보드 + 마시멜로 트레이 + 4색 캔디 클레이 쿠션 3열) ==================== -->
     <div id="pocket-planner-popover" class="hidden fixed inset-0 z-[48] pastel-modal-backdrop flex items-center justify-center p-2.5 pointer-events-auto" role="dialog" aria-label="건물주 수첩">
       <div class="pocket-dashboard-board wood-board-frame">
-        <!-- 외곽 1단: 도톰한 3D 월넛 우드 헤더 + 황금 별 리벳 + 입체 클립보드 태그 + 3D 코럴레드 닫기 단추 -->
         <div class="wood-header-bar">
           <div class="wood-title-cluster min-w-0">
-            <span class="wood-star-rivet" aria-hidden="true">★</span>
+            <span class="wood-star-rivet" aria-hidden="true">⭐</span>
             <span class="wood-embossed-title">📒 건물주 수첩</span>
             <button id="btn-pocket-my-penthouse" type="button" class="wood-tag-pill tag-gold" title="최고층 내 방(회장님 펜트하우스) 꾸미기">
               <span>👑 내 방:</span>
               <span id="pocket-myroom-val-text">50만 원</span>
             </button>
             <span id="pocket-header-mini-ico" class="hidden"></span>
-            <img id="badge-img-pocket-header" src="./assets/ui_badges/badge_header_title.png" alt="" class="hidden" />
           </div>
 
           <div class="flex items-center gap-1.5 shrink-0">
             <button id="btn-pocket-manager-hr" type="button" class="wood-tag-pill tag-mint">
               <span id="hud-ico-raccoon-mgr" class="hidden"></span>
-              <span>🐢 관리소장</span>
+              <span>🪴 관리소장</span>
               <span id="stamp-manager-badge" class="hidden"></span>
             </button>
             <button id="btn-open-ledger-modal" type="button" class="wood-clipboard-tag-btn">
@@ -616,42 +614,42 @@
               <span>상세 장부</span>
             </button>
             <button id="btn-close-pocket-planner" type="button" class="btn-close-round" aria-label="수첩 닫기">
-              <img data-ui-illust="redCloseBtn" src="./assets/ui_illustrations/illust_red_close_btn.png" alt="닫기" class="close-toy-img" />
+              <img data-ui-nintendo="btnPinkClose" src="./assets/ui_nintendo/btn_pink_close.png" alt="닫기" class="close-toy-img" />
             </button>
           </div>
         </div>
 
-        <!-- 내부 2단: 크림 매트 클레이 속판 + 빈 여백 제로 3열 파스텔 클레이 블록 카드 -->
+        <!-- 마시멜로 밀크 화이트 속판 + 빈 여백 제로 3열 캔디 클레이 쿠션 카드 -->
         <div class="clay-cream-tray">
           <div class="pocket-three-col-grid">
-            <!-- 블록 1: 🟡 옐로우 골드 클레이 블록 (월세 수금) -->
+            <!-- 블록 1: 🍋 레몬 옐로우 쿠션 (`월세 수금` + 비비드 그린 3D 버블 버튼) -->
             <div class="pocket-giant-action-card clay-block-yellow">
               <div class="flex items-center justify-between w-full gap-1">
-                <span class="clay-block-title">🪙 월세 수금</span>
+                <span class="clay-block-title text-[#422006]">🪙 월세 수금</span>
                 <span id="stamp-collect-badge" class="clay-corner-pill pill-pink">대기</span>
               </div>
               <div id="pocket-art-collect" class="clay-illust-hero-slot">
-                <img id="illust-pocket-collect" data-ui-illust="rentChest" src="./assets/ui_illustrations/illust_rent_chest.png" alt="월세 수금" class="clay-hero-illust" />
+                <img id="illust-pocket-collect" data-ui-nintendo="illustPiggyCoins" src="./assets/ui_nintendo/illust_piggy_coins.png" alt="월세 수금" class="clay-hero-illust" />
               </div>
-              <div id="pocket-collect-amount" class="clay-block-stat text-[#6B3706]">+15만 원</div>
+              <div id="pocket-collect-amount" class="clay-block-stat text-[#422006]">+15만 원</div>
               <div class="clay-btn-groove">
-                <button id="btn-collect-all" type="button" class="clay-jelly-push push-gold w-full">
+                <button id="btn-collect-all" type="button" class="clay-jelly-push push-green w-full">
                   <span id="hud-ico-collect" class="hidden"></span>
                   <span id="pocket-collect-btn-label">일괄 수금 🪙</span>
                 </button>
               </div>
             </div>
 
-            <!-- 블록 2: 🔵 스카이 블루 클레이 블록 (증축 착공) -->
-            <div class="pocket-giant-action-card clay-block-blue">
+            <!-- 블록 2: 🍓 버블검 핑크 쿠션 (`증축 착공` + 비비드 블루 3D 버블 버튼) -->
+            <div class="pocket-giant-action-card clay-block-pink">
               <div class="flex items-center justify-between w-full gap-1">
-                <span class="clay-block-title">🏗️ 증축 착공</span>
+                <span class="clay-block-title text-[#500724]">🏗️ 증축 착공</span>
                 <span id="stamp-build-badge" class="hidden clay-corner-pill pill-blue">시공중</span>
               </div>
               <div id="pocket-art-build" class="clay-illust-hero-slot">
-                <img id="illust-pocket-build" data-ui-illust="constructDiorama" src="./assets/ui_illustrations/illust_construct_diorama.png" alt="증축 착공" class="clay-hero-illust" />
+                <img id="illust-pocket-build" data-ui-nintendo="illustPastelCrane" src="./assets/ui_nintendo/illust_pastel_crane.png" alt="증축 착공" class="clay-hero-illust" />
               </div>
-              <div id="pocket-build-subtext" class="clay-block-stat text-[#0F3156]">201호 · 25만 원</div>
+              <div id="pocket-build-subtext" class="clay-block-stat text-[#500724]">201호 · 25만 원</div>
               <div id="pocket-build-gauge-box" class="hidden w-full">
                 <div class="pocket-thick-gauge-track">
                   <div id="pocket-build-gauge-fill" class="pocket-thick-gauge-fill" style="width: 65%;"></div>
@@ -666,14 +664,14 @@
               </div>
             </div>
 
-            <!-- 블록 3: 🟣 라벤더 퍼플 클레이 블록 (쇼룸 결투) -->
+            <!-- 블록 3: 🍇 라벤더 퍼플 쿠션 (`쇼룸 결투` + 비비드 코럴오렌지 3D 버블 버튼) -->
             <div class="pocket-giant-action-card clay-block-purple">
               <div class="flex items-center justify-between w-full gap-1">
-                <span id="pocket-duel-card-title" class="clay-block-title">🦹‍♂️ 쇼룸 결투</span>
+                <span id="pocket-duel-card-title" class="clay-block-title text-[#3B0764]">🦹‍♂️ 쇼룸 결투</span>
                 <span id="stamp-duel-badge" class="clay-corner-pill pill-purple">👑 VS</span>
               </div>
               <div id="pocket-art-duel" class="clay-illust-hero-slot">
-                <img id="illust-pocket-duel" data-ui-illust="duelStage" src="./assets/ui_illustrations/illust_duel_stage.png" alt="쇼룸 결투" class="clay-hero-illust" />
+                <img id="illust-pocket-duel" data-ui-nintendo="illustStarStage" src="./assets/ui_nintendo/illust_star_stage.png" alt="쇼룸 결투" class="clay-hero-illust" />
               </div>
               <div id="pocket-duel-subtext" class="clay-block-stat text-[#3B0764]">내 방 50만 VS 98위 55만</div>
               <div class="clay-btn-groove">
@@ -691,9 +689,6 @@
           <button id="btn-open-chronicle-header" type="button"><span id="pocket-day-title-text"></span></button>
           <button id="pocket-episode-card" type="button"><span id="pocket-ep-ico"></span><span id="pocket-ep-code"></span><span id="pocket-ep-prog"></span><span id="pocket-ep-title"></span></button>
           <span id="pocket-mgr-subtext"></span>
-          <img id="badge-img-action-collect" src="./assets/ui_badges/badge_action_collect.png" alt="" />
-          <img id="badge-img-action-construct" src="./assets/ui_badges/badge_action_construct.png" alt="" />
-          <img id="badge-img-action-duel" src="./assets/ui_badges/badge_action_duel.png" alt="" />
         </div>
       </div>
     </div>
@@ -703,12 +698,12 @@
       <div class="cozy-planner-shell wood-board-frame slim-drawer-shell">
         <div class="wood-header-bar">
           <div class="wood-title-cluster">
-            <span class="wood-star-rivet" aria-hidden="true">★</span>
+            <span class="wood-star-rivet" aria-hidden="true">⭐</span>
             <span id="garage-ico-header" class="hidden"></span>
             <span class="wood-embossed-title">🏎️ 슈퍼카 차고</span>
           </div>
           <button id="btn-close-garage" type="button" class="btn-close-round" aria-label="닫기">
-            <img data-ui-illust="redCloseBtn" src="./assets/ui_illustrations/illust_red_close_btn.png" alt="닫기" class="close-toy-img" />
+            <img data-ui-nintendo="btnPinkClose" src="./assets/ui_nintendo/btn_pink_close.png" alt="닫기" class="close-toy-img" />
           </button>
         </div>
         <div class="cozy-planner-inner clay-cream-tray flex flex-col overflow-hidden flex-1">
@@ -724,14 +719,14 @@
 
         <div class="wood-header-bar">
           <div class="wood-title-cluster min-w-0">
-            <span class="wood-star-rivet" aria-hidden="true">★</span>
+            <span class="wood-star-rivet" aria-hidden="true">⭐</span>
             <span id="modal-ico-notebook" class="hidden"></span>
             <span class="wood-embossed-title whitespace-nowrap">📋 상세 장부 · 관리소장 인사</span>
             <span id="modal-quest-summary" class="clay-corner-pill pill-gold shrink-0">0/11</span>
             <span id="modal-alert-summary" class="hidden clay-corner-pill pill-pink shrink-0"></span>
           </div>
           <button id="btn-close-notebook" type="button" class="btn-close-round" aria-label="닫기">
-            <img data-ui-illust="redCloseBtn" src="./assets/ui_illustrations/illust_red_close_btn.png" alt="닫기" class="close-toy-img" />
+            <img data-ui-nintendo="btnPinkClose" src="./assets/ui_nintendo/btn_pink_close.png" alt="닫기" class="close-toy-img" />
           </button>
         </div>
 
@@ -766,13 +761,13 @@
       <div class="cozy-planner-shell wood-board-frame slim-drawer-shell">
         <div class="wood-header-bar">
           <div class="wood-title-cluster min-w-0">
-            <span class="wood-star-rivet" aria-hidden="true">★</span>
+            <span class="wood-star-rivet" aria-hidden="true">⭐</span>
             <span id="dev-ico-header" class="hidden"></span>
             <span class="wood-embossed-title">🏗️ 부지 매입 · 착공</span>
             <span id="dev-lot-badge" class="clay-corner-pill pill-mint"></span>
           </div>
           <button id="btn-close-dev-modal" type="button" class="btn-close-round" aria-label="닫기">
-            <img data-ui-illust="redCloseBtn" src="./assets/ui_illustrations/illust_red_close_btn.png" alt="닫기" class="close-toy-img" />
+            <img data-ui-nintendo="btnPinkClose" src="./assets/ui_nintendo/btn_pink_close.png" alt="닫기" class="close-toy-img" />
           </button>
         </div>
         <div class="cozy-planner-inner clay-cream-tray flex flex-col overflow-hidden flex-1">
@@ -786,7 +781,7 @@
       <div class="cozy-planner-shell wood-board-frame slim-drawer-shell">
         <div class="wood-header-bar">
           <div class="wood-title-cluster min-w-0">
-            <span class="wood-star-rivet" aria-hidden="true">★</span>
+            <span class="wood-star-rivet" aria-hidden="true">⭐</span>
             <span id="rec-ico-header" class="hidden"></span>
             <span class="wood-embossed-title">🤝 세입자 받기</span>
             <span id="rec-room-title" class="clay-corner-pill pill-pink"></span>
@@ -794,7 +789,7 @@
           <div class="flex items-center gap-1.5 shrink-0">
             <button id="btn-refresh-rec" type="button" class="clay-jelly-push push-gold !min-h-[30px] !py-1 !px-3 !text-[12px]">새로고침 10만</button>
             <button id="btn-close-recruit" type="button" class="btn-close-round" aria-label="닫기">
-              <img data-ui-illust="redCloseBtn" src="./assets/ui_illustrations/illust_red_close_btn.png" alt="닫기" class="close-toy-img" />
+              <img data-ui-nintendo="btnPinkClose" src="./assets/ui_nintendo/btn_pink_close.png" alt="닫기" class="close-toy-img" />
             </button>
           </div>
         </div>
@@ -809,12 +804,12 @@
       <div class="cozy-planner-shell wood-board-frame w-full max-w-[420px]">
         <div class="wood-header-bar">
           <div class="wood-title-cluster">
-            <span class="wood-star-rivet" aria-hidden="true">★</span>
+            <span class="wood-star-rivet" aria-hidden="true">⭐</span>
             <span id="rename-ico-crown" class="hidden"></span>
             <span class="wood-embossed-title">빌딩 현판 이름 변경</span>
           </div>
           <button id="btn-close-rename" type="button" class="btn-close-round" aria-label="닫기">
-            <img data-ui-illust="redCloseBtn" src="./assets/ui_illustrations/illust_red_close_btn.png" alt="닫기" class="close-toy-img" />
+            <img data-ui-nintendo="btnPinkClose" src="./assets/ui_nintendo/btn_pink_close.png" alt="닫기" class="close-toy-img" />
           </button>
         </div>
         <div class="cozy-planner-inner clay-cream-tray space-y-2.5">
@@ -854,12 +849,12 @@
       <div class="cozy-planner-shell wood-board-frame w-full max-w-[580px]">
         <div class="wood-header-bar">
           <div class="wood-title-cluster">
-            <span class="wood-star-rivet" aria-hidden="true">★</span>
+            <span class="wood-star-rivet" aria-hidden="true">⭐</span>
             <span id="fp-modal-ico" class="hidden"></span>
             <span id="fp-modal-title" class="wood-embossed-title">🚪 1인칭 방문지 선택</span>
           </div>
           <button id="btn-close-fp-modal" type="button" class="btn-close-round" aria-label="닫기">
-            <img data-ui-illust="redCloseBtn" src="./assets/ui_illustrations/illust_red_close_btn.png" alt="닫기" class="close-toy-img" />
+            <img data-ui-nintendo="btnPinkClose" src="./assets/ui_nintendo/btn_pink_close.png" alt="닫기" class="close-toy-img" />
           </button>
         </div>
         <div class="grid grid-cols-2 gap-2 mb-2 shrink-0">
@@ -877,14 +872,14 @@
       <div class="cozy-planner-shell wood-board-frame w-full max-w-[560px]">
         <div class="wood-header-bar">
           <div class="wood-title-cluster">
-            <span class="wood-star-rivet" aria-hidden="true">★</span>
+            <span class="wood-star-rivet" aria-hidden="true">⭐</span>
             <span id="ms-modal-ico" class="hidden"></span>
             <span class="wood-embossed-title">💖 행복도 보상</span>
             <span id="ms-modal-pct-chip" class="clay-corner-pill pill-pink">34%</span>
             <span id="ms-modal-title-chip" class="hidden clay-corner-pill pill-gold">전설의 성군</span>
           </div>
           <button id="btn-close-ms-modal" type="button" class="btn-close-round" aria-label="닫기">
-            <img data-ui-illust="redCloseBtn" src="./assets/ui_illustrations/illust_red_close_btn.png" alt="닫기" class="close-toy-img" />
+            <img data-ui-nintendo="btnPinkClose" src="./assets/ui_nintendo/btn_pink_close.png" alt="닫기" class="close-toy-img" />
           </button>
         </div>
         <div class="cozy-planner-inner clay-cream-tray space-y-2.5 overflow-y-auto custom-scroll flex-1">
@@ -910,13 +905,13 @@
       <div class="cozy-planner-shell wood-board-frame w-full max-w-[560px]">
         <div class="wood-header-bar">
           <div class="wood-title-cluster">
-            <span class="wood-star-rivet" aria-hidden="true">★</span>
+            <span class="wood-star-rivet" aria-hidden="true">⭐</span>
             <span id="rival-hub-ico" class="hidden"></span>
             <span class="wood-embossed-title">⚔️ 라이벌 재력 대결</span>
             <span id="rival-win-badge" class="clay-corner-pill pill-gold">0승</span>
           </div>
           <button id="btn-close-rival-hub" type="button" class="btn-close-round" aria-label="닫기">
-            <img data-ui-illust="redCloseBtn" src="./assets/ui_illustrations/illust_red_close_btn.png" alt="닫기" class="close-toy-img" />
+            <img data-ui-nintendo="btnPinkClose" src="./assets/ui_nintendo/btn_pink_close.png" alt="닫기" class="close-toy-img" />
           </button>
         </div>
         <div class="cozy-planner-inner clay-cream-tray space-y-2.5 overflow-y-auto custom-scroll flex-1">
@@ -942,7 +937,7 @@
             <span class="clay-corner-pill pill-pink">승리 +30%</span>
           </div>
           <button id="btn-close-poach-dock" type="button" class="btn-close-round" aria-label="닫기">
-            <img data-ui-illust="redCloseBtn" src="./assets/ui_illustrations/illust_red_close_btn.png" alt="닫기" class="close-toy-img" />
+            <img data-ui-nintendo="btnPinkClose" src="./assets/ui_nintendo/btn_pink_close.png" alt="닫기" class="close-toy-img" />
           </button>
         </div>
         <div id="poach-taunt-text" class="hidden"></div>
@@ -979,7 +974,7 @@
             <span class="clay-corner-pill pill-gold">낙찰 +40%</span>
           </div>
           <button id="btn-close-bid-dock" type="button" class="btn-close-round" aria-label="닫기">
-            <img data-ui-illust="redCloseBtn" src="./assets/ui_illustrations/illust_red_close_btn.png" alt="닫기" class="close-toy-img" />
+            <img data-ui-nintendo="btnPinkClose" src="./assets/ui_nintendo/btn_pink_close.png" alt="닫기" class="close-toy-img" />
           </button>
         </div>
 
@@ -1019,13 +1014,13 @@
       <div class="cozy-planner-shell wood-board-frame slim-drawer-shell w-full max-w-[700px]">
         <div class="wood-header-bar">
           <div class="wood-title-cluster min-w-0">
-            <span class="wood-star-rivet" aria-hidden="true">★</span>
+            <span class="wood-star-rivet" aria-hidden="true">⭐</span>
             <span id="forbes-modal-ico" class="hidden"></span>
             <span class="wood-embossed-title whitespace-nowrap">🏆 100인 부자 서열표</span>
             <span id="forbes-my-rank-chip" class="clay-corner-pill pill-gold shrink-0">99위 / 100</span>
           </div>
           <button id="btn-close-forbes" type="button" class="btn-close-round" aria-label="닫기">
-            <img data-ui-illust="redCloseBtn" src="./assets/ui_illustrations/illust_red_close_btn.png" alt="닫기" class="close-toy-img" />
+            <img data-ui-nintendo="btnPinkClose" src="./assets/ui_nintendo/btn_pink_close.png" alt="닫기" class="close-toy-img" />
           </button>
         </div>
 
@@ -1075,7 +1070,7 @@
         <div class="flex items-center gap-1.5 shrink-0">
           <button id="btn-tour-next" type="button" class="clay-jelly-push push-gold !min-h-[30px] !py-1 !px-3 !text-[12px]">다음 ▶</button>
           <button id="btn-tour-skip" type="button" class="btn-close-round !w-7 !h-7">
-            <img data-ui-illust="redCloseBtn" src="./assets/ui_illustrations/illust_red_close_btn.png" alt="닫기" class="close-toy-img" />
+            <img data-ui-nintendo="btnPinkClose" src="./assets/ui_nintendo/btn_pink_close.png" alt="닫기" class="close-toy-img" />
           </button>
         </div>
       </div>
@@ -1086,12 +1081,12 @@
       <div class="cozy-planner-shell wood-board-frame slim-drawer-shell w-full max-w-[440px]">
         <div class="wood-header-bar">
           <div class="wood-title-cluster">
-            <span class="wood-star-rivet" aria-hidden="true">★</span>
+            <span class="wood-star-rivet" aria-hidden="true">⭐</span>
             <span id="settings-ico-header" class="hidden"></span>
             <span class="wood-embossed-title">⚙️ 환경설정</span>
           </div>
           <button id="btn-close-settings" type="button" class="btn-close-round" aria-label="닫기">
-            <img data-ui-illust="redCloseBtn" src="./assets/ui_illustrations/illust_red_close_btn.png" alt="닫기" class="close-toy-img" />
+            <img data-ui-nintendo="btnPinkClose" src="./assets/ui_nintendo/btn_pink_close.png" alt="닫기" class="close-toy-img" />
           </button>
         </div>
 
@@ -1129,13 +1124,13 @@
       <div class="cozy-planner-shell wood-board-frame slim-drawer-shell w-full max-w-[540px]">
         <div class="wood-header-bar">
           <div class="wood-title-cluster">
-            <span class="wood-star-rivet" aria-hidden="true">★</span>
+            <span class="wood-star-rivet" aria-hidden="true">⭐</span>
             <span id="chronicle-ico-header" class="hidden"></span>
             <span class="wood-embossed-title">🌅 해안 신도시 연대기</span>
             <span id="chronicle-elapsed-badge" class="clay-corner-pill pill-gold">측정 중</span>
           </div>
           <button id="btn-close-chronicle" type="button" class="btn-close-round" aria-label="닫기">
-            <img data-ui-illust="redCloseBtn" src="./assets/ui_illustrations/illust_red_close_btn.png" alt="닫기" class="close-toy-img" />
+            <img data-ui-nintendo="btnPinkClose" src="./assets/ui_nintendo/btn_pink_close.png" alt="닫기" class="close-toy-img" />
           </button>
         </div>
 
@@ -1163,9 +1158,9 @@
         <!-- 우드 헤더 -->
         <div class="wood-header-bar">
           <div class="wood-title-cluster min-w-0">
-            <span class="wood-star-rivet" aria-hidden="true">★</span>
+            <span class="wood-star-rivet" aria-hidden="true">⭐</span>
             <span id="flagship-drawer-ico" class="hidden"></span>
-            <span id="flagship-board-title" class="wood-embossed-title truncate">🛋️ 가구 백화점 &amp; 👑 내 방 꾸미기</span>
+            <span id="flagship-board-title" class="wood-embossed-title truncate">🛋️ 가구 백화점</span>
             <span id="flagship-penthouse-val-chip" class="clay-corner-pill pill-gold shrink-0">👑 내 방 가치: 50만 원</span>
             <span id="flagship-inv-summary" class="hidden"></span>
           </div>
@@ -1173,7 +1168,7 @@
             <button id="btn-flagship-view-penthouse" type="button" class="wood-tag-pill tag-gold">🔭 내 방 3D 보기</button>
             <button id="btn-flagship-open-turntable" type="button" class="wood-tag-pill tag-mint">🔄 360° 감상</button>
             <button id="btn-close-flagship-drawer" type="button" class="btn-close-round" aria-label="닫기">
-              <img data-ui-illust="redCloseBtn" src="./assets/ui_illustrations/illust_red_close_btn.png" alt="닫기" class="close-toy-img" />
+              <img data-ui-nintendo="btnPinkClose" src="./assets/ui_nintendo/btn_pink_close.png" alt="닫기" class="close-toy-img" />
             </button>
           </div>
         </div>
@@ -1300,11 +1295,11 @@
       <div class="cozy-planner-shell wood-board-frame w-full max-w-[640px]">
         <div class="wood-header-bar">
           <div class="wood-title-cluster">
-            <span class="wood-star-rivet" aria-hidden="true">★</span>
+            <span class="wood-star-rivet" aria-hidden="true">⭐</span>
             <span class="wood-embossed-title">🐾 내 동물 건물주 선택</span>
           </div>
           <button id="btn-close-animal-modal" type="button" class="btn-close-round" aria-label="닫기">
-            <img data-ui-illust="redCloseBtn" src="./assets/ui_illustrations/illust_red_close_btn.png" alt="닫기" class="close-toy-img" />
+            <img data-ui-nintendo="btnPinkClose" src="./assets/ui_nintendo/btn_pink_close.png" alt="닫기" class="close-toy-img" />
           </button>
         </div>
         <div class="cozy-planner-inner clay-cream-tray flex flex-col overflow-hidden flex-1 gap-2">
@@ -1324,11 +1319,11 @@
       <div class="gate-lock-glass-card wood-board-frame">
         <div class="wood-header-bar">
           <div class="wood-title-cluster">
-            <span class="wood-star-rivet" aria-hidden="true">★</span>
+            <span class="wood-star-rivet" aria-hidden="true">⭐</span>
             <div id="gate-lock-msg" class="wood-embossed-title !text-[15.5px]">🔒 해안 대문 잠김 (3일 차 개방)</div>
           </div>
           <button id="btn-close-gate-capsule" type="button" class="btn-close-round shrink-0" aria-label="닫기">
-            <img data-ui-illust="redCloseBtn" src="./assets/ui_illustrations/illust_red_close_btn.png" alt="닫기" class="close-toy-img" />
+            <img data-ui-nintendo="btnPinkClose" src="./assets/ui_nintendo/btn_pink_close.png" alt="닫기" class="close-toy-img" />
           </button>
         </div>
         <div class="clay-cream-tray space-y-2.5 text-center">
@@ -1355,9 +1350,8 @@
       <div class="w-full max-w-[740px] flex flex-col items-center gap-1.5 pointer-events-auto z-10 shrink-0">
         <div class="w-full flex items-center justify-between gap-2 turntable-top-pill wood-board-frame !py-1.5 !px-3.5 !rounded-full">
           <div class="flex items-center gap-2 min-w-0">
-            <img id="badge-img-tt-brand" src="./assets/ui_badges/badge_header_title.png" alt="" class="hidden" />
             <span id="tt-header-badge" class="hidden">360° 쇼케이스</span>
-            <span class="wood-star-rivet" aria-hidden="true">★</span>
+            <span class="wood-star-rivet" aria-hidden="true">⭐</span>
             <div id="tt-header-title" class="wood-embossed-title !text-[14.5px] whitespace-nowrap">🛋️ 360° 쇼케이스</div>
             <div id="tt-header-sub" class="hidden"></div>
           </div>
@@ -1377,12 +1371,12 @@
           </div>
 
           <div class="flex items-center gap-1.5 shrink-0">
-            <div class="px-2.5 py-1 rounded-full bg-[#3A2510] border-2 border-[#FFD700] font-num text-[12.5px] text-[#FFD700] inline-flex items-center gap-1 whitespace-nowrap">
+            <div class="px-3 py-1 rounded-full bg-white border-[2.5px] border-[#4DC4F0] shadow-sm font-num text-[13px] text-[#1E293B] inline-flex items-center gap-1 whitespace-nowrap">
               <span id="tt-ico-coin" class="inline-flex items-center justify-center w-3.5 h-3.5">💰</span>
               <span id="tt-gold-display">55만 원</span>
             </div>
             <button id="btn-close-turntable" type="button" class="btn-close-round" aria-label="쇼케이스 닫기">
-              <img data-ui-illust="redCloseBtn" src="./assets/ui_illustrations/illust_red_close_btn.png" alt="닫기" class="close-toy-img" />
+              <img data-ui-nintendo="btnPinkClose" src="./assets/ui_nintendo/btn_pink_close.png" alt="닫기" class="close-toy-img" />
             </button>
           </div>
         </div>
