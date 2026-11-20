@@ -160,7 +160,7 @@
           </div>
         </div>
 
-        <!-- ② 중앙: [🎯 할 일: 침대 구매 👆] -->
+        <!-- ② 중앙: [🎯 할 일: 침대 구매 | 말랑 캔디 달성률 게이지 75% 👆] -->
         <div id="hud-top-center-group" class="flex items-center justify-center min-w-0 flex-1 overflow-hidden">
           <div id="top-goal-navigator" class="pointer-events-auto max-w-full">
             <button id="btn-goal-nav-bar" type="button" class="goal-navigator-capsule" title="클릭 시 목표 위치로 즉시 이동">
@@ -169,6 +169,12 @@
               </span>
               <span class="goal-nav-prefix">🎯 할 일:</span>
               <span id="goal-nav-text" class="goal-nav-label">침대 구매</span>
+              <span id="goal-nav-prog-wrap" class="goal-candy-prog-pill" aria-hidden="true">
+                <span class="goal-candy-mini-track">
+                  <span id="goal-nav-prog-fill" class="goal-candy-mini-fill" style="width: 100%;"></span>
+                </span>
+                <span id="goal-nav-prog-pct" class="goal-candy-pct-txt">100%</span>
+              </span>
               <span id="btn-goal-nav-go" class="goal-nav-finger" aria-hidden="true">👆</span>
             </button>
           </div>
@@ -233,8 +239,12 @@
           </div>
         </div>
 
-        <!-- ③ 우측: 3D 구름·무지개 날씨 마시멜로 버튼 & 3D 라벤더 별-톱니 설정 마시멜로 버튼 + 확대 시 [✕ 나가기] -->
+        <!-- ③ 우측: 1-Tap 사운드 음소거 & 3D 구름·무지개 날씨 마시멜로 버튼 & 3D 라벤더 별-톱니 설정 마시멜로 버튼 + 확대 시 [✕ 나가기] -->
         <div id="top-right-action-cluster" class="flex items-center gap-1.5 shrink-0 pointer-events-none">
+          <button id="btn-hud-sfx-quick" type="button" title="사운드 효과음 1-Tap 켜기/끄기" aria-label="사운드 켜기/끄기" class="pointer-events-auto nintendo-sfx-quick-btn">
+            <span id="hud-sfx-quick-ico" aria-hidden="true">🔊</span>
+          </button>
+
           <button id="btn-weather-cycle" type="button" title="날씨 바꾸기 (맑음 ➔ 비 ➔ 눈)" aria-label="날씨 전환" class="pointer-events-auto nintendo-top-bubble-btn relative">
             <img id="img-nintendo-weather-btn" data-ui-nintendo="btnBubbleWeather" src="./assets/ui_nintendo/btn_bubble_weather.png" alt="날씨 전환" class="nintendo-top-bubble-img" />
             <span id="weather-cycle-emoji" class="nintendo-weather-mini-badge">☀️</span>
@@ -561,6 +571,16 @@
       </div>
     </section>
 
+    <!-- ==================== 8A-0. 🧭 스마트 컨텍스트 1-Tap 퀵 액션 토스트 캡슐 (조건 충족 시 자동 팝업!) ==================== -->
+    <div id="smart-quick-cta-bar" class="hidden fixed bottom-[12px] left-[12px] z-[44] pointer-events-auto smart-quick-cta-capsule" role="region" aria-label="스마트 1-Tap 추천 행동">
+      <span id="smart-cta-icon" class="smart-cta-badge-ico" aria-hidden="true">✨</span>
+      <span id="smart-cta-label" class="smart-cta-msg-txt">201호 착공 가능!</span>
+      <button id="btn-smart-cta-exec" type="button" class="clay-jelly-push push-coral !min-h-[32px] !h-[32px] !px-3 !text-[12px] shrink-0">
+        <span id="smart-cta-btn-txt">바로 착공 🔨</span>
+      </button>
+      <button id="btn-smart-cta-dismiss" type="button" class="smart-cta-dismiss-btn" title="잠시 숨기기" aria-label="알림 숨기기">✕</button>
+    </div>
+
     <!-- ==================== 8A. ② 우측 하단 닌텐도 마시멜로 버블 메인 버튼 2종 (`돈 뿌리기`, `건물주 수첩`) ==================== -->
     <div id="bottom-town-bar" class="hidden fixed bottom-[10px] right-[12px] z-[44] pointer-events-none flex items-end gap-[10px]">
       <div id="quick-duo-dock" class="flex items-end gap-[10px] pointer-events-auto">
@@ -673,7 +693,13 @@
               <div id="pocket-art-duel" class="clay-illust-hero-slot">
                 <img id="illust-pocket-duel" data-ui-nintendo="illustStarStage" src="./assets/ui_nintendo/illust_star_stage.png" alt="쇼룸 결투" class="clay-hero-illust" />
               </div>
-              <div id="pocket-duel-subtext" class="clay-block-stat text-[#3B0764]">내 방 50만 VS 98위 55만</div>
+              <div id="pocket-duel-subtext" class="clay-block-stat text-[#3B0764]">50만 VS 98위 55만</div>
+              <div id="pocket-duel-gauge-box" class="w-full">
+                <div class="pocket-thick-gauge-track duel-candy-track">
+                  <div id="pocket-duel-gauge-fill" class="pocket-thick-gauge-fill duel-candy-fill" style="width: 90%;"></div>
+                  <span id="pocket-duel-gauge-label" class="pocket-thick-gauge-text">🔥 승률 90%</span>
+                </div>
+              </div>
               <div class="clay-btn-groove">
                 <button id="btn-rival-battle" type="button" class="clay-jelly-push push-coral w-full">
                   <span id="hud-ico-rival" class="hidden"></span>
@@ -1189,6 +1215,22 @@
           <button type="button" data-shoptier="4" class="tier-filter-pill">T4</button>
         </div>
 
+        <!-- 구매 직후 원스톱 자동 배치 연결 배너 (인벤토리 재탐색 불필요!) -->
+        <div id="flagship-onestop-bar" class="hidden flagship-onestop-strip mb-2 shrink-0">
+          <div class="flex items-center gap-1.5 min-w-0">
+            <span class="text-[14px] shrink-0">✨</span>
+            <span id="flagship-onestop-msg" class="font-title text-[12.5px] text-[#042F2E] truncate">내 방에 영구 진열 완료!</span>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button id="btn-flagship-auto-place-room" type="button" class="clay-jelly-push push-green !min-h-[30px] !h-[30px] !px-3 !text-[12px]">
+              <span id="flagship-auto-place-label">🏠 호실에 바로 배치 ➔</span>
+            </button>
+            <button id="btn-flagship-quick-myroom" type="button" class="clay-jelly-push push-cyan !min-h-[30px] !h-[30px] !px-2.5 !text-[12px]">
+              <span>👑 내 방 보기</span>
+            </button>
+          </div>
+        </div>
+
         <!-- 크림 트레이 내부 파스텔 클레이 상품 블록 그리드 -->
         <div class="clay-cream-tray flex-1 min-h-0 overflow-y-auto custom-scroll">
           <div id="flagship-items-list" class="flagship-clay-grid"></div>
@@ -1422,6 +1464,9 @@
         <div id="tt-quick-strip" class="hidden"></div>
       </div>
     </section>
+
+    <!-- 닌텐도 손맛 이펙트 레이어 (버튼 탄성 파문 · 3D 별코인/지폐 자석 포물선 · 토이 터치 하트/음표/별 팝업) -->
+    <div id="nintendo-juice-fx-layer" class="fixed inset-0 z-[96] pointer-events-none overflow-hidden" aria-hidden="true"></div>
 
     <!-- 직접 조작 피드백용 초슬림 토스트 컨테이너 -->
     <div id="toast-container" class="fixed top-[78px] left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-1 pointer-events-none max-w-[360px]"></div>

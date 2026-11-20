@@ -2088,48 +2088,6 @@ input[type='range'].golden-coin-range::-webkit-slider-thumb {
   }
 }
 
-@media (max-height: 440px) {
-  .hud-top-flexbox-bar {
-    padding: 4px 10px !important;
-  }
-  .goal-navigator-capsule {
-    height: 31px !important;
-    min-height: 31px !important;
-    padding: 2px 9px 2px 5px !important;
-    box-shadow: 0 3px 0 #E11D84, 0 5px 10px rgba(236, 72, 153, 0.18) !important;
-  }
-  .goal-nav-prefix {
-    display: none !important;
-  }
-  .goal-nav-label {
-    font-size: 12px !important;
-    max-width: 150px !important;
-  }
-  #pocket-planner-popover .pocket-dashboard-board {
-    padding: 7px 11px 9px 11px !important;
-    max-height: calc(var(--vh-unit, 1vh) * 90) !important;
-    gap: 5px !important;
-  }
-  #pocket-planner-popover .wood-header-bar {
-    padding: 1px 2px 3px 2px !important;
-  }
-  #pocket-planner-popover .clay-cream-tray {
-    padding: 7px 9px !important;
-  }
-  #pocket-planner-popover .pocket-giant-action-card {
-    padding: 7px 9px !important;
-    gap: 3px !important;
-  }
-  #pocket-planner-popover .clay-hero-illust {
-    height: 62px !important;
-  }
-  #pocket-planner-popover .clay-jelly-push {
-    min-height: 29px !important;
-    height: 29px !important;
-    font-size: 12px !important;
-  }
-}
-
 html body [id].hidden,
 html body .hidden {
   display: none !important;
@@ -3657,7 +3615,7 @@ body {
   width: 100%;
   height: 100%;
   overflow: hidden !important;
-  background: #1A1412;
+  background: #DFF4FF;
   font-family: 'Pretendard Variable', 'Pretendard', 'TmoneyRoundWind', sans-serif !important;
   word-break: keep-all !important;
   overflow-wrap: break-word;
@@ -4912,48 +4870,6 @@ body:has(#shop-focus-panel:not(.hidden)) #focus-clean-capsule:not(.hidden) {
   }
 }
 
-@media (max-height: 440px) {
-  .hud-top-flexbox-bar {
-    padding: 4px 10px !important;
-  }
-  .goal-navigator-capsule {
-    height: 31px !important;
-    min-height: 31px !important;
-    padding: 2px 9px 2px 5px !important;
-    box-shadow: 0 3px 0 #E11D84, 0 5px 10px rgba(236, 72, 153, 0.18) !important;
-  }
-  .goal-nav-prefix {
-    display: none !important;
-  }
-  .goal-nav-label {
-    font-size: 12px !important;
-    max-width: 150px !important;
-  }
-  #pocket-planner-popover .pocket-dashboard-board {
-    padding: 7px 11px 9px 11px !important;
-    max-height: calc(var(--vh-unit, 1vh) * 90) !important;
-    gap: 5px !important;
-  }
-  #pocket-planner-popover .wood-header-bar {
-    padding: 1px 2px 3px 2px !important;
-  }
-  #pocket-planner-popover .clay-cream-tray {
-    padding: 7px 9px !important;
-  }
-  #pocket-planner-popover .pocket-giant-action-card {
-    padding: 7px 9px !important;
-    gap: 3px !important;
-  }
-  #pocket-planner-popover .clay-hero-illust {
-    height: 62px !important;
-  }
-  #pocket-planner-popover .clay-jelly-push {
-    min-height: 29px !important;
-    height: 29px !important;
-    font-size: 12px !important;
-  }
-}
-
 html body [id].hidden,
 html body .hidden {
   display: none !important;
@@ -6150,7 +6066,488 @@ html body .hidden {
   }
 }
 
-@media (max-height: 440px) {
+/* ==========================================================================
+   [25. NINTENDO CHIEF UX AUDIT — GAME JUICE, COIN MAGNET, 1-TAP CTA, CANDY GAUGES & 44PX TOUCH ERGONOMICS]
+   ========================================================================== */
+
+/* 1-A) 모든 인터랙티브 마시멜로 버튼 & 파스텔 캔디 클레이 쿠션 스프링 탄성(`cubic-bezier(0.34, 1.56, 0.64, 1)`) */
+button,
+.clay-jelly-push,
+.clay-tab-pill,
+.wood-tag-pill,
+.wood-clipboard-tag-btn,
+.focus-cap-action-btn,
+.focus-mini-icon-pill,
+.room-switch-chip,
+.mg-pill-btn,
+.nintendo-top-bubble-btn,
+.nintendo-sfx-quick-btn,
+.toy-img-main-fab,
+.btn-close-round,
+.pocket-giant-action-card,
+.flagship-product-clay-card {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.18s ease,
+    filter 0.16s ease !important;
+}
+
+.clay-jelly-push:hover:not(:disabled),
+.clay-tab-pill:hover:not(:disabled),
+.wood-tag-pill:hover:not(:disabled),
+.focus-cap-action-btn:hover:not(:disabled),
+.mg-pill-btn:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.03) !important;
+  filter: brightness(1.05);
+}
+
+.clay-jelly-push:active:not(:disabled),
+.clay-tab-pill:active:not(:disabled),
+.wood-tag-pill:active:not(:disabled),
+.wood-clipboard-tag-btn:active:not(:disabled),
+.focus-cap-action-btn:active:not(:disabled),
+.focus-mini-icon-pill:active:not(:disabled),
+.room-switch-chip:active:not(:disabled),
+.mg-pill-btn:active:not(:disabled),
+.btn-close-round:active:not(:disabled) {
+  transform: translateY(3px) scale(0.92, 0.94) !important;
+  filter: brightness(1.08);
+}
+
+.pocket-giant-action-card:hover,
+.flagship-product-clay-card:hover {
+  transform: translateY(-3px) scale(1.015) !important;
+}
+
+.pocket-giant-action-card:active,
+.flagship-product-clay-card:active {
+  transform: translateY(2px) scale(0.985) !important;
+}
+
+/* 클릭 직후 통통 튀어 오르는 스프링 리바운드 & 광택 팝 클래스 */
+.jelly-spring-rebound {
+  animation: nintendoJellyRebound 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes nintendoJellyRebound {
+  0% {
+    transform: scale(0.89, 0.92);
+  }
+  52% {
+    transform: translateY(-3px) scale(1.06, 0.97);
+  }
+  80% {
+    transform: translateY(1px) scale(0.98, 1.02);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 포인터 탭 위치에 퍼지는 귀여운 캔디 하이라이트 파문(Ripple) */
+.nintendo-tap-ripple {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 3px solid #FF69B4;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.85) 0%, rgba(124, 224, 255, 0.35) 60%, transparent 100%);
+  pointer-events: none;
+  transform: translate3d(var(--rx, 0px), var(--ry, 0px), 0) translate(-50%, -50%) scale(0.25);
+  animation: nintendoTapRippleAnim 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes nintendoTapRippleAnim {
+  0% {
+    opacity: 0.95;
+    transform: translate3d(var(--rx, 0px), var(--ry, 0px), 0) translate(-50%, -50%) scale(0.25);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--rx, 0px), var(--ry, 0px), 0) translate(-50%, -50%) scale(1.65);
+  }
+}
+
+/* 1-B) 수금 & 소비 시 자산 캡슐(`#hud-badge-gold`) 통통 부풀기 & 별코인/지폐 포물선 자석 스프라이트 */
+#hud-badge-gold.hud-capsule-inflate {
+  animation: hudCapsuleInflatePop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  border-color: #FFD000 !important;
+  box-shadow: 0 5px 0 #D97706, 0 0 18px rgba(255, 208, 0, 0.65), inset 0 2px 0 #FFFFFF !important;
+}
+
+@keyframes hudCapsuleInflatePop {
+  0% {
+    transform: scale(1);
+  }
+  42% {
+    transform: scale(1.13, 1.16);
+  }
+  75% {
+    transform: scale(0.97, 0.96);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.hud-spend-float {
+  position: absolute;
+  right: 6px;
+  top: 26px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #FFF1F2;
+  border: 2px solid #FB7185;
+  font-family: 'Fredoka', 'TmoneyRoundWind', sans-serif;
+  font-size: 11.5px;
+  font-weight: 900;
+  color: #E11D48;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: hudSpendFloatAnim 0.92s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes hudSpendFloatAnim {
+  0% {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.8);
+  }
+  25% {
+    opacity: 1;
+    transform: translateY(4px) scale(1.06);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(22px) scale(0.92);
+  }
+}
+
+.magnet-star-coin {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 32% 28%, #FFFBEB 0%, #FFE033 48%, #F59E0B 100%);
+  border: 2.5px solid #FFFFFF;
+  box-shadow: 0 3px 0 #D97706, 0 5px 10px rgba(245, 158, 11, 0.45);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  line-height: 1;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.magnet-star-coin.is-bill {
+  width: 32px;
+  height: 22px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, #A7F3D0 0%, #22C55E 100%);
+  box-shadow: 0 3px 0 #15803D, 0 5px 10px rgba(34, 197, 94, 0.4);
+  font-size: 13px;
+}
+
+/* 1-C) 3D 월드 토이(동물·건물·슈퍼카) 터치 시 퐁퐁 솟아오르는 하트/음표/별 파티클 */
+.toy-joy-mote {
+  position: fixed;
+  left: 0;
+  top: 0;
+  font-size: 18px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 0 #FFFFFF) drop-shadow(0 4px 6px rgba(15, 23, 42, 0.28));
+  pointer-events: none;
+  animation: toyJoyMoteFloat 0.88s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes toyJoyMoteFloat {
+  0% {
+    opacity: 0;
+    transform: translate3d(var(--mx, 0px), var(--my, 0px), 0) translate(-50%, -50%) scale(0.35) rotate(-12deg);
+  }
+  28% {
+    opacity: 1;
+    transform: translate3d(calc(var(--mx, 0px) + var(--dx, 0px) * 0.45), calc(var(--my, 0px) - 22px), 0) translate(-50%, -50%) scale(1.22) rotate(10deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(calc(var(--mx, 0px) + var(--dx, 0px)), calc(var(--my, 0px) - 54px), 0) translate(-50%, -50%) scale(0.85) rotate(-6deg);
+  }
+}
+
+/* 2-A) 우측 상단 1-Tap 사운드 음소거 마시멜로 버블 버튼 (`44x44px` 터치 보장!) */
+.nintendo-sfx-quick-btn {
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  min-height: 42px !important;
+  border-radius: 999px !important;
+  background: linear-gradient(180deg, #FFFFFF 0%, #F0F9FF 100%) !important;
+  border: 3px solid #4DC4F0 !important;
+  box-shadow: 0 4px 0 #289FD1, 0 6px 12px rgba(14, 165, 233, 0.24), inset 0 2px 0 #FFFFFF !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 18px !important;
+  line-height: 1 !important;
+  padding: 0 !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+}
+
+.nintendo-sfx-quick-btn.is-muted {
+  background: linear-gradient(180deg, #FFF1F2 0%, #FFE4E6 100%) !important;
+  border-color: #FB7185 !important;
+  box-shadow: 0 4px 0 #E11D48, 0 6px 12px rgba(225, 29, 72, 0.22) !important;
+}
+
+/* 2-B) 컨텍스트 기반 1-Tap 스마트 퀵 액션 토스트 캡슐 (`#smart-quick-cta-bar`) */
+.smart-quick-cta-capsule {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  min-height: 44px !important;
+  padding: 5px 8px 5px 11px !important;
+  border-radius: 999px !important;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFFBEB 100%) !important;
+  border: 3.5px solid #FF69B4 !important;
+  box-shadow: 0 5px 0 #E11D84, 0 10px 22px rgba(236, 72, 153, 0.3), inset 0 2px 0 #FFFFFF !important;
+  max-width: min(calc(var(--vw-unit, 1vw) * 68), 420px) !important;
+  animation: smartCtaFloatPulse 2.2s ease-in-out infinite;
+}
+
+@keyframes smartCtaFloatPulse {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.smart-cta-badge-ico {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #FFF078 0%, #FFD633 100%);
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.14);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13.5px;
+  flex-shrink: 0;
+}
+
+.smart-cta-msg-txt {
+  font-family: 'TmoneyRoundWind', 'Pretendard', sans-serif;
+  font-size: 12.5px;
+  font-weight: 900;
+  color: #1E293B;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.smart-cta-dismiss-btn {
+  width: 26px !important;
+  height: 26px !important;
+  min-width: 26px !important;
+  min-height: 26px !important;
+  border-radius: 999px !important;
+  background: #F1F5F9 !important;
+  border: 1.5px solid #CBD5E1 !important;
+  color: #64748B !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* 2-C) 가구 백화점 구매 직후 원스톱 자동 배치 배너 (`#flagship-onestop-bar`) */
+.flagship-onestop-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 16px;
+  background: linear-gradient(90deg, #ECFDF5 0%, #E0F2FE 100%);
+  border: 2.5px solid #34D399;
+  box-shadow: 0 3px 0 #10B981, inset 0 1.5px 0 #FFFFFF;
+}
+
+/* 3-A) 상단 `🎯 할 일 가이드` 내부 말랑한 파스텔 캔디 달성률 게이지 (`75%`) */
+.goal-candy-prog-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #FFF1F2;
+  border: 1.5px solid #FDA4AF;
+  flex-shrink: 0;
+}
+
+.goal-candy-mini-track {
+  width: 34px;
+  height: 7px;
+  border-radius: 999px;
+  background: #FFE4E6;
+  overflow: hidden;
+  display: inline-block;
+  box-shadow: inset 0 1px 2px rgba(159, 18, 57, 0.18);
+}
+
+.goal-candy-mini-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #34D399 0%, #22C55E 100%);
+  transition: width 0.28s ease;
+}
+
+.goal-candy-pct-txt {
+  font-family: 'Fredoka', 'TmoneyRoundWind', sans-serif;
+  font-size: 10.5px;
+  font-weight: 900;
+  color: #BE123C;
+  line-height: 1;
+}
+
+/* 수첩 내 파스텔 캔디 프로그레스 바 시인성 강화 */
+.pocket-thick-gauge-track {
+  background: rgba(255, 255, 255, 0.82) !important;
+  border: 2px solid #FFFFFF !important;
+  box-shadow: inset 0 2px 4px rgba(15, 23, 42, 0.14) !important;
+}
+
+.pocket-thick-gauge-fill {
+  background: linear-gradient(90deg, #38BDF8 0%, #22C55E 100%) !important;
+  transition: width 0.28s ease;
+}
+
+.pocket-thick-gauge-track.duel-candy-track .duel-candy-fill {
+  background: linear-gradient(90deg, #FF80BF 0%, #FF5A36 100%) !important;
+}
+
+.pocket-thick-gauge-text {
+  color: #0F172A !important;
+  text-shadow: 0 1px 0 #FFFFFF !important;
+}
+
+/* 3-B) 월세가 꽉 찬 방 위에 통통 튀는 황금 코인 방울 (`.rent-coin-bubble`, 44px 터치 보장!) */
+.rent-coin-bubble {
+  position: fixed !important;
+  left: 0 !important;
+  top: 0 !important;
+  min-width: 58px !important;
+  min-height: 44px !important;
+  padding: 4px 10px !important;
+  border-radius: 999px !important;
+  background: linear-gradient(180deg, #FFF799 0%, #FFD000 100%) !important;
+  border: 3px solid #FFFFFF !important;
+  box-shadow: 0 4px 0 #D97706, 0 8px 14px rgba(217, 119, 6, 0.36) !important;
+  color: #422006 !important;
+  font-family: 'Fredoka', 'TmoneyRoundWind', sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  white-space: nowrap !important;
+  display: inline-flex;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 3px !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  z-index: 26 !important;
+  transform: translate3d(var(--tx, -9999px), var(--ty, -9999px), 0) translate(-50%, -100%) !important;
+  animation: rentBubbleFloat 1.1s ease-in-out infinite alternate;
+}
+
+@keyframes rentBubbleFloat {
+  from {
+    margin-top: 0px;
+  }
+  to {
+    margin-top: -6px;
+  }
+}
+
+/* 3-C) 실시간 3D 시공 현장 파스텔 프로그레스 핀 + 뚝딱거리는 망치 애니메이션 */
+.construction-prog-pin {
+  position: fixed !important;
+  transform: translate(-50%, -100%) !important;
+  min-width: 168px !important;
+  padding: 7px 11px !important;
+  border-radius: 18px !important;
+  background: linear-gradient(180deg, #FFFFFF 0%, #F0F9FF 100%) !important;
+  border: 3px solid #4DC4F0 !important;
+  box-shadow: 0 5px 0 #289FD1, 0 10px 18px rgba(14, 165, 233, 0.28) !important;
+  z-index: 27 !important;
+  pointer-events: auto !important;
+}
+
+.hammer-swing-ico {
+  display: inline-block;
+  transform-origin: bottom right;
+  animation: hammerSwingTick 0.42s ease-in-out infinite alternate;
+}
+
+@keyframes hammerSwingTick {
+  0% {
+    transform: rotate(-18deg) scale(1);
+  }
+  100% {
+    transform: rotate(24deg) scale(1.14);
+  }
+}
+
+.construction-rush-btn {
+  margin-top: 6px !important;
+  width: 100% !important;
+  min-height: 32px !important;
+  border-radius: 999px !important;
+  background: linear-gradient(180deg, #6EE7B7 0%, #22C55E 100%) !important;
+  border: 2px solid #FFFFFF !important;
+  box-shadow: 0 3px 0 #15803D !important;
+  color: #FFFFFF !important;
+  font-family: 'TmoneyRoundWind', 'Jua', sans-serif !important;
+  font-size: 11.5px !important;
+  font-weight: 900 !important;
+  cursor: pointer !important;
+}
+
+/* 5) 모바일 & 세로 강제 회전(`360x800`) 터치 히트박스(`>= 44x44px`) & 스크롤 간섭 제로 보장 */
+.custom-scroll {
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.btn-close-round::after,
+.world-vivid-arrow-pin::after,
+.nintendo-top-bubble-btn::after,
+.nintendo-sfx-quick-btn::after {
+  content: '';
+  position: absolute;
+  inset: -7px;
+}
+
+.btn-close-round {
+  position: relative !important;
+}
+
+/* 세로 화면 강제 회전(`body.force-landscape-rot` / `orientation: portrait`)에서도 360px 논리 높이 완벽 대응! */
+@media (max-height: 440px), (orientation: portrait) and (max-width: 480px) {
   .hud-top-flexbox-bar {
     padding: 4px 10px !important;
   }
@@ -6165,30 +6562,38 @@ html body .hidden {
   }
   .goal-nav-label {
     font-size: 12px !important;
-    max-width: 150px !important;
+    max-width: 120px !important;
   }
   #pocket-planner-popover .pocket-dashboard-board {
-    padding: 7px 11px 9px 11px !important;
-    max-height: calc(var(--vh-unit, 1vh) * 90) !important;
-    gap: 5px !important;
+    padding: 6px 10px 8px 10px !important;
+    max-height: calc(var(--vh-unit, 1vh) * 92) !important;
+    gap: 4px !important;
   }
   #pocket-planner-popover .wood-header-bar {
-    padding: 1px 2px 3px 2px !important;
+    padding: 1px 2px 2px 2px !important;
   }
   #pocket-planner-popover .clay-cream-tray {
-    padding: 7px 9px !important;
+    padding: 6px 8px !important;
   }
   #pocket-planner-popover .pocket-giant-action-card {
-    padding: 7px 9px !important;
-    gap: 3px !important;
+    padding: 6px 8px !important;
+    gap: 2.5px !important;
   }
   #pocket-planner-popover .clay-hero-illust {
-    height: 62px !important;
+    height: 54px !important;
+  }
+  #pocket-planner-popover .pocket-thick-gauge-track {
+    height: 15px !important;
   }
   #pocket-planner-popover .clay-jelly-push {
-    min-height: 29px !important;
-    height: 29px !important;
+    min-height: 28px !important;
+    height: 28px !important;
     font-size: 12px !important;
+  }
+  .smart-quick-cta-capsule {
+    min-height: 38px !important;
+    padding: 3px 7px 3px 9px !important;
+    max-width: calc(var(--vw-unit, 1vw) * 64) !important;
   }
 }
 

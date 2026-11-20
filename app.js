@@ -1452,6 +1452,123 @@ function playShopDoorChimeSound() {
   });
 }
 
+let lastMarimbaAtMs = 0;
+function playUiMarimbaTapSound(kind = 'tap') {
+  const nowMs = performance.now();
+  if (nowMs - lastMarimbaAtMs < 28) return;
+  lastMarimbaAtMs = nowMs;
+  try {
+    const ctx = ensureAudioCtx();
+    if (!ctx) return;
+    const t0 = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const overtone = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const overGain = ctx.createGain();
+
+    if (kind === 'close') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(620, t0);
+      osc.frequency.exponentialRampToValueAtTime(390, t0 + 0.08);
+      gain.gain.setValueAtTime(0.042, t0);
+      gain.gain.exponentialRampToValueAtTime(0.0008, t0 + 0.09);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t0);
+      osc.stop(t0 + 0.1);
+      return;
+    }
+
+    const baseFreq = kind === 'tab' ? 659.25 : 587.33;
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(baseFreq, t0);
+    osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.26, t0 + 0.055);
+    gain.gain.setValueAtTime(0.046, t0);
+    gain.gain.exponentialRampToValueAtTime(0.0008, t0 + 0.085);
+
+    overtone.type = 'sine';
+    overtone.frequency.setValueAtTime(baseFreq * 2.0, t0);
+    overGain.gain.setValueAtTime(0.02, t0);
+    overGain.gain.exponentialRampToValueAtTime(0.0006, t0 + 0.05);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    overtone.connect(overGain);
+    overGain.connect(ctx.destination);
+    osc.start(t0);
+    overtone.start(t0);
+    osc.stop(t0 + 0.095);
+    overtone.stop(t0 + 0.06);
+  } catch (e) {
+    // 오디오 제한 환경 무시
+  }
+}
+
+function playCoinMagnetSingleNote(stepIdx = 0) {
+  const scale = [987.77, 1174.66, 1318.51, 1567.98, 1760.0, 1975.53, 2093.0];
+  const f = scale[Math.min(scale.length - 1, Math.max(0, stepIdx))];
+  playSynthTone(f, 'sine', 0.16, 0.042, 0);
+  playSynthTone(f * 1.5, 'triangle', 0.09, 0.018, 0.012);
+}
+
+function playWoodblockPlaceSound() {
+  // 가구 배치 시 통통 튀는 경쾌한 2단 우드블록 팝 사운드
+  try {
+    const ctx = ensureAudioCtx();
+    if (!ctx) return;
+    [
+      { f0: 410, f1: 290, d: 0.0, vol: 0.068 },
+      { f0: 615, f1: 460, d: 0.075, vol: 0.075 }
+    ].forEach((hit) => {
+      const t0 = ctx.currentTime + hit.d;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(hit.f0, t0);
+      osc.frequency.exponentialRampToValueAtTime(hit.f1, t0 + 0.065);
+      gain.gain.setValueAtTime(hit.vol, t0);
+      gain.gain.exponentialRampToValueAtTime(0.0008, t0 + 0.08);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t0);
+      osc.stop(t0 + 0.09);
+    });
+  } catch (e) {}
+}
+
+function playToyHopSqueakSound() {
+  // 3D 토이 캐릭터·건물·슈퍼카 터치 시 귀여운 폴짝 스프링 팝 사운드
+  try {
+    const ctx = ensureAudioCtx();
+    if (!ctx) return;
+    const t0 = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(440, t0);
+    osc.frequency.exponentialRampToValueAtTime(784, t0 + 0.09);
+    gain.gain.setValueAtTime(0.048, t0);
+    gain.gain.exponentialRampToValueAtTime(0.0008, t0 + 0.12);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(t0);
+    osc.stop(t0 + 0.13);
+  } catch (e) {}
+}
+
+function playVictoryFanfareSound() {
+  // 쇼룸 결투 승리 & 랭크업 전용 화려한 닌텐도 스타일 메이저 팡파르 화음!
+  const arp = [523.25, 659.25, 783.99, 1046.5];
+  arp.forEach((f, idx) => {
+    playSynthTone(f, 'triangle', 0.22, 0.055, idx * 0.08);
+    playSynthTone(f * 2, 'sine', 0.16, 0.024, idx * 0.08 + 0.01);
+  });
+  // 따단~! 피날레 화음
+  [523.25, 659.25, 783.99, 1046.5, 1318.51].forEach((f, idx) => {
+    playSynthTone(f, idx < 3 ? 'triangle' : 'sine', 0.68, 0.048, 0.36 + idx * 0.018);
+  });
+}
+
 // =========================================================
 // 2. 상가 간판 · 도로 노면 · 유럽풍 거리 표지판 프로시저럴 텍스처
 // =========================================================
@@ -10428,6 +10545,14 @@ function calcAvgHappiness() {
   return Math.min(100, Math.max(15, raw));
 }
 
+function triggerGoldCapsuleInflate() {
+  const badge = document.getElementById('hud-badge-gold');
+  if (!badge) return;
+  badge.classList.remove('hud-capsule-inflate');
+  void badge.offsetWidth;
+  badge.classList.add('hud-capsule-inflate');
+}
+
 function addGold(amount, screenX = null, screenY = null) {
   const amt = Math.round(amount);
   if (amt <= 0) return;
@@ -10435,13 +10560,15 @@ function addGold(amount, screenX = null, screenY = null) {
   state.stats.totalEarned = (state.stats.totalEarned || 0) + amt;
   hudAnim.targetGold = state.gold;
 
-  // 상단 HUD 숫자 스프링 팝 & +XX만! 플로팅 상승 연출
+  // 상단 HUD 숫자 스프링 팝 & 자산 캡슐 통통 부풀기 & +XX만! 플로팅 상승 연출
   const goldWrap = document.getElementById('hud-gold-wrap');
   if (goldWrap) {
     goldWrap.classList.remove('hud-num-pop');
     void goldWrap.offsetWidth;
     goldWrap.classList.add('hud-num-pop');
   }
+  triggerGoldCapsuleInflate();
+
   const popAnchor = document.getElementById('hud-gold-pop-anchor');
   if (popAnchor) {
     const popEl = document.createElement('div');
@@ -10452,7 +10579,10 @@ function addGold(amount, screenX = null, screenY = null) {
   }
 
   if (screenX !== null && screenY !== null) {
-    spawnFlyingCoinsUI(screenX, screenY, Math.min(6, Math.max(2, Math.ceil(amt / 35))));
+    const coinCnt = Math.min(10, Math.max(3, Math.ceil(amt / 22)));
+    spawnFlyingCoinsUI(screenX, screenY, coinCnt);
+  } else {
+    playCoinMagnetSingleNote(2);
   }
   updateTopHUDTargets();
 }
@@ -10460,11 +10590,23 @@ function addGold(amount, screenX = null, screenY = null) {
 function spendGold(cost) {
   const c = Math.round(cost);
   if (state.gold < c) {
+    playUiMarimbaTapSound('close');
     showToast(`자산이 부족합니다! (필요: ${c.toLocaleString()}만)`, 'coral');
     return false;
   }
   state.gold -= c;
   hudAnim.targetGold = state.gold;
+
+  const popAnchor = document.getElementById('hud-gold-pop-anchor');
+  if (popAnchor && c > 0) {
+    const spEl = document.createElement('div');
+    spEl.className = 'hud-spend-float';
+    spEl.textContent = `-${c.toLocaleString()}만`;
+    popAnchor.appendChild(spEl);
+    setTimeout(() => spEl.remove(), 950);
+  }
+  playSynthTone(523.25, 'triangle', 0.09, 0.036, 0);
+  playSynthTone(659.25, 'sine', 0.11, 0.03, 0.045);
   updateTopHUDTargets();
   return true;
 }
@@ -10784,29 +10926,63 @@ function showSpeechBubble3D(key, wx, wy, wz, text, duration = 2.4, forceShow = f
   };
 }
 
-function spawnFlyingCoinsUI(startX, startY, count = 4) {
-  if (!dom.flyingCoinLayer || !dom.hudBadgeGold) return;
-  const dst = getLogicalElementCenter(dom.hudBadgeGold);
-  const dstX = dst.x;
-  const dstY = dst.y;
+function spawnFlyingCoinsUI(startX, startY, count = 5) {
+  const fxLayer = document.getElementById('nintendo-juice-fx-layer') || dom.flyingCoinLayer;
+  const goldBadge = document.getElementById('hud-badge-gold') || dom.hudBadgeGold;
+  if (!fxLayer || !goldBadge) return;
 
-  for (let i = 0; i < count; i++) {
-    const coin = document.createElement('div');
-    coin.className = 'flying-coin-dot';
-    coin.innerHTML = createCustomSVGIcon('coin_stack', 18);
-    coin.style.position = 'fixed';
-    coin.style.left = `${startX + (Math.random() - 0.5) * 20}px`;
-    coin.style.top = `${startY + (Math.random() - 0.5) * 14}px`;
-    coin.style.transition = `all ${0.46 + i * 0.06}s cubic-bezier(0.2, 0.85, 0.35, 1)`;
-    dom.flyingCoinLayer.appendChild(coin);
+  const dst = getLogicalElementCenter(goldBadge);
+  const dstX = dst.valid ? dst.x : 92;
+  const dstY = dst.valid ? dst.y : 26;
+  const safeCount = Math.min(12, Math.max(3, count));
 
-    requestAnimationFrame(() => {
-      coin.style.left = `${dstX}px`;
-      coin.style.top = `${dstY}px`;
-      coin.style.transform = 'scale(0.5)';
-      coin.style.opacity = '0.3';
-    });
-    setTimeout(() => coin.remove(), 650 + i * 65);
+  // 3D 별코인(⭐)과 지폐 다발(💵)이 분수처럼 튀어 올랐다가 포물선(Quadratic Bezier) 자석 궤적으로 자산 캡슐로 흡수!
+  for (let i = 0; i < safeCount; i++) {
+    const isBill = i % 3 === 2;
+    const node = document.createElement('div');
+    node.className = isBill ? 'magnet-star-coin is-bill' : 'magnet-star-coin';
+    node.textContent = isBill ? '💵' : '⭐';
+    fxLayer.appendChild(node);
+
+    const spreadX = (Math.random() - 0.5) * 96;
+    const burstUpY = -36 - Math.random() * 58;
+    const p0x = startX + (Math.random() - 0.5) * 18;
+    const p0y = startY + (Math.random() - 0.5) * 14;
+    const ctrlX = (p0x + dstX) * 0.5 + spreadX * 1.35;
+    const ctrlY = Math.min(p0y, dstY) + burstUpY;
+
+    const delayMs = i * 44;
+    const durMs = 520 + (i % 4) * 45;
+    const startTs = performance.now() + delayMs;
+    const spinDeg = (Math.random() < 0.5 ? -1 : 1) * (240 + Math.random() * 180);
+
+    const stepAnim = (now) => {
+      if (now < startTs) {
+        node.style.opacity = '0';
+        requestAnimationFrame(stepAnim);
+        return;
+      }
+      const rawT = Math.min(1, (now - startTs) / durMs);
+      // 초반에는 통통 퍼지고 후반에는 자석처럼 가속!
+      const t = rawT < 0.35
+        ? (rawT / 0.35) * 0.32
+        : 0.32 + Math.pow((rawT - 0.35) / 0.65, 1.45) * 0.68;
+      const inv = 1 - t;
+      const bx = inv * inv * p0x + 2 * inv * t * ctrlX + t * t * dstX;
+      const by = inv * inv * p0y + 2 * inv * t * ctrlY + t * t * dstY;
+      const sc = rawT < 0.25 ? 0.65 + (rawT / 0.25) * 0.5 : 1.15 - ((rawT - 0.25) / 0.75) * 0.45;
+      node.style.opacity = rawT > 0.92 ? String(Math.max(0, (1 - rawT) * 12)) : '1';
+      node.style.transform = `translate3d(${bx}px, ${by}px, 0) translate(-50%, -50%) scale(${sc.toFixed(2)}) rotate(${(spinDeg * rawT).toFixed(0)}deg)`;
+
+      if (rawT < 1) {
+        requestAnimationFrame(stepAnim);
+      } else {
+        node.remove();
+        triggerGoldCapsuleInflate();
+        playCoinMagnetSingleNote(i);
+      }
+    };
+    requestAnimationFrame(stepAnim);
   }
 }
 
@@ -10822,29 +10998,38 @@ function spawnRentBubble(sourceKey, wx, wy, wz, amount, label = '') {
     return;
   }
 
-  const groundCoinY = Math.min(wy, 1.15);
+  const isRoadCoin = sourceKey.startsWith('drive_') || sourceKey.startsWith('race_');
+  const coinY = isRoadCoin ? Math.min(wy, 1.15) : wy;
   const coin3D = new THREE.Mesh(GEO.coin, MAT.pureGold24k || MAT.gold);
   coin3D.scale.setScalar(1.25);
-  coin3D.position.set(wx, groundCoinY, wz + 0.55);
+  coin3D.position.set(wx, coinY, wz + 0.55);
   scene.add(coin3D);
 
   const el = document.createElement('button');
   el.type = 'button';
   el.className = 'rent-coin-bubble pointer-events-auto hidden';
-  el.style.display = 'none';
-  el.innerHTML = `<span class="rb-amt">+${Math.round(amount)}만</span>`;
+  el.setAttribute('aria-label', `${label || '월세'} 수금`);
+  el.innerHTML = `<span>🪙</span><span class="rb-amt">+${Math.round(amount)}만</span>`;
 
   const bubble = {
     sourceKey,
     wx,
-    wy: groundCoinY,
+    wy: coinY,
     wz: wz + 0.55,
+    isRoadCoin,
     amount: Math.round(amount),
     label,
     el,
     coin3D,
     magnetized: false
   };
+
+  el.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    const lp = mapClientToLogical(ev.clientX, ev.clientY);
+    collectRentBubble(bubble, 0, lp.x, lp.y);
+  });
+
   coin3D.userData = { kind: 'rentCoin3D', bubbleRef: bubble };
   pickableMeshes.push(coin3D);
 
@@ -10866,7 +11051,7 @@ function collectRentBubble(bubble, bonusPct = 0, clickX = null, clickY = null) {
   addGold(finalAmt, sx, sy);
   state.firstRentCollected = true;
   spawnGroundStatusRing3D(bubble.wx, 0.28, bubble.wz, 'income');
-  spawnPoofParticles3D(bubble.wx, bubble.wy, bubble.wz, 0xFFD43B, 7);
+  spawnPoofParticles3D(bubble.wx, bubble.wy, bubble.wz, 0xFFD43B, 8);
 
   bubble.el?.remove();
   if (bubble.coin3D) {
@@ -10897,6 +11082,12 @@ function calcCollectableRentTotalMan() {
 
 function collectAllRentBubbles() {
   state.firstRentCollected = true;
+  const collectBtn = document.getElementById('btn-collect-all');
+  const btnCenter = getLogicalElementCenter(collectBtn);
+  const vp = getLogicalViewport();
+  const originX = btnCenter.valid ? btnCenter.x : vp.width * 0.5;
+  const originY = btnCenter.valid ? btnCenter.y : vp.height * 0.45;
+
   if (rentBubbles.length === 0) {
     const advanceMan = calcCollectableRentTotalMan();
     const b = state?.buildings?.lot_main;
@@ -10907,14 +11098,13 @@ function collectAllRentBubbles() {
         }
       }
     }
-    const vp = getLogicalViewport();
-    addGold(advanceMan, vp.width * 0.5, vp.height * 0.45);
+    addGold(advanceMan, originX, originY);
     if (typeof spawnPopMartSkillBurstVFX === 'function') {
       spawnPopMartSkillBurstVFX('rent_collect', { count: 2 });
     }
     closePocketPlanner();
     if (typeof syncPocketBigCardsUI === 'function') syncPocketBigCardsUI();
-    showToast(`💰 월세 +${formatWonBig(advanceMan)} 수금!`, 'gold');
+    showToast(`💰 월세 +${formatWonBig(advanceMan)} 촤르륵 수금!`, 'gold');
     saveGameState();
     return;
   }
@@ -10927,14 +11117,14 @@ function collectAllRentBubbles() {
   const collectBuff = getActiveHeroBuffKey();
   if ((collectBuff === 'collect_20' || collectBuff === 'cosmic_emperor_25') && sumBase > 0) {
     const heroBonus = Math.max(1, Math.round(sumBase * (collectBuff === 'cosmic_emperor_25' ? 0.25 : 0.2)));
-    addGold(heroBonus);
+    addGold(heroBonus, originX, originY);
   }
   if (typeof spawnPopMartSkillBurstVFX === 'function') {
     spawnPopMartSkillBurstVFX('rent_collect', { count: copy.length });
   }
   closePocketPlanner();
   if (typeof syncPocketBigCardsUI === 'function') syncPocketBigCardsUI();
-  showToast(`💰 총 +${formatWonBig(sumBase)} 수금!`, 'gold');
+  showToast(`💰 총 +${formatWonBig(sumBase)} 일괄 수금 완료!`, 'gold');
   saveGameState();
 }
 
@@ -11715,6 +11905,9 @@ function focusCameraOnRoom(roomId) {
   if (!rm) return;
   const lot = state.lots.find((l) => l.lotId === rm.lotId);
   if (!lot) return;
+
+  // 뒷벽 가림 0%를 위해 정면 황금 조망 방위각(camAzimuth = 0)으로 자동 정렬!
+  camAzimuth = 0;
 
   if (lot.stage === 2 && state.harborUnlocked) {
     state.activeTownStage = 2;
@@ -14779,6 +14972,7 @@ function handleBuyOrEquipFurniture(rm, category, itemId, isBuy, useInventory = f
     showSpeechBubble3D(`rm_${rm.id}`, wx, wy + 1.45, wz, def.reaction, 3.6, true);
   }
 
+  playWoodblockPlaceSound();
   updateTopHUDTargets();
   renderFocusedRoomInspector();
   renderFurnitureCatalogSheet();
@@ -15982,15 +16176,15 @@ function startLive3DConstructionJob(opt) {
     pinEl = document.createElement('div');
     pinEl.className = 'construction-prog-pin';
     pinEl.innerHTML = `
-      <div class="flex items-center justify-between gap-2 text-[11.5px] font-title text-[#2C221E]">
-        <span class="truncate">🏗️ ${opt.title}</span>
-        <span data-cprog-pct class="font-num text-[#B45309] shrink-0">0%</span>
+      <div class="flex items-center justify-between gap-2 text-[12px] font-title text-[#1E293B]">
+        <span class="truncate"><span class="hammer-swing-ico" aria-hidden="true">🔨</span> ${opt.title}</span>
+        <span data-cprog-pct class="font-num text-[#E11D48] shrink-0">0%</span>
       </div>
-      <div class="candy-gauge-track !h-2.5 mt-1">
-        <div data-cprog-fill class="candy-gauge-fill candy-gold" style="width: 2%;"></div>
+      <div class="pocket-thick-gauge-track !h-3 mt-1">
+        <div data-cprog-fill class="pocket-thick-gauge-fill" style="width: 2%;"></div>
       </div>
       <button type="button" data-crush-job="${opt.jobKey}" class="construction-rush-btn">
-        ⚡ 특별 야근 투입 (즉시 완공)
+        ⚡ 즉시 완공하기
       </button>
     `;
     pinEl.addEventListener('pointerdown', (e) => e.stopPropagation());
@@ -16111,9 +16305,10 @@ function tickLive3DConstructionSites(dt, elapsed) {
       site.rig.worker.position.y = 0.18 + Math.abs(Math.sin(elapsed * 7.5)) * 0.08;
     }
     site.dustAccum += dt;
-    if (site.dustAccum >= 0.62) {
+    if (site.dustAccum >= 0.52) {
       site.dustAccum = 0;
-      spawnPoofParticles3D(site.wx - 1.0, site.wy + 1.1, site.wz + (site.spanD || 7.6) * 0.45, 0xE7D5C0, 4);
+      spawnPoofParticles3D(site.wx - 0.9, site.wy + 1.25, site.wz + (site.spanD || 7.6) * 0.45, 0xFFFFFF, 5);
+      spawnPoofParticles3D(site.wx + 0.9, site.wy + 1.65, site.wz + (site.spanD || 7.6) * 0.42, 0xFDE047, 3);
     }
 
     // 4) 상단 실시간 공정률(0% -> 100%) 프로그레스 핀 화면 좌표 투영 업데이트
@@ -19263,11 +19458,8 @@ function tickRivalBattlesAndRace(dt, elapsed) {
 // --------------------- [신규 8] 시네마틱 3D 라이브 오프닝 로딩 & 타이틀 스크린 ---------------------
 function playTitleStartFanfareSFX() {
   try {
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return;
-    if (!window._landlordAudioCtx) window._landlordAudioCtx = new AC();
-    const ctx = window._landlordAudioCtx;
-    if (ctx.state === 'suspended') ctx.resume();
+    const ctx = ensureAudioCtx();
+    if (!ctx) return;
     const now = ctx.currentTime;
 
     // 경쾌한 차링~ 코인 스파클 + 브라스 팡파르 화음!
@@ -19277,7 +19469,7 @@ function playTitleStartFanfareSFX() {
       const gain = ctx.createGain();
       osc.type = idx < 3 ? 'triangle' : 'sine';
       osc.frequency.setValueAtTime(freq, now + idx * 0.065);
-      gain.gain.setValueAtTime(0.13, now + idx * 0.065);
+      gain.gain.setValueAtTime(0.11, now + idx * 0.065);
       gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.065 + 0.48);
       osc.connect(gain);
       gain.connect(ctx.destination);
@@ -19682,15 +19874,49 @@ function updateAllProjectedOverlays(dt) {
     }
   }
 
-  // 평소 메인 뷰 글자 버튼/배지 제로(Zero): 2D 상가·부지·월세 플로팅 배지 비노출 (3D 오브젝트 직접 클릭 & 수첩 지원)
+  // 2D 상가·부지 플로팅 배지는 비노출 유지하되, 월세가 꽉 찬 방/상가의 황금 코인 방울(`.rent-coin-bubble`)은 통통 튀며 원탭 수금 지원!
   for (const el of Object.values(shopOverlayEls)) {
     if (el) el.style.display = 'none';
   }
   for (const el of Object.values(lotOverlayEls)) {
     if (el) el.style.display = 'none';
   }
+
+  const anyModalBlockingRent = !!(
+    turntableState.active ||
+    !document.getElementById('pocket-planner-popover')?.classList.contains('hidden') ||
+    !document.getElementById('notebook-modal')?.classList.contains('hidden') ||
+    !document.getElementById('forbes-modal')?.classList.contains('hidden') ||
+    !document.getElementById('lot-dev-modal')?.classList.contains('hidden') ||
+    !document.getElementById('recruit-modal')?.classList.contains('hidden') ||
+    !document.getElementById('settings-modal')?.classList.contains('hidden') ||
+    !document.getElementById('flagship-shop-drawer')?.classList.contains('hidden')
+  );
+  const canShowRoomRentBubbles =
+    !anyModalBlockingRent &&
+    !titleScreenState.active &&
+    !guidedTourState.active &&
+    !driveState.active &&
+    !fpState.active &&
+    !duelState.active;
+
   for (const rb of rentBubbles) {
-    if (rb?.el) rb.el.style.display = 'none';
+    if (!rb?.el) continue;
+    if (!canShowRoomRentBubbles || rb.isRoadCoin) {
+      rb.el.classList.add('hidden');
+      rb.el.style.display = 'none';
+      continue;
+    }
+    const pt = projectWorldToScreen(rb.wx, rb.wy + 0.85, rb.wz);
+    if (!pt.visible || pt.x < 34 || pt.x > vw - 34 || pt.y < 54 || pt.y > vh - 46) {
+      rb.el.classList.add('hidden');
+      rb.el.style.display = 'none';
+    } else {
+      rb.el.classList.remove('hidden');
+      rb.el.style.display = 'inline-flex';
+      rb.el.style.setProperty('--tx', `${pt.x}px`);
+      rb.el.style.setProperty('--ty', `${pt.y}px`);
+    }
   }
 
   // 3단계 카메라 거리 연동 말풍선 투영 (1단계 원거리 숨김 / 2단계 36x28 미니 힌트 / 3단계 전체 대사 오픈)
@@ -19781,12 +20007,16 @@ function computeActiveGoalStep() {
   const rm201 = b?.rooms?.find((r) => r.subId === '201');
   const mgr = ensureManagerSchema(b?.manager);
   const D = GAME_BALANCE.buildingDepth || 8.0;
+  const curGold = Math.max(0, Number(state?.gold) || 0);
 
   // Step 1: 가구 백화점 첫 침대 구매
   if (!hasBoughtOrEquippedPaidBed()) {
+    const firstPaidBed = (FURNITURE_CATALOG.bed || []).find((it) => it.cost > 0) || { cost: 18 };
+    const pct = Math.min(100, Math.max(5, Math.round((curGold / Math.max(1, firstPaidBed.cost)) * 100)));
     return {
       step: 1,
       text: `침대 구매`,
+      progressPct: pct,
       thumbUrl: POPMART_ASSETS?.furniture?.bedTier3Canopy || './assets/furniture/bed_tier3_canopy.png',
       targetType: 'world',
       wx: 25.2,
@@ -19809,9 +20039,13 @@ function computeActiveGoalStep() {
   const hasInvBed = (FURNITURE_CATALOG.bed || []).some((it) => it.cost > 0 && (state?.furnitureInventory?.[it.id] || 0) > 0);
   const rm201NeedsSetup = rm201 && (!rm201.unlocked || !rm201.household || (hasInvBed && (!rm201BedDef || rm201BedDef.cost === 0)));
   if (rm201NeedsSetup) {
+    const subDone = (rm201.unlocked ? 40 : Math.min(38, Math.round((curGold / Math.max(1, rm201.unlockCost || 25)) * 40)))
+      + (rm201.household ? 35 : 0)
+      + ((rm201BedDef && rm201BedDef.cost > 0) ? 25 : (hasInvBed ? 15 : 0));
     return {
       step: 2,
       text: `201호 세팅`,
+      progressPct: Math.min(100, Math.max(15, subDone)),
       thumbUrl: POPMART_ASSETS?.characters?.char_01_boba_otter?.masterUrl || './assets/characters/char_01_boba_otter.png',
       targetType: 'world',
       wx: mainLot.x + (rm201.lx || 0),
@@ -19837,6 +20071,7 @@ function computeActiveGoalStep() {
     return {
       step: 3,
       text: `첫 월세 수금`,
+      progressPct: 100,
       thumbUrl: POPMART_ASSETS?.actionIconUrls?.[0] || './assets/ui/ui_pocket_notebook.png',
       targetType: 'ui_notebook',
       execute: () => {
@@ -19859,9 +20094,13 @@ function computeActiveGoalStep() {
     }
   }
   if ((mgr.salaryLv || 1) < 2 || mgr.onStrike || anyRoomCapped) {
+    const nextMgrDef = getManagerSalaryDef(Math.min(20, (mgr.salaryLv || 1) + 1));
+    const reqCost = Math.max(1, nextMgrDef?.raiseCost || 20);
+    const pct = Math.min(100, Math.max(8, Math.round((curGold / reqCost) * 100)));
     return {
       step: 4,
       text: `소장 급여 인상`,
+      progressPct: pct,
       thumbUrl: POPMART_ASSETS?.characters?.char_29_bonsai_tortoise?.masterUrl || './assets/characters/char_29_bonsai_tortoise.png',
       targetType: 'world',
       wx: mainLot.x + 2.55,
@@ -19883,17 +20122,18 @@ function computeActiveGoalStep() {
   const activeSiteKeys = Object.keys(constructionState.sites || {});
   if (activeSiteKeys.length > 0) {
     const site = constructionState.sites[activeSiteKeys[0]];
+    const sitePct = Math.min(99, Math.max(2, Math.round(site.progress || 10)));
     return {
       step: 5,
       text: `공사 즉시 완공`,
+      progressPct: sitePct,
       thumbUrl: './assets/buildings/prop_construction_crane.png',
       targetType: 'world',
       wx: site.wx,
       wy: site.wy + (site.spanH || 4.8) + 4.0,
       wz: site.wz,
       execute: () => {
-        const pop = document.getElementById('pocket-planner-popover');
-        if (pop && pop.classList.contains('hidden')) togglePocketPlanner();
+        completeLive3DConstructionJob(activeSiteKeys[0], true);
       }
     };
   }
@@ -19903,25 +20143,33 @@ function computeActiveGoalStep() {
     return {
       step: 5,
       text: `월세 +${formatWonBig(totMan)} 수금`,
+      progressPct: 100,
       thumbUrl: POPMART_ASSETS?.actionIconUrls?.[0] || './assets/ui/ui_pocket_notebook.png',
       targetType: 'ui_notebook',
       execute: () => {
-        const pop = document.getElementById('pocket-planner-popover');
-        if (pop && pop.classList.contains('hidden')) togglePocketPlanner();
+        collectAllRentBubbles();
       }
     };
   }
 
   const standings = getForbesStandings();
   const nextRank = Math.max(1, (standings.myRank || 99) - 1);
+  const myPhVal = calcMyPenthouseValueBreakdown().totalMan;
+  const oppValMan = calcOpponentPenthouseValueMan({ modeTab: 'ranked', liveRank: nextRank });
+  const duelPct = Math.min(100, Math.max(10, Math.round((myPhVal / Math.max(1, oppValMan)) * 100)));
   return {
     step: 5,
     text: `${nextRank}위 쇼룸 결투`,
+    progressPct: duelPct,
     thumbUrl: POPMART_ASSETS?.ui?.duelTrophyCrownUrl || './assets/ui/ui_duel_trophy_crown.png',
     targetType: 'ui_notebook',
     execute: () => {
-      const pop = document.getElementById('pocket-planner-popover');
-      if (pop && pop.classList.contains('hidden')) togglePocketPlanner();
+      if (myPhVal >= oppValMan) {
+        enterShowroomFlexDuel('ranked');
+      } else {
+        const pop = document.getElementById('pocket-planner-popover');
+        if (pop && pop.classList.contains('hidden')) togglePocketPlanner();
+      }
     }
   };
 }
@@ -20178,11 +20426,17 @@ function syncPocketBigCardsUI() {
     if (buildSub) buildSub.textContent = `실시간 공정률 ${pct}%`;
     gaugeBox?.classList.remove('hidden');
     if (gaugeFill) gaugeFill.style.width = `${pct}%`;
-    if (gaugeLbl) gaugeLbl.textContent = `🚧 ${pct}%`;
+    if (gaugeLbl) gaugeLbl.textContent = `🔨 시공중 ${pct}%`;
     if (buildBtnLbl) buildBtnLbl.textContent = '⚡ 즉시 완공';
     buildBadge?.classList.remove('hidden');
   } else {
-    gaugeBox?.classList.add('hidden');
+    const targetCost = Math.max(1, expInfo.cost || 25);
+    const fundPct = Math.min(100, Math.max(4, Math.round(((state.gold || 0) / targetCost) * 100)));
+    gaugeBox?.classList.remove('hidden');
+    if (gaugeFill) gaugeFill.style.width = `${fundPct}%`;
+    if (gaugeLbl) {
+      gaugeLbl.textContent = fundPct >= 100 ? '✨ 100% 착공 가능!' : `💰 자금 ${fundPct}% 달성`;
+    }
     buildBadge?.classList.add('hidden');
     if (buildSub) {
       buildSub.textContent = expInfo.mode === 'room'
@@ -20203,11 +20457,14 @@ function syncPocketBigCardsUI() {
   const duelBtnLbl = document.getElementById('pocket-duel-btn-label');
   const duelBadgeEl = document.getElementById('stamp-duel-badge');
   const duelImg = document.getElementById('illust-pocket-duel');
+  const duelGaugeFill = document.getElementById('pocket-duel-gauge-fill');
+  const duelGaugeLbl = document.getElementById('pocket-duel-gauge-label');
   const standings = getForbesStandings();
   const nextRank = Math.max(1, (standings.myRank || 99) - 1);
   const myPhVal = calcMyPenthouseValueBreakdown().totalMan;
   const oppValMan = calcOpponentPenthouseValueMan({ modeTab: 'ranked', liveRank: nextRank });
   const winReady = myPhVal >= oppValMan;
+  const duelPct = Math.min(100, Math.max(8, Math.round((myPhVal / Math.max(1, oppValMan)) * 100)));
 
   const starStageSrc = POPMART_ASSETS?.uiNintendo?.illustStarStage || POPMART_ASSETS?.uiIllustrations?.duelStage;
   if (duelImg && starStageSrc && duelImg.getAttribute('src') !== starStageSrc) {
@@ -20217,10 +20474,16 @@ function syncPocketBigCardsUI() {
     duelTitleEl.textContent = `🦹‍♂️ 쇼룸 결투`;
   }
   if (duelBadgeEl) {
-    duelBadgeEl.textContent = winReady ? '승리예상🔥' : `${nextRank}위전`;
+    duelBadgeEl.textContent = winReady ? '승리확정🔥' : `${nextRank}위전`;
   }
   if (duelSubEl) {
     duelSubEl.textContent = `${formatWonBig(myPhVal).replace(' 원', '')} VS ${nextRank}위 ${formatWonBig(oppValMan).replace(' 원', '')}`;
+  }
+  if (duelGaugeFill) {
+    duelGaugeFill.style.width = `${duelPct}%`;
+  }
+  if (duelGaugeLbl) {
+    duelGaugeLbl.textContent = winReady ? '🔥 승리 확정 100%!' : `⚔️ 재력 ${duelPct}% 달성`;
   }
   if (duelBtnLbl) {
     duelBtnLbl.textContent = winReady ? '⚔️ 결투 승리하기!' : '⚔️ 결투 입장';
@@ -20617,10 +20880,20 @@ function tickGoalNavigatorAndWorldActionBadges(dt) {
   if (goalTextEl && goal) {
     goalTextEl.textContent = goal.text;
   }
+  const goalProgFill = document.getElementById('goal-nav-prog-fill');
+  const goalProgPct = document.getElementById('goal-nav-prog-pct');
+  if (goal && typeof goal.progressPct === 'number') {
+    const gp = THREE.MathUtils.clamp(Math.round(goal.progressPct), 0, 100);
+    if (goalProgFill) goalProgFill.style.width = `${gp}%`;
+    if (goalProgPct) goalProgPct.textContent = `${gp}%`;
+  }
   const goalThumbImg = document.getElementById('goal-nav-thumb-img');
   if (goalThumbImg && goal?.thumbUrl && goalThumbImg.getAttribute('src') !== goal.thumbUrl) {
     goalThumbImg.setAttribute('src', goal.thumbUrl);
   }
+
+  // [Pillar 2-1] 컨텍스트 기반 1-Tap 스마트 퀵 액션 캡슐 동기화 (`#smart-quick-cta-bar`)
+  syncSmartQuickCtaBar(inCleanTownStage1 && !anyModalOpen);
 
   const vpGuide = getLogicalViewport();
   const vw = vpGuide.width;
@@ -20716,6 +20989,160 @@ function tickGoalNavigatorAndWorldActionBadges(dt) {
   placeVividArrowPin(bigUiGuideState.gatePinEl, 41.2, 6.9, 17.8, false);
 
   syncSmartWorldLodBubbles(anyModalOpen, landmarkBoxes);
+}
+
+let smartQuickCtaState = {
+  dismissedSig: null,
+  dismissUntilMs: 0,
+  currentAction: null
+};
+
+function computeSmartOneTapQuickAction() {
+  const curGold = Math.max(0, Number(state?.gold) || 0);
+
+  // 1) 진행 중인 공사가 있을 때 1-Tap 즉시 완공
+  const activeSiteKeys = Object.keys(constructionState.sites || {});
+  if (activeSiteKeys.length > 0) {
+    const jk = activeSiteKeys[0];
+    const st = constructionState.sites[jk];
+    const pct = Math.min(99, Math.max(1, Math.round(st?.progress || 10)));
+    return {
+      sig: `rush_${jk}`,
+      icon: '🚧',
+      label: `${st?.title || '증축 공사'} (${pct}%)`,
+      btnText: '즉시 완공 ⚡',
+      btnTone: 'push-green',
+      run: () => completeLive3DConstructionJob(jk, true)
+    };
+  }
+
+  // 2) 쇼룸 결투 100% 승리 확정 조건 충족 시 1-Tap 즉시 결투 입장!
+  const standings = getForbesStandings();
+  const nextRank = Math.max(1, (standings.myRank || 99) - 1);
+  const myPhVal = calcMyPenthouseValueBreakdown().totalMan;
+  const oppValMan = calcOpponentPenthouseValueMan({ modeTab: 'ranked', liveRank: nextRank });
+  if (myPhVal >= oppValMan && standings.myRank > 1) {
+    return {
+      sig: `duel_win_${nextRank}`,
+      icon: '🔥',
+      label: `${nextRank}위 결투 승리 확정!`,
+      btnText: '즉시 결투 ⚔️',
+      btnTone: 'push-coral',
+      run: () => enterShowroomFlexDuel('ranked')
+    };
+  }
+
+  // 3) 공실인 개방 호실이 있을 때 1-Tap 세입자 입주 모집!
+  const b = state?.buildings?.lot_main;
+  if (b) {
+    const vacantRm = (b.rooms || []).find((r) => r.unlocked && !r.household);
+    if (vacantRm) {
+      return {
+        sig: `vacant_${vacantRm.id}`,
+        icon: '🏠',
+        label: `${vacantRm.name}호 공실 입주 대기!`,
+        btnText: '바로 입주 🤝',
+        btnTone: 'push-cyan',
+        run: () => openRecruitModal(vacantRm)
+      };
+    }
+  }
+
+  // 4) 돈이 모여 다음 호실 증축 착공이 가능한 순간 1-Tap 바로 착공!
+  if (hasAnyPaidFurnitureOrSecondRoom()) {
+    const expInfo = getNextExpansionTargetInfo();
+    if (expInfo.mode === 'room' && expInfo.room && curGold >= expInfo.room.unlockCost) {
+      return {
+        sig: `expand_${expInfo.room.id}`,
+        icon: '✨',
+        label: `${expInfo.room.name}호 착공 가능!`,
+        btnText: '바로 착공 🔨',
+        btnTone: 'push-cyan',
+        run: () => startRoomLiveConstructionFromPocket(expInfo.room)
+      };
+    }
+  } else {
+    const firstBed = (FURNITURE_CATALOG.bed || []).find((it) => it.cost > 0);
+    if (firstBed && curGold >= firstBed.cost) {
+      return {
+        sig: 'first_bed_shop',
+        icon: '🛋️',
+        label: '첫 명품 침대 구매 가능!',
+        btnText: '바로 구매 🛒',
+        btnTone: 'push-gold',
+        run: () => openFurnitureFlagshipDrawer('bed')
+      };
+    }
+  }
+
+  // 5) 관리소장 태업 중이거나 월세 한도 도달 & 급여 인상 자금 충족 시 1-Tap 소장 승급!
+  if (b) {
+    const mgr = ensureManagerSchema(b.manager);
+    const nextMgr = mgr.salaryLv < 20 ? getManagerSalaryDef(mgr.salaryLv + 1) : null;
+    const anyCapped = (b.rooms || []).some((r) => r.unlocked && calcRoomRentDetail(b, r).isCapped);
+    if (nextMgr && (mgr.onStrike || anyCapped) && curGold >= nextMgr.raiseCost) {
+      return {
+        sig: `mgr_raise_${mgr.salaryLv}`,
+        icon: '🪴',
+        label: mgr.onStrike ? '소장 파업 즉시 해결!' : '월세 한도 돌파 가능!',
+        btnText: '소장 승급 ⬆️',
+        btnTone: 'push-green',
+        run: () => raiseManagerSalaryLevel('lot_main')
+      };
+    }
+  }
+
+  // 6) 월세 코인 방울 2개 이상 누적 시 1-Tap 일괄 수금!
+  if (rentBubbles.length >= 2) {
+    const totMan = calcCollectableRentTotalMan();
+    return {
+      sig: `rent_batch_${rentBubbles.length}`,
+      icon: '🪙',
+      label: `월세 +${formatWonBig(totMan)} 대기!`,
+      btnText: '일괄 수금 🪙',
+      btnTone: 'push-green',
+      run: () => collectAllRentBubbles()
+    };
+  }
+
+  return null;
+}
+
+function syncSmartQuickCtaBar(canDisplay) {
+  const barEl = document.getElementById('smart-quick-cta-bar');
+  if (!barEl) return;
+  if (!canDisplay) {
+    barEl.classList.add('hidden');
+    smartQuickCtaState.currentAction = null;
+    return;
+  }
+
+  const cand = computeSmartOneTapQuickAction();
+  if (!cand) {
+    barEl.classList.add('hidden');
+    smartQuickCtaState.currentAction = null;
+    return;
+  }
+
+  if (smartQuickCtaState.dismissedSig === cand.sig && Date.now() < smartQuickCtaState.dismissUntilMs) {
+    barEl.classList.add('hidden');
+    return;
+  }
+
+  smartQuickCtaState.currentAction = cand;
+  const icoEl = document.getElementById('smart-cta-icon');
+  const lblEl = document.getElementById('smart-cta-label');
+  const btnEl = document.getElementById('btn-smart-cta-exec');
+  const btnTxt = document.getElementById('smart-cta-btn-txt');
+
+  if (icoEl) icoEl.textContent = cand.icon;
+  if (lblEl) lblEl.textContent = cand.label;
+  if (btnTxt) btnTxt.textContent = cand.btnText;
+  if (btnEl) {
+    btnEl.classList.remove('push-coral', 'push-green', 'push-cyan', 'push-gold');
+    btnEl.classList.add(cand.btnTone || 'push-coral');
+  }
+  barEl.classList.remove('hidden');
 }
 
 // =========================================================
@@ -21227,6 +21654,61 @@ function renderFurnitureFlagshipDrawer() {
   });
 }
 
+let flagshipOneStopTarget = null;
+
+function findBestUpgradeableTenantRoomForItem(cat, itemDef) {
+  if (!itemDef) return null;
+  const invCount = Number(state.furnitureInventory?.[itemDef.id] || 0);
+  if (invCount <= 0) return null;
+  const b = state?.buildings?.lot_main;
+  if (!b) return null;
+
+  let bestRm = null;
+  for (const rm of (b.rooms || [])) {
+    if (!rm.unlocked) continue;
+    const curId = rm.equippedFurniture?.[cat];
+    if (curId === itemDef.id) continue;
+    const curDef = getFurnitureItemDef(cat, curId);
+    const curRent = curDef?.rentAdd || 0;
+    const nextRent = itemDef.rentAdd || ((itemDef.tier || 1) * 12);
+    if (nextRent >= curRent) {
+      bestRm = rm;
+      if (rm.household) break;
+    }
+  }
+  return bestRm;
+}
+
+function syncFlagshipOneStopBanner(cat = null, itemDef = null) {
+  const bar = document.getElementById('flagship-onestop-bar');
+  const msgEl = document.getElementById('flagship-onestop-msg');
+  const placeBtn = document.getElementById('btn-flagship-auto-place-room');
+  const placeLbl = document.getElementById('flagship-auto-place-label');
+  if (!bar) return;
+
+  if (!cat || !itemDef) {
+    bar.classList.add('hidden');
+    flagshipOneStopTarget = null;
+    return;
+  }
+
+  const candRm = findBestUpgradeableTenantRoomForItem(cat, itemDef);
+  flagshipOneStopTarget = candRm ? { roomId: candRm.id, cat, itemId: itemDef.id } : null;
+
+  if (msgEl) {
+    msgEl.textContent = `👑 [${itemDef.name}] 내 방 진열 완료!`;
+  }
+  if (placeBtn && placeLbl) {
+    if (candRm) {
+      placeBtn.classList.remove('hidden');
+      placeLbl.textContent = `🏠 ${candRm.name}호에 바로 배치 (+${itemDef.rentAdd || 12}만) ➔`;
+    } else {
+      placeBtn.classList.add('hidden');
+    }
+  }
+  bar.classList.remove('hidden');
+}
+
 function buyFlagshipFurnitureToInventory(cat, itemId) {
   const item = getFurnitureItemDef(cat, itemId);
   if (!item) return;
@@ -21265,10 +21747,11 @@ function buyFlagshipFurnitureToInventory(cat, itemId) {
     }
   }
 
+  playWoodblockPlaceSound();
   playShopDoorChimeSound();
-  rebuildMyPenthouse3D();
+  rebuildMyPenthouse3D(cat);
   if (flagshipShop3DGroup) {
-    triggerSquashStretch(flagshipShop3DGroup, 1.12);
+    triggerSquashStretch(flagshipShop3DGroup, 1.16);
     spawnPoofParticles3D(25.2, 2.8, -4.5, 0xFFD700, 12);
   }
 
@@ -21277,6 +21760,8 @@ function buyFlagshipFurnitureToInventory(cat, itemId) {
   updateTopHUDTargets();
   updateForbesRankAndHUD(true);
   renderFurnitureFlagshipDrawer();
+  syncFlagshipOneStopBanner(cat, item);
+
   if (duelState.active) {
     rebuildSingleDuelShowroom3D(false, cat);
     syncDuelScoreHUD();
@@ -21286,7 +21771,7 @@ function buyFlagshipFurnitureToInventory(cat, itemId) {
   }
 
   const phVal = calcMyPenthouseValueBreakdown();
-  showToast(`👑 [${item.name}] 내 방 영구 진열 & 창고 입고! (내 방 총 가치: ${formatWonBig(phVal.totalMan)})`, 'gold');
+  showToast(`👑 [${item.name}] 내 방 진열 완료! (내 방 가치: ${formatWonBig(phVal.totalMan)})`, 'gold');
   saveGameState();
 }
 
@@ -21986,8 +22471,9 @@ function finishShowroomDuelAppraisal() {
       state.rivalKangPenalty = (state.rivalKangPenalty || 0) + 120000;
     }
 
-    addGold(prize);
-    playGoldenBellSound();
+    const vpDuelWin = getLogicalViewport();
+    addGold(prize, vpDuelWin.width * 0.5, vpDuelWin.height * 0.45);
+    playVictoryFanfareSound();
     for (let f = 0; f < 4; f++) {
       spawnShockwaveRing3D(SHOWROOM_DUEL_ORIGIN.x - 6.95, 0.35, SHOWROOM_DUEL_ORIGIN.z, 0xFFD700, 10.5);
       spawnPoofParticles3D(SHOWROOM_DUEL_ORIGIN.x - 8.5 + f * 2.2, 3.8 + (f % 2) * 1.2, SHOWROOM_DUEL_ORIGIN.z, 0xFFD700, 18);
@@ -26354,20 +26840,27 @@ async function initPopMartAssetsAsync() {
     }));
   }
 
-  await Promise.all(roster.map(async (ch) => {
-    try {
-      const srcPath = ch.imgPath || ch.sheetPath;
-      const rawImg = await loadRawImagePromise(srcPath);
-      const cleanCv = removeWhiteBackground(rawImg, 'single', 232);
-      const trimmedCv = cropTrimmedRegionToCanvas(cleanCv, 0, 0, cleanCv.width, cleanCv.height, 512, 512, true);
-      POPMART_ASSETS.characters[ch.id] = {
-        masterCanvas: trimmedCv,
-        masterUrl: trimmedCv.toDataURL('image/png')
-      };
-    } catch (e) {
-      // 개별 이미지 로드 실패 시 안전 폴백 유지
-    }
-  }));
+  const yieldMainThread = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+  for (let rIdx = 0; rIdx < roster.length; rIdx += 4) {
+    const chunk = roster.slice(rIdx, rIdx + 4);
+    await Promise.all(chunk.map(async (ch) => {
+      try {
+        const srcPath = ch.imgPath || ch.sheetPath;
+        const rawImg = await loadRawImagePromise(srcPath);
+        await yieldMainThread();
+        const cleanCv = removeWhiteBackground(rawImg, 'single', 232);
+        const trimmedCv = cropTrimmedRegionToCanvas(cleanCv, 0, 0, cleanCv.width, cleanCv.height, 512, 512, true);
+        POPMART_ASSETS.characters[ch.id] = {
+          masterCanvas: trimmedCv,
+          masterUrl: trimmedCv.toDataURL('image/png')
+        };
+      } catch (e) {
+        // 개별 이미지 로드 실패 시 안전 폴백 유지
+      }
+    }));
+    await yieldMainThread();
+  }
 
   for (const entry of popMartActorRegistry) {
     applyLoadedSheetToActor(entry);
@@ -26377,6 +26870,7 @@ async function initPopMartAssetsAsync() {
   // 공통 단일 에셋 누끼 & 고해상도 이방성 필터링(Anisotropy + SRGBColorSpace) 텍스처 빌더
   const loadSingleCleanAsset = async (url, mode = 'vfx', outSize = 512, makeGlowStdMat = false) => {
     if (!url) return null;
+    await yieldMainThread();
     const raw = await loadRawImagePromise(url);
     const rawClean = removeWhiteBackground(raw, mode, 240);
     const cv = cropTrimmedRegionToCanvas(rawClean, 0, 0, rawClean.width, rawClean.height, outSize, outSize, false);
@@ -26954,6 +27448,7 @@ function loadGameState() {
       hasChosenHeroAnimal: !!parsed.hasChosenHeroAnimal,
       devUnlockAll: !!parsed.devUnlockAll,
       firstRentCollected: !!parsed.firstRentCollected,
+      sfxMuted: !!parsed.sfxMuted,
       weatherMode: (parsed.weatherMode === 'rain' || parsed.weatherMode === 'snow') ? parsed.weatherMode : 'clear',
       furnitureInventory: {
         ...(fresh.furnitureInventory || {}),
@@ -27457,9 +27952,92 @@ function bindAllUIEvents() {
     fpState.draggingLook = false;
   });
 
+  const spawnJoyMotesScreen = (sx, sy, emojis = ['💖', '🎵', '⭐', '✨']) => {
+    const fxLayer = document.getElementById('nintendo-juice-fx-layer');
+    if (!fxLayer) return;
+    for (let i = 0; i < 4; i++) {
+      const m = document.createElement('div');
+      m.className = 'toy-joy-mote';
+      m.textContent = emojis[i % emojis.length];
+      m.style.setProperty('--mx', `${sx + (Math.random() - 0.5) * 18}px`);
+      m.style.setProperty('--my', `${sy - 6}px`);
+      m.style.setProperty('--dx', `${((i - 1.5) * 20 + (Math.random() - 0.5) * 12).toFixed(1)}px`);
+      fxLayer.appendChild(m);
+      setTimeout(() => m.remove(), 920);
+    }
+  };
+
+  const triggerWorldToyTapJuice = (targetObj, wx, wy, wz, sx, sy, moteSet = ['💖', '🎵', '⭐', '✨']) => {
+    playToyHopSqueakSound();
+    if (targetObj) {
+      triggerSquashStretch(targetObj, 1.24);
+      const baseY = targetObj.position.y;
+      const hopStart = performance.now();
+      const hopTick = (now) => {
+        const t = Math.min(1, (now - hopStart) / 320);
+        if (targetObj.parent) {
+          targetObj.position.y = baseY + Math.sin(t * Math.PI) * 0.42;
+        }
+        if (t < 1) requestAnimationFrame(hopTick);
+        else if (targetObj.parent) targetObj.position.y = baseY;
+      };
+      requestAnimationFrame(hopTick);
+    }
+    spawnPoofParticles3D(wx, wy + 0.45, wz, 0xFF80BF, 6);
+    spawnShockwaveRing3D(wx, Math.max(0.28, wy - 0.35), wz, 0x4DC4F0, 2.2, 0.55);
+    spawnJoyMotesScreen(sx, sy, moteSet);
+  };
+
+  const tryTapLivingWorldActor = (lp) => {
+    const pool = [];
+    if (heroState?.mesh && heroState.mesh.visible) {
+      pool.push({ mesh: heroState.mesh, kind: 'hero', line: '오늘도 갓물주 타운 순찰 중~ ✨' });
+    }
+    const walkers = state.activeTownStage === 2 ? harborWalkerActors : streetOutingActors;
+    for (const w of walkers) {
+      if (w?.mesh && w.mesh.visible) {
+        pool.push({ mesh: w.mesh, kind: 'walker', line: '회장님 안녕하세요! 우리 동네 최고예요~ 💖' });
+      }
+    }
+    for (const actors of Object.values(residentActors || {})) {
+      if (actors?.[0]?.mesh && actors[0].mesh.visible) {
+        pool.push({ mesh: actors[0].mesh, kind: 'tenant', line: '새 가구 덕분에 집이 너무 포근해요! 🎵' });
+      }
+    }
+
+    const wp = new THREE.Vector3();
+    let best = null;
+    let bestDist = 34;
+    for (const item of pool) {
+      item.mesh.getWorldPosition(wp);
+      const pt = projectWorldToScreen(wp.x, wp.y + 0.9, wp.z);
+      if (!pt.visible) continue;
+      const d = Math.hypot(pt.x - lp.x, pt.y - lp.y);
+      if (d < bestDist) {
+        bestDist = d;
+        best = { ...item, wx: wp.x, wy: wp.y + 0.9, wz: wp.z };
+      }
+    }
+    if (!best) return false;
+
+    if (best.mesh.userData) {
+      best.mesh.userData.cheerTimer = 1.8;
+    }
+    triggerWorldToyTapJuice(best.mesh, best.wx, best.wy, best.wz, lp.x, lp.y, ['💖', '🎵', '⭐', '🌸']);
+    showSpeechBubble3D(`tap_toy_${Date.now()}`, best.wx, best.wy + 1.25, best.wz, best.line, 2.4, true);
+    return true;
+  };
+
   renderer.domElement.addEventListener('pointerup', (e) => {
     const lp = mapClientToLogical(e.clientX, e.clientY);
-    if (Math.hypot(lp.x - downX, lp.y - downY) > 7) return;
+    if (Math.hypot(lp.x - downX, lp.y - downY) > 8) return;
+
+    // 머니건 팝오버가 열려 있을 때 빈 월드를 터치하면 부드럽게 닫기
+    const mgPop = document.getElementById('moneygun-flex-popover');
+    if (mgPop && !mgPop.classList.contains('hidden')) {
+      closeMoneyGunPopover();
+    }
+
     if (titleScreenState.active || guidedTourState.active || driveState.active || duelState.active) return;
 
     pointerNDC.x = (lp.x / Math.max(1, lp.width)) * 2 - 1;
@@ -27480,33 +28058,52 @@ function bindAllUIEvents() {
       return;
     }
 
+    // 거리/실내 동물 캐릭터 직접 터치 시 폴짝 점프 & 하트/음표 파티클 반응!
+    if (!focusedRoomId && !focusedShopId && !focusedFirstFloorShopId && tryTapLivingWorldActor(lp)) {
+      return;
+    }
+
     const hits = raycaster.intersectObjects(pickableMeshes, false);
     if (hits.length === 0) return;
 
+    const hitPt = hits[0].point;
     const ud = hits[0].object.userData;
     if (ud.kind === 'rentCoin3D' && ud.bubbleRef) {
       collectRentBubble(ud.bubbleRef, 0, lp.x, lp.y);
     } else if (ud.kind === 'goalArrow3D') {
+      spawnJoyMotesScreen(lp.x, lp.y, ['✨', '🎯', '⭐', '💫']);
       executeCurrentGoalNavigation();
     } else if (ud.kind === 'raccoonManager') {
+      const mgrMesh = lot3D?.lot_main?.publicGroup;
+      triggerWorldToyTapJuice(mgrMesh, hitPt.x, hitPt.y, hitPt.z, lp.x, lp.y, ['🪴', '💖', '⭐', '✨']);
       openNotebookModal('manager');
     } else if (ud.kind === 'goldenStatue') {
+      triggerWorldToyTapJuice(milestoneState?.statueGroup, hitPt.x, hitPt.y, hitPt.z, lp.x, lp.y, ['👑', '⭐', '✨', '💰']);
       clickGoldenLandlordStatue();
     } else if (ud.kind === 'furnitureFlagship') {
+      triggerWorldToyTapJuice(flagshipShop3DGroup, hitPt.x, hitPt.y, hitPt.z, lp.x, lp.y, ['🛋️', '✨', '💖', '⭐']);
       openFurnitureFlagshipDrawer();
     } else if (ud.kind === 'firstFloorShop' && ud.shopId) {
+      triggerWorldToyTapJuice(firstFloorShop3D[ud.shopId]?.group, hitPt.x, hitPt.y, hitPt.z, lp.x, lp.y, ['🏪', '🎵', '⭐', '✨']);
       focusCameraOnFirstFloorShop(ud.shopId);
     } else if (ud.kind === 'myPenthouse') {
+      triggerWorldToyTapJuice(lot3D?.lot_main?.roomsMap?.lot_main_penthouse, hitPt.x, hitPt.y, hitPt.z, lp.x, lp.y, ['👑', '💎', '⭐', '✨']);
       focusCameraOnMyPenthouse(false);
     } else if (ud.kind === 'room' && ud.roomId) {
+      const rGrp = lot3D?.[ud.lotId || 'lot_main']?.roomsMap?.[ud.roomId];
+      triggerWorldToyTapJuice(rGrp, hitPt.x, hitPt.y, hitPt.z, lp.x, lp.y, ['🏠', '💖', '🎵', '⭐']);
       focusCameraOnRoom(ud.roomId);
     } else if (ud.kind === 'standaloneShop' && ud.shopId) {
+      triggerWorldToyTapJuice(standaloneShop3D[ud.shopId]?.group, hitPt.x, hitPt.y, hitPt.z, lp.x, lp.y, ['🥐', '☕', '💖', '⭐']);
       focusCameraOnShop(ud.shopId);
     } else if (ud.kind === 'vipCar') {
+      triggerWorldToyTapJuice(driveState.carRootGroup, hitPt.x, hitPt.y, hitPt.z, lp.x, lp.y, ['🏎️', '🔥', '⭐', '💨']);
       enterDriveMode();
     } else if (ud.kind === 'lot' && ud.lotId) {
+      spawnJoyMotesScreen(lp.x, lp.y, ['🏗️', '🔨', '⭐', '✨']);
       openLotDevModal(ud.lotId);
     } else if (ud.kind === 'eastHarborGate') {
+      spawnJoyMotesScreen(lp.x, lp.y, ['🌅', '✨', '⭐', '🌊']);
       if (state.harborUnlocked) {
         travelToTownStage(2, true);
       } else {
@@ -27694,12 +28291,134 @@ function bindAllUIEvents() {
     document.getElementById('settings-modal')?.classList.add('hidden');
   });
 
-  document.getElementById('btn-toggle-sfx')?.addEventListener('click', (ev) => {
+  if (state.sfxMuted) {
+    sfxEnabled = false;
+  }
+
+  const syncAllSfxButtonsUI = () => {
+    const sfxBtn = document.getElementById('btn-toggle-sfx');
+    if (sfxBtn) {
+      sfxBtn.textContent = sfxEnabled ? 'ON' : 'OFF';
+      sfxBtn.classList.toggle('push-green', sfxEnabled);
+      sfxBtn.classList.toggle('push-coral', !sfxEnabled);
+    }
+    const quickBtn = document.getElementById('btn-hud-sfx-quick');
+    const quickIco = document.getElementById('hud-sfx-quick-ico');
+    if (quickBtn) quickBtn.classList.toggle('is-muted', !sfxEnabled);
+    if (quickIco) quickIco.textContent = sfxEnabled ? '🔊' : '🔇';
+  };
+  syncAllSfxButtonsUI();
+
+  const toggleGlobalSfxMute = () => {
     sfxEnabled = !sfxEnabled;
-    if (!sfxEnabled) stopCarRadioBGM();
-    ev.currentTarget.textContent = sfxEnabled ? 'ON' : 'OFF';
-    ev.currentTarget.classList.toggle('tone-mint', sfxEnabled);
-    ev.currentTarget.classList.toggle('tone-cream', !sfxEnabled);
+    state.sfxMuted = !sfxEnabled;
+    if (!sfxEnabled) {
+      stopCarRadioBGM();
+    } else {
+      playUiMarimbaTapSound('tap');
+    }
+    syncAllSfxButtonsUI();
+    showToast(sfxEnabled ? '🔊 효과음 & 사운드 ON!' : '🔇 사운드 음소거됨 (1-Tap 해제 가능)', sfxEnabled ? 'mint' : 'coral');
+    saveGameState();
+  };
+
+  document.getElementById('btn-toggle-sfx')?.addEventListener('click', toggleGlobalSfxMute);
+  document.getElementById('btn-hud-sfx-quick')?.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    toggleGlobalSfxMute();
+  });
+
+  // [Pillar 1 & 4] 전 화면 버튼 젤리 탄성 리바운드 + 캔디 파문(Ripple) + 마림바/버블 팝 사운드 전역 위임!
+  document.addEventListener('pointerdown', (ev) => {
+    const btn = ev.target?.closest?.('button');
+    if (!btn || btn.disabled) return;
+    const lp = mapClientToLogical(ev.clientX, ev.clientY);
+    const fxLayer = document.getElementById('nintendo-juice-fx-layer');
+    if (fxLayer && lp.x > 0 && lp.y > 0) {
+      const rip = document.createElement('div');
+      rip.className = 'nintendo-tap-ripple';
+      rip.style.setProperty('--rx', `${lp.x}px`);
+      rip.style.setProperty('--ry', `${lp.y}px`);
+      fxLayer.appendChild(rip);
+      setTimeout(() => rip.remove(), 440);
+    }
+    if (!btn.classList.contains('world-vivid-arrow-pin') && !btn.classList.contains('rent-coin-bubble')) {
+      btn.classList.remove('jelly-spring-rebound');
+      void btn.offsetWidth;
+      btn.classList.add('jelly-spring-rebound');
+    }
+    if (btn.id === 'btn-hud-sfx-quick' || btn.id === 'btn-toggle-sfx') return;
+    const isClose = btn.classList.contains('btn-close-round') || btn.id.includes('close');
+    const isTab = btn.classList.contains('clay-tab-pill') || btn.hasAttribute('data-shopcat') || btn.hasAttribute('data-ntab');
+    playUiMarimbaTapSound(isClose ? 'close' : isTab ? 'tab' : 'tap');
+  }, { passive: true });
+
+  // [Pillar 2-1] 스마트 1-Tap 퀵 액션 토스트 버튼 & 닫기 바인딩
+  document.getElementById('btn-smart-cta-exec')?.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    const act = smartQuickCtaState.currentAction;
+    if (act && typeof act.run === 'function') {
+      act.run();
+      syncPocketBigCardsUI();
+    }
+  });
+  document.getElementById('btn-smart-cta-dismiss')?.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    if (smartQuickCtaState.currentAction) {
+      smartQuickCtaState.dismissedSig = smartQuickCtaState.currentAction.sig;
+      smartQuickCtaState.dismissUntilMs = Date.now() + 25000;
+    }
+    document.getElementById('smart-quick-cta-bar')?.classList.add('hidden');
+  });
+
+  // [Pillar 2-2] 모든 모달 빈 배경(Dim 영역) 터치 시 부드럽게 즉시 닫기 통일!
+  const backdropClosableModals = [
+    'pocket-planner-popover',
+    'notebook-modal',
+    'forbes-modal',
+    'settings-modal',
+    'lot-dev-modal',
+    'recruit-modal',
+    'garage-modal',
+    'animal-select-modal',
+    'harbor-chronicle-modal',
+    'news-detail-modal',
+    'rival-battle-hub-modal',
+    'happiness-milestone-modal',
+    'fp-visit-modal',
+    'rename-building-modal',
+    'flagship-shop-drawer'
+  ];
+  backdropClosableModals.forEach((mid) => {
+    const mEl = document.getElementById(mid);
+    if (!mEl) return;
+    mEl.addEventListener('click', (ev) => {
+      if (ev.target === mEl) {
+        playUiMarimbaTapSound('close');
+        if (mid === 'pocket-planner-popover') closePocketPlanner();
+        else if (mid === 'animal-select-modal') closeAnimalSelectModal();
+        else if (mid === 'garage-modal') closeGarageModal();
+        else mEl.classList.add('hidden');
+      }
+    });
+  });
+
+  // [Pillar 2-3] 가구 백화점 구매 직후 원스톱 [🏠 호실에 바로 배치 ➔] & [👑 내 방 보기] 바인딩
+  document.getElementById('btn-flagship-quick-myroom')?.addEventListener('click', () => {
+    document.getElementById('flagship-shop-drawer')?.classList.add('hidden');
+    focusCameraOnMyPenthouse(false);
+  });
+  document.getElementById('btn-flagship-auto-place-room')?.addEventListener('click', () => {
+    const tgt = flagshipOneStopTarget;
+    if (!tgt) return;
+    const rm = findRoomById(tgt.roomId);
+    if (!rm) return;
+    document.getElementById('flagship-shop-drawer')?.classList.add('hidden');
+    focusCameraOnRoom(rm.id);
+    setTimeout(() => {
+      handleBuyOrEquipFurniture(rm, tgt.cat, tgt.itemId, false, true);
+      syncFlagshipOneStopBanner(null, null);
+    }, 360);
   });
 
   document.getElementById('btn-toggle-shadows')?.addEventListener('click', (ev) => {
@@ -28286,6 +29005,10 @@ window.addEventListener('DOMContentLoaded', () => {
   const mainLoopClock = new THREE.Clock();
   function animateLoop() {
     requestAnimationFrame(animateLoop);
+    if (document.hidden) {
+      mainLoopClock.getDelta();
+      return;
+    }
     const rawDt = Math.max(0.0005, mainLoopClock.getDelta());
     const dt = Math.min(0.05, rawDt);
     const uiDt = Math.min(0.25, rawDt);
